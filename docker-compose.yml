@@ -1,0 +1,31 @@
+services:
+  postgres:
+    image: postgres:17
+    env_file: .env
+    restart: unless-stopped
+    ports:
+      - "${POSTGRES_PORT}:5432"
+    volumes:
+      - .postgres_data:/var/lib/postgresql/data
+    networks:
+      - app_network
+
+  backend:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      - postgres
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./backend:/backend
+    networks:
+      - app_network
+
+volumes:
+  postgres_data:
+
+networks:
+  app_network:
+    driver: bridge

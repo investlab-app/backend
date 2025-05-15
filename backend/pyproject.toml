@@ -1,0 +1,44 @@
+[tool.isort]
+profile = "black"
+skip = [
+    "manage.py",
+    "migrations",
+    "export",
+    "media",
+    "requirements.txt",
+    "venv",
+    ".venv",
+    ".mypy_cache"
+]
+
+
+[tool.black]
+line-length = 88
+target-version = ['py312']
+exclude = '''
+/(
+    manage.py
+|   migrations
+|   export
+|   media
+|   requirements.txt
+|   venv
+|   .git
+|   .venv
+|   .mypy_cache
+)/
+'''
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--cov=modules --cov-report=term-missing"
+
+[tool.coverage.run]
+omit = [
+    "*/management/*",
+    "*/migrations/*",
+    "*/tests/*",
+    "*/__init__.py",
+#    "*/apps.py",
+]

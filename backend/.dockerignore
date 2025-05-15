@@ -1,0 +1,18 @@
+# MacOS
+.DS_Store
+
+# Cache
+*.pyc
+*.pyo
+*/__pycache__
+
+# Database
+*.sqlite3
+.coverage
+
+# Storage
+/media
+/staticfiles
+
+# Docker
+Dockerfile

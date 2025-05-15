@@ -1,0 +1,31 @@
+# MacOS
+.DS_Store
+
+# IDE
+.idea
+.vscode
+
+# Cache
+*.pyc
+*.pyo
+*/__pycache__
+*/.pytest_cache
+
+# Virtual Environment
+/venv
+/.venv
+
+# Database
+*.sqlite3
+.coverage
+.postgres_data/
+
+# Storage
+/backend/media
+/backend/staticfiles
+
+# Environment Variables
+.env
+
+# Logs
+*.log
