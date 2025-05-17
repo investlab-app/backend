@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     # Local modules
     "modules.core",
     "modules.users",
+    "modules.prices",
 ]
 
 MIDDLEWARE = [
