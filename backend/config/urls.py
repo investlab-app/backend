@@ -5,8 +5,10 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from modules.core.views import HealthCheckView
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
+
+from modules.core.views import HealthCheckView
+
 
 urlpatterns = [
     path("admin/", admin.site.urls),
