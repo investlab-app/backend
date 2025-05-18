@@ -1,22 +1,23 @@
 from datetime import datetime
+from decimal import Decimal
 from typing import cast
 
 import yfinance
 from pandas import DataFrame, Timestamp
 
-from modules.prices.dtos import InstrumentPriceDTO
-from modules.prices.errors import UnknownTickerError
-from modules.prices.helpers import TimeInterval
+from modules.prices.constants import TimeInterval
+from modules.prices.errors import FetchPriceException
+from modules.prices.schemas import InstrumentPriceSchema
 
 
 class YfinanceRepository:
-    def get_instrument_price_for_timeperiod(
-        self,
+    @staticmethod
+    def get_instrument_price(
         instrument: str,
         start_date: datetime,
         end_date: datetime,
         interval: TimeInterval,
-    ) -> list[InstrumentPriceDTO]:
+    ) -> list[InstrumentPriceSchema]:
         """
         Fetches historical price data for a specified financial instrument using the yfinance library.
 
@@ -27,40 +28,42 @@ class YfinanceRepository:
             interval (TimeInterval): The time interval for the historical data (e.g., "ONE_MINUTE", "ONE_DAY").
 
         Returns:
-            list[InstrumentPriceDTO]: A list of data transfer objects containing the instrument's historical prices.
+            list[InstrumentPriceSchema]: A list of Pydantic models containing the instrument's historical prices.
 
         Raises:
-            UnknownTickerError: If the ticker is invalid or no data is returned.
+            UnknownTickerException: If the ticker is invalid or no data is returned.
         """
-
         try:
-            ticker: yfinance.Ticker = yfinance.Ticker(instrument.lower())
-            history: DataFrame = ticker.history(
+            ticker = yfinance.Ticker(instrument.lower())
+            history = ticker.history(
                 start=start_date, end=end_date, interval=interval.value
             )
 
             if history.empty:
-                raise UnknownTickerError(instrument)
-            return self._covert_prices_to_dto(history, instrument)
+                raise FetchPriceException(
+                    f"History is empty for the ticker {instrument}"
+                )
+            return YfinanceRepository._covert_prices_to_dto(history, instrument)
 
         except Exception as e:
-            raise UnknownTickerError(instrument)
+            raise FetchPriceException(str(e))
 
+    @staticmethod
     def _covert_prices_to_dto(
-        self, dataframe: DataFrame, instrument: str
-    ) -> list[InstrumentPriceDTO]:
+        dataframe: DataFrame, instrument: str
+    ) -> list[InstrumentPriceSchema]:
         prices = []
         for index, row in dataframe.iterrows():
-            ts: Timestamp = cast(Timestamp, index)
+            ts = cast(Timestamp, index)
             prices.append(
-                InstrumentPriceDTO(
+                InstrumentPriceSchema(
                     timestamp=ts.to_pydatetime(),
                     ticker=instrument.upper(),
-                    open=float(row["Open"]),
-                    high=float(row["High"]),
-                    low=float(row["Low"]),
-                    close=float(row["Close"]),
-                    volume=float(row["Volume"]),
+                    open=Decimal(row["Open"]),
+                    high=Decimal(row["High"]),
+                    low=Decimal(row["Low"]),
+                    close=Decimal(row["Close"]),
+                    volume=Decimal((row["Volume"])),
                 )
             )
         return prices

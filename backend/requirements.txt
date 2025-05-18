@@ -1,3 +1,4 @@
+annotated-types==0.7.0
 asgiref==3.8.1
 astroid==3.3.10
 attrs==24.2.0
@@ -45,6 +46,8 @@ protobuf==6.31.0
 psycopg==3.2.6
 psycopg-binary==3.2.6
 pycparser==2.22
+pydantic==2.11.4
+pydantic_core==2.33.2
 PyJWT==2.10.1
 pylint==3.3.7
 pylint-pytest==1.1.8
@@ -61,6 +64,7 @@ rpds-py==0.22.3
 six==1.17.0
 soupsieve==2.7
 sqlparse==0.5.2
+typing-inspection==0.4.0
 tomlkit==0.13.2
 types-PyYAML==6.0.12.20250516
 types-requests==2.32.0.20250515

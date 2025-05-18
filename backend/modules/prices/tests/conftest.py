@@ -1,10 +1,11 @@
 from datetime import datetime
+from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
 import pytest
 
-from modules.prices.dtos import InstrumentPriceDTO
+from modules.prices.schemas import InstrumentPriceSchema
 
 
 @pytest.fixture
@@ -12,14 +13,14 @@ def mock_yfinance_repository():
     with patch("modules.prices.services.YfinanceRepository") as MockRepo:
         mock_instance = MagicMock()
         mock_instance.get_instrument_price_for_timeperiod.return_value = [
-            InstrumentPriceDTO(
+            InstrumentPriceSchema(
                 timestamp=datetime(2024, 4, 1, 0, 0, 0),
                 ticker="AAPL",
-                open=170.0,
-                high=172.0,
-                low=168.0,
-                close=171.0,
-                volume=1000000,
+                open=Decimal("170.0"),
+                high=Decimal("172.0"),
+                low=Decimal("168.0"),
+                close=Decimal("171.0"),
+                volume=Decimal("1000000"),
             )
         ]
         MockRepo.return_value = mock_instance
@@ -65,13 +66,13 @@ def mock_yfinance_invalid_ticker():
 @pytest.fixture
 def expected_result_from_ticker():
     return [
-        InstrumentPriceDTO(
+        InstrumentPriceSchema(
             timestamp=datetime(2024, 4, 1),
             ticker="AAPL",
-            open=100.0,
-            high=110.0,
-            low=90.0,
-            close=105.0,
-            volume=1000.0,
+            open=Decimal("100.0"),
+            high=Decimal("110.0"),
+            low=Decimal("90.0"),
+            close=Decimal("105.0"),
+            volume=Decimal("1000.0"),
         )
     ]

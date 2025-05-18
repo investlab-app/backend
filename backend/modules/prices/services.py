@@ -2,9 +2,13 @@ from datetime import datetime
 
 from rest_framework import exceptions
 
-from modules.prices.dtos import InstrumentPriceDTO
-from modules.prices.helpers import TimeInterval
+from modules.prices.constants import TimeInterval
+from modules.prices.errors import (
+    IllegalDateOrderException,
+    InvalidTimeIntervalException,
+)
 from modules.prices.repositories import YfinanceRepository
+from modules.prices.schemas import InstrumentPriceSchema
 
 
 class PricesServiceMinimal:
@@ -13,7 +17,7 @@ class PricesServiceMinimal:
 
     def get_instrument_price_for_timeperiod(
         self, instrument: str, start_date: datetime, end_date: datetime, interval: str
-    ) -> list[InstrumentPriceDTO]:
+    ) -> list[InstrumentPriceSchema]:
         """
         Retrieves historical price data for a given financial instrument within a specified time range and interval.
 
@@ -32,19 +36,18 @@ class PricesServiceMinimal:
         """
 
         if start_date > end_date:
-            raise exceptions.ValidationError("Start date cannot be after the end date.")
-        try:
-            return self._repository.get_instrument_price_for_timeperiod(
-                instrument,
-                start_date,
-                end_date,
-                self._parse_time_interval(interval.lower()),
-            )
-        except Exception as e:
-            raise exceptions.APIException("Failed to retrieve instrument price data.")
+            raise IllegalDateOrderException()
+        return self._repository.get_instrument_price(
+            instrument,
+            start_date,
+            end_date,
+            self._parse_time_interval(interval.lower()),
+        )
 
     def _parse_time_interval(self, value: str) -> TimeInterval:
         try:
             return TimeInterval(value)
-        except ValueError as e:
-            raise exceptions.ValidationError(str(e))
+        except ValueError:
+            raise InvalidTimeIntervalException(
+                f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in TimeInterval])}"
+            )
