@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractUser
 from django.contrib.auth.models import Group as _Group
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+
 from modules.core.models import BaseModel
 from modules.users.managers import UserManager
 
