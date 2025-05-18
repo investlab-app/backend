@@ -1,15 +1,19 @@
-from modules.prices.repositories import YfinanceRepository
 from datetime import datetime
-from modules.prices.helpers import TimeInterval
-from modules.prices.dtos import InstrumentPriceDTO
+
 from rest_framework import exceptions
+
+from modules.prices.dtos import InstrumentPriceDTO
+from modules.prices.helpers import TimeInterval
+from modules.prices.repositories import YfinanceRepository
 
 
 class PricesServiceMinimal:
     def __init__(self):
         self._repository = YfinanceRepository()
 
-    def get_instrument_price_for_timeperiod(self, instrument: str,  start_date: datetime, end_date: datetime, interval: str) -> list[InstrumentPriceDTO]:
+    def get_instrument_price_for_timeperiod(
+        self, instrument: str, start_date: datetime, end_date: datetime, interval: str
+    ) -> list[InstrumentPriceDTO]:
         """
         Retrieves historical price data for a given financial instrument within a specified time range and interval.
 
@@ -30,7 +34,12 @@ class PricesServiceMinimal:
         if start_date > end_date:
             raise exceptions.ValidationError("Start date cannot be after the end date.")
         try:
-            return self._repository.get_instrument_price_for_timeperiod(instrument, start_date, end_date, self._parse_time_interval(interval.lower()))
+            return self._repository.get_instrument_price_for_timeperiod(
+                instrument,
+                start_date,
+                end_date,
+                self._parse_time_interval(interval.lower()),
+            )
         except Exception as e:
             raise exceptions.APIException("Failed to retrieve instrument price data.")
 

@@ -1,5 +1,6 @@
 from enum import Enum
 
+
 class TimeInterval(Enum):
     ONE_MINUTE = "1m"
     TWO_MINUTES = "2m"
