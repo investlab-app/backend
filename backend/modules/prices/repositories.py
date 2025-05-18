@@ -8,8 +8,23 @@ from pandas import DataFrame, Timestamp
 
 class YfinanceRepository:
     def get_instrument_price_for_timeperiod(self, instrument: str, start_date: datetime, end_date: datetime, interval: TimeInterval) -> list[InstrumentPriceDTO]:
+        """
+        Fetches historical price data for a specified financial instrument using the yfinance library.
+
+        Args:
+            instrument (str): The ticker symbol of the instrument (e.g., "aapl").
+            start_date (datetime): The start of the time period to retrieve data for.
+            end_date (datetime): The end of the time period to retrieve data for.
+            interval (TimeInterval): The time interval for the historical data (e.g., "ONE_MINUTE", "ONE_DAY").
+
+        Returns:
+            list[InstrumentPriceDTO]: A list of data transfer objects containing the instrument's historical prices.
+
+        Raises:
+            UnknownTickerError: If the ticker is invalid or no data is returned.
+        """
+    
         try:
-            print(f"printing results for {instrument} from {start_date} to {end_date} with interval {interval.value}")
             ticker: yfinance.Ticker = yfinance.Ticker(instrument.lower())
             history: DataFrame = ticker.history(
                 start=start_date,
@@ -19,11 +34,9 @@ class YfinanceRepository:
 
             if history.empty:
                 raise UnknownTickerError(instrument)
-            
             return self._covert_prices_to_dto(history, instrument)
 
         except Exception as  e:
-            print(e)
             raise UnknownTickerError(instrument)
         
         
