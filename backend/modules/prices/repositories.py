@@ -6,7 +6,7 @@ import yfinance
 from pandas import DataFrame, Timestamp
 
 from modules.prices.constants import TimeInterval
-from modules.prices.errors import FetchPriceException
+from modules.prices.exceptions import FetchPriceException
 from modules.prices.schemas import InstrumentPriceSchema
 
 

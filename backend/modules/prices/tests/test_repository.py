@@ -2,8 +2,8 @@ from datetime import datetime
 
 import pytest
 
+from modules.prices.exceptions import FetchPriceException
 from modules.prices.constants import TimeInterval
-from modules.prices.errors import FetchPriceException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import InstrumentPriceSchema
 
@@ -23,7 +23,7 @@ def test_get_instrument_price_success(
     assert result == expected_result_from_ticker
 
 
-def test_raises_unknown_ticker_error_on_empty_history(
+def test_raises_fetch_price_exception_on_empty_history(
     mock_yfinance_empty_history_ticker,
 ):
     repo = YfinanceRepository()
@@ -36,7 +36,9 @@ def test_raises_unknown_ticker_error_on_empty_history(
         )
 
 
-def test_raises_unknown_ticker_error_on_exception(mock_yfinance_invalid_ticker):
+def test_raises_fetch_price_exception_on_invalid_instrument(
+    mock_yfinance_invalid_ticker,
+):
     repo = YfinanceRepository()
 
     with pytest.raises(FetchPriceException):

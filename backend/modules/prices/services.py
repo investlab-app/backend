@@ -1,12 +1,7 @@
 from datetime import datetime
 
-from rest_framework import exceptions
-
 from modules.prices.constants import TimeInterval
-from modules.prices.errors import (
-    IllegalDateOrderException,
-    InvalidTimeIntervalException,
-)
+from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import InstrumentPriceSchema
 
@@ -36,7 +31,9 @@ class PricesServiceMinimal:
         """
 
         if start_date > end_date:
-            raise IllegalDateOrderException()
+            raise InvalidTimeIntervalException(
+                "Invalid date order, end date cannot preceed start date."
+            )
         return self._repository.get_instrument_price(
             instrument,
             start_date,
