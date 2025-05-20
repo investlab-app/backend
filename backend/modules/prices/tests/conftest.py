@@ -12,16 +12,21 @@ from modules.prices.schemas import InstrumentPriceSchema
 def mock_yfinance_repository():
     with patch("modules.prices.services.YfinanceRepository") as MockRepo:
         mock_instance = MagicMock()
-        mock_instance.get_instrument_price_for_timeperiod.return_value = [
+        mock_instance.get_instrument_price_history.return_value = [
             InstrumentPriceSchema(
                 timestamp=datetime(2024, 4, 1, 0, 0, 0),
-                ticker="AAPL",
                 open=Decimal("170.0"),
                 high=Decimal("172.0"),
                 low=Decimal("168.0"),
                 close=Decimal("171.0"),
-                volume=Decimal("1000000"),
-            )
+            ),
+            InstrumentPriceSchema(
+                timestamp=datetime(2024, 4, 2, 0, 0, 0),
+                open=Decimal("170.7"),
+                high=Decimal("170.8"),
+                low=Decimal("169.0"),
+                close=Decimal("170.1"),
+            ),
         ]
         MockRepo.return_value = mock_instance
         yield mock_instance
@@ -68,11 +73,9 @@ def expected_result_from_ticker():
     return [
         InstrumentPriceSchema(
             timestamp=datetime(2024, 4, 1),
-            ticker="AAPL",
             open=Decimal("100.0"),
             high=Decimal("110.0"),
             low=Decimal("90.0"),
             close=Decimal("105.0"),
-            volume=Decimal("1000.0"),
         )
     ]

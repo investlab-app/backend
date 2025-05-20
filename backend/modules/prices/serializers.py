@@ -32,12 +32,10 @@ class InstrumentPriceQueryParams(serializers.Serializer):
 
 class InstrumentPriceResponseSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
-    ticker = serializers.CharField(max_length=10)
     high = serializers.DecimalField(max_digits=30, decimal_places=15)
     low = serializers.DecimalField(max_digits=30, decimal_places=15)
     open = serializers.DecimalField(max_digits=30, decimal_places=15)
     close = serializers.DecimalField(max_digits=30, decimal_places=15)
-    volume = serializers.DecimalField(max_digits=30, decimal_places=15)
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:

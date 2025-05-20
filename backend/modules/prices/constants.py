@@ -1,7 +1,7 @@
 from enum import Enum
 
 
-class TimeInterval(Enum):
+class YFinanceTimeInterval(Enum):
     ONE_MINUTE = "1m"
     TWO_MINUTES = "2m"
     FIVE_MINUTES = "5m"

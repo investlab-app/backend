@@ -31,7 +31,7 @@ class PricesView(generics.GenericAPIView):
         validated = cast(dict, params.validated_data)
         try:
             service = PricesServiceMinimal()
-            instrument_data = service.get_instrument_price_for_timeperiod(
+            price_history = service.get_instrument_price_history(
                 validated["ticker"],
                 validated["start_date"],
                 validated["end_date"],
@@ -41,7 +41,7 @@ class PricesView(generics.GenericAPIView):
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         records = [
             InstrumentPriceResponseSerializer.sanitize_output(item.model_dump())
-            for item in instrument_data
+            for item in price_history["data"]
         ]
         serialized = InstrumentPriceResponseSerializer(data=records, many=True)
 
@@ -50,4 +50,10 @@ class PricesView(generics.GenericAPIView):
                 {"errors": serialized.errors},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-        return Response(serialized.data)
+        return Response(
+            {
+                "data": serialized.data,
+                "min_price": price_history["min_price"],
+                "max_price": price_history["max_price"],
+            }
+        )

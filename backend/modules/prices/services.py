@@ -1,20 +1,28 @@
 from datetime import datetime
+from decimal import Decimal
+from typing import TypedDict
 
-from modules.prices.constants import TimeInterval
+from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import InstrumentPriceSchema
+
+
+class PriceHistoryWithStats(TypedDict):
+    data: list[InstrumentPriceSchema]
+    min_price: Decimal
+    max_price: Decimal
 
 
 class PricesServiceMinimal:
     def __init__(self):
         self._repository = YfinanceRepository()
 
-    def get_instrument_price_for_timeperiod(
+    def get_instrument_price_history(
         self, instrument: str, start_date: datetime, end_date: datetime, interval: str
-    ) -> list[InstrumentPriceSchema]:
+    ) -> PriceHistoryWithStats:
         """
-        Retrieves historical price data for a given financial instrument within a specified time range and interval.
+        Retrieves historical price data for a given instrument with min and max price over the range.
 
         Args:
             instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
@@ -23,7 +31,7 @@ class PricesServiceMinimal:
             interval (str): The desired data interval (e.g., "1d", "1h").
 
         Returns:
-            list[InstrumentPriceDTO]: A list of DTOs containing price information for each time point.
+            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema], 'min_price', and 'max_price'
 
         Raises:
             ValidationError: If the start_date is after the end_date.
@@ -34,17 +42,23 @@ class PricesServiceMinimal:
             raise InvalidTimeIntervalException(
                 "Invalid date order, end date cannot preceed start date."
             )
-        return self._repository.get_instrument_price(
+        data = self._repository.get_instrument_price_history(
             instrument,
             start_date,
             end_date,
             self._parse_time_interval(interval.lower()),
         )
+        min_price = min(d.low for d in data)
+        max_price = max(d.high for d in data)
 
-    def _parse_time_interval(self, value: str) -> TimeInterval:
+        return PriceHistoryWithStats(
+            data=data, min_price=min_price, max_price=max_price
+        )
+
+    def _parse_time_interval(self, value: str) -> YFinanceTimeInterval:
         try:
-            return TimeInterval(value)
+            return YFinanceTimeInterval(value)
         except ValueError:
             raise InvalidTimeIntervalException(
-                f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in TimeInterval])}"
+                f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
             )

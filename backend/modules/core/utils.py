@@ -21,5 +21,5 @@ def get_random_bool():
 
 
 def quantize_decimal(value: Decimal, places: int = 15) -> Decimal:
-    quant = Decimal("1." + "0" * places)
+    quant = Decimal(f"1e-{places}")
     return value.quantize(quant, rounding=ROUND_HALF_UP)

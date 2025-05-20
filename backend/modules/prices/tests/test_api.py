@@ -21,7 +21,13 @@ def test_prices_view_success(api_client_auth, mock_yfinance_repository) -> None:
     )
     assert isinstance(response, Response)
     assert response.status_code == 200
-    assert isinstance(response.json(), list)
+    assert isinstance(response.json(), dict)
+    assert "data" in response.json()
+    assert "min_price" in response.json()
+    assert "max_price" in response.json()
+    assert len(response.json()["data"]) == 2
+    assert response.json()["min_price"] == 168.0
+    assert response.json()["max_price"] == 172.0
 
 
 def test_missing_param_returns_400(api_client_auth, mock_yfinance_repository) -> None:

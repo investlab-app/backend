@@ -5,18 +5,18 @@ from typing import cast
 import yfinance
 from pandas import DataFrame, Timestamp
 
-from modules.prices.constants import TimeInterval
+from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
 from modules.prices.schemas import InstrumentPriceSchema
 
 
 class YfinanceRepository:
     @staticmethod
-    def get_instrument_price(
+    def get_instrument_price_history(
         instrument: str,
         start_date: datetime,
         end_date: datetime,
-        interval: TimeInterval,
+        interval: YFinanceTimeInterval,
     ) -> list[InstrumentPriceSchema]:
         """
         Fetches historical price data for a specified financial instrument using the yfinance library.
@@ -38,18 +38,15 @@ class YfinanceRepository:
             history = ticker.history(
                 start=start_date, end=end_date, interval=interval.value
             )
-
-            if history.empty:
-                raise FetchPriceException(
-                    f"History is empty for the ticker {instrument}"
-                )
-            return YfinanceRepository._covert_prices_to_dto(history, instrument)
-
         except Exception as e:
             raise FetchPriceException(str(e))
 
+        if history.empty:
+            raise FetchPriceException(f"History is empty for the ticker {instrument}")
+        return YfinanceRepository._convert_prices_to_schema(history, instrument)
+
     @staticmethod
-    def _covert_prices_to_dto(
+    def _convert_prices_to_schema(
         dataframe: DataFrame, instrument: str
     ) -> list[InstrumentPriceSchema]:
         prices = []
@@ -58,12 +55,10 @@ class YfinanceRepository:
             prices.append(
                 InstrumentPriceSchema(
                     timestamp=ts.to_pydatetime(),
-                    ticker=instrument.upper(),
                     open=Decimal(row["Open"]),
                     high=Decimal(row["High"]),
                     low=Decimal(row["Low"]),
                     close=Decimal(row["Close"]),
-                    volume=Decimal((row["Volume"])),
                 )
             )
         return prices
