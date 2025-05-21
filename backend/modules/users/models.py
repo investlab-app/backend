@@ -10,7 +10,7 @@ from modules.users.managers import UserManager
 class User(BaseModel, AbstractUser):
     username = None  # type: ignore
     email = models.EmailField(unique=True, verbose_name=_("Email"))
-
+    clerk_role = models.CharField(max_length=50, default="investor") 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

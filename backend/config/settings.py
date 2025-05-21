@@ -185,6 +185,7 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
+        "config.clerk_auth.ClerkAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
@@ -197,6 +198,15 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "",
     "VERSION": "0.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SECURITY": [{'BearerAuth': []}],  # Add Bearer token to security definitions globally
+    'SECURITY_DEFINITIONS': {
+        'BearerAuth': {
+            'type': 'apiKey',
+            'in': 'header',
+            'name': 'Authorization',
+            'description': 'JWT Authorization header using the Bearer scheme.',
+        }
+    },
     #     # OTHER SETTINGS
     #     "SECURITY": [{"BearerAuth": []}],
     #     "COMPONENT_SPLIT_REQUEST": True,
