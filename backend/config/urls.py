@@ -1,4 +1,5 @@
 from django.contrib import admin
+from modules.core import urls
 from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
@@ -21,4 +22,5 @@ urlpatterns = [
     path("auth/token-refresh/", TokenRefreshView.as_view(), name="token-refresh"),
     # Modules
     path("", include("modules.prices.urls")),
+    path("", include("modules.core.urls")),
 ]
