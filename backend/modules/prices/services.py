@@ -55,7 +55,8 @@ class PricesServiceMinimal:
             data=data, min_price=min_price, max_price=max_price
         )
 
-    def _parse_time_interval(self, value: str) -> YFinanceTimeInterval:
+    @staticmethod
+    def _parse_time_interval(value: str) -> YFinanceTimeInterval:
         try:
             return YFinanceTimeInterval(value)
         except ValueError as e:

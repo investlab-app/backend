@@ -2,8 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import cast
 
-import yfinance
 from pandas import DataFrame, Timestamp
+from yfinance import Ticker
 
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
@@ -31,11 +31,11 @@ class YfinanceRepository:
             list[InstrumentPriceSchema]: A list of Pydantic models containing the instrument's historical prices.
 
         Raises:
-            UnknownTickerException: If the ticker is invalid or no data is returned.
+            FetchPriceException: If the ticker is invalid or no data is returned.
         """
         try:
-            ticker = yfinance.Ticker(instrument.lower())
-            history = ticker.history(
+            y_ticker = Ticker(instrument.lower())
+            history = y_ticker.history(
                 start=start_date, end=end_date, interval=interval.value
             )
         except Exception as e:

@@ -1,14 +1,15 @@
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
 
-from modules.core.views import StatusView
-
 API_PREFIX = "api"
+
+sse_urlpatterns = [
+]
 
 urlpatterns = [
     path(f"{API_PREFIX}/admin/", admin.site.urls),
@@ -37,6 +38,7 @@ urlpatterns = [
     ),
     # Modules
     path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
+    path(f"{API_PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
     path(f"{API_PREFIX}/test/", include("modules.core.urls")),
 ]

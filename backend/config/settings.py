@@ -40,8 +40,8 @@ INSTALLED_APPS = [
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
-    "channels",
     "corsheaders",
+    "django_eventstream",
     # Local modules
     "modules.authentication",
     "modules.core",
