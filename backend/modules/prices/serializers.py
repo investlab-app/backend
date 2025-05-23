@@ -4,9 +4,6 @@ from rest_framework import serializers
 
 from modules.core.utils import get_local_datetime, quantize_decimal
 
-MAX_DIGITS = 30
-DECIMAL_PLACES = 15
-
 
 class InstrumentPriceQueryParams(serializers.Serializer):
     ticker = serializers.CharField(
@@ -44,5 +41,5 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
     def sanitize_output(record: dict) -> dict:
         for key in record:
             if isinstance(record[key], Decimal):
-                record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)
+                record[key] = quantize_decimal(record[key], places=30)
         return record

@@ -21,7 +21,6 @@ class PricesView(generics.GenericAPIView):
         request=InstrumentPriceQueryParams,
     )
     def get(self, request: Request) -> Response:
-
         params = InstrumentPriceQueryParams(data=request.query_params)
         if not params.is_valid():
             return Response(
@@ -29,6 +28,7 @@ class PricesView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
         validated = cast(dict, params.validated_data)
+
         try:
             service = PricesServiceMinimal()
             price_history = service.get_instrument_price_history(
@@ -39,6 +39,7 @@ class PricesView(generics.GenericAPIView):
             )
         except (FetchPriceException, InvalidTimeIntervalException) as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
         records = [
             InstrumentPriceResponseSerializer.sanitize_output(item.model_dump())
             for item in price_history["data"]
