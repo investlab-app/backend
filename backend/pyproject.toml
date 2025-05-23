@@ -64,6 +64,7 @@ disable = [
     "C0115", # missing-class-docstring
     "C0415", # import-outside-toplevel
     "C0301", # line-too-long
+    "W0223", # abstract-method
 ]
 ignore = ["migrations"]
 load-plugins = ["pylint_pytest"]

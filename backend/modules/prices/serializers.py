@@ -8,7 +8,6 @@ MAX_DIGITS = 30
 DECIMAL_PLACES = 15
 
 
-# pylint: disable=abstract-method
 class InstrumentPriceQueryParams(serializers.Serializer):
     ticker = serializers.CharField(
         required=True,
@@ -34,7 +33,6 @@ class InstrumentPriceQueryParams(serializers.Serializer):
     )
 
 
-# pylint: disable=abstract-method
 class InstrumentPriceResponseSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
     high = serializers.DecimalField(max_digits=30, decimal_places=15)
