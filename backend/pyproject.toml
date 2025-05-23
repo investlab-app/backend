@@ -45,8 +45,13 @@ omit = [
 [tool.mypy]
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 
+
 [[tool.mypy.overrides]]
 module = ["unfold.*"]
+ignore_missing_imports = true
+
+[[tool.mypy.overrides]]
+module = ["yfinance.*"]
 ignore_missing_imports = true
 
 [tool.django-stubs]
@@ -58,6 +63,8 @@ disable = [
     "C0114", # missing-module-docstring
     "C0115", # missing-class-docstring
     "C0415", # import-outside-toplevel
+    "C0301", # line-too-long
+    "W0223", # abstract-method
 ]
 ignore = ["migrations"]
 load-plugins = ["pylint_pytest"]
@@ -65,4 +72,5 @@ load-plugins = ["pylint_pytest"]
 [tool.pylint."**/tests/**/*"]
 disable = [
     "C0116", # missing-function-docstring
+    "W0611", # unused-import
 ]
