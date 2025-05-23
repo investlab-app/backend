@@ -14,10 +14,11 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from config import str_to_bool, str_to_list
+
 # from django.templatetags.static import static
 # from django.utils.translation import gettext_lazy as _
 
-from config import str_to_bool, str_to_list
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -220,7 +221,6 @@ UNFOLD = {
             "title": "Frontend",
             "link": "https://example.com",
         },
-
     ],
     # "SITE_URL": "/",
     # # "SITE_ICON": lambda request: static("icon.svg"),  # both modes, optimise for 32px height
@@ -246,7 +246,8 @@ UNFOLD = {
     # "SHOW_VIEW_ON_SITE": True,  # show/hide "View on site" button, default: True
     # "SHOW_BACK_BUTTON": False,  # show/hide "Back" button on changeform in header, default: False
     # "ENVIRONMENT": "sample_app.environment_callback",  # environment name in header
-    # "ENVIRONMENT_TITLE_PREFIX": "sample_app.environment_title_prefix_callback",  # environment name prefix in title tag
+    # # environment name prefix in title tag
+    # "ENVIRONMENT_TITLE_PREFIX": "sample_app.environment_title_prefix_callback",
     # "DASHBOARD_CALLBACK": "sample_app.dashboard_callback",
     # "LOGIN": {
     #     "image": lambda request: static("sample/login-bg.jpg"),

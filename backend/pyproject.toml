@@ -8,9 +8,8 @@ skip = [
     "requirements.txt",
     "venv",
     ".venv",
-    ".mypy_cache"
+    ".mypy_cache",
 ]
-
 
 [tool.black]
 line-length = 88
@@ -40,5 +39,30 @@ omit = [
     "*/migrations/*",
     "*/tests/*",
     "*/__init__.py",
-#    "*/apps.py",
+    # */apps.py",
+]
+
+[tool.mypy]
+plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+
+[[tool.mypy.overrides]]
+module = ["unfold.*"]
+ignore_missing_imports = true
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.pylint]
+disable = [
+    "R0903", # too-few-public-methods
+    "C0114", # missing-module-docstring
+    "C0115", # missing-class-docstring
+    "C0415", # import-outside-toplevel
+]
+ignore = ["migrations"]
+load-plugins = ["pylint_pytest"]
+
+[tool.pylint."**/tests/**/*"]
+disable = [
+    "C0116", # missing-function-docstring
 ]

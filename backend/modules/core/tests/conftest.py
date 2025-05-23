@@ -1,5 +1,6 @@
 import pytest
-from modules.users.tests.conftest import user  # noqa: F401
+
+from modules.users.tests.conftest import user
 
 
 @pytest.fixture

@@ -8,13 +8,13 @@ from modules.users.managers import UserManager
 
 
 class User(BaseModel, AbstractUser):
-    username = None
+    username = None  # type: ignore
     email = models.EmailField(unique=True, verbose_name=_("Email"))
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 
-    objects = UserManager()
+    objects = UserManager()  # type: ignore
 
     class Meta:
         verbose_name = _("User")
