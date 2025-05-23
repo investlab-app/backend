@@ -10,7 +10,7 @@ from modules.prices.schemas import InstrumentPriceSchema
 
 @pytest.fixture
 def mock_yfinance_repository():
-    with patch("modules.prices.services.YfinanceRepository") as MockRepo:
+    with patch("modules.prices.services.YfinanceRepository") as mock_repo:
         mock_instance = MagicMock()
         mock_instance.get_instrument_price_history.return_value = [
             InstrumentPriceSchema(
@@ -28,13 +28,13 @@ def mock_yfinance_repository():
                 close=Decimal("170.1"),
             ),
         ]
-        MockRepo.return_value = mock_instance
+        mock_repo.return_value = mock_instance
         yield mock_instance
 
 
 @pytest.fixture
 def mock_yfinance_ticker():
-    with patch("yfinance.Ticker") as MockTicker:
+    with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()
         mock_instance.history.return_value = pd.DataFrame(
             {
@@ -47,16 +47,16 @@ def mock_yfinance_ticker():
             },
             index=[pd.Timestamp(datetime(2024, 4, 1))],
         )
-        MockTicker.return_value = mock_instance
+        mock_ticker.return_value = mock_instance
         yield mock_instance
 
 
 @pytest.fixture
 def mock_yfinance_empty_history_ticker():
-    with patch("yfinance.Ticker") as MockTicker:
+    with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()
         mock_instance.history.return_value = pd.DataFrame()
-        MockTicker.return_value = mock_instance
+        mock_ticker.return_value = mock_instance
         yield mock_instance
 
 
@@ -64,8 +64,8 @@ def mock_yfinance_empty_history_ticker():
 def mock_yfinance_invalid_ticker():
     with patch(
         "yfinance.Ticker", side_effect=Exception("Some API failure")
-    ) as MockTicker:
-        yield MockTicker
+    ) as mock_ticker:
+        yield mock_ticker
 
 
 @pytest.fixture

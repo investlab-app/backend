@@ -58,7 +58,7 @@ class PricesServiceMinimal:
     def _parse_time_interval(self, value: str) -> YFinanceTimeInterval:
         try:
             return YFinanceTimeInterval(value)
-        except ValueError:
+        except ValueError as e:
             raise InvalidTimeIntervalException(
                 f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
-            )
+            ) from e

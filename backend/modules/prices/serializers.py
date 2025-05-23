@@ -4,6 +4,9 @@ from rest_framework import serializers
 
 from modules.core.utils import get_local_datetime, quantize_decimal
 
+MAX_DIGITS = 30
+DECIMAL_PLACES = 15
+
 
 class InstrumentPriceQueryParams(serializers.Serializer):
     ticker = serializers.CharField(
@@ -29,6 +32,12 @@ class InstrumentPriceQueryParams(serializers.Serializer):
         max_length=3,
     )
 
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()
+
 
 class InstrumentPriceResponseSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
@@ -41,5 +50,11 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
     def sanitize_output(record: dict) -> dict:
         for key in record:
             if isinstance(record[key], Decimal):
-                record[key] = quantize_decimal(record[key], places=15)
+                record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)
         return record
+
+    def create(self, validated_data):
+        raise NotImplementedError()
+
+    def update(self, instance, validated_data):
+        raise NotImplementedError()

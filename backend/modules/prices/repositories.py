@@ -39,16 +39,14 @@ class YfinanceRepository:
                 start=start_date, end=end_date, interval=interval.value
             )
         except Exception as e:
-            raise FetchPriceException(str(e))
+            raise FetchPriceException(str(e)) from e
 
         if history.empty:
             raise FetchPriceException(f"History is empty for the ticker {instrument}")
-        return YfinanceRepository._convert_prices_to_schema(history, instrument)
+        return YfinanceRepository._convert_prices_to_schema(history)
 
     @staticmethod
-    def _convert_prices_to_schema(
-        dataframe: DataFrame, instrument: str
-    ) -> list[InstrumentPriceSchema]:
+    def _convert_prices_to_schema(dataframe: DataFrame) -> list[InstrumentPriceSchema]:
         prices = []
         for index, row in dataframe.iterrows():
             ts = cast(Timestamp, index)
