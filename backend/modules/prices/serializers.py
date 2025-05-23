@@ -8,6 +8,7 @@ MAX_DIGITS = 30
 DECIMAL_PLACES = 15
 
 
+# pylint: disable=abstract-method
 class InstrumentPriceQueryParams(serializers.Serializer):
     ticker = serializers.CharField(
         required=True,
@@ -32,13 +33,8 @@ class InstrumentPriceQueryParams(serializers.Serializer):
         max_length=3,
     )
 
-    def create(self, validated_data):
-        raise NotImplementedError()
 
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
-
-
+# pylint: disable=abstract-method
 class InstrumentPriceResponseSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
     high = serializers.DecimalField(max_digits=30, decimal_places=15)
@@ -52,9 +48,3 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
             if isinstance(record[key], Decimal):
                 record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)
         return record
-
-    def create(self, validated_data):
-        raise NotImplementedError()
-
-    def update(self, instance, validated_data):
-        raise NotImplementedError()
