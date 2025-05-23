@@ -7,6 +7,10 @@ format:
 	docker compose exec backend isort .
 	docker compose exec backend black .
 
+format-check: 
+	docker compose exec backend black --check --diff .
+	docker compose exec backend isort --check-only .  
+
 lint:
 	docker compose exec backend pylint .
 

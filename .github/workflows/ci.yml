@@ -22,13 +22,13 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Make .env file
-        run: cp .env.prod.example .env
+        run: cp .env.ci .env
       - name: Build and run containers
         run: docker compose up --build -d --wait
       - name: Run lint checks
         run: make lint
       - name: Run format checks
-        run: make format
+        run: make format-check
       - name: Run type checks
         run: make typecheck
       - name: Run tests
