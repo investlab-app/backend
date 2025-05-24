@@ -1,5 +1,6 @@
 from django.urls import path
-from modules.core.views import AuthTestView, UnauthTestView, AdminTestView
+
+from modules.core.views import AdminTestView, AuthTestView, UnauthTestView
 
 urlpatterns = [
     path(
@@ -12,5 +13,5 @@ urlpatterns = [
         AuthTestView.as_view(),
         name="users_test",
     ),
-     path("all_test/", UnauthTestView.as_view(), name="all_test"),
+    path("all_test/", UnauthTestView.as_view(), name="all_test"),
 ]

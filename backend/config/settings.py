@@ -10,17 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-import os
 import json  # Added for pretty printing
+import os
+from pathlib import Path
+
+from config import str_to_bool, str_to_list
 
 print("--- All Environment Variables ---")
 print(json.dumps(dict(os.environ), indent=2))
 print("--- End of Environment Variables ---")
-
-from datetime import timedelta
-from pathlib import Path
-
-from config import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
 # from django.utils.translation import gettext_lazy as _
@@ -78,14 +76,14 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.users",
     "modules.prices",
-    "modules.authentication"
+    "modules.authentication",
 ]
 
 if DEBUG:
     INSTALLED_APPS.insert(0, "daphne")
 
 MIDDLEWARE = [
-    'corsheaders.middleware.CorsMiddleware',
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",

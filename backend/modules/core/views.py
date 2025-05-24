@@ -1,8 +1,10 @@
-from rest_framework.generics import GenericAPIView
-from rest_framework.response import Response
 from rest_framework import permissions
-from modules.authentication.permissions import IsAdmin
+from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+
+from modules.authentication.permissions import IsAdmin
+
 
 class StatusView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
@@ -18,25 +20,29 @@ class AdminTestView(GenericAPIView):
 
     def get(self, request):
         user = request.user
-        return Response({
-            "message": "Authenticated successfully!",
-            "user_email": user.email,
-            "user_id": user.id,
-        })
+        return Response(
+            {
+                "message": "Authenticated successfully!",
+                "user_email": user.email,
+                "user_id": user.id,
+            }
+        )
 
 
 class AuthTestView(GenericAPIView):
     def get(self, request):
         user = request.user
-        return Response({
-            "message": "Authenticated successfully!",
-            "user_email": user.email,
-            "user_id": user.id,
-        })
+        return Response(
+            {
+                "message": "Authenticated successfully!",
+                "user_email": user.email,
+                "user_id": user.id,
+            }
+        )
 
 
 class UnauthTestView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
 
-    def get(self, request):
+    def get(self, _):
         return Response({"OK"})

@@ -1,22 +1,17 @@
-
-
-from django.conf import settings
-from django.utils.decorators import method_decorator
-from django.views.decorators.csrf import csrf_exempt
-from drf_spectacular.utils import extend_schema, OpenApiResponse
-
-from clerk_backend_api.models import SDKError
-from rest_framework import status
-from rest_framework.permissions import AllowAny
-from rest_framework.response import Response
-from rest_framework.views import APIView
-
 from clerk_backend_api import (
     Clerk,
     CreateSessionRequestBodyTypedDict,
     GetUserListRequestTypedDict,
 )
-
+from clerk_backend_api.models import SDKError
+from django.conf import settings
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
+from drf_spectacular.utils import OpenApiResponse, extend_schema
+from rest_framework import status
+from rest_framework.permissions import AllowAny
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
 from modules.authentication.serializers import ClerkLoginSerializer
 
@@ -45,13 +40,13 @@ class ClerkUsernamePasswordSignInView(APIView):
         summary="Sign in a user with email and password via Clerk",
         description="Authenticates a user using their email and password through Clerk, returning a sign-in token upon success.",
     )
-    def post(self, request, *args, **kwargs):
+    def post(self, request):
         """
         Sign in a user with email and password via Clerk.
         """
 
         serializer = self.serializer_class(data=request.data)
-        if  not serializer.is_valid():
+        if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data["email"]
@@ -63,22 +58,22 @@ class ClerkUsernamePasswordSignInView(APIView):
         )
         if not users or len(users) == 0:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        
+
         our_user = users[0]
         try:
-            clerk_sdk.users.verify_password(
-                user_id=our_user.id, password=password
-            )
+            clerk_sdk.users.verify_password(user_id=our_user.id, password=password)
         except SDKError as e:
-            return Response(f"{e.message}: Password did not pass verification", status=status.HTTP_401_UNAUTHORIZED)
+            return Response(
+                f"{e.message}: Password did not pass verification",
+                status=status.HTTP_401_UNAUTHORIZED,
+            )
 
         session = clerk_sdk.sessions.create(
             request=CreateSessionRequestBodyTypedDict(user_id=our_user.id)
         )
 
         access_token = clerk_sdk.sessions.create_token(
-            session_id=session.id,
-            expires_in_seconds=3600
+            session_id=session.id, expires_in_seconds=3600
         )
 
         return Response(
