@@ -64,11 +64,11 @@ class ClerkAuthentication(BaseAuthentication):
         if not auth_header or not auth_header.startswith("Bearer "):
             token = request.COOKIES.get("__session")
             if not token:
-                raise AuthenticationFailed("Token is null")
+                return None
         else:
             token = auth_header.split(" ")[1]
             if token == 'null':
-                raise AuthenticationFailed("Token is null")
+                return None
         payload = decode_token(token)
         print(payload)
         user_id = payload.get("sub")
