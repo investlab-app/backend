@@ -76,6 +76,7 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.users",
     "modules.prices",
+    "modules.authentication"
 ]
 
 if DEBUG:
@@ -205,15 +206,9 @@ SPECTACULAR_SETTINGS = {
     "DESCRIPTION": "",
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SECURITY": [{'ClerkJWT': []}],  # Add Bearer token to security definitions globally
-    'SECURITY_DEFINITIONS': {
-        'ClerkJWT': {
-            'type': 'apiKey',
-            'in': 'header',
-            'name': 'Authorization',
-            'description': 'JWT Authorization header using the Bearer scheme.',
-        }
-    },
+    "SECURITY": [
+        {"BearerAuth": []},
+    ],
     #     # OTHER SETTINGS
     #     "SECURITY": [{"BearerAuth": []}],
     #     "COMPONENT_SPLIT_REQUEST": True,

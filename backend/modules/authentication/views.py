@@ -1,9 +1,11 @@
-import logging  # Add logger import
 
-from django.conf import settings  # Add settings import
+
+from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import extend_schema, OpenApiResponse
+
+from clerk_backend_api.models import SDKError
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
@@ -15,9 +17,8 @@ from clerk_backend_api import (
     GetUserListRequestTypedDict,
 )
 
-from modules.authentication.serializers import ClerkLoginSerializer
 
-logger = logging.getLogger(__name__)  # Initialize logger
+from modules.authentication.serializers import ClerkLoginSerializer
 
 
 @method_decorator(csrf_exempt, name="dispatch")
@@ -27,9 +28,9 @@ class ClerkUsernamePasswordSignInView(APIView):
     Returns a Clerk sign-in token upon successful authentication.
     """
 
-    authentication_classes = []  # Explicitly set
-    permission_classes = [AllowAny]  # Explicitly set
-    serializer_class = ClerkLoginSerializer  # Added for Swagger
+    authentication_classes = []
+    permission_classes = [AllowAny]
+    serializer_class = ClerkLoginSerializer
 
     @extend_schema(
         request=ClerkLoginSerializer,
@@ -48,57 +49,43 @@ class ClerkUsernamePasswordSignInView(APIView):
         """
         Sign in a user with email and password via Clerk.
         """
-        print(f"Request data: {request.data}")  # Debugging line
 
         serializer = self.serializer_class(data=request.data)
-
-        if not serializer.is_valid():
+        if  not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         email = serializer.validated_data["email"]
-
         password = serializer.validated_data["password"]
-
         clerk_sdk = Clerk(settings.CLERK_SECRET_KEY)
-
-        # res = clerk_sdk.users.create(
-        #     request=CreateUserRequestBodyTypedDict(
-        #         first_name="Twoj",
-        #         last_name="Stary",
-        #         email_address=[email],
-        #         password=password,
-        #     )
-        # )
-        # print(res)
 
         users = clerk_sdk.users.list(
             request=GetUserListRequestTypedDict(email_address=[email])
         )
-        # print(users)
-
+        if not users or len(users) == 0:
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        
         our_user = users[0]
-
-        verify_response = clerk_sdk.users.verify_password(
-            user_id=our_user.id, password=password
-        )
-        print(f"Verify response: {verify_response}")
+        try:
+            clerk_sdk.users.verify_password(
+                user_id=our_user.id, password=password
+            )
+        except SDKError as e:
+            return Response(f"{e.message}: Password did not pass verification", status=status.HTTP_401_UNAUTHORIZED)
 
         session = clerk_sdk.sessions.create(
             request=CreateSessionRequestBodyTypedDict(user_id=our_user.id)
         )
-        print(f"Session created: {session}")
 
-        session_id = session.id
-        print(f"Session ID: {session_id}")
-
-        jwt_token = clerk_sdk.sessions.create_token(session_id=session_id)
-        print(f"JWT Token: {jwt_token}")
+        access_token = clerk_sdk.sessions.create_token(
+            session_id=session.id,
+            expires_in_seconds=3600
+        )
 
         return Response(
             {
                 "message": "Sign-in successful",
-                "session_id": session_id,
-                "token": jwt_token,
+                "session_id": session.id,
+                "access_token": access_token.jwt,
             },
             status=status.HTTP_200_OK,
         )

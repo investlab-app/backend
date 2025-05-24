@@ -4,8 +4,9 @@ from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework import response
 
-class HealthCheckView(GenericAPIView):
-    permission_classes = []
+class StatusView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    authentication_classes = []
     serializer_class = None
 
     def get(self, _):
@@ -16,7 +17,7 @@ from rest_framework.permissions import IsAuthenticated
 from config.permissions import IsAdmin
 
 
-class AdminTestView(APIView):
+class AdminTestView(GenericAPIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
     def get(self, request):
@@ -28,7 +29,7 @@ class AdminTestView(APIView):
         })
 
 
-class AuthTestView(APIView):
+class AuthTestView(GenericAPIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -40,7 +41,7 @@ class AuthTestView(APIView):
         })
 
 
-class UnauthTestView(APIView):
+class UnauthTestView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
 
     def get(self, request):

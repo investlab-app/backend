@@ -10,10 +10,9 @@ from clerk_backend_api import Clerk
 
 from modules.users.models import User
 from django.core.cache import cache
+from jwcrypto import jwk
 
-
-def get_jwks():
-    """Fetch JWKS (JSON Web Key Set) from Clerk's endpoint"""
+def _get_jwks():
     try:
         response = requests.get(os.environ["CLERK_JWKS_URL"], timeout=5)
         response.raise_for_status()
@@ -22,21 +21,18 @@ def get_jwks():
         raise AuthenticationFailed(f"Failed to fetch JWKS: {str(e)}") from e
 
 
-def get_public_key(kid):
-    """Find the correct public key from Clerk JWKS"""
-    jwks = get_jwks()
+def _get_public_key(kid):
+    jwks = _get_jwks()
     for key in jwks['keys']:
         if key['kid'] == kid:
-            return jwks.JWK(**key)
+            return jwk.JWK(**key)
     raise AuthenticationFailed("Public key not found for given 'kid'")
 
-
-def decode_token(token):
+def _decode_token(token):
     try:
         headers = jwt.get_unverified_header(token)
         kid = headers['kid']
-        public_key = get_public_key(kid)
-
+        public_key = _get_public_key(kid)
         payload = jwt.decode(
             token,
             public_key.export_to_pem().decode('utf-8'),
@@ -48,6 +44,33 @@ def decode_token(token):
         raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
     except Exception as e:
         raise AuthenticationFailed(f"Unexpected token error: {str(e)}") from e 
+
+def _parse_user_from_payload(payload) -> User:
+
+    user_id = payload.get("sub")
+    if not user_id:
+        raise AuthenticationFailed("User ID (sub) not found in token")
+
+    email = payload.get("email")
+    if not email:
+        raise AuthenticationFailed("Email not found in token")
+
+    metadata = payload.get("metadata", {})
+    role = metadata.get("role", "investor")
+    print("UIYSTDGFHJFDH")
+    user = User(
+        id=user_id,
+        email=email,
+        first_name=payload.get("first_name", ""),
+        last_name=payload.get("last_name", ""),
+        image_url=payload.get("img_url", ""),
+        has_image=payload.get("has_img", False),
+        clerk_role=role,
+    )
+
+    return user
+
+
 
 
 class ClerkAuthentication(BaseAuthentication):
@@ -66,31 +89,6 @@ class ClerkAuthentication(BaseAuthentication):
             token = auth_header.split(" ")[1]
             if token == 'null':
                 return None
-        payload = decode_token(token)
-        print(payload)
-        user_id = payload.get("sub")
-        if not user_id:
-            raise AuthenticationFailed("User ID (sub) not found in token")
-        
-        cache_key = f"clerk_user_{user_id}"
-        clerk_user = cache.get(cache_key)
-
-        if not clerk_user:
-            clerk_sdk = Clerk(bearer_auth=os.environ["CLERK_SECRET_KEY"])
-            clerk_user = clerk_sdk.users.get(user_id=user_id)
-            cache.set(cache_key, clerk_user, timeout=300) 
-        
-        if not clerk_user:
-            raise AuthenticationFailed("Could not retrieve clerk user")
-        if not clerk_user.email_addresses or len(clerk_user.email_addresses) == 0:
-            raise AuthenticationFailed("Could user does not have an email address")
-            
-        email = clerk_user.email_addresses[0].email_address
-        role = clerk_user.public_metadata.get("role")
-        user, _ = User.objects.get_or_create(email=email)
-        if role not in ["admin", "investor"]:
-            role = "investor"
-            user.clerk_role = role
-            user.save()
-
+        payload = _decode_token(token)
+        user = _parse_user_from_payload(payload)
         return user, None

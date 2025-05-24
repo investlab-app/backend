@@ -4,8 +4,3 @@ class ClerkLoginSerializer(serializers.Serializer):
     email = serializers.EmailField(required=True)
     password = serializers.CharField(required=True, style={'input_type': 'password'})
     
-    def update(self, instance, validated_data):
-        pass
-
-    def create(self, validated_data):
-        pass
