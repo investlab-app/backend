@@ -47,11 +47,7 @@ plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
 
 
 [[tool.mypy.overrides]]
-module = ["unfold.*"]
-ignore_missing_imports = true
-
-[[tool.mypy.overrides]]
-module = ["yfinance.*"]
+module = ["yfinance.*", "unfold.*", "channels.*"]
 ignore_missing_imports = true
 
 [tool.django-stubs]
