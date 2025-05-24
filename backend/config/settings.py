@@ -39,7 +39,9 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["SECRET_KEY"]
-CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY") # Added Clerk Secret Key
+CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
+CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
+CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str_to_bool(os.environ["DEBUG"])
@@ -190,7 +192,7 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.AllowAny",
+        "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",

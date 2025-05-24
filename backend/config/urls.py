@@ -19,7 +19,7 @@ urlpatterns = [
     path("api/docs/", SpectacularSwaggerView.as_view(url_name="schema", authentication_classes=[],), name="swagger"),
     path("api/redoc/", SpectacularRedocView.as_view(url_name="schema", authentication_classes=[],), name="redoc"),
     # Modules
-    path("api/prices", include("modules.prices.urls")),
+    path("api/prices/", include("modules.prices.urls")),
     path("api/auth/", include("modules.authentication.urls")),
     path("api/test/", include("modules.core.urls")),
 ]

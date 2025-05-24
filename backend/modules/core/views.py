@@ -1,8 +1,8 @@
 from rest_framework.generics import GenericAPIView
 from rest_framework.response import Response
 from rest_framework import permissions
-from rest_framework.views import APIView
-from rest_framework import response
+from modules.authentication.permissions import IsAdmin
+from rest_framework.permissions import IsAuthenticated
 
 class StatusView(GenericAPIView):
     permission_classes = [permissions.AllowAny]
@@ -11,10 +11,6 @@ class StatusView(GenericAPIView):
 
     def get(self, _):
         return Response({"message": "App is running!"})
-
-
-from rest_framework.permissions import IsAuthenticated
-from config.permissions import IsAdmin
 
 
 class AdminTestView(GenericAPIView):
@@ -30,8 +26,6 @@ class AdminTestView(GenericAPIView):
 
 
 class AuthTestView(GenericAPIView):
-    permission_classes = [IsAuthenticated]
-
     def get(self, request):
         user = request.user
         return Response({

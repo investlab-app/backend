@@ -11,10 +11,11 @@ from clerk_backend_api import Clerk
 from modules.users.models import User
 from django.core.cache import cache
 from jwcrypto import jwk
+from django.conf import settings
 
 def _get_jwks():
     try:
-        response = requests.get(os.environ["CLERK_JWKS_URL"], timeout=5)
+        response = requests.get(settings.CLERK_JWKS_URL, timeout=5)
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
@@ -37,7 +38,7 @@ def _decode_token(token):
             token,
             public_key.export_to_pem().decode('utf-8'),
             algorithms=["RS256"],
-            issuer=os.environ["CLERK_ISSUER"],
+            issuer=settings.CLERK_ISSUER,
         )
         return payload
     except PyJWTError as e:
@@ -55,9 +56,8 @@ def _parse_user_from_payload(payload) -> User:
     if not email:
         raise AuthenticationFailed("Email not found in token")
 
-    metadata = payload.get("metadata", {})
+    metadata = payload.get("meta", {})
     role = metadata.get("role", "investor")
-    print("UIYSTDGFHJFDH")
     user = User(
         id=user_id,
         email=email,

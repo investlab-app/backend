@@ -13,7 +13,7 @@ charset-normalizer==3.4.2
 click==8.1.7
 colorama==0.4.6
 constantly==23.10.4
-clerk-backend-api==2.2.0
+clerk-backend-api @ git+https://github.com/mikolajkapica/clerk-sdk-python.git@43b124a61199d974b24a5955073ce72d529d7bc7
 coverage==7.6.10
 cryptography==45.0.3
 curl_cffi==0.11.1
