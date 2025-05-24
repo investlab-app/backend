@@ -1,5 +1,5 @@
 # backend/authentication/clerk_auth.py
-
+import modules.authentication.extensions
 import os
 import requests
 import jwt
@@ -59,19 +59,18 @@ class ClerkAuthentication(BaseAuthentication):
     Sets `request.user` to a custom User model retrieved from database
     """
     def authenticate(self, request):
-        print(request)
-        print(request.headers)
         auth_header = request.headers.get("Authorization")
 
         if not auth_header or not auth_header.startswith("Bearer "):
-            return None  # Let other auth classes try
-
-        token = auth_header.split(" ")[1]
-        if token == 'null':
-            raise AuthenticationFailed("Token is null")
+            token = request.COOKIES.get("__session")
+            if not token:
+                raise AuthenticationFailed("Token is null")
+        else:
+            token = auth_header.split(" ")[1]
+            if token == 'null':
+                raise AuthenticationFailed("Token is null")
         payload = decode_token(token)
         print(payload)
-
         user_id = payload.get("sub")
         if not user_id:
             raise AuthenticationFailed("User ID (sub) not found in token")
@@ -89,7 +88,6 @@ class ClerkAuthentication(BaseAuthentication):
         if not clerk_user.email_addresses or len(clerk_user.email_addresses) == 0:
             raise AuthenticationFailed("Could user does not have an email address")
             
-        print(clerk_user)
         email = clerk_user.email_addresses[0].email_address
         role = clerk_user.public_metadata.get("role")
         user, _ = User.objects.get_or_create(email=email)
@@ -97,6 +95,5 @@ class ClerkAuthentication(BaseAuthentication):
             role = "investor"
             user.clerk_role = role
             user.save()
-        print(user.clerk_role)
 
         return user, None

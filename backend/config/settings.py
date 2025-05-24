@@ -182,10 +182,10 @@ REST_FRAMEWORK = {
         "rest_framework.parsers.JSONParser",
     ],
     "DEFAULT_PERMISSION_CLASSES": [
-        "rest_framework.permissions.IsAuthenticated",
+        "rest_framework.permissions.AllowAny",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "config.clerk_auth.ClerkAuthentication",
+        "modules.authentication.clerk_auth.ClerkAuthentication",
         "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
@@ -196,11 +196,11 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Stocks API",
     "DESCRIPTION": "",
-    "VERSION": "0.0.0",
+    "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": False,
-    "SECURITY": [{'BearerAuth': []}],  # Add Bearer token to security definitions globally
+    "SECURITY": [{'ClerkJWT': []}],  # Add Bearer token to security definitions globally
     'SECURITY_DEFINITIONS': {
-        'BearerAuth': {
+        'ClerkJWT': {
             'type': 'apiKey',
             'in': 'header',
             'name': 'Authorization',
@@ -222,10 +222,10 @@ SPECTACULAR_SETTINGS = {
 
 AUTH_USER_MODEL = "users.User"
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
-}
+# SIMPLE_JWT = {
+#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
+#     "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+# }
 
 UNFOLD = {
     "SITE_TITLE": "Stocks",

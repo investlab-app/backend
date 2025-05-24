@@ -3,6 +3,7 @@ from rest_framework.response import Response
 from rest_framework import permissions
 from rest_framework.views import APIView
 from rest_framework import response
+
 class HealthCheckView(GenericAPIView):
     permission_classes = []
     serializer_class = None
@@ -15,7 +16,6 @@ from rest_framework.permissions import IsAuthenticated
 from config.permissions import IsAdmin
 
 
-
 class AdminTestView(APIView):
     permission_classes = [IsAuthenticated, IsAdmin]
 
@@ -26,7 +26,7 @@ class AdminTestView(APIView):
             "user_email": user.email,
             "user_id": user.id,
         })
-    
+
 
 class AuthTestView(APIView):
     permission_classes = [IsAuthenticated]
@@ -38,7 +38,7 @@ class AuthTestView(APIView):
             "user_email": user.email,
             "user_id": user.id,
         })
-    
+
 
 class UnauthTestView(APIView):
     permission_classes = [permissions.AllowAny]
