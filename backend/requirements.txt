@@ -89,6 +89,7 @@ Twisted==24.11.0
 txaio==23.1.1
 types-colorama==0.4.15.20240311
 types-docutils==0.21.0.20250523
+types-jwcrypto==1.5.0.20250514
 types-Markdown==3.8.0.20250415
 types-peewee==3.18.1.20250516
 types-pexpect==4.9.0.20250516
