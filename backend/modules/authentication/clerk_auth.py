@@ -1,10 +1,7 @@
-# backend/authentication/clerk_auth.py
-import modules.authentication.extensions
 import os
 import requests
 import jwt
 from jwt.exceptions import PyJWTError
-from jwcrypto import jwk
 
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
@@ -22,7 +19,7 @@ def get_jwks():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        raise AuthenticationFailed(f"Failed to fetch JWKS: {str(e)}")
+        raise AuthenticationFailed(f"Failed to fetch JWKS: {str(e)}") from e
 
 
 def get_public_key(kid):
@@ -30,7 +27,7 @@ def get_public_key(kid):
     jwks = get_jwks()
     for key in jwks['keys']:
         if key['kid'] == kid:
-            return jwk.JWK(**key)
+            return jwks.JWK(**key)
     raise AuthenticationFailed("Public key not found for given 'kid'")
 
 
@@ -48,9 +45,9 @@ def decode_token(token):
         )
         return payload
     except PyJWTError as e:
-        raise AuthenticationFailed(f"Token verification failed: {str(e)}")
+        raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
     except Exception as e:
-        raise AuthenticationFailed(f"Unexpected token error: {str(e)}")
+        raise AuthenticationFailed(f"Unexpected token error: {str(e)}") from e 
 
 
 class ClerkAuthentication(BaseAuthentication):

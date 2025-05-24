@@ -11,6 +11,12 @@ https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
 import os
+import json  # Added for pretty printing
+
+print("--- All Environment Variables ---")
+print(json.dumps(dict(os.environ), indent=2))
+print("--- End of Environment Variables ---")
+
 from datetime import timedelta
 from pathlib import Path
 
@@ -33,6 +39,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["SECRET_KEY"]
+CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY") # Added Clerk Secret Key
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str_to_bool(os.environ["DEBUG"])
