@@ -1,10 +1,6 @@
-import os
-
 import jwt
 import requests
-from clerk_backend_api import Clerk
 from django.conf import settings
-from django.core.cache import cache
 from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
 from rest_framework.authentication import BaseAuthentication
@@ -30,7 +26,24 @@ def _get_public_key(kid):
     raise AuthenticationFailed("Public key not found for given 'kid'")
 
 
-def _decode_token(token):
+def decode_token(token):
+    """
+    Decodes and verifies a Clerk-issued JWT.
+
+    This function extracts the `kid` (key ID) from the token header, retrieves the corresponding
+    public key from Clerk's JWKS endpoint, and uses it to verify and decode the token. It ensures
+    the token was signed with RS256 and issued by the expected Clerk issuer.
+
+    Args:
+        token (str): The JWT to decode.
+
+    Returns:
+        dict: The decoded JWT payload if the token is valid.
+
+    Raises:
+        AuthenticationFailed: If the token is invalid, expired, has incorrect padding,
+        signature issues, or if the public key could not be retrieved.
+    """
     try:
         headers = jwt.get_unverified_header(token)
         kid = headers["kid"]
@@ -49,7 +62,6 @@ def _decode_token(token):
 
 
 def _parse_user_from_payload(payload) -> User:
-
     user_id = payload.get("sub")
     if not user_id:
         raise AuthenticationFailed("User ID (sub) not found in token")
@@ -77,20 +89,20 @@ class ClerkAuthentication(BaseAuthentication):
     """
     Custom authentication class that verifies Clerk JWTs.
     Sets `request.user` to a custom User model retrieved from database
+    Sets `request.token to the retrived token`
     """
 
-    def authenticate(self, request):
+    def authenticate(self, request) -> tuple[User | None, str | None]:
         auth_header = request.headers.get("Authorization")
 
         if not auth_header or not auth_header.startswith("Bearer "):
             token = request.COOKIES.get("__session")
-            print(request.COOKIES)
             if not token:
-                return None
+                return None, None
         else:
             token = auth_header.split(" ")[1]
             if token == "null":
-                return None
-        payload = _decode_token(token)
+                return None, None
+        payload = decode_token(token)
         user = _parse_user_from_payload(payload)
-        return user, None
+        return user, token
