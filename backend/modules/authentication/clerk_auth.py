@@ -1,6 +1,8 @@
 import jwt
 import requests
+from clerk_backend_api import Clerk
 from django.conf import settings
+from django.core.cache import cache
 from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
 from rest_framework.authentication import BaseAuthentication
@@ -66,19 +68,27 @@ def _parse_user_from_payload(payload) -> User:
     if not user_id:
         raise AuthenticationFailed("User ID (sub) not found in token")
 
-    email = payload.get("email")
-    if not email:
-        raise AuthenticationFailed("Email not found in token")
+    cache_key = f"clerk_user_{user_id}"
+    clerk_user = cache.get(cache_key)
 
-    metadata = payload.get("meta", {})
+    if not clerk_user:
+        clerk_sdk = Clerk(bearer_auth=settings.CLERK_SECRET_KEY)
+        clerk_user = clerk_sdk.users.get(user_id=user_id)
+        cache.set(cache_key, clerk_user, timeout=300)
+
+    if not clerk_user:
+        raise AuthenticationFailed("Could not retrieve clerk user")
+
+    metadata = clerk_user.public_metadata
+    print(metadata)
     role = metadata.get("role", "investor")
     user = User(
         id=user_id,
-        email=email,
-        first_name=payload.get("first_name", ""),
-        last_name=payload.get("last_name", ""),
-        image_url=payload.get("img_url", ""),
-        has_image=payload.get("has_img", False),
+        email=clerk_user.email_addresses[0].email_address,
+        first_name=clerk_user.first_name,
+        last_name=clerk_user.last_name,
+        image_url=clerk_user.image_url,
+        has_image=clerk_user.has_image,
         clerk_role=role,
     )
 
