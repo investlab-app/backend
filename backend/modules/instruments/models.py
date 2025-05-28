@@ -2,13 +2,13 @@ import uuid
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
-from django.db import models
 
 from modules.core.models import BaseModel
 from modules.core.utils import get_local_datetime
-from modules.instruments.constants import InstrumentTypeEnum, FiatCurrencyEnum
+from modules.instruments.constants import FiatCurrencyEnum, InstrumentTypeEnum
 
 
 class Instrument(BaseModel):
@@ -30,12 +30,14 @@ class Instrument(BaseModel):
         verbose_name=_("Details Type"),
         null=True,
         blank=True,
-        limit_choices_to=Q(app_label='instruments', model__in=['companydetails', 'indexdetails']),
+        limit_choices_to=Q(
+            app_label="instruments", model__in=["companydetails", "indexdetails"]
+        ),
     )
     details_id = models.UUIDField(
         verbose_name=_("Details ID"), blank=True, null=True, editable=True
     )
-    details = GenericForeignKey('details_type', 'details_id')
+    details = GenericForeignKey("details_type", "details_id")
 
     # synchronized_at = models.DateTimeField(verbose_name=_("Synchronized at"), default=get_local_datetime)
 
@@ -63,11 +65,17 @@ class Instrument(BaseModel):
 class CompanyDetails(BaseModel):
     name = models.CharField(verbose_name=_("Company Name"), max_length=255, unique=True)
     country = models.CharField(
-        verbose_name=_("Country"), max_length=100, blank=True, null=True
+        verbose_name=_("Country"),
+        max_length=100,
+        blank=True,
+        null=True,
         # TODO: add enum
     )
     industry = models.CharField(
-        verbose_name=_("Industry"), max_length=100, blank=True, null=True
+        verbose_name=_("Industry"),
+        max_length=100,
+        blank=True,
+        null=True,
         # TODO: add enum
     )
     ...  # Add fields according to what API provides
@@ -83,7 +91,9 @@ class CompanyDetails(BaseModel):
 
 class IndexDetails(BaseModel):
     name = models.CharField(verbose_name=_("Index Name"), max_length=255, unique=True)
-    fund_name = models.CharField(verbose_name=_("Fund Name"), max_length=255, blank=True, null=True)
+    fund_name = models.CharField(
+        verbose_name=_("Fund Name"), max_length=255, blank=True, null=True
+    )
     ...  # Add fields according to what API provides
 
     class Meta:
