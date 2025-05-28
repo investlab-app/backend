@@ -16,9 +16,7 @@ urlpatterns = [
     # Docs
     path(
         f"{API_PREFIX}/schema/",
-        SpectacularAPIView.as_view(
-            authentication_classes=[],
-        ),
+        SpectacularAPIView.as_view(authentication_classes=[]),
         name="schema",
     ),
     path(

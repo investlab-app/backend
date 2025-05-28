@@ -1,13 +1,13 @@
 from rest_framework import permissions
 from rest_framework.generics import GenericAPIView
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
 
 from modules.authentication.permissions import IsAdmin
 
 
 class StatusView(GenericAPIView):
-    permission_classes = [permissions.AllowAny]
+    permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = None
 
