@@ -40,6 +40,7 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
 CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
 CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str_to_bool(os.environ["DEBUG"])
@@ -71,7 +72,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_spectacular",
     "channels",
-    'corsheaders',
+    "corsheaders",
     # Local modules
     "modules.core",
     "modules.users",
@@ -149,7 +150,7 @@ AUTH_PASSWORD_VALIDATORS = [
 ]
 
 CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000",  # Vite default dev port
+    FRONTEND_URL,
 ]
 
 

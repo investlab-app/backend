@@ -56,7 +56,7 @@ class ClerkUsernamePasswordSignInView(APIView):
         users = clerk_sdk.users.list(
             request=GetUserListRequestTypedDict(email_address=[email])
         )
-        if not users or len(users) == 0:
+        if not users or len(users) < 1:
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
         our_user = users[0]
@@ -73,7 +73,7 @@ class ClerkUsernamePasswordSignInView(APIView):
         )
 
         access_token = clerk_sdk.sessions.create_token(
-            session_id=session.id, expires_in_seconds=3600
+            session_id=session.id, expires_in_seconds=600
         )
 
         return Response(

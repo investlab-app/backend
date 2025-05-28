@@ -15,7 +15,7 @@ colorama==0.4.6
 constantly==23.10.4
 clerk-backend-api @ git+https://github.com/mikolajkapica/clerk-sdk-python.git@43b124a61199d974b24a5955073ce72d529d7bc7
 coverage==7.6.10
-cryptography==45.0.3
+cryptography==44.0.3
 curl_cffi==0.11.1
 daphne==4.2.0
 dill==0.4.0

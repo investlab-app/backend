@@ -80,7 +80,6 @@ def _parse_user_from_payload(payload) -> User:
         raise AuthenticationFailed("Could not retrieve clerk user")
 
     metadata = clerk_user.public_metadata
-    print(metadata)
     role = metadata.get("role", "investor")
     user = User(
         id=user_id,

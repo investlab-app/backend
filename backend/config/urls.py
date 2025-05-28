@@ -8,19 +8,21 @@ from drf_spectacular.views import (
 
 from modules.core.views import StatusView
 
+API_PREFIX = "api/v1"
+
 urlpatterns = [
-    path("api/admin/", admin.site.urls),
-    path("api/status/", StatusView.as_view(), name="status"),
+    path(f"{API_PREFIX}/admin/", admin.site.urls),
+    path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs
     path(
-        "api/schema/",
+        f"{API_PREFIX}/schema/",
         SpectacularAPIView.as_view(
             authentication_classes=[],
         ),
         name="schema",
     ),
     path(
-        "api/docs/",
+        f"{API_PREFIX}/docs/",
         SpectacularSwaggerView.as_view(
             url_name="schema",
             authentication_classes=[],
@@ -28,7 +30,7 @@ urlpatterns = [
         name="swagger",
     ),
     path(
-        "api/redoc/",
+        f"{API_PREFIX}/redoc/",
         SpectacularRedocView.as_view(
             url_name="schema",
             authentication_classes=[],
@@ -36,7 +38,7 @@ urlpatterns = [
         name="redoc",
     ),
     # Modules
-    path("api/prices/", include("modules.prices.urls")),
-    path("api/auth/", include("modules.authentication.urls")),
-    path("api/test/", include("modules.core.urls")),
+    path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
+    path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{API_PREFIX}/test/", include("modules.core.urls")),
 ]
