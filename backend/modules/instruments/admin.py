@@ -1,7 +1,8 @@
 from django.contrib import admin
-from unfold.admin import ModelAdmin
 from django.utils.translation import gettext_lazy as _
-from modules.instruments.models import Instrument, CompanyDetails, IndexDetails
+from unfold.admin import ModelAdmin
+
+from modules.instruments.models import CompanyDetails, IndexDetails, Instrument
 
 
 @admin.register(Instrument)
@@ -20,7 +21,8 @@ class InstrumentAdmin(ModelAdmin):
     ordering = ("ticker",)
     fieldsets = (
         (
-            None, {
+            None,
+            {
                 "fields": (
                     "id",
                     "ticker",
@@ -28,11 +30,17 @@ class InstrumentAdmin(ModelAdmin):
                     "name",
                     "currency",
                 )
-            }
+            },
         ),
         (
             _("Details"),
-            {"fields": ("details_type", "details_id", "details",)},
+            {
+                "fields": (
+                    "details_type",
+                    "details_id",
+                    "details",
+                )
+            },
         ),
         (
             _("Description"),
