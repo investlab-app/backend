@@ -5,20 +5,40 @@ from drf_spectacular.views import (
     SpectacularRedocView,
     SpectacularSwaggerView,
 )
-from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
-from modules.core.views import HealthCheckView
+from modules.core.views import StatusView
+
+API_PREFIX = "api"
 
 urlpatterns = [
-    path("admin/", admin.site.urls),
-    path("healthcheck/", HealthCheckView.as_view(), name="healthcheck"),
+    path(f"{API_PREFIX}/admin/", admin.site.urls),
+    path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs
-    path("schema/", SpectacularAPIView.as_view(), name="schema"),
-    path("docs/", SpectacularSwaggerView.as_view(url_name="schema"), name="swagger"),
-    path("redoc/", SpectacularRedocView.as_view(url_name="schema"), name="redoc"),
-    # Authentication
-    path("auth/token/", TokenObtainPairView.as_view(), name="token-obtain-pair"),
-    path("auth/token-refresh/", TokenRefreshView.as_view(), name="token-refresh"),
+    path(
+        f"{API_PREFIX}/schema/",
+        SpectacularAPIView.as_view(
+            authentication_classes=[],
+        ),
+        name="schema",
+    ),
+    path(
+        f"{API_PREFIX}/docs/",
+        SpectacularSwaggerView.as_view(
+            url_name="schema",
+            authentication_classes=[],
+        ),
+        name="swagger",
+    ),
+    path(
+        f"{API_PREFIX}/redoc/",
+        SpectacularRedocView.as_view(
+            url_name="schema",
+            authentication_classes=[],
+        ),
+        name="redoc",
+    ),
     # Modules
-    path("", include("modules.prices.urls")),
+    path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
+    path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{API_PREFIX}/test/", include("modules.core.urls")),
 ]

@@ -10,11 +10,15 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
+import json  # Added for pretty printing
 import os
-from datetime import timedelta
 from pathlib import Path
 
 from config import str_to_bool, str_to_list
+
+print("--- All Environment Variables ---")
+print(json.dumps(dict(os.environ), indent=2))
+print("--- End of Environment Variables ---")
 
 # from django.templatetags.static import static
 # from django.utils.translation import gettext_lazy as _
@@ -33,6 +37,10 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # SECURITY WARNING: keep the secret key used in production secret!
 SECRET_KEY = os.environ["SECRET_KEY"]
+CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
+CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
+CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
+FRONTEND_URL = os.environ.get("FRONTEND_URL")
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = str_to_bool(os.environ["DEBUG"])
@@ -64,7 +72,9 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_spectacular",
     "channels",
+    "corsheaders",
     # Local modules
+    "modules.authentication",
     "modules.core",
     "modules.users",
     "modules.prices",
@@ -74,6 +84,7 @@ if DEBUG:
     INSTALLED_APPS.insert(0, "daphne")
 
 MIDDLEWARE = [
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
     "django.middleware.common.CommonMiddleware",
@@ -138,6 +149,10 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
+CORS_ALLOWED_ORIGINS = [
+    FRONTEND_URL,
+]
+
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -179,7 +194,8 @@ REST_FRAMEWORK = {
         "rest_framework.permissions.IsAuthenticated",
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        "modules.authentication.clerk_auth.ClerkAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -189,8 +205,11 @@ REST_FRAMEWORK = {
 SPECTACULAR_SETTINGS = {
     "TITLE": "Stocks API",
     "DESCRIPTION": "",
-    "VERSION": "0.0.0",
+    "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": False,
+    "SECURITY": [
+        {"BearerAuth": []},
+    ],
     #     # OTHER SETTINGS
     #     "SECURITY": [{"BearerAuth": []}],
     #     "COMPONENT_SPLIT_REQUEST": True,
@@ -206,10 +225,10 @@ SPECTACULAR_SETTINGS = {
 
 AUTH_USER_MODEL = "users.User"
 
-SIMPLE_JWT = {
-    "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
-    "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
-}
+# SIMPLE_JWT = {
+#     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
+#     "REFRESH_TOKEN_LIFETIME": timedelta(days=90),
+# }
 
 UNFOLD = {
     "SITE_TITLE": "Stocks",

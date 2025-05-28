@@ -11,6 +11,14 @@ class User(BaseModel, AbstractUser):
     username = None  # type: ignore
     email = models.EmailField(unique=True, verbose_name=_("Email"))
 
+    clerk_role = models.CharField(
+        max_length=50, default="investor", verbose_name=_("Clerk Role")
+    )
+    image_url = models.URLField(
+        blank=True, null=True, verbose_name=_("Profile Image URL")
+    )
+    has_image = models.BooleanField(default=False, verbose_name=_("Has Image"))
+
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

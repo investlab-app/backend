@@ -10,4 +10,7 @@ def user():
         password="test-password",
         first_name="Test",
         last_name="User",
+        clerk_role="investor",
+        image_url="https://beautifulimage.jpg",
+        has_image=True,
     )
