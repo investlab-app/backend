@@ -19,13 +19,6 @@ class User(BaseModel, AbstractUser):
     )
     has_image = models.BooleanField(default=False, verbose_name=_("Has Image"))
 
-    first_name = models.CharField(
-        max_length=150, blank=True, verbose_name=_("First name")
-    )
-    last_name = models.CharField(
-        max_length=150, blank=True, verbose_name=_("Last name")
-    )
-
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = []
 

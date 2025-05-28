@@ -8,7 +8,7 @@ from drf_spectacular.views import (
 
 from modules.core.views import StatusView
 
-API_PREFIX = "api/v1"
+API_PREFIX = "api"
 
 urlpatterns = [
     path(f"{API_PREFIX}/admin/", admin.site.urls),

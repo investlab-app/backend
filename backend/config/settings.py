@@ -74,10 +74,10 @@ INSTALLED_APPS = [
     "channels",
     "corsheaders",
     # Local modules
+    "modules.authentication",
     "modules.core",
     "modules.users",
     "modules.prices",
-    "modules.authentication",
 ]
 
 if DEBUG:
@@ -195,7 +195,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
