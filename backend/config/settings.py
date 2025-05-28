@@ -70,6 +70,9 @@ INSTALLED_APPS = [
     "modules.prices",
 ]
 
+if DEBUG:
+    INSTALLED_APPS.insert(0, "daphne")
+
 MIDDLEWARE = [
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
