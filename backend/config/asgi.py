@@ -7,12 +7,16 @@ For more information on this file, see
 https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
-import os
-
-import django  # Added import for django
+from channels.routing import ProtocolTypeRouter, URLRouter
 from django.core.asgi import get_asgi_application
+from django.urls import path
 
-os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
-django.setup()  # Explicitly call django.setup() to initialize settings
+from config.urls import sse_urlpatterns
 
-application = get_asgi_application()
+application = ProtocolTypeRouter({
+    "http": URLRouter(
+        sse_urlpatterns + [
+            path("", get_asgi_application())  # type: ignore [arg-type]
+        ]
+    ),
+})
