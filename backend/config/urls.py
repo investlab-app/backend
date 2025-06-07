@@ -14,7 +14,7 @@ API_PREFIX = "api"
 
 import logging
 
-logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
 
 sse_urlpatterns = [
     path(f"{API_PREFIX}/sse/subscribe", SSESubscribeView.as_view(), name="sse-subscribe"),

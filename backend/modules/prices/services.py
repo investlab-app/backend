@@ -1,6 +1,9 @@
+import random
 from datetime import datetime
 from decimal import Decimal
 from typing import TypedDict
+
+import asyncio
 
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
@@ -63,3 +66,54 @@ class PricesServiceMinimal:
             raise InvalidTimeIntervalException(
                 f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
             ) from e
+
+class LivePrices:
+
+    def __init__(self):
+        self.handlers = []
+        self.instruments: set[str] = set()
+        self.task: asyncio.Task | None = None
+
+    def create_task(self) -> None:
+        if self.instruments and self.handlers and not self.task:
+            self.task = asyncio.create_task(self.run())
+
+    def cancel_task(self) -> None:
+        if self.task:
+            self.task.cancel()
+            self.task = None
+
+    def restart_task(self) -> None:
+        self.cancel_task()
+        self.create_task()
+
+    def add_instruments(self, instruments: set[str]) -> None:
+        self.instruments.update(instruments)
+        self.restart_task()
+
+    def remove_instruments(self, instruments: set[str]) -> None:
+        self.instruments.difference_update(instruments)
+        self.restart_task()
+
+    def add_handler(self, handler) -> None:
+        self.handlers.append(handler)
+        self.create_task()
+
+    def remove_handler(self, handler) -> None:
+        self.handlers.remove(handler)
+        self.cancel_task()
+
+    # # Uncomment this when you want to use yfinance
+    # def yfinance_handler(self, prices: dict[str, float]) -> None:
+    #     asyncio.create_task(
+    #         asyncio.gather(*(handler(prices) for handler in self.handlers), return_exceptions=True)
+    #     )
+    #
+    # async def run(self) -> None:
+    #     yfinance.Tickers(self.instruments).live(self.yfinance_handler)
+
+    async def run(self) -> None:
+        while self.instruments:
+            await asyncio.sleep(1)
+            prices = {instrument: random.uniform(100, 500) for instrument in self.instruments}
+            await asyncio.gather(*(handler(prices) for handler in self.handlers), return_exceptions=True)
