@@ -104,6 +104,10 @@ class ClerkAuthentication(BaseAuthentication):
     def authenticate(self, request) -> tuple[User | None, str | None]:
         auth_header = request.headers.get("Authorization")
 
+        print(f"Auth header: {auth_header}")
+
+
+
         if not auth_header or not auth_header.startswith("Bearer "):
             token = request.COOKIES.get("__session")
             if not token:
@@ -112,6 +116,10 @@ class ClerkAuthentication(BaseAuthentication):
             token = auth_header.split(" ")[1]
             if token == "null":
                 return None, None
+
+        print(f"Token: {token}")
         payload = decode_token(token)
+        print(f"Payload: {payload}")
         user = _parse_user_from_payload(payload)
+        print(f"User: {user}")
         return user, token

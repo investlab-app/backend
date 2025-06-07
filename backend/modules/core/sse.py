@@ -7,6 +7,7 @@ import asyncio
 from channels.generic.http import AsyncHttpConsumer
 from django.http import HttpResponse
 from django.views.generic.base import View
+from rest_framework.generics import GenericAPIView
 from rest_framework.views import APIView
 from typing_extensions import override
 
@@ -117,7 +118,7 @@ def unsubscribe(client_id: uuid, symbols: set[str]) -> None:
 
 
 class SSESubscribeView(APIView):
-    def put(request, symbols):
+    def put(self, request, symbols):
         symbols_set = set(symbols.split(","))
 
         client_id = uuid.uuid4()  # from clerk
