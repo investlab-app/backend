@@ -9,7 +9,7 @@ from modules.prices.services import LivePrices
 
 _lock = threading.Lock()
 subscriptions: dict[str, int] = {}
-clients = dict[uuid.UUID, set[str]]()
+clients: dict[uuid.UUID, set[str]] = {}
 live_prices = LivePrices()
 
 
