@@ -54,7 +54,7 @@ class InstrumentsServiceMinimal:
         if filter_industry:
             instruments = [i for i in instruments if i.industry == filter_industry]
 
-        if sort_by and sort_by in InstrumentBasicInfoSchema.model_fields:
+        if sort_by and hasattr(InstrumentBasicInfoSchema, sort_by):
             reverse = sort_direction.lower() == "desc"
             instruments.sort(
                 key=lambda x: (
