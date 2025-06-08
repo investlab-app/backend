@@ -48,19 +48,14 @@ def decode_token(token):
     """
     try:
         headers = jwt.get_unverified_header(token)
-        print(f"Headers: {headers}")
         kid = headers["kid"]
-        print(f"KID: {kid}")
         public_key = _get_public_key(kid)
-        print(f"Public key: {public_key.export_to_pem().decode('utf-8')}")
-        print(f"ISSUER: {settings.CLERK_ISSUER}")
         payload = jwt.decode(
             token,
             public_key.export_to_pem().decode("utf-8"),
             algorithms=["RS256"],
             issuer=settings.CLERK_ISSUER,
         )
-        print(f"Decoded payload: {payload}")
         return payload
     except PyJWTError as e:
         raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
@@ -98,6 +93,22 @@ def _parse_user_from_payload(payload) -> User:
 
     return user
 
+def validate_token(token: str) -> User:
+    """
+    Validates a Clerk JWT and returns the corresponding User object.
+
+    Args:
+        token (str): The JWT to validate.
+
+    Returns:
+        User: The user associated with the token.
+
+    Raises:
+        AuthenticationFailed: If the token is invalid or user cannot be retrieved.
+    """
+    payload = decode_token(token)
+    return _parse_user_from_payload(payload)
+
 
 class ClerkAuthentication(BaseAuthentication):
     """
@@ -118,9 +129,5 @@ class ClerkAuthentication(BaseAuthentication):
             if token == "null":
                 return None, None
 
-        print(f"Token: {token}")
-        payload = decode_token(token)
-        print(f"Payload: {payload}")
-        user = _parse_user_from_payload(payload)
-        print(f"User: {user}")
+        user = validate_token(token)
         return user, token

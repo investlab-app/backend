@@ -1,26 +1,29 @@
-import uuid
+import asyncio
 import logging
+import uuid
 from abc import ABC, abstractmethod
 from urllib.parse import parse_qs
 
-import asyncio
 from channels.generic.http import AsyncHttpConsumer
 from django.http import HttpResponse
-from django.views.generic.base import View
-from rest_framework.generics import GenericAPIView
+from drf_spectacular.utils import extend_schema
+from pydantic import Field, BaseModel
+from rest_framework import serializers, status
+from rest_framework.response import Response
 from rest_framework.views import APIView
 from typing_extensions import override
 
 from config.settings import CORS_ALLOWED_ORIGINS
+from modules.authentication import clerk_auth
 from modules.prices.services import LivePrices
 
 
-class ServerSentEventsConsumer(AsyncHttpConsumer, ABC):
-
+class SSEConsumer(AsyncHttpConsumer, ABC):
     sse_headers = [
         (b"Content-Type", b"text/event-stream"),
         (b"Cache-Control", b"no-cache"),
         (b"Connection", b"keep-alive"),
+        (b"Access-Control-Allow-Credentials", b"true"),
     ]
 
     def __init__(self, *args, **kwargs):
@@ -28,30 +31,78 @@ class ServerSentEventsConsumer(AsyncHttpConsumer, ABC):
         self.sse_task = None
         self.shutdown_event = asyncio.Event()
 
+    async def handle_preflight(self, origin):
+        response_origin = origin if origin.decode("utf-8") in CORS_ALLOWED_ORIGINS else b""
+        headers = [
+            (b"Access-Control-Allow-Origin", response_origin),
+            (b"Access-Control-Allow-Methods", b"GET, OPTIONS"),
+            (b"Access-Control-Allow-Headers", b"Content-Type, Authorization"),
+            (b"Access-Control-Allow-Credentials", b"true"),
+        ]
+        await self.send_response(
+            status=204,
+            headers=headers,
+            body=b"",
+        )
+        print(headers)
+        return None
+
+    @staticmethod
+    @abstractmethod
+    async def validate_auth(bearer_token: str) -> bool:
+        """
+        Validates the provided bearer token using Clerk authentication.
+        :param bearer_token: The token to validate.
+        :return: bool: True if the token is valid, False otherwise.
+        """
+        pass
+
     @override
-    async def http_request(self, message):
+    async def http_request(self, message) -> None:
         """
         Async entrypoint for the HTTP request.
         This method now sets up the SSE connection and starts a background
         task to send events, rather than blocking.
         """
+        headers: dict[bytes, bytes] = dict(self.scope["headers"])
+        request_origin = headers.get(b'origin', b'')
+
+        if self.scope["method"] == "OPTIONS":
+            return await self.handle_preflight(request_origin)
+
+        auth_header = headers.get(b'authorization', b'')
+        if auth_header.startswith(b'Bearer '):
+            bearer_token = auth_header[7:]
+        else:
+            return await self.send_response(
+                status=401,
+                body=b"Unauthorized",
+                headers=[(b"WWW-Authenticate", b"Bearer")],
+            )
+
+        if not await self.validate_auth(bearer_token.decode("utf-8")):
+            return await self.send_response(
+                status=401,
+                body=b"Unauthorized",
+                headers=[(b"WWW-Authenticate", b"Bearer")],
+            )
+
         if "body" in message:
             self.body.append(message["body"])
 
         if not message.get("more_body"):
-            headers: dict[bytes, bytes] = dict(self.scope["headers"])
-            request_origin = headers.get(b'origin')
-
             query_string = self.scope["query_string"]
             params = parse_qs(query_string)
             params_decoded = {k.decode("utf-8"): v[0].decode("utf-8") for k, v in params.items()}
 
-            allowed = request_origin and request_origin.decode("utf-8") in CORS_ALLOWED_ORIGINS
-
             response_headers = self.sse_headers.copy()
+
+            allowed = request_origin.decode("utf-8") in CORS_ALLOWED_ORIGINS
 
             if allowed:
                 response_headers.append((b"Access-Control-Allow-Origin", request_origin))
+
+            print(f"Response headers: {response_headers}")
 
             await self.send_headers(
                 status=200,
@@ -60,6 +111,8 @@ class ServerSentEventsConsumer(AsyncHttpConsumer, ABC):
 
             if allowed:
                 self.sse_task = asyncio.create_task(self.handle(params_decoded))
+
+        return None
 
     @abstractmethod
     async def handle(self, params):
@@ -96,6 +149,8 @@ class ServerSentEventsConsumer(AsyncHttpConsumer, ABC):
 
 subscriptions: dict[str, int] = {}
 clients = dict[uuid.UUID, set[str]]()
+live_prices = LivePrices()
+
 
 def subscribe(client_id: uuid, symbols: set[str]) -> None:
     for symbol in symbols:
@@ -105,6 +160,8 @@ def subscribe(client_id: uuid, symbols: set[str]) -> None:
     client_symbols = clients.get(client_id, set())
     clients.update({client_id: symbols | client_symbols})
 
+    live_prices.add_instruments(symbols)
+
 
 def unsubscribe(client_id: uuid, symbols: set[str]) -> None:
     for symbol in symbols:
@@ -112,48 +169,102 @@ def unsubscribe(client_id: uuid, symbols: set[str]) -> None:
             subscriptions[symbol] -= 1
         elif subscriptions[symbol] == 1:
             del subscriptions[symbol]
+            live_prices.remove_instruments({symbol})
 
     client_symbols = clients.get(client_id, set())
     clients.update({client_id: symbols - client_symbols})
 
 
+class SSERequestSerializer(serializers.Serializer):
+    @override
+    def to_internal_value(self, data):
+        symbols = data.get("symbols")
+        if isinstance(symbols, str):
+            symbols = [s.strip() for s in symbols.split(",") if s.strip()]
+        data["symbols"] = symbols
+        return super().to_internal_value(data)
+
+    symbols = serializers.ListField(
+        child=serializers.CharField(
+            help_text="List of stock symbols to subscribe to, e.g. ['AAPL', 'GOOGL']."
+        ),
+        required=True,
+        help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
+    )
+    connectionId = serializers.UUIDField(
+        required=True,
+        help_text="Unique identifier for the SSE connection."
+    )
+
+
+class SSERequestParams(BaseModel):
+    symbols: set[str]
+    connection_id: uuid.UUID = Field(..., alias="connectionId")
+
+    class Config:
+        populate_by_name = True
+
+
+def parse_sse_request(data: dict) -> SSERequestParams:
+    serializer = SSERequestSerializer(data=data)
+
+    if not serializer.is_valid():
+        raise ValueError(f"Invalid SSE request data: {serializer.errors}")
+
+    return SSERequestParams.model_validate(serializer.validated_data)
+
+
 class SSESubscribeView(APIView):
-    def put(self, request, symbols):
-        symbols_set = set(symbols.split(","))
+    @extend_schema(request=SSERequestSerializer)
+    def put(self, request):
+        try:
+            params = parse_sse_request(request.data)
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        connection_id = params.connection_id
+        symbols = params.symbols
 
-        client_id = uuid.uuid4()  # from clerk
+        subscribe(connection_id, symbols)
 
-        subscribe(client_id, symbols_set)
-
-        logging.debug(f"{client_id}: Subscribed to symbols: {symbols_set}")
+        logging.debug(f"{connection_id}: Subscribed to symbols: {symbols}")
 
         return HttpResponse(
-            f"Subscribed to new events: {symbols_set}",
+            f"Subscribed to new events: {symbols}",
             content_type="text/plain",
             status=200
         )
 
 
 class SSEUnsubscribeView(APIView):
-    def put(self, request, symbols):
-        symbols_set = set(symbols.split(","))
+    @extend_schema(request=SSERequestSerializer)
+    def put(self, request):
+        try:
+            params = parse_sse_request(request.data)
+        except ValueError as e:
+            return Response(
+                {"error": str(e)},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        connection_id = params.connection_id
+        symbols = params.symbols
 
-        client_id = uuid.uuid4()  # from clerk
+        unsubscribe(connection_id, symbols)
 
-        unsubscribe(client_id, symbols_set)
-
-        logging.debug(f"{client_id}: Unsubscribed from symbols: {symbols_set}")
+        logging.debug(f"{connection_id}: Unsubscribed from symbols: {symbols}")
 
         return HttpResponse(
-            f"Unsubscribed from events: {symbols_set}",
+            f"Unsubscribed from events: {symbols}",
             content_type="text/plain",
             status=200
         )
 
 
-live_prices = LivePrices()
 
-class SSEConsumerImpl(ServerSentEventsConsumer):
+
+class SSEConsumerImpl(SSEConsumer):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -168,20 +279,32 @@ class SSEConsumerImpl(ServerSentEventsConsumer):
 
     connection_id: uuid.UUID = None
 
+    @staticmethod
+    @override
+    async def validate_auth(bearer_token: str) -> bool:
+        try:
+            clerk_auth.validate_token(bearer_token)
+            return True
+        except clerk_auth.AuthenticationFailed as e:
+            logging.error(f"Authentication failed: {e}")
+            return False
+
     @override
     async def handle(self, params):
-        self.connection_id = uuid.uuid4()  # todo add auth and match connection_ids with client id or something unique
+        try:
+            params = parse_sse_request(params)
+        except ValueError as e:
+            logging.error(f"Invalid SSE request parameters: {e}")
+            raise
+
+        self.connection_id = params.connection_id
+        symbols = params.symbols
+
         self.log(logging.DEBUG, f"{self.connection_id}: Starting SSE stream with params: {params}")
         try:
-            symbols = params.get("symbols", "")
-            if not symbols:
-                self.log(logging.ERROR, "No symbols provided for SSE stream.")
-            else:
-                symbols_set = set(symbols.split(","))
-                subscribe(self.connection_id, symbols_set)
-                if clients[self.connection_id]:
-                    live_prices.add_handler(self.live_prices_handler)
-                    live_prices.add_instruments(set(clients[self.connection_id]))
+            subscribe(self.connection_id, symbols)
+            if clients[self.connection_id]:
+                live_prices.add_handler(self.live_prices_handler)
 
             await self.shutdown_event.wait()
         except asyncio.CancelledError:

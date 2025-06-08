@@ -97,11 +97,11 @@ class LivePrices:
 
     def add_handler(self, handler) -> None:
         self.handlers.append(handler)
-        self.create_task()
+        self.restart_task()
 
     def remove_handler(self, handler) -> None:
         self.handlers.remove(handler)
-        self.cancel_task()
+        self.restart_task()
 
     # # Uncomment this when you want to use yfinance
     # def yfinance_handler(self, prices: dict[str, float]) -> None:
@@ -114,6 +114,7 @@ class LivePrices:
 
     async def run(self) -> None:
         while self.instruments:
+            print(f"Fetching live prices for: {self.instruments}")
             await asyncio.sleep(1)
             prices = {instrument: random.uniform(100, 500) for instrument in self.instruments}
             await asyncio.gather(*(handler(prices) for handler in self.handlers), return_exceptions=True)
