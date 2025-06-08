@@ -66,11 +66,17 @@ def subscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
 def unsubscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
     with _lock:
         for symbol in iter(symbols):
+            if symbol not in subscriptions:
+                continue
             if subscriptions[symbol] > 1:
                 subscriptions[symbol] -= 1
-            elif subscriptions[symbol] == 1:
+            else:
                 del subscriptions[symbol]
                 live_prices.remove_instruments({symbol})
 
         client_symbols = clients.get(client_id, set())
-        clients.update({client_id: symbols - client_symbols})
+        remaining = client_symbols - symbols
+        if remaining:
+            clients[client_id] = remaining
+        else:
+            clients.pop(client_id, None)
