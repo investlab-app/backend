@@ -60,10 +60,12 @@ class SSEConsumerImpl(SSEConsumer):
             f"{self.connection_id}: Starting SSE stream with symbols: {symbols}",
         )
 
+        handler_added = False
         try:
             subscribe(self.connection_id, symbols)
             if clients[self.connection_id]:
                 live_prices.add_handler(self.live_prices_handler)
+                handler_added = True
 
             await self.shutdown_event.wait()
         except asyncio.CancelledError:
@@ -73,11 +75,12 @@ class SSEConsumerImpl(SSEConsumer):
             logging.error(f"{self.connection_id}: An error occurred in the stream: {e}")
             raise
         finally:
+            if handler_added:
+                live_prices.remove_handler(self.live_prices_handler)
             self.log(logging.DEBUG, "SSE stream generation finished.")
 
     async def disconnect(self):
         logging.debug(f"{self.connection_id}: Disconnecting SSE stream.")
         self.shutdown_event.set()
         unsubscribe(self.connection_id, clients.get(self.connection_id, set()))
-        live_prices.remove_handler(self.live_prices_handler)
         await super().disconnect()
