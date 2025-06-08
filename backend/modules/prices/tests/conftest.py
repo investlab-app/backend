@@ -42,6 +42,24 @@ ticker_history = {
     "index": datetime(2024, 4, 1),
 }
 
+@pytest.fixture
+def mock_yfinance_ticker():
+    with patch("yfinance.Ticker") as mock_ticker:
+        mock_instance = MagicMock()
+        mock_instance.history.return_value = pd.DataFrame(
+            {
+                "Open": [100.0],
+                "High": [110.0],
+                "Low": [90.0],
+                "Close": [105.0],
+                "Volume": [1000],
+                "Irrelevant_data": [8532],
+            },
+            index=[pd.Timestamp(datetime(2024, 4, 1))],
+        )
+        mock_ticker.return_value = mock_instance
+        yield mock_instance
+
 
 @pytest.fixture
 def mock_yfinance_repository():

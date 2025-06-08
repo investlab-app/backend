@@ -107,18 +107,6 @@ ticker_history = {
 }
 
 @pytest.fixture
-def mock_yfinance_ticker():
-    with patch("yfinance.Ticker") as mock_ticker:
-        mock_instance = MagicMock()
-        mock_instance.history.return_value = pd.DataFrame(
-            ticker_history["history"],
-            index=[pd.Timestamp(ticker_history["index"])],
-        )
-        mock_ticker.return_value = mock_instance
-        yield mock_instance
-
-
-@pytest.fixture
 def mock_yfinance_empty_history_ticker():
     with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()

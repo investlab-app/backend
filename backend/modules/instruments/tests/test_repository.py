@@ -7,6 +7,8 @@ from modules.instruments.repositories import YfinanceRepository
 from modules.instruments.schemas import (InstrumentBasicInfoSchema,
                                          InstrumentDetailedInfoSchema)
 
+from modules.prices.tests.conftest import mock_yfinance_ticker
+
 
 
 def test_get_basic_instrument_info_success(mock_yfinance_ticker):
