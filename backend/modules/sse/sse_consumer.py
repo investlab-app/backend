@@ -28,9 +28,8 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         ]
 
     async def handle_preflight(self, origin):
-        response_origin = (
-            origin if origin.decode("utf-8") in CORS_ALLOWED_ORIGINS else b""
-        )
+        origin_str = origin.decode("utf-8") if origin else ""
+        response_origin = origin if origin_str in CORS_ALLOWED_ORIGINS else b""
         await self.send_response(
             status=204,
             headers=self._headers(response_origin),
