@@ -77,5 +77,6 @@ load-plugins = ["pylint_pytest"]
 disable = [
     "C0116", # missing-function-docstring
     "W0611", # unused-import
+    "W0212", # protected-access
 
 ]

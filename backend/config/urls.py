@@ -8,9 +8,9 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from modules.core.sse.sse_consumer_impl import SSEConsumerImpl
-from modules.core.sse.views import SSESubscribeView, SSEUnsubscribeView
 from modules.core.views import StatusView
+from modules.sse.sse_consumer_impl import SSEConsumerImpl
+from modules.sse.views import SSESubscribeView, SSEUnsubscribeView
 
 API_PREFIX = "api"
 

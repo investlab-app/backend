@@ -5,14 +5,8 @@ import uuid
 from typing_extensions import override
 
 from modules.authentication import clerk_auth
-from modules.core.sse import (
-    clients,
-    live_prices,
-    parse_sse_request,
-    subscribe,
-    unsubscribe,
-)
-from modules.core.sse.sse_consumer import SSEConsumer
+from modules.sse import clients, live_prices, parse_sse_request, subscribe, unsubscribe
+from modules.sse.sse_consumer import SSEConsumer
 
 
 class SSEConsumerImpl(SSEConsumer):

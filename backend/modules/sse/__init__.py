@@ -36,7 +36,7 @@ class SSERequestParams(BaseModel):
     symbols: set[str]
     connection_id: uuid.UUID = Field(..., alias="connectionId")
 
-    class Config:
+    class ConfigDict:
         populate_by_name = True
 
 

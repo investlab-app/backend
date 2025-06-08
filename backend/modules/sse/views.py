@@ -6,12 +6,7 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from modules.core.sse import (
-    SSERequestSerializer,
-    parse_sse_request,
-    subscribe,
-    unsubscribe,
-)
+from modules.sse import SSERequestSerializer, parse_sse_request, subscribe, unsubscribe
 
 
 class SSESubscribeView(APIView):
