@@ -1,4 +1,5 @@
 import pytest
+
 from modules.users.tests.conftest import user
 
 
@@ -22,6 +23,7 @@ def api_client_auth(user):
 @pytest.fixture
 def websocket_communicator():
     from channels.testing import WebsocketCommunicator
+
     from config.asgi import application
 
     async def _create_communicator(path="/ws/test/"):
@@ -34,6 +36,7 @@ def websocket_communicator():
 @pytest.fixture
 def websocket_communicator_auth(user):
     from channels.testing import WebsocketCommunicator
+
     from config.asgi import application
 
     async def _create_communicator(path="/ws/test/"):

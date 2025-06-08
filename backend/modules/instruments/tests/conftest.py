@@ -5,26 +5,6 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from modules.prices.schemas import InstrumentPriceSchema
-
-
-instrument_price_history = [
-    InstrumentPriceSchema(
-        timestamp=datetime(2024, 4, 1, 0, 0, 0),
-        open=Decimal("170.0"),
-        high=Decimal("172.0"),
-        low=Decimal("168.0"),
-        close=Decimal("171.0"),
-    ),
-    InstrumentPriceSchema(
-        timestamp=datetime(2024, 4, 2, 0, 0, 0),
-        open=Decimal("170.7"),
-        high=Decimal("170.8"),
-        low=Decimal("169.0"),
-        close=Decimal("170.1"),
-    ),
-]
-
 major_holders = {"Major Holder": ["Holder A"], "Shares": [1000]}
 
 institutional_holders = {"Institutional Holder": ["Institution B"], "Shares": [2000]}
@@ -44,21 +24,18 @@ ticker_history = {
 }
 
 
-
 @pytest.fixture
 def mock_yfinance_ticker():
     with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()
         mock_instance.history.return_value = pd.DataFrame(
-            {
-                "Open": [100.0],
-                "High": [110.0],
-                "Low": [90.0],
-                "Close": [105.0],
-                "Volume": [1000],
-                "Irrelevant_data": [8532],
-            },
-            index=[pd.Timestamp(datetime(2024, 4, 1))],
+            ticker_history["history"],
+            index=[pd.Timestamp(ticker_history["index"])],
         )
+        mock_instance.major_holders.return_value = pd.DataFrame(major_holders)
+        mock_instance.institutional_holders.return_value = pd.DataFrame(
+            institutional_holders
+        )
+        mock_instance.recommendations.return_value = pd.DataFrame(recommendations)
         mock_ticker.return_value = mock_instance
         yield mock_instance

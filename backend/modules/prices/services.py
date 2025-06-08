@@ -7,7 +7,7 @@ from datetime import datetime
 from decimal import Decimal
 from typing import Callable, TypedDict
 
-from modules.prices.constants import YFinanceTimeInterval
+from config import parse_time_interval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import InstrumentPriceSchema
@@ -51,7 +51,7 @@ class PricesServiceMinimal:
             instrument,
             start_date,
             end_date,
-            self._parse_time_interval(interval.lower()),
+            parse_time_interval(interval.lower()),
         )
         min_price = min(d.low for d in data)
         max_price = max(d.high for d in data)
@@ -59,15 +59,6 @@ class PricesServiceMinimal:
         return PriceHistoryWithStats(
             data=data, min_price=min_price, max_price=max_price
         )
-
-    @staticmethod
-    def _parse_time_interval(value: str) -> YFinanceTimeInterval:
-        try:
-            return YFinanceTimeInterval(value)
-        except ValueError as e:
-            raise InvalidTimeIntervalException(
-                f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
-            ) from e
 
 
 class LivePrices:

@@ -1,4 +1,5 @@
 from django.urls import path
+
 from modules.prices.views import PricesView
 
 urlpatterns = [

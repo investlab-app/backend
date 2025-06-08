@@ -1,4 +1,5 @@
 from django.urls import path
+
 from modules.core.views import AdminTestView, AuthTestView, UnauthTestView
 
 urlpatterns = [

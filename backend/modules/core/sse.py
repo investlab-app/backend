@@ -5,16 +5,17 @@ from abc import ABC, abstractmethod
 from urllib.parse import parse_qs
 
 from channels.generic.http import AsyncHttpConsumer
-from config.settings import CORS_ALLOWED_ORIGINS
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema
-from modules.authentication import clerk_auth
-from modules.prices.services import LivePrices
 from pydantic import BaseModel, Field
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from typing_extensions import override
+
+from config.settings import CORS_ALLOWED_ORIGINS
+from modules.authentication import clerk_auth
+from modules.prices.services import LivePrices
 
 
 class SSEConsumer(AsyncHttpConsumer, ABC):
@@ -121,7 +122,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
 
     @abstractmethod
     @override
-    async def handle(self, params): # pylint: disable=arguments-renamed
+    async def handle(self, params):  # pylint: disable=arguments-renamed
         """
         This method should be implemented by subclasses to handle the SSE
         event stream. It will run as a background task.

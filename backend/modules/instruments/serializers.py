@@ -1,7 +1,8 @@
 from decimal import Decimal
 
-from modules.core.utils import quantize_decimal
 from rest_framework import serializers
+
+from modules.core.utils import quantize_decimal
 
 MAX_DIGITS = 30
 DECIMAL_PLACES = 15

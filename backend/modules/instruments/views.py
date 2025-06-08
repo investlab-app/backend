@@ -1,14 +1,18 @@
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
-from modules.instruments.exceptions import FetchInstrumentInfoException
-from modules.instruments.serializers import (
-    InstrumentDetailedInfoSerializer, InstrumentInfoSerializer,
-    InstrumentsListQueryParams, PaginatedInstrumentsResponseSerializer)
-from modules.instruments.services import InstrumentsServiceMinimal
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
+
+from modules.instruments.exceptions import FetchInstrumentInfoException
+from modules.instruments.serializers import (
+    InstrumentDetailedInfoSerializer,
+    InstrumentInfoSerializer,
+    InstrumentsListQueryParams,
+    PaginatedInstrumentsResponseSerializer,
+)
+from modules.instruments.services import InstrumentsServiceMinimal
 
 
 class InstrumentsListView(generics.GenericAPIView):
@@ -28,7 +32,7 @@ class InstrumentsListView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        validated = cast(dict, params.validated_data)
+        validated = cast(dict, params.validated_data)  # pylint: disable=duplicate-code
 
         tickers = [ticker.strip().upper() for ticker in validated["tickers"].split(",")]
 
@@ -75,7 +79,9 @@ class InstrumentDetailView(generics.GenericAPIView):
     @extend_schema(
         responses=[InstrumentDetailedInfoSerializer],
     )
-    def get(self, request: Request, ticker: str) -> Response: # pylint: disable=unused-argument
+    def get(
+        self, request: Request, ticker: str
+    ) -> Response:  # pylint: disable=unused-argument
         """
         Get detailed information for a single instrument.
         """

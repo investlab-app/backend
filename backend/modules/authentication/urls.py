@@ -1,4 +1,5 @@
 from django.urls import path
+
 from modules.authentication.views import ClerkUsernamePasswordSignInView
 
 urlpatterns = [

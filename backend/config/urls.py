@@ -2,11 +2,13 @@ import logging
 
 from django.contrib import admin
 from django.urls import include, path, re_path
-from drf_spectacular.views import (SpectacularAPIView, SpectacularRedocView,
-                                   SpectacularSwaggerView)
+from drf_spectacular.views import (
+    SpectacularAPIView,
+    SpectacularRedocView,
+    SpectacularSwaggerView,
+)
 
-from modules.core.sse import (SSEConsumerImpl, SSESubscribeView,
-                              SSEUnsubscribeView)
+from modules.core.sse import SSEConsumerImpl, SSESubscribeView, SSEUnsubscribeView
 from modules.core.views import StatusView
 
 API_PREFIX = "api"

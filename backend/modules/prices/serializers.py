@@ -1,7 +1,8 @@
 from decimal import Decimal
 
-from modules.core.utils import get_local_datetime, quantize_decimal
 from rest_framework import serializers
+
+from modules.core.utils import get_local_datetime, quantize_decimal
 
 MAX_DIGITS = 30
 DECIMAL_PLACES = 15

@@ -1,7 +1,8 @@
 import pytest
 from django.urls import reverse
-from modules.core.tests.conftest import api_client_auth
 from rest_framework.response import Response
+
+from modules.core.tests.conftest import api_client_auth
 
 pytestmark = pytest.mark.django_db
 

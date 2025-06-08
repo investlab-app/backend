@@ -7,26 +7,31 @@ import pytest
 
 from modules.prices.schemas import InstrumentPriceSchema
 
+instrument_price_history = [
+    InstrumentPriceSchema(
+        timestamp=datetime(2024, 4, 1, 0, 0, 0),
+        open=Decimal("170.0"),
+        high=Decimal("172.0"),
+        low=Decimal("168.0"),
+        close=Decimal("171.0"),
+    ),
+    InstrumentPriceSchema(
+        timestamp=datetime(2024, 4, 2, 0, 0, 0),
+        open=Decimal("170.7"),
+        high=Decimal("170.8"),
+        low=Decimal("169.0"),
+        close=Decimal("170.1"),
+    ),
+]
+
+
 @pytest.fixture
 def mock_yfinance_repository():
     with patch("modules.prices.services.YfinanceRepository") as mock_repo:
         mock_instance = MagicMock()
-        mock_instance.get_instrument_price_history.return_value = [
-            InstrumentPriceSchema(
-                timestamp=datetime(2024, 4, 1, 0, 0, 0),
-                open=Decimal("170.0"),
-                high=Decimal("172.0"),
-                low=Decimal("168.0"),
-                close=Decimal("171.0"),
-            ),
-            InstrumentPriceSchema(
-                timestamp=datetime(2024, 4, 2, 0, 0, 0),
-                open=Decimal("170.7"),
-                high=Decimal("170.8"),
-                low=Decimal("169.0"),
-                close=Decimal("170.1"),
-            ),
-        ]
+        mock_instance.get_instrument_price_history.return_value = (
+            instrument_price_history
+        )
         mock_repo.return_value = mock_instance
         yield mock_instance
 
@@ -43,7 +48,7 @@ def mock_yfinance_empty_history_ticker():
 @pytest.fixture
 def mock_yfinance_invalid_ticker():
     with patch(
-            "yfinance.Ticker", side_effect=Exception("Some API failure")
+        "yfinance.Ticker", side_effect=Exception("Some API failure")
     ) as mock_ticker:
         yield mock_ticker
 

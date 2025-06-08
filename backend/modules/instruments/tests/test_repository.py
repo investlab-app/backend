@@ -4,9 +4,11 @@ import pytest
 
 from modules.instruments.exceptions import FetchInstrumentInfoException
 from modules.instruments.repositories import YfinanceRepository
-from modules.instruments.schemas import (InstrumentBasicInfoSchema,
-                                         InstrumentDetailedInfoSchema)
-from modules.prices.tests.conftest import mock_yfinance_ticker
+from modules.instruments.schemas import (
+    InstrumentBasicInfoSchema,
+    InstrumentDetailedInfoSchema,
+)
+from modules.prices.tests.conftest import mock_yfinance_empty_history_ticker
 
 
 def test_get_basic_instrument_info_success(mock_yfinance_ticker):
@@ -28,7 +30,7 @@ def test_raises_get_basic_instrument_info_invalid_ticker():
 
 
 def test_get_basic_instrument_info_empty_ticker(
-        mock_yfinance_empty_history_ticker,
+    mock_yfinance_empty_history_ticker,
 ):
     repo = YfinanceRepository()
     tickers = []
@@ -38,7 +40,7 @@ def test_get_basic_instrument_info_empty_ticker(
 
 
 def test_get_detailed_instrument_info_success(
-        mock_yfinance_ticker,
+    mock_yfinance_ticker,
 ):
     repo = YfinanceRepository()
     ticker = "AAPL"
@@ -59,7 +61,7 @@ def test_get_detailed_instrument_info_invalid_ticker():
 
 
 def test_get_detailed_instrument_info_missing_data(
-        mock_yfinance_ticker,
+    mock_yfinance_ticker,
 ):
     repo = YfinanceRepository()
     ticker_str = "AAPL"

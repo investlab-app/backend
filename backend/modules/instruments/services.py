@@ -1,8 +1,10 @@
 from typing import TypedDict
 
 from modules.instruments.repositories import YfinanceRepository
-from modules.instruments.schemas import (InstrumentBasicInfoSchema,
-                                         InstrumentDetailedInfoSchema)
+from modules.instruments.schemas import (
+    InstrumentBasicInfoSchema,
+    InstrumentDetailedInfoSchema,
+)
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
 
@@ -93,12 +95,3 @@ class InstrumentsServiceMinimal:
             InstrumentDetailedInfoSchema: Detailed instrument information
         """
         return self._repository.get_instrument_detailed_info(ticker)
-
-    @staticmethod
-    def _parse_time_interval(value: str) -> YFinanceTimeInterval:
-        try:
-            return YFinanceTimeInterval(value)
-        except ValueError as e:
-            raise InvalidTimeIntervalException(
-                f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
-            ) from e

@@ -3,10 +3,10 @@ from django.contrib.auth.admin import GroupAdmin as _GroupAdmin
 from django.contrib.auth.admin import UserAdmin as _UserAdmin
 from django.contrib.auth.models import Group as _Group
 from django.utils.translation import gettext_lazy as _
-from modules.users.models import Group, User
 from unfold.admin import ModelAdmin
-from unfold.forms import (AdminPasswordChangeForm, UserChangeForm,
-                          UserCreationForm)
+from unfold.forms import AdminPasswordChangeForm, UserChangeForm, UserCreationForm
+
+from modules.users.models import Group, User
 
 admin.site.unregister(_Group)
 

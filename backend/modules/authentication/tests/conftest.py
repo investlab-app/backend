@@ -3,8 +3,9 @@ from unittest.mock import MagicMock, patch
 import pytest
 from clerk_backend_api import SDKError
 from jwcrypto import jwk
-from modules.users.models import User
 from rest_framework.test import APIRequestFactory
+
+from modules.users.models import User
 
 
 @pytest.fixture
