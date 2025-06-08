@@ -134,7 +134,7 @@ class SSESubscribeView(APIView):
         )
 
 
-class SSEUnsubscribeView(View):
+class SSEUnsubscribeView(APIView):
     def put(self, request, symbols):
         symbols_set = set(symbols.split(","))
 
@@ -170,7 +170,7 @@ class SSEConsumerImpl(ServerSentEventsConsumer):
 
     @override
     async def handle(self, params):
-        self.connection_id = uuid.uuid4()  # todo add auth
+        self.connection_id = uuid.uuid4()  # todo add auth and match connection_ids with client id or something unique
         self.log(logging.DEBUG, f"{self.connection_id}: Starting SSE stream with params: {params}")
         try:
             symbols = params.get("symbols", "")

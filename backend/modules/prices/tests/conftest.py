@@ -5,12 +5,8 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from modules.prices.exceptions import FetchInstrumentInfoException
-from modules.prices.schemas import (
-    InstrumentDetailedInfoSchema,
-    InstrumentBasicInfoSchema,
-    InstrumentPriceSchema,
-)
+from modules.instruments.schemas import InstrumentBasicInfoSchema, InstrumentDetailedInfoSchema
+from modules.prices.schemas import InstrumentPriceSchema
 
 instrument_price_history = [
     InstrumentPriceSchema(
@@ -84,7 +80,6 @@ instrument_detail_info = InstrumentDetailedInfoSchema(
     dividend_yield=Decimal("0.0058"),
     business_summary="Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, a line of smartphones; Mac, a line of personal computers; iPad, a line of multi-purpose tablets; and wearables, home, and accessories comprising AirPods, Apple TV, Apple Watch, Beats products, and HomePod.",
 )
-
 
 ticker_info = {
     "symbol": instrument_detail_info.ticker,
@@ -176,7 +171,7 @@ def mock_yfinance_empty_history_ticker():
 @pytest.fixture
 def mock_yfinance_invalid_ticker():
     with patch(
-        "yfinance.Ticker", side_effect=Exception("Some API failure")
+            "yfinance.Ticker", side_effect=Exception("Some API failure")
     ) as mock_ticker:
         yield mock_ticker
 

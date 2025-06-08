@@ -5,11 +5,8 @@ from unittest.mock import MagicMock, patch
 import pandas as pd
 import pytest
 
-from modules.instruments.schemas import (
-    InstrumentDetailedInfoSchema,
-    InstrumentBasicInfoSchema,
-    InstrumentPriceSchema,
-)
+from modules.instruments.schemas import InstrumentBasicInfoSchema, InstrumentDetailedInfoSchema
+from modules.prices.schemas import InstrumentPriceSchema
 
 instrument_price_history = [
     InstrumentPriceSchema(
@@ -84,7 +81,6 @@ instrument_detail_info = InstrumentDetailedInfoSchema(
     business_summary="Apple Inc. designs, manufactures, and markets smartphones, personal computers, tablets, wearables, and accessories worldwide. The company offers iPhone, a line of smartphones; Mac, a line of personal computers; iPad, a line of multi-purpose tablets; and wearables, home, and accessories comprising AirPods, Apple TV, Apple Watch, Beats products, and HomePod.",
 )
 
-
 ticker_info = {
     "symbol": instrument_detail_info.ticker,
     "shortName": instrument_detail_info.name,
@@ -129,7 +125,7 @@ ticker_history = {
 
 @pytest.fixture
 def mock_yfinance_repository():
-    with patch("modules.instruments.services.YfinanceRepository") as mock_repo:
+    with patch("modules.prices.services.YfinanceRepository") as mock_repo:
         mock_instance = MagicMock()
         mock_instance.get_instrument_price_history.return_value = [
             InstrumentPriceSchema(
@@ -152,8 +148,42 @@ def mock_yfinance_repository():
 
 
 @pytest.fixture
+def mock_yfinance_ticker():
+    with patch("yfinance.Ticker") as mock_ticker:
+        mock_instance = MagicMock()
+        mock_instance.history.return_value = pd.DataFrame(
+            ticker_history["history"],
+            index=[pd.Timestamp(ticker_history["index"])],
+        )
+        mock_ticker.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
+def mock_yfinance_empty_history_ticker():
+    with patch("yfinance.Ticker") as mock_ticker:
+        mock_instance = MagicMock()
+        mock_instance.history.return_value = pd.DataFrame()
+        mock_ticker.return_value = mock_instance
+        yield mock_instance
+
+
+@pytest.fixture
 def mock_yfinance_invalid_ticker():
     with patch(
-        "yfinance.Ticker", side_effect=Exception("Some API failure")
+            "yfinance.Ticker", side_effect=Exception("Some API failure")
     ) as mock_ticker:
         yield mock_ticker
+
+
+@pytest.fixture
+def expected_result_from_ticker():
+    return [
+        InstrumentPriceSchema(
+            timestamp=datetime(2024, 4, 1),
+            open=Decimal("100.0"),
+            high=Decimal("110.0"),
+            low=Decimal("90.0"),
+            close=Decimal("105.0"),
+        )
+    ]

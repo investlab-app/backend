@@ -48,14 +48,19 @@ def decode_token(token):
     """
     try:
         headers = jwt.get_unverified_header(token)
+        print(f"Headers: {headers}")
         kid = headers["kid"]
+        print(f"KID: {kid}")
         public_key = _get_public_key(kid)
+        print(f"Public key: {public_key.export_to_pem().decode('utf-8')}")
+        print(f"ISSUER: {settings.CLERK_ISSUER}")
         payload = jwt.decode(
             token,
             public_key.export_to_pem().decode("utf-8"),
             algorithms=["RS256"],
             issuer=settings.CLERK_ISSUER,
         )
+        print(f"Decoded payload: {payload}")
         return payload
     except PyJWTError as e:
         raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
@@ -103,10 +108,6 @@ class ClerkAuthentication(BaseAuthentication):
 
     def authenticate(self, request) -> tuple[User | None, str | None]:
         auth_header = request.headers.get("Authorization")
-
-        print(f"Auth header: {auth_header}")
-
-
 
         if not auth_header or not auth_header.startswith("Bearer "):
             token = request.COOKIES.get("__session")

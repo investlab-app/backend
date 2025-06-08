@@ -3,7 +3,6 @@ from django.urls import reverse
 from rest_framework.response import Response
 
 from modules.core.tests.conftest import api_client_auth
-from modules.users.tests.conftest import user
 
 pytestmark = pytest.mark.django_db
 
@@ -67,48 +66,3 @@ def test_invalid_interval(api_client_auth, mock_yfinance_repository) -> None:
     )
     assert isinstance(response, Response)
     assert response.status_code == 400
-
-
-def test_instruments_list_view_success(api_client_auth, mock_yfinance_repository) -> None:
-    url = reverse("instruments-list")
-    response = api_client_auth.get(
-        url,
-        {
-            "tickers": "aapl,msft,goog",
-            "page": "1",
-            "page_size": "10",
-        },
-    )
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-
-    response_data = response.json()
-    assert isinstance(response_data, dict)
-    assert "items" in response_data
-    assert "total" in response_data
-    assert "page" in response_data
-    assert "page_size" in response_data
-    assert "num_pages" in response_data
-    assert len(response_data["items"]) == 2
-    assert response_data["total"] == 2
-    assert response_data["items"][0]["ticker"] == "AAPL"
-
-
-def test_instruments_missing_param_returns_400(api_client_auth) -> None:
-    url = reverse("instruments-list")
-    response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 400
-
-
-def test_instrument_detail_view_success(api_client_auth, mock_yfinance_repository) -> None:
-    url = reverse("instrument-detail", kwargs={"ticker": "aapl"})
-    response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-    
-    response_data = response.json()
-    assert isinstance(response_data, dict)
-    assert response_data["ticker"] == "AAPL"
-    assert response_data["name"] == "Apple Inc."
-    assert "business_summary" in response_data
