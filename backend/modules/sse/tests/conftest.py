@@ -1,21 +1,43 @@
+import uuid
 from unittest.mock import Mock
 
 import pytest
 
-from modules.sse import clients
-
-
-@pytest.fixture(autouse=True)
-def cleanup_clients():
-    """Clean up the clients dictionary after each test to avoid test pollution"""
-    yield
-    clients.clear()
+from modules.sse import SSERequestParams
+from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 
 @pytest.fixture
-def mock_clerk_auth():
-    """Mock the clerk_auth module for authentication tests"""
-    mock_auth = Mock()
-    mock_auth.validate_token.return_value = True
-    mock_auth.AuthenticationFailed = Exception
-    return mock_auth
+def mock_connection_id():
+    return uuid.uuid4()
+
+
+@pytest.fixture
+def mock_symbols():
+    return {"AAPL", "GOOGL"}
+
+
+@pytest.fixture
+def valid_request_data(mock_connection_id, mock_symbols):
+    return {
+        "connectionId": str(mock_connection_id),
+        "symbols": list(mock_symbols),
+    }
+
+
+@pytest.fixture
+def mock_parsed_params(mock_connection_id, mock_symbols):
+    params = Mock(spec=SSERequestParams)
+    params.connection_id = mock_connection_id
+    params.symbols = mock_symbols
+    return params
+
+
+@pytest.fixture
+def consumer():
+    return SSEConsumerImpl()
+
+
+@pytest.fixture
+def mock_prices():
+    return {"AAPL": 150.25, "GOOGL": 2800.50, "MSFT": 300.75, "TSLA": 250.00}

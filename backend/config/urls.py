@@ -1,5 +1,3 @@
-import logging
-
 from django.contrib import admin
 from django.urls import include, path, re_path
 from drf_spectacular.views import (
@@ -13,10 +11,6 @@ from modules.sse.sse_consumer_impl import SSEConsumerImpl
 from modules.sse.views import SSESubscribeView, SSEUnsubscribeView
 
 API_PREFIX = "api"
-
-logging.basicConfig(
-    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
-)
 
 sse_urlpatterns = [
     re_path(f"^{API_PREFIX}/sse/?$", SSEConsumerImpl.as_asgi()),

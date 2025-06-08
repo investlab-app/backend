@@ -29,6 +29,8 @@ class SSEConsumerImpl(SSEConsumer):
             if label in clients[self.connection_id]
         }
 
+        self.log(logging.DEBUG, "Received live prices: " + str(prices))
+
         await self._send_event("price_update", str(prices))
 
     connection_id: uuid.UUID | None = None
@@ -77,4 +79,5 @@ class SSEConsumerImpl(SSEConsumer):
         logging.debug(f"{self.connection_id}: Disconnecting SSE stream.")
         self.shutdown_event.set()
         unsubscribe(self.connection_id, clients.get(self.connection_id, set()))
+        live_prices.remove_handler(self.live_prices_handler)
         await super().disconnect()

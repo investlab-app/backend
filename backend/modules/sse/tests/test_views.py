@@ -1,44 +1,13 @@
-import uuid
-from unittest.mock import Mock, patch
+from unittest.mock import patch
 
 import pytest
 from django.http import HttpResponse
 from django.urls import reverse
 from rest_framework import status
-from rest_framework.test import APIRequestFactory
 
 from modules.core.tests.conftest import api_client_auth
-from modules.sse import SSERequestParams
-from modules.sse.views import SSESubscribeView, SSEUnsubscribeView
-from modules.users.tests.conftest import user
 
 pytestmark = pytest.mark.django_db
-
-
-@pytest.fixture
-def mock_connection_id():
-    return uuid.uuid4()
-
-
-@pytest.fixture
-def mock_symbols():
-    return {"AAPL", "GOOGL"}
-
-
-@pytest.fixture
-def valid_request_data(mock_connection_id, mock_symbols):
-    return {
-        "connectionId": str(mock_connection_id),
-        "symbols": list(mock_symbols),
-    }
-
-
-@pytest.fixture
-def mock_parsed_params(mock_connection_id, mock_symbols):
-    params = Mock(spec=SSERequestParams)
-    params.connection_id = mock_connection_id
-    params.symbols = mock_symbols
-    return params
 
 
 class TestSSESubscribeView:

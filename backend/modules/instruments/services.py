@@ -5,8 +5,6 @@ from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
 )
-from modules.prices.constants import YFinanceTimeInterval
-from modules.prices.exceptions import InvalidTimeIntervalException
 
 
 class PaginatedInstruments(TypedDict):
@@ -66,9 +64,8 @@ class InstrumentsServiceMinimal:
             )
 
         total_items = len(instruments)
-        total_pages = (
-            (total_items + page_size - 1) // page_size if total_items > 0 else 1
-        )
+        page_size = max(1, page_size)
+        total_pages = (total_items + page_size - 1) // page_size
 
         page = max(1, min(page, total_pages))
 

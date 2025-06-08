@@ -1,5 +1,12 @@
+import logging
+
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
+
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
+
 
 TRUE_STRING_VALUES = ("1", "true", "True", "TRUE", "on", "yes")
 

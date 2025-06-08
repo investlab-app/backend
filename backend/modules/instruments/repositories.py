@@ -41,7 +41,7 @@ class YfinanceRepository:
 
     @staticmethod
     def get_instrument_detailed_info(
-        ticker_str: str,
+        ticker: str,
     ) -> InstrumentDetailedInfoSchema:
         """
         Fetches detailed information for a single instrument.
@@ -55,10 +55,10 @@ class YfinanceRepository:
         Raises:
             FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
         """
-        ticker = yfinance.Ticker(ticker_str)
+        y_ticker = yfinance.Ticker(ticker)
 
         try:
-            detailed_info = YfinanceRepository._get_detailed_info(ticker)
+            detailed_info = YfinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
 
@@ -149,20 +149,19 @@ class YfinanceRepository:
                 else None
             ),
             earnings_date=earnings_date_value,
-            business_summary=ticker_info.get("longBusinessSummary"),
         )
         major_holders = ticker.major_holders
-        if not major_holders.empty:
+        if major_holders is not None and not major_holders.empty:
             detailed_ticker_info.major_holders = major_holders.to_dict()
 
         institutional_holders = ticker.institutional_holders
-        if not institutional_holders.empty:
+        if institutional_holders is not None and not institutional_holders.empty:
             detailed_ticker_info.institutional_holders = institutional_holders.to_dict(
                 "records"
             )
 
         recommendations = ticker.recommendations
-        if not recommendations.empty:
+        if recommendations is not None and not recommendations.empty:
             detailed_ticker_info.analyst_recommendations = recommendations.to_dict(
                 "records"
             )
