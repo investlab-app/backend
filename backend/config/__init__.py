@@ -18,6 +18,7 @@ def parse_time_interval(value: str) -> YFinanceTimeInterval:
     try:
         return YFinanceTimeInterval(value)
     except ValueError as e:
+        valid_intervals = ", ".join([ti.value for ti in YFinanceTimeInterval])
         raise InvalidTimeIntervalException(
-            f"Invalid time interval, valid intervals are: {", ".join([ti.value for ti in YFinanceTimeInterval])}"
+            f"Invalid time interval, valid intervals are: {valid_intervals}"
         ) from e
