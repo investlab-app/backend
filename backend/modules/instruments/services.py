@@ -1,10 +1,10 @@
 from typing import TypedDict
 
 from modules.instruments.repositories import YfinanceRepository
-from modules.instruments.schemas import (
-    InstrumentDetailedInfoSchema,
-    InstrumentBasicInfoSchema,
-)
+from modules.instruments.schemas import (InstrumentBasicInfoSchema,
+                                         InstrumentDetailedInfoSchema)
+from modules.prices.constants import YFinanceTimeInterval
+from modules.prices.exceptions import InvalidTimeIntervalException
 
 
 class PaginatedInstruments(TypedDict):

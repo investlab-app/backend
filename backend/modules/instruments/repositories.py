@@ -1,13 +1,10 @@
 from datetime import datetime
 from decimal import Decimal
 
-from yfinance import Ticker, Tickers
-
 from modules.instruments.exceptions import FetchInstrumentInfoException
-from modules.instruments.schemas import (
-    InstrumentBasicInfoSchema,
-    InstrumentDetailedInfoSchema,
-)
+from modules.instruments.schemas import (InstrumentBasicInfoSchema,
+                                         InstrumentDetailedInfoSchema)
+from yfinance import Ticker, Tickers
 
 
 class YfinanceRepository:

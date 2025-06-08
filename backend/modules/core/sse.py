@@ -5,17 +5,16 @@ from abc import ABC, abstractmethod
 from urllib.parse import parse_qs
 
 from channels.generic.http import AsyncHttpConsumer
+from config.settings import CORS_ALLOWED_ORIGINS
 from django.http import HttpResponse
 from drf_spectacular.utils import extend_schema
-from pydantic import Field, BaseModel
+from modules.authentication import clerk_auth
+from modules.prices.services import LivePrices
+from pydantic import BaseModel, Field
 from rest_framework import serializers, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from typing_extensions import override
-
-from config.settings import CORS_ALLOWED_ORIGINS
-from modules.authentication import clerk_auth
-from modules.prices.services import LivePrices
 
 
 class SSEConsumer(AsyncHttpConsumer, ABC):
@@ -32,7 +31,9 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         self.shutdown_event = asyncio.Event()
 
     async def handle_preflight(self, origin):
-        response_origin = origin if origin.decode("utf-8") in CORS_ALLOWED_ORIGINS else b""
+        response_origin = (
+            origin if origin.decode("utf-8") in CORS_ALLOWED_ORIGINS else b""
+        )
         headers = [
             (b"Access-Control-Allow-Origin", response_origin),
             (b"Access-Control-Allow-Methods", b"GET, OPTIONS"),
@@ -55,7 +56,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         :param bearer_token: The token to validate.
         :return: bool: True if the token is valid, False otherwise.
         """
-        pass
+        raise NotImplementedError("Subclasses must implement validate_auth method.")
 
     @override
     async def http_request(self, message) -> None:
@@ -65,13 +66,13 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         task to send events, rather than blocking.
         """
         headers: dict[bytes, bytes] = dict(self.scope["headers"])
-        request_origin = headers.get(b'origin', b'')
+        request_origin = headers.get(b"origin", b"")
 
         if self.scope["method"] == "OPTIONS":
             return await self.handle_preflight(request_origin)
 
-        auth_header = headers.get(b'authorization', b'')
-        if auth_header.startswith(b'Bearer '):
+        auth_header = headers.get(b"authorization", b"")
+        if auth_header.startswith(b"Bearer "):
             bearer_token = auth_header[7:]
         else:
             return await self.send_response(
@@ -93,14 +94,18 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         if not message.get("more_body"):
             query_string = self.scope["query_string"]
             params = parse_qs(query_string)
-            params_decoded = {k.decode("utf-8"): v[0].decode("utf-8") for k, v in params.items()}
+            params_decoded = {
+                k.decode("utf-8"): v[0].decode("utf-8") for k, v in params.items()
+            }
 
             response_headers = self.sse_headers.copy()
 
             allowed = request_origin.decode("utf-8") in CORS_ALLOWED_ORIGINS
 
             if allowed:
-                response_headers.append((b"Access-Control-Allow-Origin", request_origin))
+                response_headers.append(
+                    (b"Access-Control-Allow-Origin", request_origin)
+                )
 
             print(f"Response headers: {response_headers}")
 
@@ -115,7 +120,8 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         return None
 
     @abstractmethod
-    async def handle(self, params):
+    @override
+    async def handle(self, params): # pylint: disable=arguments-renamed
         """
         This method should be implemented by subclasses to handle the SSE
         event stream. It will run as a background task.
@@ -194,8 +200,7 @@ class SSERequestSerializer(serializers.Serializer):
         help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
     )
     connectionId = serializers.UUIDField(
-        required=True,
-        help_text="Unique identifier for the SSE connection."
+        required=True, help_text="Unique identifier for the SSE connection."
     )
 
 
@@ -222,10 +227,7 @@ class SSESubscribeView(APIView):
         try:
             params = parse_sse_request(request.data)
         except ValueError as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         connection_id = params.connection_id
         symbols = params.symbols
 
@@ -236,7 +238,7 @@ class SSESubscribeView(APIView):
         return HttpResponse(
             f"Subscribed to new events: {symbols}",
             content_type="text/plain",
-            status=200
+            status=200,
         )
 
 
@@ -246,10 +248,7 @@ class SSEUnsubscribeView(APIView):
         try:
             params = parse_sse_request(request.data)
         except ValueError as e:
-            return Response(
-                {"error": str(e)},
-                status=status.HTTP_400_BAD_REQUEST
-            )
+            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         connection_id = params.connection_id
         symbols = params.symbols
 
@@ -260,10 +259,8 @@ class SSEUnsubscribeView(APIView):
         return HttpResponse(
             f"Unsubscribed from events: {symbols}",
             content_type="text/plain",
-            status=200
+            status=200,
         )
-
-
 
 
 class SSEConsumerImpl(SSEConsumer):
@@ -276,8 +273,12 @@ class SSEConsumerImpl(SSEConsumer):
         logging.log(level, f"{self.connection_id}: {msg}")
 
     async def live_prices_handler(self, prices: dict[str, float]) -> None:
-        prices = {label: price for (label, price) in prices.items() if label in clients[self.connection_id]}
-        await self._send_event("price_update", prices.__str__())
+        prices = {
+            label: price
+            for (label, price) in prices.items()
+            if label in clients[self.connection_id]
+        }
+        await self._send_event("price_update", str(prices))
 
     connection_id: uuid.UUID = None
 
@@ -301,7 +302,10 @@ class SSEConsumerImpl(SSEConsumer):
 
         self.connection_id = params.connection_id
         symbols = params.symbols
-        self.log(logging.DEBUG, f"{self.connection_id}: Starting SSE stream with symbols: {symbols}")
+        self.log(
+            logging.DEBUG,
+            f"{self.connection_id}: Starting SSE stream with symbols: {symbols}",
+        )
 
         try:
             subscribe(self.connection_id, symbols)

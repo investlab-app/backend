@@ -3,8 +3,10 @@ from decimal import Decimal
 
 from pydantic import BaseModel
 
+
 class InstrumentBasicInfoSchema(BaseModel):
     """Basic information about an instrument, suitable for table views."""
+
     ticker: str
     name: str
     currency: str
@@ -21,6 +23,7 @@ class InstrumentBasicInfoSchema(BaseModel):
 
 class InstrumentDetailedInfoSchema(InstrumentBasicInfoSchema):
     """Detailed information about an instrument, for comprehensive display."""
+
     description: str | None = None
     website: str | None = None
     logo_url: str | None = None

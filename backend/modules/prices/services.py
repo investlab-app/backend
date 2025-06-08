@@ -5,7 +5,7 @@ import threading
 import time
 from datetime import datetime
 from decimal import Decimal
-from typing import TypedDict, Callable
+from typing import Callable, TypedDict
 
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
@@ -24,7 +24,7 @@ class PricesServiceMinimal:
         self._repository = YfinanceRepository()
 
     def get_instrument_price_history(
-            self, instrument: str, start_date: datetime, end_date: datetime, interval: str
+        self, instrument: str, start_date: datetime, end_date: datetime, interval: str
     ) -> PriceHistoryWithStats:
         """
         Retrieves historical price data for a given instrument with min and max price over the range.
@@ -155,7 +155,10 @@ class LivePrices:
             try:
                 print(f"Fetching live prices for: {self.instruments}")
 
-                prices = {instrument: random.uniform(100, 500) for instrument in self.instruments}
+                prices = {
+                    instrument: random.uniform(100, 500)
+                    for instrument in self.instruments
+                }
 
                 handler_tasks = []
                 for handler in self.handlers:
@@ -164,7 +167,9 @@ class LivePrices:
                             handler_tasks.append(handler(prices))
                         else:
                             handler_tasks.append(
-                                asyncio.get_event_loop().run_in_executor(None, handler, prices)
+                                asyncio.get_event_loop().run_in_executor(
+                                    None, handler, prices
+                                )
                             )
                     except Exception as e:
                         logging.error(f"Error preparing handler call: {e}")

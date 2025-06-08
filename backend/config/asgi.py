@@ -8,15 +8,15 @@ https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
 from channels.routing import ProtocolTypeRouter, URLRouter
+from config.urls import sse_urlpatterns
 from django.core.asgi import get_asgi_application
 from django.urls import re_path
 
-from config.urls import sse_urlpatterns
-
-application = ProtocolTypeRouter({
-    "http": URLRouter(
-        sse_urlpatterns + [
-            re_path("^", get_asgi_application())  # type: ignore [arg-type]
-        ]
-    ),
-})
+application = ProtocolTypeRouter(
+    {
+        "http": URLRouter(
+            sse_urlpatterns
+            + [re_path("^", get_asgi_application())]  # type: ignore [arg-type]
+        ),
+    }
+)

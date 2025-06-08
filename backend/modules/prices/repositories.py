@@ -2,12 +2,11 @@ from datetime import datetime
 from decimal import Decimal
 from typing import cast
 
-from pandas import DataFrame, Timestamp
-from yfinance import Ticker
-
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
 from modules.prices.schemas import InstrumentPriceSchema
+from pandas import DataFrame, Timestamp
+from yfinance import Ticker
 
 
 class YfinanceRepository:

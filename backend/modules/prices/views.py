@@ -1,19 +1,14 @@
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
+from modules.prices.exceptions import (FetchPriceException,
+                                       InvalidTimeIntervalException)
+from modules.prices.serializers import (InstrumentPriceQueryParams,
+                                        InstrumentPriceResponseSerializer)
+from modules.prices.services import PricesServiceMinimal
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
-
-from modules.prices.exceptions import (
-    FetchPriceException,
-    InvalidTimeIntervalException,
-)
-from modules.prices.serializers import (
-    InstrumentPriceQueryParams,
-    InstrumentPriceResponseSerializer,
-)
-from modules.prices.services import PricesServiceMinimal
 
 
 class PricesView(generics.GenericAPIView):

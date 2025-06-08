@@ -1,19 +1,15 @@
-from clerk_backend_api import (
-    Clerk,
-    CreateSessionRequestBodyTypedDict,
-    GetUserListRequestTypedDict,
-)
+from clerk_backend_api import (Clerk, CreateSessionRequestBodyTypedDict,
+                               GetUserListRequestTypedDict)
 from clerk_backend_api.models import SDKError
 from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from modules.authentication.serializers import ClerkLoginSerializer
 from rest_framework import status
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
-
-from modules.authentication.serializers import ClerkLoginSerializer
 
 
 @method_decorator(csrf_exempt, name="dispatch")

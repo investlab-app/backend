@@ -5,10 +5,9 @@ from django.conf import settings
 from django.core.cache import cache
 from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
+from modules.users.models import User
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-
-from modules.users.models import User
 
 
 def _get_jwks():
@@ -92,6 +91,7 @@ def _parse_user_from_payload(payload) -> User:
     )
 
     return user
+
 
 def validate_token(token: str) -> User:
     """

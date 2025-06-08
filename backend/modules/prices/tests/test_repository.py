@@ -1,7 +1,6 @@
 from datetime import datetime
 
 import pytest
-
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
 from modules.prices.repositories import YfinanceRepository
@@ -29,5 +28,3 @@ def test_raises_fetch_price_exception_on_invalid_instrument():
             end_date=datetime(2024, 4, 30),
             interval=YFinanceTimeInterval.ONE_DAY,
         )
-
-

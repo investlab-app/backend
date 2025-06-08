@@ -1,27 +1,33 @@
+import logging
+
 from django.contrib import admin
 from django.urls import include, path, re_path
-from drf_spectacular.views import (
-    SpectacularAPIView,
-    SpectacularRedocView,
-    SpectacularSwaggerView,
-)
+from drf_spectacular.views import (SpectacularAPIView, SpectacularRedocView,
+                                   SpectacularSwaggerView)
 
-from modules.core.sse import SSEConsumerImpl, SSESubscribeView, SSEUnsubscribeView
+from modules.core.sse import (SSEConsumerImpl, SSESubscribeView,
+                              SSEUnsubscribeView)
 from modules.core.views import StatusView
 
 API_PREFIX = "api"
 
-import logging
-
-logging.basicConfig(level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s")
+logging.basicConfig(
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
+)
 
 sse_urlpatterns = [
     re_path(f"^{API_PREFIX}/sse/?$", SSEConsumerImpl.as_asgi()),
 ]
 
 urlpatterns = [
-    path(f"{API_PREFIX}/sse/subscribe", SSESubscribeView.as_view(), name="sse-subscribe"),
-    path(f"{API_PREFIX}/sse/unsubscribe", SSEUnsubscribeView.as_view(), name="sse-unsubscribe"),
+    path(
+        f"{API_PREFIX}/sse/subscribe", SSESubscribeView.as_view(), name="sse-subscribe"
+    ),
+    path(
+        f"{API_PREFIX}/sse/unsubscribe",
+        SSEUnsubscribeView.as_view(),
+        name="sse-unsubscribe",
+    ),
     path(f"{API_PREFIX}/admin/", admin.site.urls),
     path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs

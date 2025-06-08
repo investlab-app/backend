@@ -3,6 +3,7 @@ class FetchPriceException(Exception):
         super().__init__(f"Could not fetch price data, reason: {reason}")
         self.reason = reason
 
+
 class InvalidTimeIntervalException(Exception):
     def __init__(self, reason: str):
         super().__init__(reason)

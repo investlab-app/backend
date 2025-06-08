@@ -1,18 +1,14 @@
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
+from modules.instruments.exceptions import FetchInstrumentInfoException
+from modules.instruments.serializers import (
+    InstrumentDetailedInfoSerializer, InstrumentInfoSerializer,
+    InstrumentsListQueryParams, PaginatedInstrumentsResponseSerializer)
+from modules.instruments.services import InstrumentsServiceMinimal
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
-
-from modules.instruments.exceptions import FetchInstrumentInfoException
-from modules.instruments.serializers import (
-    InstrumentDetailedInfoSerializer,
-    InstrumentInfoSerializer,
-    InstrumentsListQueryParams,
-    PaginatedInstrumentsResponseSerializer,
-)
-from modules.prices.services import PricesServiceMinimal
 
 
 class InstrumentsListView(generics.GenericAPIView):
@@ -36,7 +32,7 @@ class InstrumentsListView(generics.GenericAPIView):
 
         tickers = [ticker.strip().upper() for ticker in validated["tickers"].split(",")]
 
-        service = PricesServiceMinimal()
+        service = InstrumentsServiceMinimal()
 
         try:
             result = service.get_instruments_list(
@@ -79,11 +75,11 @@ class InstrumentDetailView(generics.GenericAPIView):
     @extend_schema(
         responses=[InstrumentDetailedInfoSerializer],
     )
-    def get(self, request: Request, ticker: str) -> Response:
+    def get(self, request: Request, ticker: str) -> Response: # pylint: disable=unused-argument
         """
         Get detailed information for a single instrument.
         """
-        service = PricesServiceMinimal()
+        service = InstrumentsServiceMinimal()
 
         try:
             result = service.get_instrument_detailed_info(ticker)
@@ -103,4 +99,3 @@ class InstrumentDetailView(generics.GenericAPIView):
             )
 
         return Response(serialized.data)
-
