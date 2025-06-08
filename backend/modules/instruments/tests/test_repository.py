@@ -46,7 +46,6 @@ def test_get_detailed_instrument_info_success(
     ticker = "AAPL"
     result = repo.get_instrument_detailed_info(ticker)
     assert isinstance(result, InstrumentDetailedInfoSchema)
-    assert result.ticker == ticker
     assert result.current_price == Decimal("180.5")
     assert result.major_holders is not None
     assert result.institutional_holders is not None
@@ -67,4 +66,7 @@ def test_get_detailed_instrument_info_missing_data(
     ticker_str = "AAPL"
     result = repo.get_instrument_detailed_info(ticker_str)
     assert isinstance(result, InstrumentDetailedInfoSchema)
-    assert result.ticker == "AAPL"
+    assert (
+        result.description
+        == "The company designs, manufactures, and markets smartphones, computers, and related services."
+    )

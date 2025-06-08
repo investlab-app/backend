@@ -2,8 +2,8 @@ from datetime import datetime
 from decimal import Decimal
 from typing import cast
 
+import yfinance
 from pandas import DataFrame, Timestamp
-from yfinance import Ticker
 
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
@@ -34,7 +34,7 @@ class YfinanceRepository:
             FetchPriceException: If the ticker is invalid or no data is returned.
         """
         try:
-            y_ticker = Ticker(instrument.lower())
+            y_ticker = yfinance.Ticker(instrument.lower())
             history = y_ticker.history(
                 start=start_date, end=end_date, interval=interval.value
             )

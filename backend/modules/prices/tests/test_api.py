@@ -3,6 +3,7 @@ from django.urls import reverse
 from rest_framework.response import Response
 
 from modules.core.tests.conftest import api_client_auth
+from modules.users.tests.conftest import user
 
 pytestmark = pytest.mark.django_db
 
@@ -21,14 +22,13 @@ def test_prices_view_success(api_client_auth, mock_yfinance_repository) -> None:
     assert isinstance(response, Response)
     assert response.status_code == 200
 
-    response_data = response.json()
-    assert isinstance(response_data, dict)
-    assert "data" in response_data
-    assert "min_price" in response_data
-    assert "max_price" in response_data
-    assert len(response_data["data"]) == 2
-    assert response_data["min_price"] == 168.0
-    assert response_data["max_price"] == 172.0
+    assert isinstance(response.data, dict)
+    assert "data" in response.data
+    assert "min_price" in response.data
+    assert "max_price" in response.data
+    assert len(response.data["data"]) == 2
+    assert response.data["min_price"] == 168.0
+    assert response.data["max_price"] == 172.0
 
 
 def test_missing_param_returns_400(api_client_auth, mock_yfinance_repository) -> None:

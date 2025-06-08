@@ -61,16 +61,20 @@ class PricesServiceMinimal:
         )
 
 
+type PriceUpdateHandler = Callable[[dict[str, float]], None]
+
+
 class LivePrices:
-    def __init__(self):
-        self.handlers: list[Callable] = []
+
+    def __init__(self) -> None:
+        self.handlers: list[PriceUpdateHandler] = []
         self.instruments: set[str] = set()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._running = False
         self._lock = threading.Lock()
         self._start_background_loop()
 
-    def _start_background_loop(self):
+    def _start_background_loop(self) -> None:
         def run_loop():
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
@@ -109,7 +113,7 @@ class LivePrices:
             if not self.instruments and self._running:
                 self._schedule_coroutine(self._stop_fetching())
 
-    def add_handler(self, handler: Callable) -> None:
+    def add_handler(self, handler: PriceUpdateHandler) -> None:
         """Add price update handler (sync method)"""
         with self._lock:
             logging.debug(f"Adding handler: {handler}")
@@ -118,7 +122,7 @@ class LivePrices:
             if not self._running and self.instruments and len(self.handlers) == 1:
                 self._schedule_coroutine(self._start_fetching())
 
-    def remove_handler(self, handler: Callable) -> None:
+    def remove_handler(self, handler: PriceUpdateHandler) -> None:
         """Remove price update handler (sync method)"""
         with self._lock:
             logging.debug(f"Removing handler: {handler}")
@@ -136,12 +140,10 @@ class LivePrices:
         logging.info("Starting live price fetching loop")
 
     async def _stop_fetching(self):
-        """Stop the price fetching loop (async internal method)"""
         self._running = False
         logging.info("Stopping live price fetching loop")
 
     async def _fetch_loop(self):
-        """Main fetching loop (async internal method)"""
         while self._running and self.instruments and self.handlers:
             try:
                 print(f"Fetching live prices for: {self.instruments}")

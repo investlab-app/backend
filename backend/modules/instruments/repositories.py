@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-from yfinance import Ticker, Tickers
+import yfinance
 
 from modules.instruments.exceptions import FetchInstrumentInfoException
 from modules.instruments.schemas import (
@@ -28,7 +28,7 @@ class YfinanceRepository:
             FetchInstrumentInfoException: If there's an error fetching the data.
         """
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
-        y_tickers = Tickers(tickers_str)
+        y_tickers = yfinance.Tickers(tickers_str)
 
         try:
             tickers_data = [
@@ -55,7 +55,7 @@ class YfinanceRepository:
         Raises:
             FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
         """
-        ticker = Ticker(ticker_str)
+        ticker = yfinance.Ticker(ticker_str)
 
         try:
             detailed_info = YfinanceRepository._get_detailed_info(ticker)
@@ -107,7 +107,7 @@ class YfinanceRepository:
         return basic_info
 
     @staticmethod
-    def _get_detailed_info(ticker: Ticker) -> InstrumentDetailedInfoSchema:
+    def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
         ticker_info = ticker.info
 
         basic_schema_instance = YfinanceRepository._get_basic_info(ticker_info)

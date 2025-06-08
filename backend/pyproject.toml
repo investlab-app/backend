@@ -68,6 +68,7 @@ disable = [
     "R0913", # too-many-arguments
     "R0917", # too-many-positional-arguments
     "W0718", # broad-exception-caught
+    "W0613", # unused-argument
 ]
 ignore = ["migrations"]
 load-plugins = ["pylint_pytest"]

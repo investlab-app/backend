@@ -59,7 +59,6 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         """
         raise NotImplementedError("Subclasses must implement validate_auth method.")
 
-    @override
     async def http_request(self, message) -> None:
         """
         Async entrypoint for the HTTP request.
@@ -94,7 +93,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
 
         if not message.get("more_body"):
             query_string = self.scope["query_string"]
-            params = parse_qs(query_string)
+            params: dict[bytes, list[bytes]] = parse_qs(query_string)
             params_decoded = {
                 k.decode("utf-8"): v[0].decode("utf-8") for k, v in params.items()
             }
@@ -159,8 +158,8 @@ clients = dict[uuid.UUID, set[str]]()
 live_prices = LivePrices()
 
 
-def subscribe(client_id: uuid, symbols: set[str]) -> None:
-    for symbol in symbols:
+def subscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
+    for symbol in iter(symbols):
         subscriptions.setdefault(symbol, 0)
         subscriptions[symbol] += 1
 
@@ -170,8 +169,8 @@ def subscribe(client_id: uuid, symbols: set[str]) -> None:
     live_prices.add_instruments(symbols)
 
 
-def unsubscribe(client_id: uuid, symbols: set[str]) -> None:
-    for symbol in symbols:
+def unsubscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
+    for symbol in iter(symbols):
         if subscriptions[symbol] > 1:
             subscriptions[symbol] -= 1
         elif subscriptions[symbol] == 1:
@@ -274,14 +273,19 @@ class SSEConsumerImpl(SSEConsumer):
         logging.log(level, f"{self.connection_id}: {msg}")
 
     async def live_prices_handler(self, prices: dict[str, float]) -> None:
+        if not self.connection_id:
+            logging.error("Connection ID is not set, cannot handle live prices.")
+            return
+
         prices = {
             label: price
             for (label, price) in prices.items()
             if label in clients[self.connection_id]
         }
+
         await self._send_event("price_update", str(prices))
 
-    connection_id: uuid.UUID = None
+    connection_id: uuid.UUID | None = None
 
     @staticmethod
     @override
