@@ -146,8 +146,6 @@ class LivePrices:
     async def _fetch_loop(self):
         while self._running and self.instruments and self.handlers:
             try:
-                print(f"Fetching live prices for: {self.instruments}")
-
                 prices = {
                     instrument: random.uniform(100, 500)
                     for instrument in self.instruments
