@@ -174,6 +174,8 @@ def unsubscribe(client_id: uuid, symbols: set[str]) -> None:
     client_symbols = clients.get(client_id, set())
     clients.update({client_id: symbols - client_symbols})
 
+    live_prices.remove_instruments(symbols)
+
 
 class SSERequestSerializer(serializers.Serializer):
     @override
@@ -299,8 +301,8 @@ class SSEConsumerImpl(SSEConsumer):
 
         self.connection_id = params.connection_id
         symbols = params.symbols
+        self.log(logging.DEBUG, f"{self.connection_id}: Starting SSE stream with symbols: {symbols}")
 
-        self.log(logging.DEBUG, f"{self.connection_id}: Starting SSE stream with params: {params}")
         try:
             subscribe(self.connection_id, symbols)
             if clients[self.connection_id]:
@@ -319,14 +321,5 @@ class SSEConsumerImpl(SSEConsumer):
     async def disconnect(self):
         logging.debug(f"{self.connection_id}: Disconnecting SSE stream.")
         self.shutdown_event.set()
-        self._cleanup_symbols()
+        unsubscribe(self.connection_id, clients.get(self.connection_id, set()))
         await super().disconnect()
-
-    def _cleanup_symbols(self):
-        remove_symbols = []
-        for symbol in clients.get(self.connection_id, []):
-            subscriptions[symbol] -= 1
-            if subscriptions[symbol] <= 0:
-                remove_symbols += [symbol]
-        logging.debug(f"{self.connection_id}: Cleaning up symbols: {remove_symbols}")
-        live_prices.remove_instruments(set(remove_symbols))
