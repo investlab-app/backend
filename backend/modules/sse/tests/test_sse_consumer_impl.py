@@ -1,7 +1,6 @@
 import asyncio
-import logging
 import uuid
-from unittest.mock import AsyncMock, MagicMock, Mock, patch
+from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
@@ -279,7 +278,6 @@ class TestSSEConsumerImpl:
         with (
             patch("modules.sse.sse_consumer_impl.parse_sse_request") as mock_parse,
             patch("modules.sse.sse_consumer_impl.subscribe") as mock_subscribe,
-            patch.object(consumer, "log") as mock_log,
             patch.object(live_prices, "add_handler") as mock_add_handler,
         ):
 
