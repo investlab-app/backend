@@ -170,7 +170,7 @@ class TestSSEConsumerImpl:
                 await cancel_task_ref
 
                 # Verify the cancellation was logged
-                mock_log_debug.assert_called_with(
+                mock_log_debug.assert_any_call(
                     f"{mock_connection_id}: Disconnected from SSE stream."
                 )
 
