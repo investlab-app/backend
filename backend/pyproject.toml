@@ -66,6 +66,7 @@ disable = [
     "W1203", # logging-fstring-interpolation
     "C0411", # wrong-import-order
     "R0913", # too-many-arguments
+    "R0917", # too-many-positional-arguments
     "W0718", # broad-exception-caught
 ]
 ignore = ["migrations"]
