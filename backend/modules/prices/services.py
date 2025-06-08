@@ -27,20 +27,23 @@ class PricesServiceMinimal:
         self, instrument: str, start_date: datetime, end_date: datetime, interval: str
     ) -> PriceHistoryWithStats:
         """
-        Retrieves historical price data for a given instrument with min and max price over the range.
-
+        Retrieves historical price data for an instrument, including minimum and maximum prices.
+        
+        Fetches price history for the specified instrument and date range at the given interval, returning the data along with the lowest and highest prices observed.
+        
         Args:
-            instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
-            start_date (datetime): The starting datetime for the price data range.
-            end_date (datetime): The ending datetime for the price data range.
-            interval (str): The desired data interval (e.g., "1d", "1h").
-
+            instrument: The ticker symbol of the instrument.
+            start_date: The start of the date range for price data.
+            end_date: The end of the date range for price data.
+            interval: The interval between data points (e.g., "1d", "1h").
+        
         Returns:
-            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema], 'min_price', and 'max_price'
-
+            A dictionary containing the price data list, minimum price, and maximum price.
+        
         Raises:
-            ValidationError: If the start_date is after the end_date.
-            APIException: If an error occurs while fetching data from the repository.
+            InvalidTimeIntervalException: If start_date is after end_date.
+            ValidationError: If input validation fails.
+            APIException: If an error occurs while fetching data.
         """
 
         if start_date > end_date:
@@ -67,6 +70,9 @@ type PriceUpdateHandler = Callable[[dict[str, float]], None]
 class LivePrices:
 
     def __init__(self) -> None:
+        """
+        Initializes the LivePrices service, setting up handler and instrument storage and starting the background event loop in a separate thread.
+        """
         self.handlers: list[PriceUpdateHandler] = []
         self.instruments: set[str] = set()
         self._loop: asyncio.AbstractEventLoop | None = None
@@ -75,6 +81,11 @@ class LivePrices:
         self._start_background_loop()
 
     def _start_background_loop(self) -> None:
+        """
+        Starts a background thread running an asyncio event loop for asynchronous tasks.
+        
+        Initializes a new asyncio event loop in a dedicated daemon thread and sets it as the current event loop for that thread. This enables scheduling and execution of asynchronous operations in the background.
+        """
         def run_loop():
             self._loop = asyncio.new_event_loop()
             asyncio.set_event_loop(self._loop)
@@ -88,6 +99,17 @@ class LivePrices:
         time.sleep(0.1)
 
     def _schedule_coroutine(self, coro):
+        """
+        Schedules a coroutine to run on the background event loop.
+        
+        If the event loop is active, submits the coroutine for execution in a thread-safe manner. Returns a Future representing the execution, or None if the event loop is unavailable.
+        
+        Args:
+            coro: The coroutine to schedule.
+        
+        Returns:
+            A concurrent.futures.Future if scheduled, or None if the event loop is not running.
+        """
         logging.debug(f"Scheduling coroutine: {coro}")
 
         if self._loop and not self._loop.is_closed():
@@ -95,7 +117,11 @@ class LivePrices:
         return None
 
     def add_instruments(self, instruments: set[str]) -> None:
-        """Add instruments to track"""
+        """
+        Adds instruments to the set being tracked for live price updates.
+        
+        If new instruments are added and there are registered handlers, starts the live price fetching loop.
+        """
         with self._lock:
             logging.debug(f"Adding instruments: {instruments}")
             self.instruments.update(instruments)
@@ -105,7 +131,11 @@ class LivePrices:
                 self._schedule_coroutine(self._start_fetching())
 
     def remove_instruments(self, instruments: set[str]) -> None:
-        """Remove instruments (sync method)"""
+        """
+        Removes specified instruments from the set being tracked.
+        
+        If no instruments remain after removal and live fetching is active, stops the fetching loop.
+        """
         with self._lock:
             logging.debug(f"Removing instruments: {instruments}")
             self.instruments.difference_update(instruments)
@@ -114,7 +144,11 @@ class LivePrices:
                 self._schedule_coroutine(self._stop_fetching())
 
     def add_handler(self, handler: PriceUpdateHandler) -> None:
-        """Add price update handler (sync method)"""
+        """
+        Registers a handler to receive live price updates.
+        
+        If this is the first handler and there are tracked instruments, starts the live price fetching loop.
+        """
         with self._lock:
             logging.debug(f"Adding handler: {handler}")
             self.handlers.append(handler)
@@ -123,7 +157,11 @@ class LivePrices:
                 self._schedule_coroutine(self._start_fetching())
 
     def remove_handler(self, handler: PriceUpdateHandler) -> None:
-        """Remove price update handler (sync method)"""
+        """
+        Removes a registered price update handler.
+        
+        If this is the last handler and live price updates are running, stops the fetching loop.
+        """
         with self._lock:
             logging.debug(f"Removing handler: {handler}")
             if handler in self.handlers:
@@ -133,6 +171,11 @@ class LivePrices:
                     self._schedule_coroutine(self._stop_fetching())
 
     async def _start_fetching(self):
+        """
+        Starts the live price fetching loop if it is not already running.
+        
+        This method sets the running flag and schedules the asynchronous fetch loop to begin dispatching live price updates to registered handlers.
+        """
         if self._running:
             return
         self._running = True
@@ -140,10 +183,18 @@ class LivePrices:
         logging.info("Starting live price fetching loop")
 
     async def _stop_fetching(self):
+        """
+        Stops the live price fetching loop asynchronously by setting the running flag to False.
+        """
         self._running = False
         logging.info("Stopping live price fetching loop")
 
     async def _fetch_loop(self):
+        """
+        Continuously generates and dispatches simulated price updates to all registered handlers.
+        
+        While the service is running and both instruments and handlers are present, this loop generates random price data for each instrument every second and invokes all registered handlers with the price updates. Supports both synchronous and asynchronous handlers. Errors during handler invocation or price generation are logged, and the loop continues operation unless explicitly stopped.
+        """
         while self._running and self.instruments and self.handlers:
             try:
                 prices = {
@@ -177,7 +228,11 @@ class LivePrices:
         self._running = False
 
     def shutdown(self):
-        """Shutdown the service"""
+        """
+        Stops the live price update service and shuts down the background event loop.
+        
+        This method halts price fetching, prevents further handler notifications, and cleanly stops the background asyncio event loop.
+        """
         with self._lock:
             logging.info("Shutting down LivePrices service")
             self._running = False

@@ -12,12 +12,24 @@ from config.settings import CORS_ALLOWED_ORIGINS
 class SSEConsumer(AsyncHttpConsumer, ABC):
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the SSEConsumer with attributes for managing SSE tasks and shutdown signaling.
+        """
         super().__init__(*args, **kwargs)
         self.sse_task = None
         self.shutdown_event = asyncio.Event()
 
     @staticmethod
     def _headers(response_origin: bytes | None):
+        """
+        Generates HTTP headers required for Server-Sent Events (SSE) responses with CORS support.
+        
+        Args:
+            response_origin: The origin to set for the Access-Control-Allow-Origin header, or None to allow all origins.
+        
+        Returns:
+            A list of HTTP header tuples for SSE responses, including CORS and connection headers.
+        """
         return [
             (b"Content-Type", b"text/event-stream"),
             (b"Cache-Control", b"no-cache"),
@@ -28,6 +40,11 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         ]
 
     async def handle_preflight(self, origin):
+        """
+        Handles CORS preflight (OPTIONS) requests by responding with appropriate headers.
+        
+        If the provided origin is allowed, includes it in the CORS response headers; otherwise, responds with a wildcard origin.
+        """
         origin_str = origin.decode("utf-8") if origin else ""
         response_origin = origin if origin_str in CORS_ALLOWED_ORIGINS else b""
         await self.send_response(
@@ -41,17 +58,23 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
     @abstractmethod
     async def _validate_auth(bearer_token: str) -> bool:
         """
-        Validates the provided bearer token using Clerk authentication.
-        :param bearer_token: The token to validate.
-        :return: bool: True if the token is valid, False otherwise.
+        Validates the provided bearer token for authentication.
+        
+        This method must be implemented by subclasses to define custom authentication logic.
+        
+        Args:
+            bearer_token: The bearer token extracted from the Authorization header.
+        
+        Returns:
+            True if the token is valid; False otherwise.
         """
         raise NotImplementedError("Subclasses must implement validate_auth method.")
 
     async def http_request(self, message) -> None:
         """
-        Async entrypoint for the HTTP request.
-        This method now sets up the SSE connection and starts a background
-        task to send events, rather than blocking.
+        Handles incoming HTTP requests for establishing an SSE connection.
+        
+        Validates CORS origin and bearer token authentication, responds to preflight OPTIONS requests, and initiates the SSE event stream as a background task if authentication and CORS checks pass. Responds with appropriate HTTP status codes for unauthorized or disallowed origins.
         """
         headers: dict[bytes, bytes] = dict(self.scope["headers"])
         request_origin = headers.get(b"origin", b"")
@@ -104,16 +127,22 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
     @override
     async def handle(self, params):  # pylint: disable=arguments-renamed
         """
-        This method should be implemented by subclasses to handle the SSE
-        event stream. It will run as a background task.
+        Handles the SSE event stream as a background task.
+        
+        Subclasses must implement this method to define how events are generated and sent to the client using the provided query parameters.
+        
+        Args:
+            params: Decoded query parameters from the HTTP request.
         """
         raise NotImplementedError("Subclasses must implement the handle method.")
 
     async def _send_event(self, event: str, data: str):
         """
-        Sends an event to the client.
-        :param event: The channel name for the event.
-        :param data: The data to send in the event.
+        Sends a Server-Sent Event (SSE) with the specified event name and data to the client.
+        
+        Args:
+            event: The SSE event type.
+            data: The event payload as a string.
         """
         event_data = f"event: {event}\ndata: {data}\n\n"
         await self.send_body(event_data.encode("utf-8"), more_body=True)
@@ -121,8 +150,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
     @override
     async def disconnect(self):
         """
-        Called when the client disconnects.
-        This is responsible for cleaning up the background task.
+        Cleans up resources and cancels the SSE background task when the client disconnects.
         """
         if self.sse_task and not self.sse_task.done():
             self.sse_task.cancel()

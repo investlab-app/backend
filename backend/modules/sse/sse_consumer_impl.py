@@ -12,13 +12,28 @@ from modules.sse.sse_consumer import SSEConsumer
 class SSEConsumerImpl(SSEConsumer):
 
     def __init__(self, *args, **kwargs):
+        """
+        Initializes the SSEConsumerImpl instance and sets up the shutdown event used to control stream termination.
+        """
         super().__init__(*args, **kwargs)
         self.shutdown_event = asyncio.Event()
 
     def log(self, level, msg):
+        """
+        Logs a message with the specified logging level, prefixed by the current connection ID.
+        
+        Args:
+            level: The logging level (e.g., logging.INFO, logging.ERROR).
+            msg: The message to log.
+        """
         logging.log(level, f"{self.connection_id}: {msg}")
 
     async def live_prices_handler(self, prices: dict[str, float]) -> None:
+        """
+        Handles incoming live price updates for the current connection.
+        
+        Filters the provided prices to include only those relevant to the subscribed symbols for this connection, logs the filtered prices, and sends them as a "price_update" SSE event. If the connection ID is not set, the handler logs an error and exits without sending updates.
+        """
         if not self.connection_id:
             logging.error("Connection ID is not set, cannot handle live prices.")
             return
@@ -38,6 +53,12 @@ class SSEConsumerImpl(SSEConsumer):
     @staticmethod
     @override
     async def _validate_auth(bearer_token: str) -> bool:
+        """
+        Asynchronously validates a bearer token for authentication.
+        
+        Returns:
+            True if the token is valid; False if authentication fails.
+        """
         try:
             clerk_auth.validate_token(bearer_token)
             return True
@@ -47,6 +68,11 @@ class SSEConsumerImpl(SSEConsumer):
 
     @override
     async def handle(self, params):
+        """
+        Handles the lifecycle of an SSE connection for live price updates.
+        
+        Parses and validates request parameters, subscribes the connection to requested symbols, registers a live price update handler, and waits for a shutdown event or cancellation. Cleans up subscriptions and handlers upon disconnection or error.
+        """
         try:
             params = parse_sse_request(params)
         except ValueError as e:
@@ -80,6 +106,11 @@ class SSEConsumerImpl(SSEConsumer):
             self.log(logging.DEBUG, "SSE stream generation finished.")
 
     async def disconnect(self):
+        """
+        Disconnects the SSE stream and performs cleanup.
+        
+        Signals the shutdown event to terminate the stream, unsubscribes the connection from all subscribed symbols, and invokes the superclass disconnect logic.
+        """
         logging.debug(f"{self.connection_id}: Disconnecting SSE stream.")
         self.shutdown_event.set()
         unsubscribe(self.connection_id, clients.get(self.connection_id, set()))

@@ -75,6 +75,15 @@ class InstrumentInfoSerializer(serializers.Serializer):
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:
+        """
+        Normalizes all Decimal values in a record to a fixed number of decimal places.
+        
+        Args:
+            record: A dictionary potentially containing Decimal values.
+        
+        Returns:
+            The input dictionary with all Decimal values quantized to the configured decimal precision.
+        """
         for key in record:
             if isinstance(record[key], Decimal):
                 record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)

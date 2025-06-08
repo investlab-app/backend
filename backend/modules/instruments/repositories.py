@@ -16,16 +16,9 @@ class YfinanceRepository:
         tickers: list[str],
     ) -> list[InstrumentBasicInfoSchema]:
         """
-        Fetches basic information for multiple instruments.
-
-        Args:
-            tickers (list[str]): List of ticker symbols to fetch information for.
-
-        Returns:
-            list[InstrumentBasicInfoSchema]: A list of basic instrument information.
-
-        Raises:
-            FetchInstrumentInfoException: If there's an error fetching the data.
+        Retrieves basic information for a list of financial instruments by their ticker symbols.
+        
+        Returns a list of InstrumentBasicInfoSchema objects containing summary data for each requested ticker. Raises FetchInstrumentInfoException if data retrieval fails.
         """
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
         y_tickers = yfinance.Tickers(tickers_str)
@@ -44,16 +37,15 @@ class YfinanceRepository:
         ticker: str,
     ) -> InstrumentDetailedInfoSchema:
         """
-        Fetches detailed information for a single instrument.
-
-        Args:
-            ticker (str): The ticker symbol to fetch detailed information for.
-
+        Retrieves detailed information for a financial instrument by its ticker symbol.
+        
+        Fetches and structures comprehensive data for the specified ticker, including business summary, financial ratios, holders, and analyst recommendations. Raises a FetchInstrumentInfoException if data retrieval or processing fails.
+        
         Returns:
-            InstrumentDetailedInfoSchema: Detailed instrument information.
-
+            An InstrumentDetailedInfoSchema containing detailed instrument data.
+        
         Raises:
-            FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
+            FetchInstrumentInfoException: If an error occurs during data fetching or processing.
         """
         y_ticker = yfinance.Ticker(ticker)
 
@@ -66,6 +58,17 @@ class YfinanceRepository:
 
     @staticmethod
     def _get_basic_info(ticker_info: dict) -> InstrumentBasicInfoSchema:
+        """
+        Converts a raw ticker information dictionary into an InstrumentBasicInfoSchema.
+        
+        Extracts and formats key financial fields such as symbol, name, currency, current price, previous close, market cap, volume, sector, industry, and country. Calculates day change and day change percentage if price data is available. Numeric values are converted to Decimal where applicable.
+        
+        Args:
+            ticker_info: Dictionary containing raw ticker data from yfinance.
+        
+        Returns:
+            An InstrumentBasicInfoSchema instance populated with the extracted and computed fields.
+        """
         ticker_symbol = ticker_info.get("symbol", "")
         basic_info = InstrumentBasicInfoSchema(
             ticker=ticker_symbol.upper(),
@@ -108,6 +111,17 @@ class YfinanceRepository:
 
     @staticmethod
     def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
+        """
+        Builds a detailed instrument information schema from a yfinance Ticker object.
+        
+        Extracts and structures both basic and extended financial data, including business summary, website, logo URL, exchange, 52-week range, P/E ratios, dividend yield, earnings date, major holders, institutional holders, and analyst recommendations.
+        
+        Args:
+            ticker: A yfinance Ticker object containing instrument data.
+        
+        Returns:
+            An InstrumentDetailedInfoSchema instance with comprehensive instrument details.
+        """
         ticker_info = ticker.info
 
         basic_schema_instance = YfinanceRepository._get_basic_info(ticker_info)

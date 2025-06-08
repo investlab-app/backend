@@ -9,6 +9,11 @@ pytestmark = pytest.mark.django_db
 
 
 def test_prices_view_success(api_client_auth, mock_yfinance_repository) -> None:
+    """
+    Tests that the "prices" API endpoint returns correct data and status for valid input.
+    
+    Sends a GET request with valid ticker, date range, and interval, then verifies the response contains expected keys and values.
+    """
     url = reverse("prices")
     response = api_client_auth.get(
         url,

@@ -27,6 +27,12 @@ instrument_price_history = [
 
 @pytest.fixture
 def mock_yfinance_repository():
+    """
+    Pytest fixture that mocks the YfinanceRepository to return predefined instrument price history data.
+    
+    Yields:
+        MagicMock: A mock instance of YfinanceRepository with get_instrument_price_history returning instrument_price_history.
+    """
     with patch("modules.prices.services.YfinanceRepository") as mock_repo:
         mock_instance = MagicMock()
         mock_instance.get_instrument_price_history.return_value = (

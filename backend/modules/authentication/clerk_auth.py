@@ -64,6 +64,11 @@ def decode_token(token):
 
 
 def _parse_user_from_payload(payload) -> User:
+    """
+    Constructs a User object from a Clerk JWT payload.
+    
+    Extracts the user ID from the payload, retrieves the corresponding Clerk user (using cache when available), and populates a User instance with Clerk user data. Raises AuthenticationFailed if the user ID is missing or the Clerk user cannot be retrieved.
+    """
     user_id = payload.get("sub")
     if not user_id:
         raise AuthenticationFailed("User ID (sub) not found in token")
@@ -96,16 +101,18 @@ def _parse_user_from_payload(payload) -> User:
 
 def validate_token(token: str) -> User:
     """
-    Validates a Clerk JWT and returns the corresponding User object.
-
+    Validates a Clerk JWT and returns the associated User object.
+    
+    Decodes and verifies the provided JWT, then retrieves and constructs the corresponding User instance from the token payload. Raises AuthenticationFailed if the token is invalid or the user cannot be retrieved.
+    
     Args:
-        token (str): The JWT to validate.
-
+        token: The Clerk JWT to validate.
+    
     Returns:
-        User: The user associated with the token.
-
+        The User object corresponding to the validated token.
+    
     Raises:
-        AuthenticationFailed: If the token is invalid or user cannot be retrieved.
+        AuthenticationFailed: If validation fails or user retrieval is unsuccessful.
     """
     payload = decode_token(token)
     return _parse_user_from_payload(payload)
@@ -119,6 +126,12 @@ class ClerkAuthentication(BaseAuthentication):
     """
 
     def authenticate(self, request) -> tuple[User | None, str | None]:
+        """
+        Authenticates a request using a Clerk JWT from the Authorization header or session cookie.
+        
+        If a valid token is found, returns a tuple containing the authenticated User and the token.
+        Returns (None, None) if no valid token is present.
+        """
         auth_header = request.headers.get("Authorization")
 
         if not auth_header or not auth_header.startswith("Bearer "):

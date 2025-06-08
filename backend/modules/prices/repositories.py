@@ -19,19 +19,19 @@ class YfinanceRepository:
         interval: YFinanceTimeInterval,
     ) -> list[InstrumentPriceSchema]:
         """
-        Fetches historical price data for a specified financial instrument using the yfinance library.
-
+        Retrieves historical price data for a financial instrument within a specified date range and interval.
+        
         Args:
-            instrument (str): The ticker symbol of the instrument (e.g., "aapl").
-            start_date (datetime): The start of the time period to retrieve data for.
-            end_date (datetime): The end of the time period to retrieve data for.
-            interval (TimeInterval): The time interval for the historical data (e.g., "ONE_MINUTE", "ONE_DAY").
-
+            instrument: The ticker symbol of the financial instrument.
+            start_date: The start date for the historical data.
+            end_date: The end date for the historical data.
+            interval: The time interval for the historical data.
+        
         Returns:
-            list[InstrumentPriceSchema]: A list of Pydantic models containing the instrument's historical prices.
-
+            A list of InstrumentPriceSchema objects representing the instrument's historical prices.
+        
         Raises:
-            FetchPriceException: If the ticker is invalid or no data is returned.
+            FetchPriceException: If data retrieval fails or no data is available for the given ticker.
         """
         try:
             y_ticker = yfinance.Ticker(instrument.lower())

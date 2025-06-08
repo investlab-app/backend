@@ -48,6 +48,11 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:
+        """
+        Standardizes the decimal precision of all Decimal values in a record to a fixed number of places.
+        
+        Iterates through the input dictionary and quantizes any Decimal values to the configured number of decimal places. Returns the modified dictionary.
+        """
         for key in record:
             if isinstance(record[key], Decimal):
                 record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)

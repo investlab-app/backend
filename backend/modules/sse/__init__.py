@@ -16,6 +16,11 @@ live_prices = LivePrices()
 class SSERequestSerializer(serializers.Serializer):
     @override
     def to_internal_value(self, data):
+        """
+        Parses and normalizes the "symbols" field from the input data.
+        
+        If "symbols" is a comma-separated string, splits it into a list of trimmed symbol strings before validation.
+        """
         symbols = data.get("symbols")
         if isinstance(symbols, str):
             symbols = [s.strip() for s in symbols.split(",") if s.strip()]
@@ -43,6 +48,15 @@ class SSERequestParams(BaseModel):
 
 
 def parse_sse_request(data: dict) -> SSERequestParams:
+    """
+    Validates and parses incoming SSE subscription request data.
+    
+    Raises:
+        ValueError: If the input data fails validation.
+    
+    Returns:
+        An SSERequestParams instance containing the validated subscription parameters.
+    """
     serializer = SSERequestSerializer(data=data)
 
     if not serializer.is_valid():
@@ -52,6 +66,11 @@ def parse_sse_request(data: dict) -> SSERequestParams:
 
 
 def subscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
+    """
+    Registers a client's subscription to a set of stock symbols for live price updates.
+    
+    Increments the subscription count for each symbol, updates the client's set of subscribed symbols, and notifies the live price service to start streaming updates for the specified symbols.
+    """
     with _lock:
         for symbol in iter(symbols):
             subscriptions.setdefault(symbol, 0)
@@ -64,6 +83,11 @@ def subscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
 
 
 def unsubscribe(client_id: uuid.UUID, symbols: set[str]) -> None:
+    """
+    Removes a client's subscriptions to specified stock symbols.
+    
+    Decrements the subscription count for each symbol and removes the symbol from global tracking and live price updates if no clients remain subscribed. Updates the client's set of subscribed symbols, removing the client entirely if no subscriptions remain.
+    """
     with _lock:
         for symbol in iter(symbols):
             if symbol not in subscriptions:

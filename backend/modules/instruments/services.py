@@ -17,6 +17,9 @@ class PaginatedInstruments(TypedDict):
 
 class InstrumentsServiceMinimal:
     def __init__(self):
+        """
+        Initializes the InstrumentsServiceMinimal with a YfinanceRepository instance.
+        """
         self._repository = YfinanceRepository()
 
     def get_instruments_list(
@@ -30,19 +33,21 @@ class InstrumentsServiceMinimal:
         filter_industry: str | None = None,
     ) -> PaginatedInstruments:
         """
-        Retrieves a paginated, sorted, and filtered list of instruments.
-
+        Retrieves a paginated list of instruments with optional sorting and filtering.
+        
+        Filters instruments by sector and industry if specified, sorts by a given attribute in ascending or descending order, and returns the specified page of results along with pagination metadata.
+        
         Args:
-            tickers: List of ticker symbols to retrieve information for
-            page: Current page number (1-indexed)
-            page_size: Number of items per page
-            sort_by: Field to sort by (e.g., 'market_cap', 'current_price')
-            sort_direction: 'asc' or 'desc'
-            filter_sector: Filter by sector name
-            filter_industry: Filter by industry name
-
+            tickers: List of ticker symbols to retrieve instrument information for.
+            page: Page number to return (1-indexed).
+            page_size: Number of items per page.
+            sort_by: Attribute to sort by (e.g., 'market_cap', 'current_price').
+            sort_direction: Sort order, either 'asc' for ascending or 'desc' for descending.
+            filter_sector: Sector name to filter instruments by.
+            filter_industry: Industry name to filter instruments by.
+        
         Returns:
-            PaginatedInstruments: Paginated list of instruments with total count and page info
+            A PaginatedInstruments dictionary containing the paginated list of instruments and pagination details.
         """
         instruments = self._repository.get_instruments_info(tickers)
 
@@ -83,12 +88,12 @@ class InstrumentsServiceMinimal:
 
     def get_instrument_detailed_info(self, ticker: str) -> InstrumentDetailedInfoSchema:
         """
-        Retrieves detailed information for a single instrument.
-
+        Retrieves detailed information for a financial instrument by its ticker symbol.
+        
         Args:
-            ticker: Ticker symbol to retrieve information for
-
+            ticker: The ticker symbol identifying the instrument.
+        
         Returns:
-            InstrumentDetailedInfoSchema: Detailed instrument information
+            An object containing comprehensive details about the specified instrument.
         """
         return self._repository.get_instrument_detailed_info(ticker)

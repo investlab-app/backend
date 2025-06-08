@@ -41,6 +41,13 @@ ticker_info = {
 
 @pytest.fixture
 def mock_yfinance_ticker():
+    """
+    Pytest fixture that mocks the yfinance.Ticker class with predefined financial data.
+    
+    Yields:
+        A MagicMock instance simulating a yfinance.Ticker object, with methods and attributes
+        returning static DataFrames and metadata for consistent, network-free testing.
+    """
     with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()
         mock_instance.history.return_value = pd.DataFrame(

@@ -11,7 +11,9 @@ class TestSSEConsumerImpl:
     """Test cases for SSEConsumerImpl"""
 
     def test_initialization(self, consumer):
-        """Test that SSEConsumerImpl initializes correctly"""
+        """
+        Tests that SSEConsumerImpl initializes with a shutdown event, no connection ID, and the shutdown event unset.
+        """
         assert consumer.shutdown_event is not None
         assert isinstance(consumer.shutdown_event, asyncio.Event)
         assert consumer.connection_id is None
@@ -19,7 +21,9 @@ class TestSSEConsumerImpl:
 
     @pytest.mark.asyncio
     async def test_validate_auth_success(self):
-        """Test successful authentication validation"""
+        """
+        Tests that `_validate_auth` returns True when the external token validation succeeds.
+        """
         test_token = "valid_test_token"
 
         with patch(
@@ -36,7 +40,11 @@ class TestSSEConsumerImpl:
     async def test_live_prices_handler_success(
         self, consumer, mock_connection_id, mock_symbols, mock_prices
     ):
-        """Test live prices handler processes prices correctly"""
+        """
+        Tests that the live prices handler sends only subscribed symbols' prices to the client.
+        
+        Verifies that the handler filters out prices for symbols not in the client's subscription and that the event is sent with the correct data.
+        """
         consumer.connection_id = mock_connection_id
         consumer._send_event = AsyncMock()
 
@@ -64,7 +72,9 @@ class TestSSEConsumerImpl:
 
     @pytest.mark.asyncio
     async def test_live_prices_handler_no_connection_id(self, consumer, mock_prices):
-        """Test live prices handler when connection ID is not set"""
+        """
+        Tests that the live prices handler logs an error and performs no action when the connection ID is not set.
+        """
         consumer.connection_id = None
 
         with patch("logging.error") as mock_log_error:
@@ -78,7 +88,11 @@ class TestSSEConsumerImpl:
     async def test_handle_method_success(
         self, consumer, mock_connection_id, mock_symbols
     ):
-        """Test successful handle method execution"""
+        """
+        Tests that the handle method processes a valid request, registers subscriptions, adds the live prices handler, sets the connection ID, and logs the connection lifecycle as expected.
+        
+        Simulates a shutdown event to allow the handle coroutine to exit cleanly and verifies that all key operations are performed.
+        """
         mock_request_data = {
             "connectionId": str(mock_connection_id),
             "symbols": list(mock_symbols),
@@ -103,6 +117,11 @@ class TestSSEConsumerImpl:
             try:
                 # Create a task that will set the shutdown event after a short delay
                 async def trigger_shutdown():
+                    """
+                    Triggers the shutdown event after a brief delay.
+                    
+                    Waits for 0.1 seconds before setting the consumer's shutdown event to signal shutdown.
+                    """
                     await asyncio.sleep(0.1)
                     consumer.shutdown_event.set()
 
@@ -134,7 +153,11 @@ class TestSSEConsumerImpl:
     async def test_handle_method_with_cancellation(
         self, consumer, mock_connection_id, mock_symbols
     ):
-        """Test handle method handles cancellation gracefully"""
+        """
+        Tests that the handle method of SSEConsumerImpl handles task cancellation gracefully.
+        
+        Simulates cancellation of the handle coroutine and verifies that a CancelledError is raised and a debug log entry records the disconnection event.
+        """
         mock_request_data = {
             "connectionId": str(mock_connection_id),
             "symbols": list(mock_symbols),
@@ -157,6 +180,11 @@ class TestSSEConsumerImpl:
             try:
                 # Create a task that will cancel the handle task
                 async def cancel_task():
+                    """
+                    Cancels the running handle_task after a brief delay.
+                    
+                    Waits for 0.1 seconds before invoking cancellation on the handle_task.
+                    """
                     await asyncio.sleep(0.1)
                     handle_task.cancel()
 
@@ -183,7 +211,9 @@ class TestSSEConsumerImpl:
     async def test_disconnect_method_success(
         self, consumer, mock_connection_id, mock_symbols
     ):
-        """Test successful disconnect method execution"""
+        """
+        Tests that the disconnect method sets the shutdown event, unsubscribes the client, logs the disconnection, and calls the superclass disconnect method.
+        """
         consumer.connection_id = mock_connection_id
         consumer.shutdown_event = asyncio.Event()
 
@@ -218,7 +248,11 @@ class TestSSEConsumerImpl:
     async def test_disconnect_method_with_no_client_symbols(
         self, consumer, mock_connection_id
     ):
-        """Test disconnect method when no client symbols exist"""
+        """
+        Tests that the disconnect method unsubscribes a client with no active symbols and performs proper cleanup.
+        
+        Verifies that `unsubscribe` is called with an empty set, the shutdown event is set, logging occurs, and the superclass disconnect method is invoked when the client has no subscriptions.
+        """
         consumer.connection_id = mock_connection_id
         consumer.shutdown_event = asyncio.Event()
 
@@ -246,7 +280,11 @@ class TestSSEConsumerImpl:
     async def test_handle_method_with_empty_client_subscription(
         self, consumer, mock_connection_id, mock_symbols
     ):
-        """Test handle method when client has no active subscriptions"""
+        """
+        Tests that the handle method does not add a live price handler when the client has no active subscriptions.
+        
+        Verifies that subscription registration occurs, but no handler is added if the client's subscription set is empty.
+        """
         mock_request_data = {
             "connectionId": str(mock_connection_id),
             "symbols": list(mock_symbols),
@@ -270,6 +308,11 @@ class TestSSEConsumerImpl:
             try:
                 # Create a task that will set the shutdown event after a short delay
                 async def trigger_shutdown():
+                    """
+                    Triggers the shutdown event after a brief delay.
+                    
+                    Waits for 0.1 seconds before setting the consumer's shutdown event to signal shutdown.
+                    """
                     await asyncio.sleep(0.1)
                     consumer.shutdown_event.set()
 
@@ -294,7 +337,11 @@ class TestSSEConsumerImpl:
     async def test_live_prices_handler_filters_prices_correctly(
         self, consumer, mock_connection_id
     ):
-        """Test that live prices handler correctly filters prices based on client subscriptions"""
+        """
+        Tests that the live prices handler sends only prices for symbols the client is subscribed to.
+        
+        Verifies that when provided with a mix of subscribed and unsubscribed symbols, only the subscribed symbols' prices are included in the event sent to the client.
+        """
         consumer.connection_id = mock_connection_id
         consumer._send_event = AsyncMock()
 

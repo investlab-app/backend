@@ -12,6 +12,11 @@ from modules.sse import SSERequestSerializer, parse_sse_request, subscribe, unsu
 class SSESubscribeView(APIView):
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
+        """
+        Handles a PUT request to subscribe a client to Server-Sent Events (SSE) for specified symbols.
+        
+        Parses and validates the request data, registers the connection for the requested symbols, and returns a confirmation message. Returns a 400 Bad Request response if the request data is invalid.
+        """
         try:
             params = parse_sse_request(request.data)
         except ValueError as e:
@@ -33,6 +38,11 @@ class SSESubscribeView(APIView):
 class SSEUnsubscribeView(APIView):
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
+        """
+        Handles HTTP PUT requests to unsubscribe a client from specified SSE event symbols.
+        
+        Parses the request data to extract the connection ID and symbols, removes the subscription for those symbols, and returns a plain text confirmation response. Returns a 400 Bad Request if the request data is invalid.
+        """
         try:
             params = parse_sse_request(request.data)
         except ValueError as e:

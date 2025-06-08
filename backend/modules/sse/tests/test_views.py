@@ -20,6 +20,9 @@ class TestSSESubscribeView:
         mock_connection_id,
         mock_symbols,
     ):
+        """
+        Tests that a successful PUT request to the SSE subscribe endpoint results in correct parsing, subscription, logging, and a 200 OK response with a confirmation message.
+        """
         with (
             patch(
                 "modules.sse.views.parse_sse_request",
@@ -44,6 +47,11 @@ class TestSSESubscribeView:
             )
 
     def test_subscribe_put_invalid_data(self, api_client_auth):
+        """
+        Tests that a PUT request with invalid subscription data returns a 400 error response.
+        
+        Simulates a failure in parsing the request data by raising a ValueError, and verifies that the view responds with an appropriate error message and HTTP 400 status.
+        """
         invalid_data = {"symbols": "AAPL"}  # Missing connectionId
 
         with patch(
@@ -68,6 +76,11 @@ class TestSSEUnsubscribeView:
         mock_connection_id,
         mock_symbols,
     ):
+        """
+        Tests that a successful PUT request to the unsubscribe endpoint unsubscribes the client from specified symbols.
+        
+        Verifies that the request data is parsed, the unsubscribe function is called with the correct parameters, a debug log entry is made, and the response confirms successful unsubscription.
+        """
         with (
             patch(
                 "modules.sse.views.parse_sse_request",
@@ -92,6 +105,11 @@ class TestSSEUnsubscribeView:
             )
 
     def test_unsubscribe_put_invalid_data(self, api_client_auth):
+        """
+        Tests that a PUT request with invalid data to the SSE unsubscribe endpoint returns a 400 error.
+        
+        Verifies that when the request data is invalid and parsing fails, the view responds with an appropriate error message and status code.
+        """
         invalid_data = {}  # Empty data
 
         with patch(

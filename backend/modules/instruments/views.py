@@ -23,7 +23,9 @@ class InstrumentsListView(generics.GenericAPIView):
     )
     def get(self, request: Request) -> Response:
         """
-        Get a paginated, sorted, and filtered list of instruments.
+        Retrieves a paginated, sorted, and filtered list of instruments based on query parameters.
+        
+        Validates query parameters, processes ticker symbols, and fetches instrument data using the service layer. Returns a paginated response with instrument information or an error message if validation or data retrieval fails.
         """
         params = InstrumentsListQueryParams(data=request.query_params)
         if not params.is_valid():
@@ -88,7 +90,9 @@ class InstrumentDetailView(generics.GenericAPIView):
         self, request: Request, ticker: str
     ) -> Response:  # pylint: disable=unused-argument
         """
-        Get detailed information for a single instrument.
+        Retrieves detailed information for a specific instrument identified by its ticker symbol.
+        
+        Returns an HTTP 400 response if the instrument cannot be fetched, or an HTTP 500 response if data serialization fails. On success, returns the serialized instrument details.
         """
         service = InstrumentsServiceMinimal()
 
