@@ -34,9 +34,9 @@ def test_get_basic_instrument_info_empty_ticker(
 ):
     repo = YfinanceRepository()
     tickers = []
-    repo.get_instruments_info(tickers)
-    assert isinstance(tickers, list)
-    assert len(tickers) == 0
+    result = repo.get_instruments_info(tickers)
+    assert isinstance(result, list)
+    assert len(result) == 0
 
 
 def test_get_detailed_instrument_info_success(
