@@ -30,12 +30,13 @@ class YfinanceRepository:
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
         y_tickers = yfinance.Tickers(tickers_str)
 
-        try:
-            tickers_data = [
-                y_tickers.tickers[ticker.upper()].info for ticker in tickers
-            ]
-        except Exception as e:
-            raise FetchInstrumentInfoException(str(e)) from e
+        tickers_data = []
+
+        for ticker in tickers:
+            try:
+                tickers_data.append(y_tickers.tickers[ticker.upper()].info)
+            except Exception as e:
+                raise FetchInstrumentInfoException(f"Error fetching data for ticker: {ticker}, {str(e)}") from e
 
         return [YfinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
 
