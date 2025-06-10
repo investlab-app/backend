@@ -65,12 +65,9 @@ class InstrumentsListView(generics.GenericAPIView):
 
         validated = cast(dict, params.validated_data)  # pylint: disable=duplicate-code
 
+        raw_tickers = (validated.get("tickers") or "").split(",")
         tickers = list(
-            {
-                t.upper()
-                for t in (piece.strip() for piece in validated["tickers"].split(","))
-                if t
-            }
+            {t.upper() for t in (piece.strip() for piece in raw_tickers) if t}
         )
         service = InstrumentsServiceMinimal()
 
