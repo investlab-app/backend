@@ -1,6 +1,11 @@
 from django.urls import path, re_path
 
-from modules.instruments.views import InstrumentDetailView, InstrumentNewsView, InstrumentsListView, InstrumentsAvailableView
+from modules.instruments.views import (
+    InstrumentDetailView,
+    InstrumentNewsView,
+    InstrumentsAvailableView,
+    InstrumentsListView,
+)
 
 urlpatterns = [
     path(

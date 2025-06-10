@@ -41,13 +41,12 @@ class InstrumentDetailedInfoSchema(InstrumentBasicInfoSchema):
     analyst_recommendations: dict | None = None
 
 
-
-
 class NewsThumbnailResolution(BaseModel):
     url: str
     width: int
     height: int
     tag: str
+
 
 class NewsThumbnail(BaseModel):
     originalUrl: str
@@ -56,9 +55,11 @@ class NewsThumbnail(BaseModel):
     caption: str
     resolutions: list[NewsThumbnailResolution]
 
+
 class NewsProvider(BaseModel):
     displayName: str
     url: str
+
 
 class NewsUrl(BaseModel):
     url: str
@@ -66,15 +67,19 @@ class NewsUrl(BaseModel):
     region: str | None
     lang: str | None
 
+
 class NewsMetadata(BaseModel):
     editorsPick: bool
+
 
 class NewsPremiumFinance(BaseModel):
     isPremiumNews: bool
     isPremiumFreeNews: bool
 
+
 class NewsFinance(BaseModel):
     premiumFinance: NewsPremiumFinance
+
 
 class NewsContent(BaseModel):
     id: str
@@ -94,6 +99,7 @@ class NewsContent(BaseModel):
     metadata: NewsMetadata
     finance: NewsFinance
     storyline: dict | None
+
 
 class NewsItem(BaseModel):
     id: str

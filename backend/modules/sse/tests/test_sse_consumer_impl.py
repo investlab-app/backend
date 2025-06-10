@@ -88,7 +88,9 @@ class TestSSEConsumerImpl:
 
         with (
             patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
-            patch("modules.sse.sse_consumer_impl.live_prices.subscribe") as mock_subscribe,
+            patch(
+                "modules.sse.sse_consumer_impl.live_prices.subscribe"
+            ) as mock_subscribe,
             patch.object(consumer, "log") as mock_log,
         ):
 
@@ -100,7 +102,10 @@ class TestSSEConsumerImpl:
 
             # Setup clients dict to simulate successful subscription
             from modules.prices.schemas import ClientInfo
-            live_prices.clients[mock_connection_id] = ClientInfo(instruments=mock_symbols, handler=None)
+
+            live_prices.clients[mock_connection_id] = ClientInfo(
+                instruments=mock_symbols, handler=None
+            )
 
             try:
                 # Create a task that will set the shutdown event after a short delay
@@ -118,7 +123,9 @@ class TestSSEConsumerImpl:
 
                 # Verify all expected calls were made
                 mock_parse.assert_called_once_with(mock_request_data)
-                mock_subscribe.assert_called_once_with(mock_connection_id, mock_symbols, consumer.live_prices_handler)
+                mock_subscribe.assert_called_once_with(
+                    mock_connection_id, mock_symbols, consumer.live_prices_handler
+                )
 
                 # Verify connection_id was set
                 assert consumer.connection_id == mock_connection_id
@@ -154,7 +161,10 @@ class TestSSEConsumerImpl:
 
             # Setup clients dict with ClientInfo
             from modules.prices.schemas import ClientInfo
-            live_prices.clients[mock_connection_id] = ClientInfo(instruments=mock_symbols, handler=None)
+
+            live_prices.clients[mock_connection_id] = ClientInfo(
+                instruments=mock_symbols, handler=None
+            )
 
             try:
                 # Create a task that will cancel the handle task
@@ -191,7 +201,10 @@ class TestSSEConsumerImpl:
 
         # Setup clients dict with ClientInfo
         from modules.prices.schemas import ClientInfo
-        live_prices.clients[mock_connection_id] = ClientInfo(instruments=mock_symbols, handler=None)
+
+        live_prices.clients[mock_connection_id] = ClientInfo(
+            instruments=mock_symbols, handler=None
+        )
 
         with (
             patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
@@ -262,7 +275,10 @@ class TestSSEConsumerImpl:
 
             # Setup empty clients dict (no active subscriptions)
             from modules.prices.schemas import ClientInfo
-            live_prices.clients[mock_connection_id] = ClientInfo(instruments=set(), handler=None)
+
+            live_prices.clients[mock_connection_id] = ClientInfo(
+                instruments=set(), handler=None
+            )
 
             try:
                 # Create a task that will set the shutdown event after a short delay
@@ -279,7 +295,9 @@ class TestSSEConsumerImpl:
                 await shutdown_task
 
                 # Verify subscribe was called
-                mock_subscribe.assert_called_once_with(mock_connection_id, mock_symbols, consumer.live_prices_handler)
+                mock_subscribe.assert_called_once_with(
+                    mock_connection_id, mock_symbols, consumer.live_prices_handler
+                )
 
             finally:
                 # Cleanup

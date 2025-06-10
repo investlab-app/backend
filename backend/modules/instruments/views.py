@@ -6,7 +6,10 @@ from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.instruments.exceptions import FetchInstrumentInfoException, FetchInstrumentNewsException
+from modules.instruments.exceptions import (
+    FetchInstrumentInfoException,
+    FetchInstrumentNewsException,
+)
 from modules.instruments.serializers import (
     InstrumentDetailedInfoSerializer,
     InstrumentInfoSerializer,
@@ -101,7 +104,7 @@ class InstrumentDetailView(generics.GenericAPIView):
         responses=[InstrumentDetailedInfoSerializer],
     )
     def get(
-            self, request: Request, ticker: str
+        self, request: Request, ticker: str
     ) -> Response:  # pylint: disable=unused-argument
         """
         Get detailed information for a single instrument.
@@ -126,6 +129,7 @@ class InstrumentDetailView(generics.GenericAPIView):
             )
 
         return Response(serialized.data)
+
 
 class InstrumentNewsView(generics.GenericAPIView):
     def get(self, request: Request, ticker: str) -> Response:

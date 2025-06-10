@@ -119,8 +119,9 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         tasks = asyncio.all_tasks()
         logging.info(f"Current tasks in event loop: {len(tasks)}")
         for task in tasks:
-            logging.info(f"Task: {task.get_name()}, Done: {task.done()}, Cancelled: {task.cancelled()}")
-
+            logging.info(
+                f"Task: {task.get_name()}, Done: {task.done()}, Cancelled: {task.cancelled()}"
+            )
 
         event_data = f"event: {event}\ndata: {data}\n\n"
         logging.info("ATTENTION: CREATING TASK SEND BODY")

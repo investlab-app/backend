@@ -1,10 +1,13 @@
+import logging
 from datetime import datetime
 from decimal import Decimal
-import logging
 
 import yfinance
 
-from modules.instruments.exceptions import FetchInstrumentInfoException, FetchInstrumentNewsException
+from modules.instruments.exceptions import (
+    FetchInstrumentInfoException,
+    FetchInstrumentNewsException,
+)
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
@@ -243,7 +246,6 @@ class YfinanceRepository:
         ticker = yfinance.Ticker(ticker)
 
         logging.info(f"Ticker news: {ticker.news[:100]}")
-
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]

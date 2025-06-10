@@ -12,7 +12,9 @@ class InstrumentPriceSchema(BaseModel):
     low: Decimal
     close: Decimal
 
+
 type PriceUpdateHandler = Callable[[dict[str, float]], None]
+
 
 class ClientInfo(BaseModel):
     instruments: set[str]
