@@ -21,8 +21,20 @@ from modules.instruments.services import InstrumentsServiceMinimal
 
 class InstrumentsAvailableView(generics.GenericAPIView):
     @extend_schema(
-        responses=[PaginatedInstrumentsResponseSerializer],
-    )
+-       responses=[PaginatedInstrumentsResponseSerializer],
+-   )
++       responses={
++           "200": {
++               "type": "object",
++               "properties": {
++                   "instruments": {
++                       "type": "array",
++                       "items": {"type": "string"}
++                   }
++               }
++           }
++       },
++   )
     def get(self, request: Request) -> Response:
         """
         Get a list of some available instruments (from S&P 500 for 6/9/2025).
