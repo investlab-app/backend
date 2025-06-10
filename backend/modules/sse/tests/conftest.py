@@ -3,7 +3,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from modules.sse import SSERequestParams
+from modules.sse.schemas import SSERequestParams
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 

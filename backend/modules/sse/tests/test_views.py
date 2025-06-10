@@ -22,10 +22,10 @@ class TestSSESubscribeView:
     ):
         with (
             patch(
-                "modules.sse.views.SSERequestParams.parse",
+                "modules.sse.schemas.SSERequestParams.parse",
                 return_value=mock_parsed_params,
             ) as mock_parse,
-            patch("modules.sse.views.subscribe") as mock_subscribe,
+            patch("modules.sse.live_prices.subscribe") as mock_subscribe,
             patch("modules.sse.views.logging.debug") as mock_logging_debug,
         ):
 
@@ -47,7 +47,7 @@ class TestSSESubscribeView:
         invalid_data = {"symbols": "AAPL"}  # Missing connectionId
 
         with patch(
-            "modules.sse.views.SSERequestParams.parse",
+            "modules.sse.schemas.SSERequestParams.parse",
             side_effect=ValueError("Invalid data"),
         ) as mock_parse:
 
@@ -70,10 +70,10 @@ class TestSSEUnsubscribeView:
     ):
         with (
             patch(
-                "modules.sse.views.SSERequestParams.parse",
+                "modules.sse.schemas.SSERequestParams.parse",
                 return_value=mock_parsed_params,
             ) as mock_parse,
-            patch("modules.sse.views.unsubscribe") as mock_unsubscribe,
+            patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
             patch("modules.sse.views.logging.debug") as mock_logging_debug,
         ):
 
@@ -95,7 +95,7 @@ class TestSSEUnsubscribeView:
         invalid_data = {}  # Empty data
 
         with patch(
-            "modules.sse.views.SSERequestParams.parse",
+            "modules.sse.schemas.SSERequestParams.parse",
             side_effect=ValueError("Invalid data"),
         ) as mock_parse:
             url = reverse("sse-unsubscribe")

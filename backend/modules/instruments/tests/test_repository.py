@@ -11,7 +11,7 @@ from modules.instruments.schemas import (
 from modules.prices.tests.conftest import mock_yfinance_empty_history_ticker
 
 
-def test_get_basic_instrument_info_success(mock_yfinance_ticker):
+def test_get_basic_instrument_info_success(mock_yfinance_tickers):
     repo = YfinanceRepository()
     tickers = ["AAPL", "MSFT"]
     result = repo.get_instruments_info(tickers)

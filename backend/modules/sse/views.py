@@ -6,8 +6,9 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from modules.sse.serializers import SSERequestSerializer
 from modules.sse.schemas import SSERequestParams
-from modules.sse import SSERequestSerializer, live_prices
+from modules.sse import live_prices
 
 
 class SSESubscribeView(APIView):
