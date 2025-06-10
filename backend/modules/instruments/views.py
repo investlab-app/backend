@@ -21,8 +21,20 @@ from modules.instruments.services import InstrumentsServiceMinimal
 
 class InstrumentsAvailableView(generics.GenericAPIView):
     @extend_schema(
-        responses=[PaginatedInstrumentsResponseSerializer],
-    )
+-       responses=[PaginatedInstrumentsResponseSerializer],
+-   )
++       responses={
++           "200": {
++               "type": "object",
++               "properties": {
++                   "instruments": {
++                       "type": "array",
++                       "items": {"type": "string"}
++                   }
++               }
++           }
++       },
++   )
     def get(self, request: Request) -> Response:
         """
         Get a list of some available instruments (from S&P 500 for 6/9/2025).
@@ -53,12 +65,9 @@ class InstrumentsListView(generics.GenericAPIView):
 
         validated = cast(dict, params.validated_data)  # pylint: disable=duplicate-code
 
+        raw_tickers = (validated.get("tickers") or "").split(",")
         tickers = list(
-            {
-                t.upper()
-                for t in (piece.strip() for piece in validated["tickers"].split(","))
-                if t
-            }
+            {t.upper() for t in (piece.strip() for piece in raw_tickers) if t}
         )
         service = InstrumentsServiceMinimal()
 
