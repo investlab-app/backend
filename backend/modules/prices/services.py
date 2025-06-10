@@ -194,14 +194,12 @@ class LivePrices:
     def message_handler(self, prices):
         logging.debug(f"Handling price update: {prices}")
 
-        print(prices['id'])
-
         handlers = [
             handler
             for client in self._clients.values()
             if (handler := client.handler)
             and client.instruments
-            and prices['id'] in client.instruments
+            and prices["id"] in client.instruments
         ]
 
         print(handlers)
