@@ -2,6 +2,7 @@ from datetime import datetime
 
 import pytest
 
+from modules.instruments.tests.conftest import mock_yfinance_ticker
 from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import FetchPriceException
 from modules.prices.repositories import YfinanceRepository

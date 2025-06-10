@@ -63,6 +63,13 @@ disable = [
     "C0415", # import-outside-toplevel
     "C0301", # line-too-long
     "W0223", # abstract-method
+    "W1203", # logging-fstring-interpolation
+    "C0411", # wrong-import-order
+    "R0913", # too-many-arguments
+    "R0917", # too-many-positional-arguments
+    "W0718", # broad-exception-caught
+    "W0613", # unused-argument
+    "C0413", # wrong-import-position
 ]
 ignore = ["migrations"]
 load-plugins = ["pylint_pytest"]
@@ -71,4 +78,6 @@ load-plugins = ["pylint_pytest"]
 disable = [
     "C0116", # missing-function-docstring
     "W0611", # unused-import
+    "W0212", # protected-access
+
 ]
