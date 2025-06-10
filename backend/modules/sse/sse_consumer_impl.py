@@ -26,13 +26,6 @@ class SSEConsumerImpl(SSEConsumer):
             logging.error("Connection ID is not set, cannot handle live prices.")
             return
 
-        # Filter prices based on client subscriptions
-        client_symbols = (
-            live_prices.get_clients()
-            .get(self.connection_id, ClientInfo.empty())
-            .instruments
-        )
-
         self.send_event("price_update", str(prices))
 
     @staticmethod
