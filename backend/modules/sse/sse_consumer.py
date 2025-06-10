@@ -124,7 +124,6 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
             )
 
         event_data = f"event: {event}\ndata: {data}\n\n"
-        logging.info("ATTENTION: CREATING TASK SEND BODY")
         asyncio.create_task(self.send_body(event_data.encode("utf-8"), more_body=True))
 
     @override

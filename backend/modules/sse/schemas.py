@@ -19,4 +19,6 @@ class SSERequestParams(BaseModel):
         if not serializer.is_valid():
             raise ValueError(f"Invalid SSE request data: {serializer.errors}")
 
-        return SSERequestParams.model_validate(serializer.validated_data)
+        validated_data = serializer.validated_data.copy()
+        validated_data["symbols"] = set(validated_data["symbols"])
+        return SSERequestParams.model_validate(validated_data)

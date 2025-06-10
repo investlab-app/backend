@@ -4,7 +4,7 @@ from modules.prices.constants import YFinanceTimeInterval
 from modules.prices.exceptions import InvalidTimeIntervalException
 
 logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s"
+    level=logging.DEBUG, format="%(asctime)s - %(levelname)s - %(message)s"
 )
 
 

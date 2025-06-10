@@ -19,7 +19,7 @@ class SSEConsumerImpl(SSEConsumer):
         self.shutdown_event = asyncio.Event()
         self.connection_id: uuid.UUID | None = None
 
-    async def live_prices_handler(self, prices: dict[str, Any]) -> None:
+    def live_prices_handler(self, prices: dict[str, Any]) -> None:
         logging.debug(f"Live prices handler called with prices: {prices}")
 
         if not self.connection_id:
@@ -27,17 +27,13 @@ class SSEConsumerImpl(SSEConsumer):
             return
 
         # Filter prices based on client subscriptions
-        client_symbols = live_prices.clients.get(
-            self.connection_id, ClientInfo.empty()
-        ).instruments
-        filtered_prices = {
-            symbol: price
-            for symbol, price in prices.items()
-            if symbol in client_symbols
-        }
+        client_symbols = (
+            live_prices.get_clients()
+            .get(self.connection_id, ClientInfo.empty())
+            .instruments
+        )
 
-        if filtered_prices:
-            await self.send_event("price_update", str(filtered_prices))
+        self.send_event("price_update", str(prices))
 
     @staticmethod
     @override

@@ -21,7 +21,7 @@ class YfinanceRepository:
         tickers: list[str],
     ) -> list[InstrumentBasicInfoSchema]:
         """
-        Fetches basic information for multiple instruments.
+        Fetches basic information for multiple instruments in a single batch request.
 
         Args:
             tickers (list[str]): List of ticker symbols to fetch information for.
@@ -38,11 +38,12 @@ class YfinanceRepository:
         tickers_data = []
         tickers_errors = []
 
-        for ticker in tickers:
+        # Use batch-fetched data from y_tickers.tickers.values()
+        for ticker_obj in y_tickers.tickers.values():
             try:
-                tickers_data.append(y_tickers.tickers[ticker.upper()].info)
+                tickers_data.append(ticker_obj.info)
             except Exception:
-                tickers_errors.append(ticker)
+                tickers_errors.append(ticker_obj.ticker)
 
         if tickers_errors:
             raise FetchInstrumentInfoException(
@@ -84,17 +85,17 @@ class YfinanceRepository:
             name=ticker_info.get("shortName", ticker_symbol.upper()),
             currency=ticker_info.get("currency", "USD"),
             current_price=(
-                Decimal(str(ticker_info.get("currentPrice", 0)))
+                Decimal(str(ticker_info["currentPrice"]))
                 if ticker_info.get("currentPrice") is not None
                 else None
             ),
             previous_close=(
-                Decimal(str(ticker_info.get("previousClose", 0)))
+                Decimal(str(ticker_info["previousClose"]))
                 if ticker_info.get("previousClose") is not None
                 else None
             ),
             market_cap=(
-                Decimal(str(ticker_info.get("marketCap", 0)))
+                Decimal(str(ticker_info["marketCap"]))
                 if ticker_info.get("marketCap") is not None
                 else None
             ),
@@ -136,27 +137,27 @@ class YfinanceRepository:
             logo_url=ticker_info.get("logo_url"),
             exchange=ticker_info.get("exchange"),
             fifty_two_week_low=(
-                Decimal(str(ticker_info.get("fiftyTwoWeekLow", 0)))
+                Decimal(str(ticker_info["fiftyTwoWeekLow"]))
                 if ticker_info.get("fiftyTwoWeekLow") is not None
                 else None
             ),
             fifty_two_week_high=(
-                Decimal(str(ticker_info.get("fiftyTwoWeekHigh", 0)))
+                Decimal(str(ticker_info["fiftyTwoWeekHigh"]))
                 if ticker_info.get("fiftyTwoWeekHigh") is not None
                 else None
             ),
             trailing_pe=(
-                Decimal(str(ticker_info.get("trailingPE", 0)))
+                Decimal(str(ticker_info["trailingPE"]))
                 if ticker_info.get("trailingPE") is not None
                 else None
             ),
             forward_pe=(
-                Decimal(str(ticker_info.get("forwardPE", 0)))
+                Decimal(str(ticker_info["forwardPE"]))
                 if ticker_info.get("forwardPE") is not None
                 else None
             ),
             dividend_yield=(
-                Decimal(str(ticker_info.get("dividendYield", 0)))
+                Decimal(str(ticker_info["dividendYield"]))
                 if ticker_info.get("dividendYield") is not None
                 else None
             ),

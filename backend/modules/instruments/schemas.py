@@ -7,9 +7,9 @@ from pydantic import BaseModel
 class InstrumentBasicInfoSchema(BaseModel):
     """Basic information about an instrument, suitable for table views."""
 
-    ticker: str
-    name: str
-    currency: str
+    ticker: str | None = None
+    name: str | None = None
+    currency: str | None = None
     current_price: Decimal | None = None
     previous_close: Decimal | None = None
     day_change: Decimal | None = None
@@ -42,65 +42,65 @@ class InstrumentDetailedInfoSchema(InstrumentBasicInfoSchema):
 
 
 class NewsThumbnailResolution(BaseModel):
-    url: str
-    width: int
-    height: int
-    tag: str
+    url: str | None = None
+    width: int | None = None
+    height: int | None = None
+    tag: str | None = None
 
 
 class NewsThumbnail(BaseModel):
-    originalUrl: str
-    originalWidth: int
-    originalHeight: int
-    caption: str
-    resolutions: list[NewsThumbnailResolution]
+    originalUrl: str | None = None
+    originalWidth: int | None = None
+    originalHeight: int | None = None
+    caption: str | None = None
+    resolutions: list[NewsThumbnailResolution] | None = None
 
 
 class NewsProvider(BaseModel):
-    displayName: str
-    url: str
+    displayName: str | None = None
+    url: str | None = None
 
 
 class NewsUrl(BaseModel):
-    url: str
-    site: str | None
-    region: str | None
-    lang: str | None
+    url: str | None = None
+    site: str | None = None
+    region: str | None = None
+    lang: str | None = None
 
 
 class NewsMetadata(BaseModel):
-    editorsPick: bool
+    editorsPick: bool | None = None
 
 
 class NewsPremiumFinance(BaseModel):
-    isPremiumNews: bool
-    isPremiumFreeNews: bool
+    isPremiumNews: bool | None = None
+    isPremiumFreeNews: bool | None = None
 
 
 class NewsFinance(BaseModel):
-    premiumFinance: NewsPremiumFinance
+    premiumFinance: NewsPremiumFinance | None = None
 
 
 class NewsContent(BaseModel):
-    id: str
-    contentType: str
-    title: str
-    description: str
-    summary: str
-    pubDate: datetime
-    displayTime: str
-    isHosted: bool
-    bypassModal: bool
-    previewUrl: str | None
-    thumbnail: NewsThumbnail | None
-    provider: NewsProvider
-    canonicalUrl: NewsUrl
-    clickThroughUrl: NewsUrl
-    metadata: NewsMetadata
-    finance: NewsFinance
-    storyline: dict | None
+    id: str | None = None
+    contentType: str | None = None
+    title: str | None = None
+    description: str | None = None
+    summary: str | None = None
+    pubDate: datetime | None = None
+    displayTime: str | None = None
+    isHosted: bool | None = None
+    bypassModal: bool | None = None
+    previewUrl: str | None = None
+    thumbnail: NewsThumbnail | None = None
+    provider: NewsProvider | None = None
+    canonicalUrl: NewsUrl | None = None
+    clickThroughUrl: NewsUrl | None = None
+    metadata: NewsMetadata | None = None
+    finance: NewsFinance | None = None
+    storyline: dict | None = None
 
 
 class NewsItem(BaseModel):
-    id: str
-    content: NewsContent
+    id: str | None = None
+    content: NewsContent | None = None

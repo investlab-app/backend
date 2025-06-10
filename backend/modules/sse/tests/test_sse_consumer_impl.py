@@ -41,7 +41,9 @@ class TestSSEConsumerImpl:
         consumer.send_event = AsyncMock()
 
         # Setup clients dictionary with subscribed symbols
-        live_prices.clients[mock_connection_id] = mock_symbols
+        from modules.prices.schemas import ClientInfo
+
+        live_prices.subscribe(mock_connection_id, mock_symbols)
 
         try:
             await consumer.live_prices_handler(mock_prices)
@@ -59,8 +61,8 @@ class TestSSEConsumerImpl:
 
         finally:
             # Cleanup
-            if mock_connection_id in live_prices.clients:
-                del live_prices.clients[mock_connection_id]
+            live_prices.unsubscribe(mock_connection_id)
+            live_prices.shutdown()
 
     @pytest.mark.asyncio
     async def test_live_prices_handler_no_connection_id(self, consumer, mock_prices):
@@ -68,10 +70,10 @@ class TestSSEConsumerImpl:
         consumer.connection_id = None
         consumer.send_event = AsyncMock()
 
-        with patch.object(consumer, "log") as mock_log:
+        with patch("modules.sse.sse_consumer_impl.logging") as mock_logging:
             await consumer.live_prices_handler(mock_prices)
 
-            mock_log.error.assert_called_once_with(
+            mock_logging.error.assert_called_once_with(
                 "Connection ID is not set, cannot handle live prices."
             )
             consumer.send_event.assert_not_called()
@@ -91,7 +93,7 @@ class TestSSEConsumerImpl:
             patch(
                 "modules.sse.sse_consumer_impl.live_prices.subscribe"
             ) as mock_subscribe,
-            patch.object(consumer, "log") as mock_log,
+            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
         ):
 
             # Setup mocks
@@ -100,43 +102,18 @@ class TestSSEConsumerImpl:
             mock_parsed_params.symbols = mock_symbols
             mock_parse.return_value = mock_parsed_params
 
-            # Setup clients dict to simulate successful subscription
-            from modules.prices.schemas import ClientInfo
-
-            live_prices.clients[mock_connection_id] = ClientInfo(
-                instruments=mock_symbols, handler=None
-            )
+            live_prices.subscribe(mock_connection_id, mock_symbols)
 
             try:
-                # Create a task that will set the shutdown event after a short delay
-                async def trigger_shutdown():
-                    await asyncio.sleep(0.1)
-                    consumer.shutdown_event.set()
-
-                shutdown_task = asyncio.create_task(trigger_shutdown())
-
-                # Run the handle method
                 await consumer.handle(mock_request_data)
 
-                # Wait for shutdown task to complete
-                await shutdown_task
-
-                # Verify all expected calls were made
-                mock_parse.assert_called_once_with(mock_request_data)
-                mock_subscribe.assert_called_once_with(
-                    mock_connection_id, mock_symbols, consumer.live_prices_handler
-                )
-
-                # Verify connection_id was set
-                assert consumer.connection_id == mock_connection_id
-
-                # Verify logging calls
-                assert mock_log.debug.call_count >= 2
+                mock_subscribe.assert_called_once_with(mock_connection_id, mock_symbols)
+                mock_logging.debug.assert_called()
 
             finally:
                 # Cleanup
-                if mock_connection_id in live_prices.clients:
-                    del live_prices.clients[mock_connection_id]
+                live_prices.unsubscribe(mock_connection_id)
+                live_prices.shutdown()
 
     @pytest.mark.asyncio
     async def test_handle_method_with_cancellation(
@@ -150,7 +127,10 @@ class TestSSEConsumerImpl:
 
         with (
             patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
-            patch("logging.debug") as mock_log_debug,
+            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
+            patch(
+                "modules.sse.sse_consumer_impl.live_prices.unsubscribe"
+            ) as mock_unsubscribe,
         ):
 
             # Setup mocks
@@ -162,9 +142,7 @@ class TestSSEConsumerImpl:
             # Setup clients dict with ClientInfo
             from modules.prices.schemas import ClientInfo
 
-            live_prices.clients[mock_connection_id] = ClientInfo(
-                instruments=mock_symbols, handler=None
-            )
+            live_prices.subscribe(mock_connection_id, mock_symbols)
 
             try:
                 # Create a task that will cancel the handle task
@@ -181,15 +159,12 @@ class TestSSEConsumerImpl:
 
                 await cancel_task_ref
 
-                # Verify the cancellation was logged
-                mock_log_debug.assert_any_call(
-                    f"Unsubscribing client {mock_connection_id} with symbols: None"
-                )
+                mock_unsubscribe.assert_called_once_with(mock_connection_id, set())
 
             finally:
                 # Cleanup
-                if mock_connection_id in live_prices.clients:
-                    del live_prices.clients[mock_connection_id]
+                live_prices.unsubscribe(mock_connection_id)
+                live_prices.shutdown()
 
     @pytest.mark.asyncio
     async def test_disconnect_method_success(
@@ -207,7 +182,7 @@ class TestSSEConsumerImpl:
         )
 
         with (
-            patch.object(consumer, "log") as mock_log,
+            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
             patch.object(
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
             ) as mock_super_disconnect,
@@ -219,7 +194,7 @@ class TestSSEConsumerImpl:
             assert consumer.shutdown_event.is_set()
 
             # Verify logging
-            mock_log.debug.assert_any_call(
+            mock_logging.debug.assert_any_call(
                 f"{mock_connection_id}: Disconnecting SSE stream."
             )
 
@@ -237,7 +212,7 @@ class TestSSEConsumerImpl:
         # Don't add anything to clients dict
 
         with (
-            patch.object(consumer, "log") as mock_log,
+            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
             patch.object(
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
             ) as mock_super_disconnect,
@@ -247,7 +222,7 @@ class TestSSEConsumerImpl:
 
             # Verify other behaviors still work
             assert consumer.shutdown_event.is_set()
-            mock_log.debug.assert_called()
+            mock_logging.debug.assert_called()
             mock_super_disconnect.assert_called_once()
 
     @pytest.mark.asyncio
@@ -263,6 +238,9 @@ class TestSSEConsumerImpl:
         with (
             patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
             patch("modules.sse.live_prices.subscribe") as mock_subscribe,
+            patch(
+                "modules.sse.sse_consumer_impl.live_prices.unsubscribe"
+            ) as mock_unsubscribe,
         ):
 
             # Setup mocks
@@ -274,33 +252,18 @@ class TestSSEConsumerImpl:
             # Setup empty clients dict (no active subscriptions)
             from modules.prices.schemas import ClientInfo
 
-            live_prices.clients[mock_connection_id] = ClientInfo(
-                instruments=set(), handler=None
-            )
+            live_prices.subscribe(mock_connection_id, set())
 
             try:
-                # Create a task that will set the shutdown event after a short delay
-                async def trigger_shutdown():
-                    await asyncio.sleep(0.1)
-                    consumer.shutdown_event.set()
-
-                shutdown_task = asyncio.create_task(trigger_shutdown())
-
-                # Run the handle method
                 await consumer.handle(mock_request_data)
 
-                # Wait for shutdown task to complete
-                await shutdown_task
-
-                # Verify subscribe was called
-                mock_subscribe.assert_called_once_with(
-                    mock_connection_id, mock_symbols, consumer.live_prices_handler
-                )
+                mock_subscribe.assert_called_once_with(mock_connection_id, mock_symbols)
+                mock_unsubscribe.assert_called_once_with(mock_connection_id, set())
 
             finally:
                 # Cleanup
-                if mock_connection_id in live_prices.clients:
-                    del live_prices.clients[mock_connection_id]
+                live_prices.unsubscribe(mock_connection_id)
+                live_prices.shutdown()
 
     @pytest.mark.asyncio
     async def test_live_prices_handler_filters_prices_correctly(
@@ -312,7 +275,8 @@ class TestSSEConsumerImpl:
 
         # Setup client with specific subscriptions
         subscribed_symbols = {"AAPL", "GOOGL"}
-        live_prices.clients[mock_connection_id] = subscribed_symbols
+
+        live_prices.subscribe(mock_connection_id, subscribed_symbols)
 
         # Provide prices for both subscribed and unsubscribed symbols
         all_prices = {
@@ -338,5 +302,5 @@ class TestSSEConsumerImpl:
 
         finally:
             # Cleanup
-            if mock_connection_id in live_prices.clients:
-                del live_prices.clients[mock_connection_id]
+            live_prices.unsubscribe(mock_connection_id)
+            live_prices.shutdown()

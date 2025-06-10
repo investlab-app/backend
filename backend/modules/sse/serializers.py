@@ -5,11 +5,12 @@ from typing_extensions import override
 class SSERequestSerializer(serializers.Serializer):
     @override
     def to_internal_value(self, data):
-        symbols = data.get("symbols")
+        data_copy = data.copy()
+        symbols = data_copy.get("symbols")
         if isinstance(symbols, str):
             symbols = [s.strip() for s in symbols.split(",") if s.strip()]
-        data["symbols"] = symbols
-        return super().to_internal_value(data)
+        data_copy["symbols"] = symbols
+        return super().to_internal_value(data_copy)
 
     symbols = serializers.ListField(
         child=serializers.CharField(

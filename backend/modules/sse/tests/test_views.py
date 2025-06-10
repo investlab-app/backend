@@ -1,9 +1,9 @@
 from unittest.mock import patch
 
 import pytest
-from django.http import HttpResponse
 from django.urls import reverse
 from rest_framework import status
+from rest_framework.response import Response
 
 from modules.core.tests.conftest import api_client_auth
 from modules.users.tests.conftest import user
@@ -38,10 +38,10 @@ class TestSSESubscribeView:
                 f"{mock_connection_id}: Subscribed to symbols: {mock_symbols}"
             )
             assert response.status_code == status.HTTP_200_OK
-            assert isinstance(response, HttpResponse)
-            assert (
-                response.content.decode() == f"Subscribed to new events: {mock_symbols}"
-            )
+            assert isinstance(response, Response)
+            assert response.data == {
+                "message": f"Subscribed to new events: {mock_symbols}"
+            }
 
     def test_subscribe_put_invalid_data(self, api_client_auth):
         invalid_data = {"symbols": "AAPL"}  # Missing connectionId
@@ -86,10 +86,10 @@ class TestSSEUnsubscribeView:
                 f"{mock_connection_id}: Unsubscribed from symbols: {mock_symbols}"
             )
             assert response.status_code == status.HTTP_200_OK
-            assert isinstance(response, HttpResponse)
-            assert (
-                response.content.decode() == f"Unsubscribed from events: {mock_symbols}"
-            )
+            assert isinstance(response, Response)
+            assert response.data == {
+                "message": f"Unsubscribed from events: {mock_symbols}"
+            }
 
     def test_unsubscribe_put_invalid_data(self, api_client_auth):
         invalid_data = {}  # Empty data

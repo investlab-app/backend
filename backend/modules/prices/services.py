@@ -71,9 +71,18 @@ class LivePrices:
         self._running = False
         self._lock = threading.Lock()
         self._start_background_loop()
-        self.instruments: set[str] = set()
-        self.subscriptions: dict[str, int] = {}
-        self.clients: dict[uuid.UUID, ClientInfo] = {}
+        self._instruments: set[str] = set()
+        self._subscriptions: dict[str, int] = {}
+        self._clients: dict[uuid.UUID, ClientInfo] = {}
+
+    def get_instruments(self) -> set[str]:
+        return self._instruments.copy()
+
+    def get_subscriptions(self) -> dict[str, int]:
+        return self._subscriptions.copy()
+
+    def get_clients(self) -> dict[uuid.UUID, ClientInfo]:
+        return self._clients.copy()
 
     def subscribe(
         self,
@@ -81,54 +90,57 @@ class LivePrices:
         symbols: set[str],
         handler: PriceUpdateHandler | None = None,
     ) -> None:
-        with self._lock:
-            logging.debug(f"Subscribing client {client_id} to symbols: {symbols}")
+        logging.debug(f"Subscribing client {client_id} to symbols: {symbols}")
 
-            for symbol in iter(symbols):
-                self.subscriptions.setdefault(symbol, 0)
-                self.subscriptions[symbol] += 1
+        for symbol in iter(symbols):
+            self._subscriptions.setdefault(symbol, 0)
+            self._subscriptions[symbol] += 1
 
-            client_info = self.clients.get(client_id, ClientInfo.empty())
+        client_info = self._clients.get(client_id, ClientInfo.empty())
 
-            self.clients.update(
-                {
-                    client_id: ClientInfo(
-                        instruments=client_info.instruments | symbols,
-                        handler=handler if handler else client_info.handler,
-                    )
-                }
-            )
+        self._clients.update(
+            {
+                client_id: ClientInfo(
+                    instruments=client_info.instruments | symbols,
+                    handler=handler if handler else client_info.handler,
+                )
+            }
+        )
 
-            self._add_instruments(symbols)
+        self._add_instruments(symbols)
 
     def unsubscribe(
         self, client_id: uuid.UUID, symbols: set[str] | None = None
     ) -> None:
-        with self._lock:
-            logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
+        logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
 
-            instruments = (
-                symbols
-                if symbols
-                else self.clients.get(client_id, ClientInfo.empty()).instruments
-            )
+        instruments = (
+            symbols
+            if symbols
+            else self._clients.get(client_id, ClientInfo.empty()).instruments
+        )
 
-            for instrument in iter(instruments):
-                if instrument not in self.subscriptions:
-                    continue
-                if self.subscriptions[instrument] > 1:
-                    self.subscriptions[instrument] -= 1
-                else:
-                    del self.subscriptions[instrument]
-                    self._remove_instruments({instrument})
+        for instrument in iter(instruments):
+            if instrument not in self._subscriptions:
+                continue
+            if self._subscriptions[instrument] > 1:
+                self._subscriptions[instrument] -= 1
+            else:
+                del self._subscriptions[instrument]
+                self._remove_instruments({instrument})
 
-            client_symbols = self.clients.get(client_id, ClientInfo.empty()).instruments
+        client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
 
+        if symbols is None:
+            # If symbols is None, remove all subscriptions for this client
+            self._clients.pop(client_id, None)
+        else:
+            # Otherwise, remove only the specified symbols
             remaining = client_symbols - symbols
             if remaining:
-                self.clients[client_id].instruments = remaining
+                self._clients[client_id].instruments = remaining
             else:
-                self.clients.pop(client_id, None)
+                self._clients.pop(client_id, None)
 
     def _start_background_loop(self) -> None:
         def run_loop():
@@ -152,19 +164,20 @@ class LivePrices:
         return None
 
     def _add_instruments(self, instruments: set[str]) -> None:
-        logging.debug(f"Adding instruments: {instruments}")
-        self.instruments.update(self.instruments | instruments)
+        with self._lock:
+            logging.debug(f"Adding instruments: {instruments}")
+            self._instruments.update(instruments)
 
-        if not self._running and self.instruments:
-            print(f"Starting live price fetching for instruments: {self.instruments}")
-            self._schedule_coroutine(self._start_fetching())
+            if not self._running and self._instruments:
+                self._schedule_coroutine(self._start_fetching())
 
     def _remove_instruments(self, instruments: set[str]) -> None:
-        logging.debug(f"Removing instruments: {instruments}")
-        self.instruments.difference_update(instruments)
+        with self._lock:
+            logging.debug(f"Removing instruments: {instruments}")
+            self._instruments.difference_update(instruments)
 
-        if not self.instruments and self._running:
-            self._schedule_coroutine(self._stop_fetching())
+            if not self._instruments and self._running:
+                self._schedule_coroutine(self._stop_fetching())
 
     async def _start_fetching(self):
         if self._running:
@@ -181,11 +194,17 @@ class LivePrices:
     def message_handler(self, prices):
         logging.debug(f"Handling price update: {prices}")
 
+        print(prices['id'])
+
         handlers = [
             handler
-            for client in self.clients.values()
-            if (handler := client.handler) is not None
+            for client in self._clients.values()
+            if (handler := client.handler)
+            and client.instruments
+            and prices['id'] in client.instruments
         ]
+
+        print(handlers)
 
         for handler in handlers:
             try:
@@ -208,7 +227,10 @@ class LivePrices:
 
         try:
             async with yfinance.AsyncWebSocket() as ws:
-                await ws.subscribe(list(self.instruments))
+                # Get a copy of instruments while holding the lock
+                with self._lock:
+                    instruments_to_subscribe = list(self._instruments)
+                await ws.subscribe(instruments_to_subscribe)
                 await ws.listen(self.message_handler)
         except Exception as e:
             logging.error(f"Error in fetch loop: {e}")
