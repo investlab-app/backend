@@ -136,6 +136,17 @@ class InstrumentDetailView(generics.GenericAPIView):
 
 
 class InstrumentNewsView(generics.GenericAPIView):
+    @extend_schema(
+        responses={
+            "200": {
+                "type": "array",
+                "items": {
+                    "type": "object",
+                    "description": "News item for the instrument",
+                },
+            }
+        },
+    )
     def get(self, request: Request, ticker: str) -> Response:
         """
 
