@@ -41,7 +41,7 @@ class YfinanceRepository:
         for ticker in tickers:
             try:
                 tickers_data.append(y_tickers.tickers[ticker.upper()].info)
-            except Exception as e:
+            except Exception:
                 tickers_errors.append(ticker)
 
         if tickers_errors:
@@ -242,8 +242,8 @@ class YfinanceRepository:
             "ADP",
         ]
 
-    def get_news(self, ticker: str) -> list[NewsItem]:
-        ticker = yfinance.Ticker(ticker)
+    def get_news(self, ticker_str: str) -> list[NewsItem]:
+        ticker = yfinance.Ticker(ticker_str)
 
         logging.info(f"Ticker news: {ticker.news[:100]}")
 

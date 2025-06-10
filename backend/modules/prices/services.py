@@ -107,17 +107,20 @@ class LivePrices:
         with self._lock:
             logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
 
-            if not symbols:
-                symbols = self.clients.get(client_id, ClientInfo.empty()).instruments
+            instruments = (
+                symbols
+                if symbols
+                else self.clients.get(client_id, ClientInfo.empty()).instruments
+            )
 
-            for symbol in iter(symbols):
-                if symbol not in self.subscriptions:
+            for instrument in iter(instruments):
+                if instrument not in self.subscriptions:
                     continue
-                if self.subscriptions[symbol] > 1:
-                    self.subscriptions[symbol] -= 1
+                if self.subscriptions[instrument] > 1:
+                    self.subscriptions[instrument] -= 1
                 else:
-                    del self.subscriptions[symbol]
-                    self._remove_instruments({symbol})
+                    del self.subscriptions[instrument]
+                    self._remove_instruments({instrument})
 
             client_symbols = self.clients.get(client_id, ClientInfo.empty()).instruments
 

@@ -207,7 +207,6 @@ class TestSSEConsumerImpl:
         )
 
         with (
-            patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
             patch.object(consumer, "log") as mock_log,
             patch.object(
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
@@ -238,7 +237,6 @@ class TestSSEConsumerImpl:
         # Don't add anything to clients dict
 
         with (
-            patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
             patch.object(consumer, "log") as mock_log,
             patch.object(
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
