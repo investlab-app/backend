@@ -1,12 +1,14 @@
 from datetime import datetime
 from decimal import Decimal
+import logging
 
 import yfinance
 
-from modules.instruments.exceptions import FetchInstrumentInfoException
+from modules.instruments.exceptions import FetchInstrumentInfoException, FetchInstrumentNewsException
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
+    NewsItem,
 )
 
 
@@ -31,12 +33,18 @@ class YfinanceRepository:
         y_tickers = yfinance.Tickers(tickers_str)
 
         tickers_data = []
+        tickers_errors = []
 
         for ticker in tickers:
             try:
                 tickers_data.append(y_tickers.tickers[ticker.upper()].info)
             except Exception as e:
-                raise FetchInstrumentInfoException(f"Error fetching data for ticker: {ticker}, {str(e)}") from e
+                tickers_errors.append(ticker)
+
+        if tickers_errors:
+            raise FetchInstrumentInfoException(
+                f"Errors fetching data: {', '.join(tickers_errors)}"
+            )
 
         return [YfinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
 
@@ -168,3 +176,78 @@ class YfinanceRepository:
             )
 
         return detailed_ticker_info
+
+    def get_instruments_available(self) -> list[str]:
+        """
+        Retrieves a list of available instruments (top S&P50 for 10/6/25).
+
+        Returns:
+            list[str]: List of available instrument tickers.
+        """
+
+        return [
+            "MMM",
+            "AOS",
+            "ABT",
+            "ABBV",
+            "ACN",
+            "ADBE",
+            "AMD",
+            "AES",
+            "AFL",
+            "A",
+            "APD",
+            "ABNB",
+            "AKAM",
+            "ALB",
+            "ARE",
+            "ALGN",
+            "ALLE",
+            "LNT",
+            "ALL",
+            "GOOGL",
+            "GOOG",
+            "MO",
+            "AMZN",
+            "AMCR",
+            "AEE",
+            "AEP",
+            "AXP",
+            "AIG",
+            "AMT",
+            "AWK",
+            "AMP",
+            "AME",
+            "AMGN",
+            "APH",
+            "ADI",
+            "ANSS",
+            "AON",
+            "APA",
+            "APO",
+            "AAPL",
+            "AMAT",
+            "APTV",
+            "ACGL",
+            "ADM",
+            "ANET",
+            "AJG",
+            "AIZ",
+            "T",
+            "ATO",
+            "ADSK",
+            "ADP",
+        ]
+
+    def get_news(self, ticker: str) -> list[NewsItem]:
+        ticker = yfinance.Ticker(ticker)
+
+        logging.info(f"Ticker news: {ticker.news[:100]}")
+
+
+        try:
+            news_items = [NewsItem(**item) for item in ticker.news]
+        except Exception as e:
+            raise FetchInstrumentNewsException(str(e)) from e
+
+        return news_items

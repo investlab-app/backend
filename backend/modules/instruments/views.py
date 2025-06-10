@@ -1,3 +1,4 @@
+import logging
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
@@ -5,7 +6,7 @@ from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.instruments.exceptions import FetchInstrumentInfoException
+from modules.instruments.exceptions import FetchInstrumentInfoException, FetchInstrumentNewsException
 from modules.instruments.serializers import (
     InstrumentDetailedInfoSerializer,
     InstrumentInfoSerializer,
@@ -13,6 +14,21 @@ from modules.instruments.serializers import (
     PaginatedInstrumentsResponseSerializer,
 )
 from modules.instruments.services import InstrumentsServiceMinimal
+
+
+class InstrumentsAvailableView(generics.GenericAPIView):
+    @extend_schema(
+        responses=[PaginatedInstrumentsResponseSerializer],
+    )
+    def get(self, request: Request) -> Response:
+        """
+        Get a list of some available instruments (from S&P 500 for 6/9/2025).
+        """
+        service = InstrumentsServiceMinimal()
+
+        instruments: list[str] = service.get_instruments_available()
+
+        return Response(data={"instruments": instruments}, status=status.HTTP_200_OK)
 
 
 class InstrumentsListView(generics.GenericAPIView):
@@ -85,7 +101,7 @@ class InstrumentDetailView(generics.GenericAPIView):
         responses=[InstrumentDetailedInfoSerializer],
     )
     def get(
-        self, request: Request, ticker: str
+            self, request: Request, ticker: str
     ) -> Response:  # pylint: disable=unused-argument
         """
         Get detailed information for a single instrument.
@@ -110,3 +126,25 @@ class InstrumentDetailView(generics.GenericAPIView):
             )
 
         return Response(serialized.data)
+
+class InstrumentNewsView(generics.GenericAPIView):
+    def get(self, request: Request, ticker: str) -> Response:
+        """
+
+        Args:
+            request (Request): The HTTP request object.
+            ticker (str): The ticker symbol to fetch news for.
+
+        Returns:
+            Response: A response containing the news items for the instrument.
+        """
+        service = InstrumentsServiceMinimal()
+
+        try:
+            result = service.get_news(ticker)
+        except FetchInstrumentNewsException as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+        result_dict = [item.model_dump() for item in result]
+
+        return Response(result_dict)

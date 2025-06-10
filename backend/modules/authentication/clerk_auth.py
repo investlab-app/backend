@@ -94,9 +94,9 @@ def _parse_user_from_payload(payload) -> User:
     return user
 
 
-def validate_token(token: str) -> User:
+def authenticate_and_get_user(token: str) -> User:
     """
-    Validates a Clerk JWT and returns the corresponding User object.
+    Authenticates a Clerk JWT and returns the corresponding User object.
 
     Args:
         token (str): The JWT to validate.
@@ -130,5 +130,5 @@ class ClerkAuthentication(BaseAuthentication):
             if token == "null":
                 return None, None
 
-        user = validate_token(token)
+        user = authenticate_and_get_user(token)
         return user, token

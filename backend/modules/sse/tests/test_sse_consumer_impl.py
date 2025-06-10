@@ -23,7 +23,7 @@ class TestSSEConsumerImpl:
         test_token = "valid_test_token"
 
         with patch(
-            "modules.sse.sse_consumer_impl.clerk_auth.validate_token"
+            "modules.sse.sse_consumer_impl.clerk_auth.authenticate_and_get_user"
         ) as mock_validate:
             mock_validate.return_value = True
 
@@ -85,8 +85,8 @@ class TestSSEConsumerImpl:
         }
 
         with (
-            patch("modules.sse.sse_consumer_impl.parse_sse_request") as mock_parse,
-            patch("modules.sse.sse_consumer_impl.subscribe") as mock_subscribe,
+            patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
+            patch("modules.sse.sse_consumer_impl.live_prices.subscribe") as mock_subscribe,
             patch.object(consumer, "log") as mock_log,
             patch.object(live_prices, "add_handler") as mock_add_handler,
         ):
@@ -141,7 +141,7 @@ class TestSSEConsumerImpl:
         }
 
         with (
-            patch("modules.sse.sse_consumer_impl.parse_sse_request") as mock_parse,
+            patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
             patch("logging.debug") as mock_log_debug,
         ):
 
@@ -253,7 +253,7 @@ class TestSSEConsumerImpl:
         }
 
         with (
-            patch("modules.sse.sse_consumer_impl.parse_sse_request") as mock_parse,
+            patch("modules.sse.sse_consumer_impl.SSERequestParams.parse") as mock_parse,
             patch("modules.sse.sse_consumer_impl.subscribe") as mock_subscribe,
             patch.object(live_prices, "add_handler") as mock_add_handler,
         ):

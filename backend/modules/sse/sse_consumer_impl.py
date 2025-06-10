@@ -4,8 +4,9 @@ import uuid
 
 from typing_extensions import override
 
+from modules.sse.schemas import SSERequestParams
 from modules.authentication import clerk_auth
-from modules.sse import clients, live_prices, parse_sse_request, subscribe, unsubscribe
+from modules.sse import live_prices
 from modules.sse.sse_consumer import SSEConsumer
 
 
@@ -14,32 +15,22 @@ class SSEConsumerImpl(SSEConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.shutdown_event = asyncio.Event()
+        self.connection_id: uuid.UUID | None = None
 
-    def log(self, level, msg):
-        logging.log(level, f"{self.connection_id}: {msg}")
+    def live_prices_handler(self, prices: dict[str, any]) -> None:
+        logging.debug(f"Live prices handler called with prices: {prices}")
 
-    async def live_prices_handler(self, prices: dict[str, float]) -> None:
         if not self.connection_id:
             logging.error("Connection ID is not set, cannot handle live prices.")
             return
 
-        prices = {
-            label: price
-            for (label, price) in prices.items()
-            if label in clients[self.connection_id]
-        }
-
-        self.log(logging.DEBUG, "Received live prices: " + str(prices))
-
-        await self._send_event("price_update", str(prices))
-
-    connection_id: uuid.UUID | None = None
+        self.send_event("price_update", str(prices))
 
     @staticmethod
     @override
     async def _validate_auth(bearer_token: str) -> bool:
         try:
-            clerk_auth.validate_token(bearer_token)
+            clerk_auth.authenticate_and_get_user(bearer_token)
             return True
         except clerk_auth.AuthenticationFailed as e:
             logging.error(f"Authentication failed: {e}")
@@ -48,25 +39,20 @@ class SSEConsumerImpl(SSEConsumer):
     @override
     async def handle(self, params):
         try:
-            params = parse_sse_request(params)
+            params = SSERequestParams.parse(params)
         except ValueError as e:
             logging.error(f"Invalid SSE request parameters: {e}")
             raise
 
         self.connection_id = params.connection_id
         symbols = params.symbols
-        self.log(
-            logging.DEBUG,
-            f"{self.connection_id}: Starting SSE stream with symbols: {symbols}",
-        )
 
-        handler_added = False
+        logging.debug(f"{self.connection_id}: Starting SSE stream with symbols: {symbols}")
+
         try:
-            subscribe(self.connection_id, symbols)
-            if clients[self.connection_id]:
-                live_prices.add_handler(self.live_prices_handler)
-                handler_added = True
+            live_prices.subscribe(self.connection_id, symbols, self.live_prices_handler)
 
+            logging.debug(f"{self.connection_id}: Waiting for SSE stream to finish")
             await self.shutdown_event.wait()
         except asyncio.CancelledError:
             logging.debug(f"{self.connection_id}: Disconnected from SSE stream.")
@@ -75,12 +61,10 @@ class SSEConsumerImpl(SSEConsumer):
             logging.error(f"{self.connection_id}: An error occurred in the stream: {e}")
             raise
         finally:
-            if handler_added:
-                live_prices.remove_handler(self.live_prices_handler)
+            live_prices.unsubscribe(self.connection_id)
             self.log(logging.DEBUG, "SSE stream generation finished.")
 
     async def disconnect(self):
         logging.debug(f"{self.connection_id}: Disconnecting SSE stream.")
         self.shutdown_event.set()
-        unsubscribe(self.connection_id, clients.get(self.connection_id, set()))
         await super().disconnect()

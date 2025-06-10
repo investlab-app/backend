@@ -61,7 +61,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
 
         auth_header = headers.get(b"authorization", b"")
         if auth_header.startswith(b"Bearer "):
-            bearer_token = auth_header[7:]
+            bearer_token = auth_header.split()[1]
         else:
             return await self.send_response(
                 status=401,
@@ -90,7 +90,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
                 await self.send_headers(
                     headers=self._headers(request_origin), status=200
                 )
-                self.sse_task = asyncio.create_task(self.handle(params_decoded))
+                self.sse_task = await self.handle(params_decoded)
             else:
                 await self.send_response(
                     status=403,
@@ -109,14 +109,22 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         """
         raise NotImplementedError("Subclasses must implement the handle method.")
 
-    async def _send_event(self, event: str, data: str):
+    def send_event(self, event: str, data: str):
         """
         Sends an event to the client.
         :param event: The channel name for the event.
         :param data: The data to send in the event.
         """
+
+        tasks = asyncio.all_tasks()
+        logging.info(f"Current tasks in event loop: {len(tasks)}")
+        for task in tasks:
+            logging.info(f"Task: {task.get_name()}, Done: {task.done()}, Cancelled: {task.cancelled()}")
+
+
         event_data = f"event: {event}\ndata: {data}\n\n"
-        await self.send_body(event_data.encode("utf-8"), more_body=True)
+        logging.info("ATTENTION: CREATING TASK SEND BODY")
+        asyncio.create_task(self.send_body(event_data.encode("utf-8"), more_body=True))
 
     @override
     async def disconnect(self):

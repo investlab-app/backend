@@ -4,6 +4,7 @@ from modules.instruments.repositories import YfinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
+    NewsItem,
 )
 
 
@@ -92,3 +93,24 @@ class InstrumentsServiceMinimal:
             InstrumentDetailedInfoSchema: Detailed instrument information
         """
         return self._repository.get_instrument_detailed_info(ticker)
+
+    def get_instruments_available(self) -> list[str]:
+        """
+        Retrieves a list of available instruments (top S&P50 for 10/6/25).
+
+        Returns:
+            list[str]: List of available instrument tickers.
+        """
+        return self._repository.get_instruments_available()
+
+    def get_news(self, ticker: str) -> list[NewsItem]:
+        """
+        Retrieves news for a single instrument.
+
+        Args:
+            ticker: Ticker symbol to retrieve news for
+
+        Returns:
+            list[NewsItem]: List of news items
+        """
+        return self._repository.get_news(ticker)

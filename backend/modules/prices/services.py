@@ -1,16 +1,19 @@
 import asyncio
 import logging
-import random
 import threading
 import time
+import uuid
 from datetime import datetime
 from decimal import Decimal
 from typing import Callable, TypedDict
 
+import yfinance
+from pydantic import BaseModel
+
 from config import parse_time_interval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
-from modules.prices.schemas import InstrumentPriceSchema
+from modules.prices.schemas import ClientInfo, InstrumentPriceSchema, PriceUpdateHandler
 
 
 class PriceHistoryWithStats(TypedDict):
@@ -61,18 +64,68 @@ class PricesServiceMinimal:
         )
 
 
-type PriceUpdateHandler = Callable[[dict[str, float]], None]
-
-
 class LivePrices:
 
     def __init__(self) -> None:
-        self.handlers: list[PriceUpdateHandler] = []
-        self.instruments: set[str] = set()
         self._loop: asyncio.AbstractEventLoop | None = None
         self._running = False
         self._lock = threading.Lock()
         self._start_background_loop()
+        self.instruments: set[str] = set()
+        self.subscriptions: dict[str, int] = {}
+        self.clients: dict[uuid.UUID, ClientInfo] = {}
+
+    def subscribe(
+        self,
+        client_id: uuid.UUID,
+        symbols: set[str],
+        handler: PriceUpdateHandler | None = None,
+    ) -> None:
+        with self._lock:
+            logging.debug(f"Subscribing client {client_id} to symbols: {symbols}")
+
+            for symbol in iter(symbols):
+                self.subscriptions.setdefault(symbol, 0)
+                self.subscriptions[symbol] += 1
+
+            client_info = self.clients.get(client_id, ClientInfo.empty())
+
+            self.clients.update(
+                {
+                    client_id: ClientInfo(
+                        instruments=client_info.instruments | symbols,
+                        handler=handler if handler else client_info.handler,
+                    )
+                }
+            )
+
+            self._add_instruments(symbols)
+
+    def unsubscribe(
+        self, client_id: uuid.UUID, symbols: set[str] | None = None
+    ) -> None:
+        with self._lock:
+            logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
+
+            if not symbols:
+                symbols = self.clients.get(client_id, ClientInfo.empty()).instruments
+
+            for symbol in iter(symbols):
+                if symbol not in self.subscriptions:
+                    continue
+                if self.subscriptions[symbol] > 1:
+                    self.subscriptions[symbol] -= 1
+                else:
+                    del self.subscriptions[symbol]
+                    self._remove_instruments({symbol})
+
+            client_symbols = self.clients.get(client_id, ClientInfo.empty()).instruments
+
+            remaining = client_symbols - symbols
+            if remaining:
+                self.clients[client_id].instruments = remaining
+            else:
+                self.clients.pop(client_id, None)
 
     def _start_background_loop(self) -> None:
         def run_loop():
@@ -92,94 +145,77 @@ class LivePrices:
 
         if self._loop and not self._loop.is_closed():
             return asyncio.run_coroutine_threadsafe(coro, self._loop)
+
         return None
 
-    def add_instruments(self, instruments: set[str]) -> None:
-        """Add instruments to track"""
-        with self._lock:
-            logging.debug(f"Adding instruments: {instruments}")
-            self.instruments.update(instruments)
+    def _add_instruments(self, instruments: set[str]) -> None:
+        logging.debug(f"Adding instruments: {instruments}")
+        self.instruments.update(self.instruments | instruments)
 
-            # If we added new instruments and we're not running, start
-            if not self._running and self.instruments and self.handlers:
-                self._schedule_coroutine(self._start_fetching())
+        if not self._running and self.instruments:
+            print(f"Starting live price fetching for instruments: {self.instruments}")
+            self._schedule_coroutine(self._start_fetching())
 
-    def remove_instruments(self, instruments: set[str]) -> None:
-        """Remove instruments (sync method)"""
-        with self._lock:
-            logging.debug(f"Removing instruments: {instruments}")
-            self.instruments.difference_update(instruments)
+    def _remove_instruments(self, instruments: set[str]) -> None:
+        logging.debug(f"Removing instruments: {instruments}")
+        self.instruments.difference_update(instruments)
 
-            if not self.instruments and self._running:
-                self._schedule_coroutine(self._stop_fetching())
-
-    def add_handler(self, handler: PriceUpdateHandler) -> None:
-        """Add price update handler (sync method)"""
-        with self._lock:
-            logging.debug(f"Adding handler: {handler}")
-            self.handlers.append(handler)
-
-            if not self._running and self.instruments and len(self.handlers) == 1:
-                self._schedule_coroutine(self._start_fetching())
-
-    def remove_handler(self, handler: PriceUpdateHandler) -> None:
-        """Remove price update handler (sync method)"""
-        with self._lock:
-            logging.debug(f"Removing handler: {handler}")
-            if handler in self.handlers:
-                self.handlers.remove(handler)
-
-                if not self.handlers and self._running:
-                    self._schedule_coroutine(self._stop_fetching())
+        if not self.instruments and self._running:
+            self._schedule_coroutine(self._stop_fetching())
 
     async def _start_fetching(self):
         if self._running:
             return
-        self._running = True
+
+        logging.debug("Starting live price fetching")
+
         asyncio.create_task(self._fetch_loop())
-        logging.info("Starting live price fetching loop")
 
     async def _stop_fetching(self):
+        logging.debug("Stopping live price fetching loop")
         self._running = False
-        logging.info("Stopping live price fetching loop")
+
+    def message_handler(self, prices):
+        logging.debug(f"Handling price update: {prices}")
+
+        handlers = [
+            handler
+            for client in self.clients.values()
+            if (handler := client.handler) is not None
+        ]
+
+        for handler in handlers:
+            try:
+                if asyncio.iscoroutinefunction(handler):
+                    if self._loop and not self._loop.is_closed():
+                        asyncio.run_coroutine_threadsafe(handler(prices), self._loop)
+                    else:
+                        logging.error("Event loop not available for async handler")
+                else:
+                    handler(prices)
+            except Exception as e:
+                logging.error(f"Error in handler {handler}: {e}")
 
     async def _fetch_loop(self):
-        while self._running and self.instruments and self.handlers:
-            try:
-                prices = {
-                    instrument: random.uniform(100, 500)
-                    for instrument in self.instruments
-                }
+        logging.debug("Starting fetch loop")
+        if self._running:
+            return
 
-                handler_tasks = []
-                for handler in self.handlers:
-                    try:
-                        if asyncio.iscoroutinefunction(handler):
-                            handler_tasks.append(handler(prices))
-                        else:
-                            handler_tasks.append(
-                                asyncio.get_event_loop().run_in_executor(
-                                    None, handler, prices
-                                )
-                            )
-                    except Exception as e:
-                        logging.error(f"Error preparing handler call: {e}")
+        self._running = True
 
-                if handler_tasks:
-                    await asyncio.gather(*handler_tasks, return_exceptions=True)
-
-                await asyncio.sleep(1)
-
-            except Exception as e:
-                logging.error(f"Error in fetch loop: {e}")
-                await asyncio.sleep(1)
-
-        self._running = False
+        try:
+            async with yfinance.AsyncWebSocket() as ws:
+                await ws.subscribe(list(self.instruments))
+                await ws.listen(self.message_handler)
+        except Exception as e:
+            logging.error(f"Error in fetch loop: {e}")
+        finally:
+            self._running = False
 
     def shutdown(self):
         """Shutdown the service"""
         with self._lock:
-            logging.info("Shutting down LivePrices service")
+            logging.debug("Starting shutdown process")
             self._running = False
             if self._loop and not self._loop.is_closed():
                 self._loop.call_soon_threadsafe(self._loop.stop)

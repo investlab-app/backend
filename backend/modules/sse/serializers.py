@@ -1,0 +1,23 @@
+from rest_framework import serializers
+from typing_extensions import override
+
+
+class SSERequestSerializer(serializers.Serializer):
+    @override
+    def to_internal_value(self, data):
+        symbols = data.get("symbols")
+        if isinstance(symbols, str):
+            symbols = [s.strip() for s in symbols.split(",") if s.strip()]
+        data["symbols"] = symbols
+        return super().to_internal_value(data)
+
+    symbols = serializers.ListField(
+        child=serializers.CharField(
+            help_text="List of stock symbols to subscribe to, e.g. ['AAPL', 'GOOGL']."
+        ),
+        required=True,
+        help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
+    )
+    connectionId = serializers.UUIDField(
+        required=True, help_text="Unique identifier for the SSE connection."
+    )
