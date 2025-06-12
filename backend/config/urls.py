@@ -47,11 +47,10 @@ urlpatterns = [
             url_name="schema",
             authentication_classes=[],
         ),
-        name="redoc",
-    ),
-    # Modules
+        name="redoc",    ),    # Modules
     path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
     path(f"{API_PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{API_PREFIX}/investors/", include("modules.investors.urls")),
     path(f"{API_PREFIX}/test/", include("modules.core.urls")),
 ]

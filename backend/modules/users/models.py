@@ -8,8 +8,15 @@ from modules.users.managers import UserManager
 
 
 class User(BaseModel, AbstractUser):
+    # Override the UUID id field from BaseModel to use Clerk's string-based user IDs
+    id = models.CharField(max_length=255, primary_key=True, verbose_name=_("ID"))
+    
     username = None  # type: ignore
     email = models.EmailField(unique=True, verbose_name=_("Email"))
+    
+    # Override AbstractUser fields to make them nullable since Clerk may not provide them
+    first_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("First name"))
+    last_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("Last name"))
 
     clerk_role = models.CharField(
         max_length=50, default="investor", verbose_name=_("Clerk Role")

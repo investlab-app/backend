@@ -1,6 +1,8 @@
+import pytest
 from modules.authentication.clerk_auth import ClerkAuthentication, decode_token
 
 
+@pytest.mark.django_db
 def test_auth_with_valid_authorization_header(
     factory, mock_decode_token, user_from_payload, mock_clerk, mock_django_cache
 ):

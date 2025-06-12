@@ -8,6 +8,7 @@ from jwt.exceptions import PyJWTError
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
+from modules.investors.models import Investor
 from modules.users.models import User
 
 
@@ -80,16 +81,19 @@ def _parse_user_from_payload(payload) -> User:
         raise AuthenticationFailed("Could not retrieve clerk user")
 
     metadata = clerk_user.public_metadata
+    email = clerk_user.email_addresses[0].email_address
     role = metadata.get("role", "investor")
-    user = User(
+    user, _ = User.objects.get_or_create(
         id=user_id,
-        email=clerk_user.email_addresses[0].email_address,
+        email=email,
         first_name=clerk_user.first_name,
         last_name=clerk_user.last_name,
         image_url=clerk_user.image_url,
         has_image=clerk_user.has_image,
         clerk_role=role,
     )
+
+    Investor.objects.get_or_create(user=user)
 
     return user
 

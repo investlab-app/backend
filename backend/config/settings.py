@@ -178,23 +178,28 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Stocks API",
-    "DESCRIPTION": "",
+    "DESCRIPTION": "API for stock market data and trading operations",
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
     "SECURITY": [
-        {"BearerAuth": []},
+        {"ClerkAuth": []},
     ],
-    #     # OTHER SETTINGS
-    #     "SECURITY": [{"BearerAuth": []}],
-    #     "COMPONENT_SPLIT_REQUEST": True,
-    #     "SCHEMA_PATH_PREFIX": "/api/",  # Optional
-    #     "COMPONENT_SECURITY_SCHEMES": {
-    #         "BearerAuth": {
-    #             "type": "http",
-    #             "scheme": "bearer",
-    #             "bearerFormat": "JWT",
-    #         }
-    #     },
+    "COMPONENT_SECURITY_SCHEMES": {
+        "ClerkAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Clerk JWT authentication. Use format: 'Bearer <token>'"
+        }
+    },
+    "PREPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.preprocess_exclude_path_format",
+    ],
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+    ],
 }
 
 AUTH_USER_MODEL = "users.User"

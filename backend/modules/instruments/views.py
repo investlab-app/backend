@@ -42,10 +42,14 @@ class InstrumentsAvailableView(generics.GenericAPIView):
 
 
 class InstrumentsListView(generics.GenericAPIView):
+    serializer_class = PaginatedInstrumentsResponseSerializer
+    
     @extend_schema(
         parameters=[InstrumentsListQueryParams],
-        responses=[PaginatedInstrumentsResponseSerializer],
-        request=InstrumentsListQueryParams,
+        responses={200: PaginatedInstrumentsResponseSerializer},
+        summary="List instruments with pagination",
+        description="Get a paginated list of financial instruments",
+        operation_id="instruments_list",
     )
     def get(self, request: Request) -> Response:
         """
@@ -104,8 +108,13 @@ class InstrumentsListView(generics.GenericAPIView):
 
 
 class InstrumentDetailView(generics.GenericAPIView):
+    serializer_class = InstrumentDetailedInfoSerializer
+    
     @extend_schema(
-        responses=[InstrumentDetailedInfoSerializer],
+        responses={200: InstrumentDetailedInfoSerializer},
+        summary="Get instrument details",
+        description="Get detailed information about a specific instrument by ticker",
+        operation_id="instrument_detail",
     )
     def get(
         self, request: Request, ticker: str

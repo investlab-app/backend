@@ -1,18 +1,42 @@
 import logging
 
 from django.http import HttpResponse
-from drf_spectacular.utils import extend_schema
+from drf_spectacular.utils import extend_schema, OpenApiResponse
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from modules.sse import live_prices
 from modules.sse.schemas import SSERequestParams
-from modules.sse.serializers import SSERequestSerializer
+from modules.sse.serializers import (
+    SSERequestSerializer,
+    SSEResponseSerializer,
+    SSEErrorResponseSerializer,
+)
 
 
 class SSESubscribeView(APIView):
-    @extend_schema(request=SSERequestSerializer)
+    serializer_class = SSERequestSerializer
+    
+    @extend_schema(
+        request=SSERequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=SSEResponseSerializer,
+                description="Successfully subscribed to symbols"
+            ),
+            400: OpenApiResponse(
+                response=SSEErrorResponseSerializer,
+                description="Invalid request data"
+            ),
+            500: OpenApiResponse(
+                response=SSEErrorResponseSerializer,
+                description="Internal server error"
+            ),
+        },
+        summary="Subscribe to SSE events for stock symbols",
+        description="Subscribe to Server-Sent Events for real-time stock price updates for specified symbols.",
+    )
     def put(self, request):
         try:
             params = SSERequestParams.parse(request.data)
@@ -40,7 +64,27 @@ class SSESubscribeView(APIView):
 
 
 class SSEUnsubscribeView(APIView):
-    @extend_schema(request=SSERequestSerializer)
+    serializer_class = SSERequestSerializer
+    
+    @extend_schema(
+        request=SSERequestSerializer,
+        responses={
+            200: OpenApiResponse(
+                response=SSEResponseSerializer,
+                description="Successfully unsubscribed from symbols"
+            ),
+            400: OpenApiResponse(
+                response=SSEErrorResponseSerializer,
+                description="Invalid request data"
+            ),
+            500: OpenApiResponse(
+                response=SSEErrorResponseSerializer,
+                description="Internal server error"
+            ),
+        },
+        summary="Unsubscribe from SSE events for stock symbols",
+        description="Unsubscribe from Server-Sent Events for specified stock symbols.",
+    )
     def put(self, request):
         try:
             params = SSERequestParams.parse(request.data)
