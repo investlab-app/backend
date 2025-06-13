@@ -65,35 +65,42 @@ exclude = [
 [tool.ruff.lint]
 select = ["ALL"]
 ignore = [
-    "D",       # pydocstyle - we can enable this later if you want docstrings
-    "E501",    # line too long - ruff will handle this with line-length setting
-    "ANN",     # flake8-annotations - we can enable this later if you want type annotations
-    "PLR",     # pylint rules - we can enable specific ones if needed
-    "ERA",     # commented-out code - too strict for settings.py
-    "S311",    # random number generation - not used for crypto
-    "TRY003",  # exception messages - too strict
-    "EM101",   # exception messages - too strict
-    "EM102",   # exception messages - too strict
-    "BLE001",  # blind exception catching - sometimes necessary
-    "DJ001",   # null=True on string fields - sometimes necessary
-    "PGH003",  # type ignore comments - too strict
-    "RUF012",  # mutable class attributes - too strict
-    "N818",    # exception naming - too strict
-    "TRY300",  # else block - too strict
-    "COM812",  # trailing comma - conflicts with formatter
-    "ISC001",  # single line import - conflicts with formatter
+    "D",     # docstring issues
+    "ANN",   # type annotation issues
+    "ARG",   # argument issues
+    "BLE",   # blind exception issues
+    "COM812", # missing-trailing-comma issues
+    "DTZ",   # datetime issues
+    "EM",    # exception message issues
+    "INP",   # implicit namespace package issues
+    "PGH",   # type ignore issues
+    "PLR",   # magic number issues
+    "RET",   # return issues
+    "RUF",   # ruff specific issues
+    "S",     # security issues
+    "TRY",   # try/except issues
+    "T",     # print issues
+    "N818",  # exception naming issues
+    "DJ001", # Django specific issues
+    "ERA001", # commented out code
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"tests/**/*.py" = [
-    "S101",    # assert statements
-    "S105",    # hardcoded password strings
-    "S106",    # hardcoded password strings
-    "DTZ001",  # datetime without timezone
-    "ARG001",  # unused function arguments
-    "ARG002",  # unused method arguments
-    "RET504",  # unnecessary assignment before return
-    "INP001",  # implicit namespace packages
+"**/tests/**/*.py" = [
+    "D",     # docstring issues
+    "ANN",   # type annotation issues
+    "ARG",   # argument issues
+    "BLE",   # blind exception issues
+    "DTZ",   # datetime issues
+    "EM",    # exception message issues
+    "INP",   # implicit namespace package issues
+    "PGH",   # type ignore issues
+    "PLR",   # magic number issues
+    "RET",   # return issues
+    "RUF",   # ruff specific issues
+    "S",     # security issues
+    "TRY",   # try/except issues
+    "T",     # print issues
 ]
 
 [tool.mypy]

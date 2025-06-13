@@ -1,5 +1,4 @@
-"""
-ASGI config for backend project.
+"""ASGI config for backend project.
 
 It exposes the ASGI callable as a module-level variable named ``application``.
 
@@ -21,7 +20,7 @@ application = ProtocolTypeRouter(
     {
         "http": get_asgi_application(),
         "websocket": AuthMiddlewareStack(
-            URLRouter(modules.prices.routing.websocket_urlpatterns)
+            URLRouter(modules.prices.routing.websocket_urlpatterns),
         ),
-    }
+    },
 )

@@ -1,5 +1,4 @@
-"""
-WSGI config for backend project.
+"""WSGI config for backend project.
 
 It exposes the WSGI callable as a module-level variable named ``application``.
 

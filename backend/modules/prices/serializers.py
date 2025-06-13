@@ -39,7 +39,7 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:
-        for key in record:
-            if isinstance(record[key], Decimal):
-                record[key] = quantize_decimal(record[key], places=15)
+        for key, value in record.items():
+            if isinstance(value, Decimal):
+                record[key] = quantize_decimal(value, places=15)
         return record

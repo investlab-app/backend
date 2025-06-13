@@ -9,7 +9,8 @@ from modules.prices.schemas import InstrumentPriceSchema
 
 
 def test_get_instrument_price_success(
-    mock_yfinance_ticker, expected_result_from_ticker
+    mock_yfinance_ticker,
+    expected_result_from_ticker,
 ):
     repo = YfinanceRepository()
     start = datetime(2024, 4, 1)

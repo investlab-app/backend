@@ -17,7 +17,7 @@ def _get_jwks():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        raise AuthenticationFailed(f"Failed to fetch JWKS: {str(e)}") from e
+        raise AuthenticationFailed(f"Failed to fetch JWKS: {e!s}") from e
 
 
 def _get_public_key(kid):
@@ -29,22 +29,26 @@ def _get_public_key(kid):
 
 
 def decode_token(token):
-    """
-    Decodes and verifies a Clerk-issued JWT.
+    """Decodes and verifies a Clerk-issued JWT.
 
-    This function extracts the `kid` (key ID) from the token header, retrieves the corresponding
-    public key from Clerk's JWKS endpoint, and uses it to verify and decode the token. It ensures
-    the token was signed with RS256 and issued by the expected Clerk issuer.
+    This function extracts the `kid` (key ID) from the token header, retrieves the
+    corresponding public key from Clerk's JWKS endpoint, and uses it to verify and
+    decode the token. It ensures the token was signed with RS256 and issued by the
+    expected Clerk issuer.
 
     Args:
+    ----
         token (str): The JWT to decode.
 
     Returns:
+    -------
         dict: The decoded JWT payload if the token is valid.
 
     Raises:
-        AuthenticationFailed: If the token is invalid, expired, has incorrect padding,
-        signature issues, or if the public key could not be retrieved.
+    ------
+        AuthenticationFailed: If the token is invalid, expired, has incorrect
+        padding, signature issues, or if the public key could not be retrieved.
+
     """
     try:
         headers = jwt.get_unverified_header(token)
@@ -58,9 +62,9 @@ def decode_token(token):
         )
         return payload
     except PyJWTError as e:
-        raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
+        raise AuthenticationFailed(f"Token verification failed: {e!s}") from e
     except Exception as e:
-        raise AuthenticationFailed(f"Unexpected token error: {str(e)}") from e
+        raise AuthenticationFailed(f"Unexpected token error: {e!s}") from e
 
 
 def _parse_user_from_payload(payload) -> User:
@@ -95,8 +99,7 @@ def _parse_user_from_payload(payload) -> User:
 
 
 class ClerkAuthentication(BaseAuthentication):
-    """
-    Custom authentication class that verifies Clerk JWTs.
+    """Custom authentication class that verifies Clerk JWTs.
     Sets `request.user` to a custom User model retrieved from database
     Sets `request.token to the retrived token`
     """
