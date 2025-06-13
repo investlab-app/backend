@@ -126,4 +126,16 @@ requires = ["setuptools>=42", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [tool.setuptools]
-packages = ["config", "modules"]
+packages = [
+    "config",
+    "modules",
+    "modules.prices",
+    "modules.sse",
+    "modules.instruments",
+    "modules.authentication",
+    "modules.core",
+    "modules.users",
+    "modules.transactions",
+    "modules.orders",
+    "modules.investors"
+]

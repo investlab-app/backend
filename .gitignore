@@ -29,3 +29,9 @@
 
 # Logs
 *.log
+
+# Python package build artifacts
+*.egg
+*.egg-info/
+dist/
+build/
