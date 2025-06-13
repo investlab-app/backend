@@ -17,13 +17,13 @@ class TestSSEConsumerImpl:
         assert consumer.connection_id is None
         assert not consumer.shutdown_event.is_set()
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_validate_auth_success(self):
         """Test successful authentication validation"""
         test_token = "valid_test_token"
 
         with patch(
-            "modules.sse.sse_consumer_impl.clerk_auth.authenticate_and_get_user"
+            "modules.sse.sse_consumer_impl.clerk_auth.verify_token",
         ) as mock_validate:
             mock_validate.return_value = True
 
@@ -32,7 +32,7 @@ class TestSSEConsumerImpl:
             assert result is True
             mock_validate.assert_called_once_with(test_token)
 
-    @pytest.mark.asyncio()
+    @pytest.mark.asyncio
     async def test_disconnect_method_success(
         self, consumer, mock_connection_id, mock_symbols
     ):
