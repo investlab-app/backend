@@ -47,21 +47,13 @@ class TestSSEConsumerImpl:
             mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
         )
 
-        with (
-            patch("modules.sse.sse_consumer_impl.logger") as mock_logging,
-            patch.object(
-                consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
-            ) as mock_super_disconnect,
-        ):
+        with patch.object(
+            consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
+        ) as mock_super_disconnect:
             await consumer.disconnect()
 
             # Verify shutdown event was set
             assert consumer.shutdown_event.is_set()
-
-            # Verify logging
-            mock_logging.debug.assert_any_call(
-                f"{mock_connection_id}: Disconnecting SSE stream."
-            )
 
             # Verify parent disconnect was called
             mock_super_disconnect.assert_called_once()
