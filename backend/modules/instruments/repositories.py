@@ -1,9 +1,9 @@
-import logging
 from datetime import datetime
 from decimal import Decimal
 
 import yfinance
 
+from config.logging import get_logger
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
@@ -13,6 +13,8 @@ from modules.instruments.schemas import (
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
+
+logger = get_logger(__name__)
 
 
 class YfinanceRepository:
@@ -66,7 +68,8 @@ class YfinanceRepository:
             InstrumentDetailedInfoSchema: Detailed instrument information.
 
         Raises:
-            FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
+            FetchInstrumentInfoException: If there's an error fetching the data
+            or if the ticker doesn't exist.
         """
         y_ticker = yfinance.Ticker(ticker)
 
@@ -246,7 +249,7 @@ class YfinanceRepository:
     def get_news(self, ticker_str: str) -> list[NewsItem]:
         ticker = yfinance.Ticker(ticker_str)
 
-        logging.info(f"Ticker news: {ticker.news[:100]}")
+        logger.info("Ticker news: %s", ticker.news[:100])
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]

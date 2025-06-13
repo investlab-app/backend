@@ -1,5 +1,4 @@
 from datetime import datetime
-from decimal import Decimal
 from unittest.mock import MagicMock, patch
 
 import pandas as pd
@@ -37,7 +36,10 @@ ticker_info = {
     "forwardPE": "25.7",
     "dividendYield": "0.006",
     "earningsDate": datetime(2024, 7, 25),
-    "longBusinessSummary": "The company designs, manufactures, and markets smartphones, computers, and related services.",
+    "longBusinessSummary": (
+        "The company designs, manufactures, and markets smartphones, computers, "
+        "and related services."
+    ),
     "currency": "USD",
     "previousClose": "179.50",
     "marketCap": "3000000000000",
@@ -61,7 +63,9 @@ msft_ticker_info = {
     "forwardPE": "32.7",
     "dividendYield": "0.008",
     "earningsDate": datetime(2024, 7, 25),
-    "longBusinessSummary": "The company develops and supports software, services, and devices.",
+    "longBusinessSummary": (
+        "The company develops and supports software, services, and devices."
+    ),
     "currency": "USD",
     "previousClose": "395.50",
     "marketCap": "3000000000000",

@@ -8,7 +8,6 @@ from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
 )
-from modules.prices.tests.conftest import mock_yfinance_empty_history_ticker
 
 
 def test_get_basic_instrument_info_success(mock_yfinance_tickers):
@@ -68,5 +67,8 @@ def test_get_detailed_instrument_info_missing_data(
     assert isinstance(result, InstrumentDetailedInfoSchema)
     assert (
         result.description
-        == "The company designs, manufactures, and markets smartphones, computers, and related services."
+        == (
+            "The company designs, manufactures, and markets smartphones, computers, "
+            "and related services."
+        )
     )

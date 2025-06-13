@@ -43,8 +43,8 @@ class TestSSEConsumerImpl:
         # Setup clients dict with ClientInfo
         from modules.prices.schemas import ClientInfo
 
-        live_prices._clients[mock_connection_id] = ClientInfo(
-            instruments=mock_symbols, handler=None
+        live_prices.set_client(
+            mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
         )
 
         with (
@@ -53,7 +53,6 @@ class TestSSEConsumerImpl:
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
             ) as mock_super_disconnect,
         ):
-
             await consumer.disconnect()
 
             # Verify shutdown event was set
@@ -68,10 +67,11 @@ class TestSSEConsumerImpl:
             mock_super_disconnect.assert_called_once()
 
     @pytest.mark.asyncio
-    async def test_live_prices_handler_filters_prices_correctly(
+    async def test_live_prices_handler_filters_prices(
         self, consumer, mock_connection_id
     ):
-        """Test that live prices handler correctly filters prices based on client subscriptions"""
+        """Test that live prices handler correctly filters prices based on client
+        subscriptions."""
         consumer.connection_id = mock_connection_id
         consumer.send_event = Mock()
 

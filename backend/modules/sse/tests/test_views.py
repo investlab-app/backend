@@ -5,9 +5,6 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.response import Response
 
-from modules.core.tests.conftest import api_client_auth
-from modules.users.tests.conftest import user
-
 pytestmark = pytest.mark.django_db
 
 
@@ -28,7 +25,6 @@ class TestSSESubscribeView:
             patch("modules.sse.live_prices.subscribe") as mock_subscribe,
             patch("modules.sse.views.logging.debug") as mock_logging_debug,
         ):
-
             url = reverse("sse-subscribe")
             response = api_client_auth.put(url, valid_request_data, format="json")
 
@@ -50,7 +46,6 @@ class TestSSESubscribeView:
             "modules.sse.schemas.SSERequestParams.parse",
             side_effect=ValueError("Invalid data"),
         ) as mock_parse:
-
             url = reverse("sse-subscribe")
             response = api_client_auth.put(url, invalid_data, format="json")
 
@@ -76,7 +71,6 @@ class TestSSEUnsubscribeView:
             patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
             patch("modules.sse.views.logging.debug") as mock_logging_debug,
         ):
-
             url = reverse("sse-unsubscribe")
             response = api_client_auth.put(url, valid_request_data, format="json")
 

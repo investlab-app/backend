@@ -87,20 +87,21 @@ ignore = [
 
 [tool.ruff.lint.per-file-ignores]
 "**/tests/**/*.py" = [
-    "D",     # docstring issues
-    "ANN",   # type annotation issues
-    "ARG",   # argument issues
-    "BLE",   # blind exception issues
-    "DTZ",   # datetime issues
-    "EM",    # exception message issues
-    "INP",   # implicit namespace package issues
-    "PGH",   # type ignore issues
-    "PLR",   # magic number issues
-    "RET",   # return issues
-    "RUF",   # ruff specific issues
-    "S",     # security issues
-    "TRY",   # try/except issues
-    "T",     # print issues
+    "D",      # docstring issues
+    "ANN",    # type annotation issues
+    "ARG",    # argument issues
+    "BLE",    # blind exception issues
+    "DTZ",    # datetime issues
+    "EM",     # exception message issues
+    "INP",    # implicit namespace package issues
+    "PGH",    # type ignore issues
+    "PLR",    # magic number issues
+    "RET",    # return issues
+    "RUF",    # ruff specific issues
+    "S",      # security issues
+    "TRY",    # try/except issues
+    "T",      # print issues
+    "SLF001", # self reference issues
 ]
 
 [tool.mypy]

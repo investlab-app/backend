@@ -30,20 +30,14 @@ class InstrumentsServiceMinimal:
         filter_sector: str | None = None,
         filter_industry: str | None = None,
     ) -> PaginatedInstruments:
-        """
-        Retrieves a paginated, sorted, and filtered list of instruments.
+        """Get information about multiple instruments.
 
         Args:
-            tickers: List of ticker symbols to retrieve information for
-            page: Current page number (1-indexed)
-            page_size: Number of items per page
-            sort_by: Field to sort by (e.g., 'market_cap', 'current_price')
-            sort_direction: 'asc' or 'desc'
-            filter_sector: Filter by sector name
-            filter_industry: Filter by industry name
+            tickers: List of ticker symbols.
 
         Returns:
-            PaginatedInstruments: Paginated list of instruments with total count and page info
+            PaginatedInstruments: Paginated list of instruments with total count and
+                page info.
         """
         instruments = self._repository.get_instruments_info(tickers)
 
