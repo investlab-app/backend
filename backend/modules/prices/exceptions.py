@@ -1,6 +1,6 @@
 class FetchPriceException(Exception):
     def __init__(self, reason: str):
-        super().__init__(f"Could not fetch data from yfinance, reason: {reason}")
+        super().__init__(f"Could not fetch price data, reason: {reason}")
         self.reason = reason
 
 

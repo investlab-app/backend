@@ -98,6 +98,23 @@ def _parse_user_from_payload(payload) -> User:
     return user
 
 
+def authenticate_and_get_user(token: str) -> User:
+    """
+    Authenticates a Clerk JWT and returns the corresponding User object.
+
+    Args:
+        token (str): The JWT to validate.
+
+    Returns:
+        User: The user associated with the token.
+
+    Raises:
+        AuthenticationFailed: If the token is invalid or user cannot be retrieved.
+    """
+    payload = decode_token(token)
+    return _parse_user_from_payload(payload)
+
+
 class ClerkAuthentication(BaseAuthentication):
     """Custom authentication class that verifies Clerk JWTs.
     Sets `request.user` to a custom User model retrieved from database
@@ -115,6 +132,6 @@ class ClerkAuthentication(BaseAuthentication):
             token = auth_header.split(" ")[1]
             if token == "null":
                 return None, None
-        payload = decode_token(token)
-        user = _parse_user_from_payload(payload)
+
+        user = authenticate_and_get_user(token)
         return user, token

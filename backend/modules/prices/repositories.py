@@ -37,16 +37,12 @@ class YfinanceRepository:
                 instrument's historical prices.
 
         Raises:
-        ------
-            UnknownTickerException: If the ticker is invalid or no data is returned.
-
+            FetchPriceException: If the ticker is invalid or no data is returned.
         """
         try:
-            ticker = yfinance.Ticker(instrument.lower())
-            history = ticker.history(
-                start=start_date,
-                end=end_date,
-                interval=interval.value,
+            y_ticker = yfinance.Ticker(instrument.lower())
+            history = y_ticker.history(
+                start=start_date, end=end_date, interval=interval.value
             )
         except Exception as e:
             raise FetchPriceException(str(e)) from e

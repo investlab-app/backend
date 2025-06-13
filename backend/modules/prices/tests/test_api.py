@@ -18,6 +18,7 @@ def test_prices_view_success(api_client_auth, mock_yfinance_repository) -> None:
     )
     assert isinstance(response, Response)
     assert response.status_code == 200
+
     assert isinstance(response.data, dict)
     assert "data" in response.data
     assert "min_price" in response.data
