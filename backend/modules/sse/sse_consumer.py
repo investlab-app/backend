@@ -1,6 +1,6 @@
 import asyncio
 from abc import ABC, abstractmethod
-from typing import Any, override
+from typing import override
 from urllib.parse import parse_qs
 
 from channels.generic.http import AsyncHttpConsumer

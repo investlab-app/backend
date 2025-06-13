@@ -17,7 +17,7 @@ class TestSSEConsumerImpl:
         assert consumer.connection_id is None
         assert not consumer.shutdown_event.is_set()
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio()
     async def test_validate_auth_success(self):
         """Test successful authentication validation"""
         test_token = "valid_test_token"
@@ -32,7 +32,7 @@ class TestSSEConsumerImpl:
             assert result is True
             mock_validate.assert_called_once_with(test_token)
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio()
     async def test_disconnect_method_success(
         self, consumer, mock_connection_id, mock_symbols
     ):
@@ -48,7 +48,7 @@ class TestSSEConsumerImpl:
         )
 
         with (
-            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
+            patch("modules.sse.sse_consumer_impl.logger") as mock_logging,
             patch.object(
                 consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
             ) as mock_super_disconnect,
@@ -66,7 +66,7 @@ class TestSSEConsumerImpl:
             # Verify parent disconnect was called
             mock_super_disconnect.assert_called_once()
 
-    @pytest.mark.asyncio
+    @pytest.mark.asyncio()
     async def test_live_prices_handler_filters_prices(
         self, consumer, mock_connection_id
     ):

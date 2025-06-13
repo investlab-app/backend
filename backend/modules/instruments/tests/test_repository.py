@@ -8,6 +8,7 @@ from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
 )
+
 from modules.prices.tests.conftest import mock_yfinance_empty_history_ticker
 
 

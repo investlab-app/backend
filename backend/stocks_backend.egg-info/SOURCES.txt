@@ -1,0 +1,13 @@
+pyproject.toml
+config/__init__.py
+config/asgi.py
+config/logging.py
+config/settings.py
+config/urls.py
+config/wsgi.py
+modules/__init__.py
+stocks_backend.egg-info/PKG-INFO
+stocks_backend.egg-info/SOURCES.txt
+stocks_backend.egg-info/dependency_links.txt
+stocks_backend.egg-info/requires.txt
+stocks_backend.egg-info/top_level.txt

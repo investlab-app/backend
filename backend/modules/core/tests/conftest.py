@@ -1,7 +1,5 @@
 import pytest
 
-from modules.users.tests.conftest import user
-
 
 @pytest.fixture
 def api_client():

@@ -23,7 +23,7 @@ INSTALLED_APPS = [
     "unfold",  # Django admin theme
     # "unfold.contrib.filters",  # optional, for special filters
     # "unfold.contrib.forms",  # optional, for special form elements
-    # "unfold.contrib.inlines",  # optional, for special inlines 
+    # "unfold.contrib.inlines",  # optional, for special inlines
     # "unfold.contrib.import_export"  # optional, for django-import-export
     # "unfold.contrib.guardian",  # optional, for django-guardian
     # "unfold.contrib.simple_history",  # optional, for django-simple-history
@@ -217,12 +217,16 @@ UNFOLD = {
         },
     ],
     # "SITE_URL": "/",
-    # # "SITE_ICON": lambda request: static("icon.svg"),  # both modes, optimise for 32px height
+    # # "SITE_ICON": (
+    #   lambda request: static("icon.svg"),  # both modes, optimise for 32px height
+    #  )
     # "SITE_ICON": {
     #     "light": lambda request: static("icon-light.svg"),  # light mode
     #     "dark": lambda request: static("icon-dark.svg"),  # dark mode
     # },
-    # # "SITE_LOGO": lambda request: static("logo.svg"),  # both modes, optimise for 32px height
+    # # "SITE_LOGO": (
+    #   lambda request: static("logo.svg"),  # both modes, optimise for 32px height
+    # )
     # "SITE_LOGO": {
     #     "light": lambda request: static("logo-light.svg"),  # light mode
     #     "dark": lambda request: static("logo-dark.svg"),  # dark mode
@@ -238,7 +242,9 @@ UNFOLD = {
     # ],
     # "SHOW_HISTORY": True,  # show/hide "History" button, default: True
     # "SHOW_VIEW_ON_SITE": True,  # show/hide "View on site" button, default: True
-    # "SHOW_BACK_BUTTON": False,  # show/hide "Back" button on changeform in header, default: False
+    # "SHOW_BACK_BUTTON": (
+    #    False,  # show/hide "Back" button on changeform in header, default: False
+    # )
     # "ENVIRONMENT": "sample_app.environment_callback",  # environment name in header
     # # environment name prefix in title tag
     # "ENVIRONMENT_TITLE_PREFIX": "sample_app.environment_title_prefix_callback",

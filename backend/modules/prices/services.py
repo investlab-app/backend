@@ -96,7 +96,7 @@ class LivePrices:
     def subscribe(
         self,
         client_id: uuid.UUID,
-        symbols: set[str] | None = None,
+        symbols: set[str],
         handler: PriceUpdateHandler | None = None,
     ) -> None:
         logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
