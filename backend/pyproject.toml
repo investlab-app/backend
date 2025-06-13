@@ -33,6 +33,8 @@ dev = [
     "ruff>=0.11.13",
     "pytest-asyncio>=1.0.0",
     "pytest-mock>=3.14.1",
+    "pandas-stubs>=2.2.3.250527",
+    "types-jwcrypto>=1.5.0.20250516",
 ]
 
 [tool.pytest.ini_options]
