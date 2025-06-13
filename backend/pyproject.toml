@@ -104,6 +104,8 @@ ignore = [
     "TRY",    # try/except issues
     "T",      # print issues
     "SLF001", # self reference issues
+    "F",     # pyflakes issues
+    "PT",    # pytest issues
 ]
 
 [tool.mypy]
