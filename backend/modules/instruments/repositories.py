@@ -34,6 +34,9 @@ class YfinanceRepository:
         Raises:
             FetchInstrumentInfoException: If there's an error fetching the data.
         """
+        if not tickers:
+            return []
+
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
         y_tickers = yfinance.Tickers(tickers_str)
 
@@ -43,7 +46,11 @@ class YfinanceRepository:
         # Use batch-fetched data from y_tickers.tickers.values()
         for ticker_obj in y_tickers.tickers.values():
             try:
-                tickers_data.append(ticker_obj.info)
+                info = ticker_obj.info
+                if not info:
+                    tickers_errors.append(ticker_obj.ticker)
+                else:
+                    tickers_data.append(info)
             except Exception:
                 tickers_errors.append(ticker_obj.ticker)
 
@@ -74,6 +81,9 @@ class YfinanceRepository:
         y_ticker = yfinance.Ticker(ticker)
 
         try:
+            info = y_ticker.info
+            if not info or not info.get("symbol"):
+                raise FetchInstrumentInfoException(f"Invalid ticker: {ticker}")
             detailed_info = YfinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
