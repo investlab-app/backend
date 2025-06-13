@@ -81,8 +81,8 @@ class LivePrices:
         self._subscriptions: dict[str, int] = {}
         self._clients: dict[uuid.UUID, ClientInfo] = {}
 
-    def set_client(self, uuid: uuid.UUID, client: ClientInfo) -> None:
-        self._clients[uuid] = client
+    def set_client(self, client_id: uuid.UUID, client: ClientInfo) -> None:
+        self._clients[client_id] = client
 
     def get_instruments(self) -> set[str]:
         return self._instruments.copy()
@@ -101,8 +101,9 @@ class LivePrices:
     ) -> None:
         logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
 
-        for symbol in iter(symbols):
+        for symbol in symbols:
             self._add_instruments({symbol})
+            self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
 
         client_info = self._clients.get(client_id, ClientInfo.empty())
 
