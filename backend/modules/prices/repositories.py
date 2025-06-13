@@ -56,7 +56,7 @@ class YfinanceRepository:
     def _convert_prices_to_schema(dataframe: DataFrame) -> list[InstrumentPriceSchema]:
         prices = []
         for index, row in dataframe.iterrows():
-            ts = cast(Timestamp, index)
+            ts = cast("Timestamp", index)
             prices.append(
                 InstrumentPriceSchema(
                     timestamp=ts.to_pydatetime(),
