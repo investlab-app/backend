@@ -3,7 +3,7 @@ import pytest
 from modules.users.models import User
 
 
-@pytest.fixture
+@pytest.fixture()
 def user():
     return User.objects.create_user(
         email="test@example.com",

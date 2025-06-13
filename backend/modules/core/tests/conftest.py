@@ -1,16 +1,14 @@
 import pytest
 
-from modules.users.tests.conftest import user
 
-
-@pytest.fixture
+@pytest.fixture()
 def api_client():
     from rest_framework.test import APIClient
 
-    yield APIClient()
+    return APIClient()
 
 
-@pytest.fixture
+@pytest.fixture()
 def api_client_auth(user):
     from rest_framework.test import APIClient
 
@@ -20,7 +18,7 @@ def api_client_auth(user):
     client.logout()
 
 
-@pytest.fixture
+@pytest.fixture()
 def websocket_communicator():
     from channels.testing import WebsocketCommunicator
 
@@ -30,10 +28,10 @@ def websocket_communicator():
         communicator = WebsocketCommunicator(application, path)
         return communicator
 
-    yield _create_communicator
+    return _create_communicator
 
 
-@pytest.fixture
+@pytest.fixture()
 def websocket_communicator_auth(user):
     from channels.testing import WebsocketCommunicator
 
@@ -44,4 +42,4 @@ def websocket_communicator_auth(user):
         communicator.scope["user"] = user
         return communicator
 
-    yield _create_communicator
+    return _create_communicator

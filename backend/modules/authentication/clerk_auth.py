@@ -18,7 +18,7 @@ def _get_jwks():
         response.raise_for_status()
         return response.json()
     except requests.exceptions.RequestException as e:
-        raise AuthenticationFailed(f"Failed to fetch JWKS: {str(e)}") from e
+        raise AuthenticationFailed(f"Failed to fetch JWKS: {e!s}") from e
 
 
 def _get_public_key(kid):
@@ -59,9 +59,9 @@ def decode_token(token):
         )
         return payload
     except PyJWTError as e:
-        raise AuthenticationFailed(f"Token verification failed: {str(e)}") from e
+        raise AuthenticationFailed(f"Token verification failed: {e!s}") from e
     except Exception as e:
-        raise AuthenticationFailed(f"Unexpected token error: {str(e)}") from e
+        raise AuthenticationFailed(f"Unexpected token error: {e!s}") from e
 
 
 def _parse_user_from_payload(payload) -> User:

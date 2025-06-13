@@ -27,7 +27,11 @@ class PricesServiceMinimal:
         self._repository = YfinanceRepository()
 
     def get_instrument_price_history(
-        self, instrument: str, start_date: datetime, end_date: datetime, interval: str
+        self,
+        instrument: str,
+        start_date: datetime,
+        end_date: datetime,
+        interval: str,
     ) -> PriceHistoryWithStats:
         """
         Retrieves historical price data for a given instrument with min and max price over the range.
@@ -48,7 +52,7 @@ class PricesServiceMinimal:
 
         if start_date > end_date:
             raise InvalidTimeIntervalException(
-                "Invalid date order, end date cannot preceed start date."
+                "Invalid date order, end date cannot preceed start date.",
             )
         data = self._repository.get_instrument_price_history(
             instrument,
@@ -60,7 +64,9 @@ class PricesServiceMinimal:
         max_price = max(d.high for d in data)
 
         return PriceHistoryWithStats(
-            data=data, min_price=min_price, max_price=max_price
+            data=data,
+            min_price=min_price,
+            max_price=max_price,
         )
 
 

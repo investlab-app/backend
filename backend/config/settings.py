@@ -1,4 +1,3 @@
-import json  # Added for pretty printing
 import os
 from pathlib import Path
 
@@ -99,7 +98,7 @@ DATABASES = {
         "PASSWORD": os.environ["POSTGRES_PASSWORD"],
         "HOST": os.environ["POSTGRES_HOST"],
         "PORT": os.environ["POSTGRES_PORT"],
-    }
+    },
 }
 
 

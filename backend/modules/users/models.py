@@ -19,10 +19,14 @@ class User(BaseModel, AbstractUser):
     last_name = models.CharField(max_length=150, blank=True, null=True, verbose_name=_("Last name"))
 
     clerk_role = models.CharField(
-        max_length=50, default="investor", verbose_name=_("Clerk Role")
+        max_length=50,
+        default="investor",
+        verbose_name=_("Clerk Role"),
     )
     image_url = models.URLField(
-        blank=True, null=True, verbose_name=_("Profile Image URL")
+        blank=True,
+        null=True,
+        verbose_name=_("Profile Image URL"),
     )
     has_image = models.BooleanField(default=False, verbose_name=_("Has Image"))
 
@@ -40,7 +44,6 @@ class User(BaseModel, AbstractUser):
 
 
 class Group(_Group):
-
     class Meta:
         verbose_name = _("Group")
         verbose_name_plural = _("Groups")

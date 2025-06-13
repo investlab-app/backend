@@ -1,9 +1,5 @@
-import pytest
 from django.urls import reverse
 from rest_framework import status
-
-from modules.core.tests.conftest import api_client
-from modules.users.tests.conftest import user
 
 
 def test_clerk_sign_in_success(api_client, mock_clerk, mock_clerk_login_serializer):
@@ -18,7 +14,9 @@ def test_clerk_sign_in_success(api_client, mock_clerk, mock_clerk_login_serializ
 
 
 def test_clerk_sign_in_wrong_password(
-    api_client, mock_clerk_invalid_password, mock_clerk_login_serializer
+    api_client,
+    mock_clerk_invalid_password,
+    mock_clerk_login_serializer,
 ):
     url = reverse("clerk-sign-in")
     payload = {"email": "test@example.com", "password": "securepassword123"}

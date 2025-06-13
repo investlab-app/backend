@@ -27,5 +27,5 @@ application = ProtocolTypeRouter(
             sse_urlpatterns
             + [re_path("^", http_application)]  # type: ignore [arg-type]
         ),
-    }
+    },
 )

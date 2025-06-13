@@ -75,7 +75,7 @@ class AdminTestView(GenericAPIView):
                 "message": "Authenticated successfully!",
                 "user_email": user.email,
                 "user_id": user.id,
-            }
+            },
         )
 
 
@@ -99,7 +99,7 @@ class AuthTestView(GenericAPIView):
                 "message": "Authenticated successfully!",
                 "user_email": user.email,
                 "user_id": user.id,
-            }
+            },
         )
 
 

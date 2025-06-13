@@ -25,7 +25,7 @@ instrument_price_history = [
 ]
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_yfinance_repository():
     with patch("modules.prices.services.YfinanceRepository") as mock_repo:
         mock_instance = MagicMock()
@@ -36,7 +36,7 @@ def mock_yfinance_repository():
         yield mock_instance
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_yfinance_empty_history_ticker():
     with patch("yfinance.Ticker") as mock_ticker:
         mock_instance = MagicMock()
@@ -45,15 +45,16 @@ def mock_yfinance_empty_history_ticker():
         yield mock_instance
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_yfinance_invalid_ticker():
     with patch(
-        "yfinance.Ticker", side_effect=Exception("Some API failure")
+        "yfinance.Ticker",
+        side_effect=Exception("Some API failure"),
     ) as mock_ticker:
         yield mock_ticker
 
 
-@pytest.fixture
+@pytest.fixture()
 def expected_result_from_ticker():
     return [
         InstrumentPriceSchema(
@@ -62,5 +63,5 @@ def expected_result_from_ticker():
             high=Decimal("110.0"),
             low=Decimal("90.0"),
             close=Decimal("105.0"),
-        )
+        ),
     ]

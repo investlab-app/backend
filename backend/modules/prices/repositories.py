@@ -57,6 +57,6 @@ class YfinanceRepository:
                     high=Decimal(row["High"]),
                     low=Decimal(row["Low"]),
                     close=Decimal(row["Close"]),
-                )
+                ),
             )
         return prices

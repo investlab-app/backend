@@ -58,5 +58,5 @@ class PricesView(generics.GenericAPIView):
                 "data": serialized.data,
                 "min_price": price_history["min_price"],
                 "max_price": price_history["max_price"],
-            }
+            },
         )

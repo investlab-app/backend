@@ -2,16 +2,15 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from clerk_backend_api import SDKError
-from jwcrypto import jwk
 from rest_framework.test import APIRequestFactory
 
 from modules.users.models import User
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_clerk_login_serializer():
     with patch(
-        "modules.authentication.views.ClerkLoginSerializer"
+        "modules.authentication.views.ClerkLoginSerializer",
     ) as mock_serializer_class:
         mock_instance = MagicMock()
         mock_instance.is_valid.return_value = True
@@ -23,7 +22,7 @@ def mock_clerk_login_serializer():
         yield mock_instance
 
 
-@pytest.fixture
+@pytest.fixture()
 def valid_payload():
     return {
         "sub": "user_123",
@@ -36,7 +35,7 @@ def valid_payload():
     }
 
 
-@pytest.fixture
+@pytest.fixture()
 def user_from_payload(valid_payload):
     return User(
         id=valid_payload["sub"],
@@ -49,7 +48,7 @@ def user_from_payload(valid_payload):
     )
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_clerk(valid_payload):
     with (
         patch("modules.authentication.views.Clerk") as mock_clerk_views,
@@ -83,7 +82,7 @@ def mock_clerk(valid_payload):
         yield mock_clerk_instance
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_clerk_invalid_password():
     with patch("modules.authentication.views.Clerk") as mock_clerk_class:
         mock_clerk_instance = MagicMock()
@@ -102,12 +101,12 @@ def mock_clerk_invalid_password():
         yield mock_clerk_instance
 
 
-@pytest.fixture
+@pytest.fixture()
 def factory():
     return APIRequestFactory()
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_django_cache():
     with patch("modules.authentication.clerk_auth.cache") as mock_cache:
         mock_cache.get.return_value = None
@@ -115,8 +114,9 @@ def mock_django_cache():
         yield mock_cache
 
 
-@pytest.fixture
+@pytest.fixture()
 def mock_decode_token(mocker, valid_payload):
     return mocker.patch(
-        "modules.authentication.clerk_auth.decode_token", return_value=valid_payload
+        "modules.authentication.clerk_auth.decode_token",
+        return_value=valid_payload,
     )
