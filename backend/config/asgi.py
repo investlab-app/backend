@@ -24,8 +24,7 @@ http_application = get_asgi_application()
 application = ProtocolTypeRouter(
     {
         "http": URLRouter(
-            sse_urlpatterns
-            + [re_path("^", http_application)]  # type: ignore [arg-type]
+            sse_urlpatterns + [re_path("^", http_application)]  # type: ignore [arg-type]
         ),
     }
 )

@@ -21,14 +21,14 @@ class InstrumentsServiceMinimal:
         self._repository = YfinanceRepository()
 
     def get_instruments_list(
-            self,
-            tickers: list[str],
-            page: int = 1,
-            page_size: int = 10,
-            sort_by: str | None = None,
-            sort_direction: str = "asc",
-            filter_sector: str | None = None,
-            filter_industry: str | None = None,
+        self,
+        tickers: list[str],
+        page: int = 1,
+        page_size: int = 10,
+        sort_by: str | None = None,
+        sort_direction: str = "asc",
+        filter_sector: str | None = None,
+        filter_industry: str | None = None,
     ) -> PaginatedInstruments:
         """
         Retrieves a paginated, sorted, and filtered list of instruments.
