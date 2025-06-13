@@ -20,6 +20,7 @@ def setup_logging() -> None:
     # Add handler to logger
     logger.addHandler(console_handler)
 
+
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance with the given name."""
     return logging.getLogger(name)

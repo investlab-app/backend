@@ -1,4 +1,3 @@
-
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.decorators import api_view
@@ -37,7 +36,7 @@ class SSESubscribeView(APIView):
                 "%s: Failed to subscribe to symbols %s: %s",
                 connection_id,
                 symbols,
-                str(e)
+                str(e),
             )
             return Response(
                 {"error": f"Failed to subscribe to symbols: {str(e)}"},
@@ -68,7 +67,7 @@ class SSEUnsubscribeView(APIView):
                 "%s: Failed to unsubscribe from symbols %s: %s",
                 connection_id,
                 symbols,
-                str(e)
+                str(e),
             )
             return Response(
                 {"error": f"Failed to unsubscribe from symbols: {str(e)}"},
@@ -85,11 +84,7 @@ async def subscribe(request: Request) -> Response:
 
         try:
             live_prices.subscribe(connection_id, symbols)
-            logger.debug(
-                "%s: Subscribed to symbols: %s",
-                connection_id,
-                symbols
-            )
+            logger.debug("%s: Subscribed to symbols: %s", connection_id, symbols)
             return Response(
                 {"message": f"Subscribed to new events: {symbols}"},
                 status=status.HTTP_200_OK,
@@ -99,7 +94,7 @@ async def subscribe(request: Request) -> Response:
                 "%s: Failed to subscribe to symbols %s: %s",
                 connection_id,
                 symbols,
-                str(e)
+                str(e),
             )
             return Response(
                 {"error": f"Failed to subscribe to symbols: {str(e)}"},
@@ -128,7 +123,7 @@ def unsubscribe(request: Request) -> Response:
                 "%s: Failed to unsubscribe from symbols %s: %s",
                 connection_id,
                 symbols,
-                str(e)
+                str(e),
             )
             return Response(
                 {"error": f"Failed to unsubscribe from symbols: {str(e)}"},

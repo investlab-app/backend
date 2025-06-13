@@ -124,7 +124,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
                 "Task: %s, Done: %s, Cancelled: %s",
                 task.get_name(),
                 task.done(),
-                task.cancelled()
+                task.cancelled(),
             )
 
         event_data = f"event: {event}\ndata: {data}\n\n"

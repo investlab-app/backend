@@ -65,10 +65,7 @@ def test_get_detailed_instrument_info_missing_data(
     ticker_str = "AAPL"
     result = repo.get_instrument_detailed_info(ticker_str)
     assert isinstance(result, InstrumentDetailedInfoSchema)
-    assert (
-        result.description
-        == (
-            "The company designs, manufactures, and markets smartphones, computers, "
-            "and related services."
-        )
+    assert result.description == (
+        "The company designs, manufactures, and markets smartphones, computers, "
+        "and related services."
     )
