@@ -16,17 +16,12 @@ ENV PYTHONDONTWRITEBYTECODE=1
 # Prevents Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED=1
 
-# Upgrade pip
-RUN pip install --upgrade pip
-
-# Copy the Django project  and install dependencies
-COPY requirements.txt  /backend/
-
-# Run this command to install all dependencies
-RUN pip install --no-cache-dir -r requirements.txt
-
-# Copy the Django project to the container
+# Copy the project files
 COPY . /backend/
+
+# Upgrade pip and install dependencies
+RUN pip install --upgrade pip && \
+    pip install ".[dev]"
 
 # Add permissions to the entrypoint script
 RUN chmod +x /backend/entrypoint.sh
@@ -34,5 +29,5 @@ RUN chmod +x /backend/entrypoint.sh
 # Expose the Django port
 EXPOSE 8000
 
-# Run Django’s development server
+# Run Django's development server
 ENTRYPOINT ["/bin/bash", "/backend/entrypoint.sh"]

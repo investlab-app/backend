@@ -1,32 +1,37 @@
-[tool.isort]
-profile = "black"
-skip = [
-    "manage.py",
-    "migrations",
-    "export",
-    "media",
-    "requirements.txt",
-    "venv",
-    ".venv",
-    ".mypy_cache",
+[project]
+name = "stocks-backend"
+version = "0.1.0"
+description = "Stocks Backend"
+requires-python = ">=3.12"
+dependencies = [
+    "Django>=5.2.3",
+    "djangorestframework>=3.16.0",
+    "djangorestframework-simplejwt>=5.5.0",
+    "drf-spectacular>=0.28.0",
+    "channels>=4.2.2",
+    "django-cors-headers>=4.7.0",
+    "django-unfold>=0.59.0",
+    "yfinance>=0.2.63",
+    "pandas>=2.3.0",
+    "whitenoise>=6.9.0",
+    "pydantic>=2.11.6",
+    "clerk-backend-api @ git+https://github.com/mikolajkapica/clerk-sdk-python.git@43b124a61199d974b24a5955073ce72d529d7bc7",
+    "psycopg>=3.2.9",
+    "uvicorn>=0.34.3",
+    "jwcrypto>=1.5.6",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ['py312']
-exclude = '''
-/(
-    manage.py
-|   migrations
-|   export
-|   media
-|   requirements.txt
-|   venv
-|   .git
-|   .venv
-|   .mypy_cache
-)/
-'''
+[project.optional-dependencies]
+dev = [
+    "daphne>=4.2.0",
+    "pytest>=8.4.0",
+    "pytest-django>=4.11.1",
+    "pytest-cov>=6.2.1",
+    "mypy>=1.16.0",
+    "django-stubs>=5.2.0",
+    "djangorestframework-stubs>=3.16.0",
+    "ruff>=0.11.13"
+]
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
@@ -41,12 +46,58 @@ omit = [
     "*/migrations/*",
     "*/tests/*",
     "*/__init__.py",
-    # */apps.py",
+]
+
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+exclude = [
+    "manage.py",
+    "migrations",
+    "export",
+    "media",
+    "requirements.txt",
+    "venv",
+    ".venv",
+    ".mypy_cache",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",       # pydocstyle - we can enable this later if you want docstrings
+    "E501",    # line too long - ruff will handle this with line-length setting
+    "ANN",     # flake8-annotations - we can enable this later if you want type annotations
+    "PLR",     # pylint rules - we can enable specific ones if needed
+    "ERA",     # commented-out code - too strict for settings.py
+    "S311",    # random number generation - not used for crypto
+    "TRY003",  # exception messages - too strict
+    "EM101",   # exception messages - too strict
+    "EM102",   # exception messages - too strict
+    "BLE001",  # blind exception catching - sometimes necessary
+    "DJ001",   # null=True on string fields - sometimes necessary
+    "PGH003",  # type ignore comments - too strict
+    "RUF012",  # mutable class attributes - too strict
+    "N818",    # exception naming - too strict
+    "TRY300",  # else block - too strict
+    "COM812",  # trailing comma - conflicts with formatter
+    "ISC001",  # single line import - conflicts with formatter
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",    # assert statements
+    "S105",    # hardcoded password strings
+    "S106",    # hardcoded password strings
+    "DTZ001",  # datetime without timezone
+    "ARG001",  # unused function arguments
+    "ARG002",  # unused method arguments
+    "RET504",  # unnecessary assignment before return
+    "INP001",  # implicit namespace packages
 ]
 
 [tool.mypy]
 plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
-
 
 [[tool.mypy.overrides]]
 module = ["yfinance.*", "unfold.*", "channels.*"]
@@ -55,20 +106,9 @@ ignore_missing_imports = true
 [tool.django-stubs]
 django_settings_module = "config.settings"
 
-[tool.pylint]
-disable = [
-    "R0903", # too-few-public-methods
-    "C0114", # missing-module-docstring
-    "C0115", # missing-class-docstring
-    "C0415", # import-outside-toplevel
-    "C0301", # line-too-long
-    "W0223", # abstract-method
-]
-ignore = ["migrations"]
-load-plugins = ["pylint_pytest"]
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
 
-[tool.pylint."**/tests/**/*"]
-disable = [
-    "C0116", # missing-function-docstring
-    "W0611", # unused-import
-]
+[tool.setuptools]
+packages = ["config", "modules"]
