@@ -1,6 +1,5 @@
 # Use the official Python runtime image
 FROM python:3.13
-
 RUN apt-get update \
   && apt-get install -y netcat-traditional \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
@@ -19,9 +18,11 @@ ENV PYTHONUNBUFFERED=1
 # Copy the project files
 COPY . /backend/
 
-# Upgrade pip and install dependencies
-RUN pip install --upgrade pip && \
-    pip install ".[dev]"
+# Upgrade pip
+RUN pip install --upgrade pip
+
+# Install dependencies
+RUN pip install ".[dev]"
 
 # Add permissions to the entrypoint script
 RUN chmod +x /backend/entrypoint.sh
