@@ -1,4 +1,4 @@
-.PHONY: manage format format-check lint typecheck pip bash test install-dev
+.PHONY: manage format format-check lint typecheck pip bash test
 
 manage:
 	docker compose exec backend python3 manage.py $(filter-out $@,$(MAKECMDGOALS))
@@ -16,10 +16,7 @@ typecheck:
 	docker compose exec backend mypy .
 
 pip:
-	docker compose exec backend uv pip $(filter-out $@,$(MAKECMDGOALS))
-
-install-dev:
-	docker compose exec backend uv pip install -e ".[dev]"
+	docker compose exec backend pip3 $(filter-out $@,$(MAKECMDGOALS))
 
 bash:
 	docker compose exec backend bash

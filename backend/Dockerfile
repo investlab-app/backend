@@ -1,5 +1,6 @@
 # Use the official Python runtime image
 FROM python:3.13
+
 RUN apt-get update \
   && apt-get install -y netcat-traditional \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
@@ -21,7 +22,7 @@ COPY . /backend/
 # Upgrade pip
 RUN pip install --upgrade pip
 
-# Install dependencies
+# Install dependencies (with dev dependencies) (todo create seperate image for production)
 RUN pip install ".[dev]"
 
 # Add permissions to the entrypoint script

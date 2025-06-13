@@ -110,25 +110,16 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         """
         raise NotImplementedError("Subclasses must implement the handle method.")
 
-    async def send_event(self, event: str, data: Any) -> None:
-        """Send an event to the client.
+    def send_event(self, event: str, data: str) -> None:
+        """
+        Send an event to the client.
 
         Args:
             event: The event name.
             data: The event data.
         """
-        tasks = asyncio.all_tasks()
-        logger.info("Current tasks in event loop: %s", len(tasks))
-        for task in tasks:
-            logger.info(
-                "Task: %s, Done: %s, Cancelled: %s",
-                task.get_name(),
-                task.done(),
-                task.cancelled(),
-            )
-
         event_data = f"event: {event}\ndata: {data}\n\n"
-        await self.send(text_data=event_data)
+        asyncio.create_task(self.send_body(event_data.encode("utf-8"), more_body=True))
 
     @override
     async def disconnect(self):

@@ -15,7 +15,10 @@ class SSERequestSerializer(serializers.Serializer):
         data_copy["symbols"] = symbols
         return super().to_internal_value(data_copy)
 
-    symbols = serializers.CharField(
+    symbols = serializers.ListField(
+        child=serializers.CharField(
+            help_text="List of stock symbols to subscribe to, e.g. ['AAPL', 'GOOGL']."
+        ),
         required=True,
         help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
     )

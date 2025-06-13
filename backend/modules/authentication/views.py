@@ -18,7 +18,8 @@ from modules.authentication.serializers import ClerkLoginSerializer
 
 @method_decorator(csrf_exempt, name="dispatch")
 class ClerkUsernamePasswordSignInView(APIView):
-    """Handles Clerk authentication via username (email) and password.
+    """
+    Handles Clerk authentication via username (email) and password.
     Returns a Clerk sign-in token upon successful authentication.
     """
 
@@ -43,7 +44,9 @@ class ClerkUsernamePasswordSignInView(APIView):
         ),
     )
     def post(self, request):
-        """Sign in a user with email and password via Clerk."""
+        """
+        Sign in a user with email and password via Clerk.
+        """
         serializer = self.serializer_class(data=request.data)
         if not serializer.is_valid():
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

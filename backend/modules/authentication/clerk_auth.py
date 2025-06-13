@@ -29,7 +29,8 @@ def _get_public_key(kid):
 
 
 def decode_token(token):
-    """Decodes and verifies a Clerk-issued JWT.
+    """
+    Decodes and verifies a Clerk-issued JWT.
 
     This function extracts the `kid` (key ID) from the token header, retrieves the
     corresponding public key from Clerk's JWKS endpoint, and uses it to verify and
@@ -37,15 +38,12 @@ def decode_token(token):
     expected Clerk issuer.
 
     Args:
-    ----
         token (str): The JWT to decode.
 
     Returns:
-    -------
         dict: The decoded JWT payload if the token is valid.
 
     Raises:
-    ------
         AuthenticationFailed: If the token is invalid, expired, has incorrect
         padding, signature issues, or if the public key could not be retrieved.
 
@@ -116,7 +114,8 @@ def verify_token(token: str) -> User:
 
 
 class ClerkAuthentication(BaseAuthentication):
-    """Custom authentication class that verifies Clerk JWTs.
+    """
+    Custom authentication class that verifies Clerk JWTs.
     Sets `request.user` to a custom User model retrieved from database
     Sets `request.token to the retrived token`
     """

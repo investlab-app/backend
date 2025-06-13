@@ -2,6 +2,9 @@ import pytest
 from django.urls import reverse
 from rest_framework.response import Response
 
+from modules.core.tests.conftest import api_client_auth
+from modules.users.tests.conftest import user
+
 pytestmark = pytest.mark.django_db
 
 

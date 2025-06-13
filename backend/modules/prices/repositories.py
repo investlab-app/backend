@@ -18,13 +18,13 @@ class YfinanceRepository:
         end_date: datetime,
         interval: YFinanceTimeInterval,
     ) -> list[InstrumentPriceSchema]:
-        """Fetches historical price data for a specified financial instrument.
+        """
+        Fetches historical price data for a specified financial instrument.
 
         Uses the yfinance library to retrieve historical price data for the given
         instrument.
 
         Args:
-        ----
             instrument (str): The ticker symbol of the instrument (e.g., "aapl").
             start_date (datetime): The start of the time period to retrieve data for.
             end_date (datetime): The end of the time period to retrieve data for.
@@ -32,7 +32,6 @@ class YfinanceRepository:
                 (e.g., "ONE_MINUTE", "ONE_DAY").
 
         Returns:
-        -------
             list[InstrumentPriceSchema]: A list of Pydantic models containing the
                 instrument's historical prices.
 
@@ -57,7 +56,7 @@ class YfinanceRepository:
     def _convert_prices_to_schema(dataframe: DataFrame) -> list[InstrumentPriceSchema]:
         prices = []
         for index, row in dataframe.iterrows():
-            ts = cast("Timestamp", index)
+            ts = cast(Timestamp, index)
             prices.append(
                 InstrumentPriceSchema(
                     timestamp=ts.to_pydatetime(),

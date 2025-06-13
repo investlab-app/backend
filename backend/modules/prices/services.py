@@ -34,27 +34,24 @@ class PricesServiceMinimal:
         end_date: datetime,
         interval: str,
     ) -> PriceHistoryWithStats:
-        """Retrieves historical price data for a given instrument.
+        """
+        Retrieves historical price data for a given instrument.
 
         Retrieves price data with min and max price over the specified range.
 
         Args:
-        ----
             instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
             start_date (datetime): The starting datetime for the price data range.
             end_date (datetime): The ending datetime for the price data range.
             interval (str): The desired data interval (e.g., "1d", "1h").
 
         Returns:
-        -------
             PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema],
                 'min_price', and 'max_price'
 
         Raises:
-        ------
             ValidationError: If the start_date is after the end_date.
             APIException: If an error occurs while fetching data from the repository.
-
         """
         if start_date > end_date:
             raise InvalidTimeIntervalException(

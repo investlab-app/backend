@@ -70,8 +70,10 @@ class TestSSEConsumerImpl:
     async def test_live_prices_handler_filters_prices(
         self, consumer, mock_connection_id
     ):
-        """Test that live prices handler correctly filters prices based on client
-        subscriptions."""
+        """
+        Test that live prices handler correctly filters prices based on client
+        subscriptions.
+        """
         consumer.connection_id = mock_connection_id
         consumer.send_event = Mock()
 

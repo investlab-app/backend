@@ -21,23 +21,30 @@ class InstrumentsServiceMinimal:
         self._repository = YfinanceRepository()
 
     def get_instruments_list(
-        self,
-        tickers: list[str],
-        page: int = 1,
-        page_size: int = 10,
-        sort_by: str | None = None,
-        sort_direction: str = "asc",
-        filter_sector: str | None = None,
-        filter_industry: str | None = None,
+            self,
+            tickers: list[str],
+            page: int = 1,
+            page_size: int = 10,
+            sort_by: str | None = None,
+            sort_direction: str = "asc",
+            filter_sector: str | None = None,
+            filter_industry: str | None = None,
     ) -> PaginatedInstruments:
-        """Get information about multiple instruments.
+        """
+        Retrieves a paginated, sorted, and filtered list of instruments.
 
         Args:
-            tickers: List of ticker symbols.
+            tickers: List of ticker symbols to retrieve information for
+            page: Current page number (1-indexed)
+            page_size: Number of items per page
+            sort_by: Field to sort by (e.g., 'market_cap', 'current_price')
+            sort_direction: 'asc' or 'desc'
+            filter_sector: Filter by sector name
+            filter_industry: Filter by industry name
 
         Returns:
             PaginatedInstruments: Paginated list of instruments with total count and
-                page info.
+            page info.
         """
         instruments = self._repository.get_instruments_info(tickers)
 

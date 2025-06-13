@@ -57,7 +57,7 @@ class InstrumentsListView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        validated = cast("dict", params.validated_data)  # pylint: disable=duplicate-code
+        validated = cast(dict, params.validated_data)  # pylint: disable=duplicate-code
 
         raw_tickers = (validated.get("tickers") or "").split(",")
         tickers = list(

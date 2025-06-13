@@ -26,7 +26,7 @@ class PricesView(generics.GenericAPIView):
                 {"errors": params.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        validated = cast("dict", params.validated_data)
+        validated = cast(dict, params.validated_data)
 
         try:
             service = PricesServiceMinimal()
