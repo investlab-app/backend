@@ -1,7 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING, override
 
-from clerk_backend_api import Any
+from typing import Any
 
 from config.logging import get_logger
 from modules.authentication import clerk_auth

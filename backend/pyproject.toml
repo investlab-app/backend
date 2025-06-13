@@ -65,6 +65,7 @@ exclude = [
     "venv",
     ".venv",
     ".mypy_cache",
+    "*.egg-info",
 ]
 
 [tool.ruff.lint]
