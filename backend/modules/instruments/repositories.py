@@ -122,7 +122,7 @@ class YfinanceRepository:
             basic_info.current_price is not None
             and basic_info.previous_close is not None
         ):
-            basic_info.day_change = basic_info.current_price - basic_info.previous_close
+            basic_info.day_change = Decimal(str(basic_info.current_price)) - Decimal(str(basic_info.previous_close))
             if basic_info.previous_close != Decimal(0):
                 basic_info.day_change_percent = (
                     basic_info.day_change / basic_info.previous_close

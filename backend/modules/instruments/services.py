@@ -55,13 +55,11 @@ class InstrumentsServiceMinimal:
             instruments = [i for i in instruments if i.industry == filter_industry]
 
         if sort_by and hasattr(InstrumentBasicInfoSchema, sort_by):
+            assert isinstance(sort_by, str)
             reverse = sort_direction.lower() == "desc"
+            default_sort_value = float("-inf") if reverse else float("inf")
             instruments.sort(
-                key=lambda x: (
-                    getattr(x, sort_by)
-                    if getattr(x, sort_by) is not None
-                    else (0 if reverse else float("inf"))
-                ),
+                key=lambda x, key=sort_by: getattr(x, key, default_sort_value),
                 reverse=reverse,
             )
 

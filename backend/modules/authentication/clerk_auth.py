@@ -7,6 +7,7 @@ from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
+from requests.exceptions import RequestException
 
 from modules.users.models import User
 
@@ -16,7 +17,7 @@ def _get_jwks():
         response = requests.get(settings.CLERK_JWKS_URL, timeout=5)
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.RequestException as e:
+    except RequestException as e:
         raise AuthenticationFailed(f"Failed to fetch JWKS: {e!s}") from e
 
 
