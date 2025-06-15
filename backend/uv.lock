@@ -1100,7 +1100,6 @@ dependencies = [
     { name = "pandas" },
     { name = "psycopg" },
     { name = "pydantic" },
-    { name = "uv" },
     { name = "uvicorn" },
     { name = "whitenoise" },
     { name = "yfinance" },
@@ -1120,6 +1119,7 @@ dev = [
     { name = "pytest-mock" },
     { name = "ruff" },
     { name = "types-jwcrypto" },
+    { name = "uv" },
 ]
 
 [package.metadata]
@@ -1148,7 +1148,7 @@ requires-dist = [
     { name = "pytest-mock", marker = "extra == 'dev'", specifier = ">=3.14.1" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.11.13" },
     { name = "types-jwcrypto", marker = "extra == 'dev'", specifier = ">=1.5.0.20250516" },
-    { name = "uv", specifier = ">=0.7.13" },
+    { name = "uv", marker = "extra == 'dev'", specifier = ">=0.7.13" },
     { name = "uvicorn", specifier = ">=0.34.3" },
     { name = "whitenoise", specifier = ">=6.9.0" },
     { name = "yfinance", specifier = ">=0.2.63" },
