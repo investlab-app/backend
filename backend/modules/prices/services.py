@@ -202,9 +202,11 @@ class LivePrices:
         logger.debug("Handling price update: %s", prices)
 
         handlers = [
-            client.handler
+            handler
             for client in self._clients.values()
-            if client.handler is not None
+            if (handler := client.handler)
+            and client.instruments
+            and prices["id"] in client.instruments
         ]
 
         for handler in handlers:
