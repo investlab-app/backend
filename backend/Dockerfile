@@ -21,8 +21,8 @@ COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /bin/
 # Copy dependency files first for better caching
 COPY pyproject.toml uv.lock ./
 
-# Install external dependencies only (not the local package)
-RUN uv sync --locked --no-install-project
+# Install dependencies
+RUN uv sync --locked --no-install-project --dev
 
 # Copy the rest of the project files
 COPY . /backend/
