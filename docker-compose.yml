@@ -25,7 +25,10 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/backend
+      - ./backend:/backend:delegated
+      - /backend/.venv
+      - /backend/__pycache__
+      - /backend/*.pyc
     networks:
       - app_network
 
