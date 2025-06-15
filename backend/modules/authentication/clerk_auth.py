@@ -5,9 +5,9 @@ from django.conf import settings
 from django.core.cache import cache
 from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
+from requests.exceptions import RequestException
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
-from requests.exceptions import RequestException
 
 from modules.users.models import User
 
