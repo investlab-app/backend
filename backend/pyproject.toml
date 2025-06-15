@@ -58,7 +58,7 @@ omit = [
 
 [tool.ruff]
 line-length = 88
-target-version = "py312"
+target-version = "py313"
 exclude = [
     "manage.py",
     "migrations",
