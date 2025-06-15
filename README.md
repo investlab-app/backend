@@ -57,6 +57,7 @@ docker compose up --build
 Available commands to run in the container:
 
 ```bash
+make uv <command>      # Run uv commands in the container
 make manage <command>  # Run Django management commands
 make format            # Format code with ruff
 make lint              # Run ruff linter
