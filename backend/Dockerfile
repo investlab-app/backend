@@ -1,4 +1,4 @@
-FROM python:3.13-slim-bookworm
+FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 
 RUN apt-get update \
   && apt-get install -y netcat-traditional git \
@@ -14,24 +14,31 @@ WORKDIR /backend
 ENV PYTHONDONTWRITEBYTECODE=1
 # Prevents Python from buffering stdout and stderr
 ENV PYTHONUNBUFFERED=1
+# Copy from the cache instead of linking since it's a mounted volume
+ENV UV_LINK_MODE=copy
+# Use system Python environment
+ENV UV_PROJECT_ENVIRONMENT=/usr/local
 
-# Install uv
-COPY --from=ghcr.io/astral-sh/uv:0.7.13 /uv /uvx /bin/
+# Install the project's dependencies using the lockfile and settings
+RUN --mount=type=cache,target=/root/.cache/uv \
+    --mount=type=bind,source=uv.lock,target=uv.lock \
+    --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
+    uv sync --locked --no-install-project
 
-# Copy dependency files first for better caching
-COPY pyproject.toml uv.lock ./
-
-# Install dependencies
-RUN uv sync --locked --no-install-project --dev
-
-# Copy the rest of the project files
-COPY . /backend/
-
-# Add permissions to the entrypoint script
-RUN chmod +x /backend/entrypoint.sh
+# Then, add the rest of the project source code and install it
+# Installing separately from its dependencies allows optimal layer caching
+COPY . /backend
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --locked
 
 # Expose the Django port
 EXPOSE 8000
 
+# Reset the entrypoint, don't invoke `uv`
+ENTRYPOINT []
+
+# Add permissions to the entrypoint script
+RUN chmod +x /backend/entrypoint.sh
+
 # Run Django's development server
-ENTRYPOINT ["/bin/bash", "/backend/entrypoint.sh"]
+CMD ["/bin/bash", "/backend/entrypoint.sh"]

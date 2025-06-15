@@ -4,7 +4,7 @@ version = "0.1.0"
 description = "Stocks Backend"
 requires-python = ">=3.13"
 dependencies = [
-    "Django>=5.2.3",
+    "django>=5.2.3",
     "djangorestframework>=3.16.0",
     "djangorestframework-simplejwt>=5.5.0",
     "drf-spectacular>=0.28.0",
@@ -15,13 +15,14 @@ dependencies = [
     "pandas>=2.3.0",
     "whitenoise>=6.9.0",
     "pydantic>=2.11.6",
-    "clerk-backend-api @ git+https://github.com/mikolajkapica/clerk-sdk-python.git@43b124a61199d974b24a5955073ce72d529d7bc7",
+    "clerk-backend-api>=2.2.0",
     "psycopg>=3.2.9",
     "uvicorn>=0.34.3",
     "jwcrypto>=1.5.6",
+    "ty>=0.0.1a10",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
     "uv>=0.7.13",
     "daphne>=4.2.0",
@@ -37,6 +38,9 @@ dev = [
     "pandas-stubs>=2.2.3.250527",
     "types-jwcrypto>=1.5.0.20250516",
 ]
+
+[tool.uv.sources]
+clerk-backend-api = { git = "https://github.com/mikolajkapica/clerk-sdk-python.git" }
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
@@ -122,22 +126,3 @@ ignore_missing_imports = true
 
 [tool.django-stubs]
 django_settings_module = "config.settings"
-
-[build-system]
-requires = ["setuptools>=42", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[tool.setuptools]
-packages = [
-    "config",
-    "modules",
-    "modules.prices",
-    "modules.sse",
-    "modules.instruments",
-    "modules.authentication",
-    "modules.core",
-    "modules.users",
-    "modules.transactions",
-    "modules.orders",
-    "modules.investors"
-]
