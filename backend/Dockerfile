@@ -1,7 +1,7 @@
 FROM python:3.13-slim-bookworm
 
 RUN apt-get update \
-  && apt-get install -y netcat-traditional \
+  && apt-get install -y netcat-traditional git \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean \
   && mkdir /backend
