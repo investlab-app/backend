@@ -3,7 +3,6 @@ from decimal import Decimal
 
 import yfinance
 
-from config.logging import get_logger
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
@@ -13,8 +12,6 @@ from modules.instruments.schemas import (
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
-
-logger = get_logger(__name__)
 
 
 class YFinanceRepository:
@@ -206,13 +203,10 @@ class YFinanceRepository:
         Returns:
             list[str]: List of available instrument tickers.
         """
-        logger.debug("Getting available instruments: %s", self._available_instruments)
         return self._available_instruments
 
     def get_news(self, ticker_str: str) -> list[NewsItem]:
         ticker = yfinance.Ticker(ticker_str)
-
-        logger.info("Ticker news: %s", ticker.news[:100])
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]
