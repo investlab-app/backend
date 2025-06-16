@@ -9,7 +9,7 @@ from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
 )
-from modules.instruments.repositories import InstrumentsRepository
+from modules.instruments.repositories import YFinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
@@ -123,8 +123,8 @@ def mock_yfinance_tickers():
 
 
 @pytest.fixture
-def mock_instruments_repository():
-    class MockInstrumentsRepository(InstrumentsRepository):
+def mock_yfinance_repository():
+    class MockYFinanceRepository(YFinanceRepository):
         def __init__(self):
             super().__init__(available_instruments=["AAPL", "MSFT", "GOOG"])
 
@@ -312,4 +312,4 @@ def mock_instruments_repository():
                 ),
             ]
 
-    return MockInstrumentsRepository()
+    return MockYFinanceRepository()

@@ -5,18 +5,18 @@ from rest_framework.response import Response
 
 from config import container
 from modules.core.tests.conftest import api_client_auth
-from modules.instruments.tests.conftest import mock_instruments_repository
+from modules.instruments.tests.conftest import mock_yfinance_repository
 from modules.users.tests.conftest import user
 
 pytestmark = pytest.mark.django_db
 
 
 def test_instruments_available_view_success(
-    api_client_auth, mock_instruments_repository
+    api_client_auth, mock_yfinance_repository
 ) -> None:
     url = reverse("instruments-available")
     with container.instruments_container.instruments_repository.override(
-        mock_instruments_repository
+        mock_yfinance_repository
     ):
         response = api_client_auth.get(url)
     assert isinstance(response, Response)
@@ -28,11 +28,11 @@ def test_instruments_available_view_success(
 
 
 def test_instruments_list_view_success(
-    api_client_auth, mock_instruments_repository
+    api_client_auth, mock_yfinance_repository
 ) -> None:
     url = reverse("instruments-list")
     with container.instruments_container.instruments_repository.override(
-        mock_instruments_repository
+        mock_yfinance_repository
     ):
         response = api_client_auth.get(
             url,
@@ -63,11 +63,11 @@ def test_instruments_list_view_missing_tickers(api_client_auth) -> None:
 
 
 def test_instrument_detail_view_success(
-    api_client_auth, mock_instruments_repository
+    api_client_auth, mock_yfinance_repository
 ) -> None:
     url = reverse("instrument-detail", kwargs={"ticker": "AAPL"})
     with container.instruments_container.instruments_repository.override(
-        mock_instruments_repository
+        mock_yfinance_repository
     ):
         response = api_client_auth.get(url)
     assert isinstance(response, Response)
@@ -87,11 +87,11 @@ def test_instrument_detail_view_invalid_ticker(api_client_auth) -> None:
 
 
 def test_instrument_news_view_success(
-    api_client_auth, mock_instruments_repository
+    api_client_auth, mock_yfinance_repository
 ) -> None:
     url = reverse("instrument-news", kwargs={"ticker": "AAPL"})
     with container.instruments_container.instruments_repository.override(
-        mock_instruments_repository
+        mock_yfinance_repository
     ):
         response = api_client_auth.get(url)
     assert isinstance(response, Response)

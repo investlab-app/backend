@@ -1,25 +1,11 @@
 instruments:
   available:
-    - AAPL
-    - MSFT
-    - GOOGL
-    - AMZN
-    - META
-    - TSLA
-    - NVDA
-    - JPM
-    - V
-    - WMT
-  settings:
-    pagination:
-      default_page_size: 20
-      max_page_size: 100
-    caching:
-      enabled: true
-      ttl: 300  # 5 minutes
-    api:
-      rate_limit: 100  # requests per minute
-      timeout: 30  # seconds
-    logging:
-      level: "INFO"
-      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s" 
+    [
+      MMM, AOS, ABT, ABBV, ACN, ADBE, AMD, AES, AFL, A, APD, ABNB, AKAM, ALB, ARE, 
+      ALGN, ALLE, LNT, ALL, GOOGL, GOOG, MO, AMZN, AMCR, AEE, AEP, AXP, AIG, AMT, 
+      AWK, AMP, AME, AMGN, APH, ADI, ANSS, AON, APA, APO, AAPL, AMAT, APTV, ACGL,
+      ADM, ANET, AJG, AIZ, T, ATO, ADSK, ADP, 
+    ]
+logging:
+  level: "INFO"
+  format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

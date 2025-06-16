@@ -1,7 +1,7 @@
 from typing import TypedDict
 
 from config.logging import get_logger
-from modules.instruments.repositories import InstrumentsRepository
+from modules.instruments.repositories import YFinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
@@ -20,9 +20,8 @@ class PaginatedInstruments(TypedDict):
 
 
 class InstrumentsService:
-    def __init__(self, repository: InstrumentsRepository | None = None):
-        logger.debug("Initializing InstrumentsService with repository: %s", repository)
-        self._repository = repository or InstrumentsRepository()
+    def __init__(self, repository: YFinanceRepository):
+        self._repository = repository
 
     def get_instruments_list(
         self,

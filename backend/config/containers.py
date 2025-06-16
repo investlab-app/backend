@@ -22,7 +22,6 @@ class AppContainer(containers.DeclarativeContainer):
 def setup_container() -> "AppContainer":
     """Set up the application container."""
     container = AppContainer()
-    logger.debug("Setting up AppContainer with config: %s", container.config())
     container.wire(
         modules=[
             "modules.instruments.views",

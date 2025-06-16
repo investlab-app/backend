@@ -31,7 +31,6 @@ class InstrumentsAvailableView(generics.GenericAPIView):
         ],
     ):
         super().__init__()
-        logger.debug("Initializing InstrumentsAvailableView with service: %s", service)
         self.service = service
 
     @extend_schema(

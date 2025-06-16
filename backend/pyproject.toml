@@ -118,7 +118,6 @@ ignore = [
 ]
 
 [tool.ty.src]
-root = "./stocks-backend/backend"
 exclude = [
     "*/migrations/*",
 ] 

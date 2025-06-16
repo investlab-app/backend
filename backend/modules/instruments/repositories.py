@@ -17,12 +17,8 @@ from modules.instruments.schemas import (
 logger = get_logger(__name__)
 
 
-class InstrumentsRepository:
+class YFinanceRepository:
     def __init__(self, available_instruments: list[str]):
-        logger.debug(
-            "Initializing InstrumentsRepository with instruments: %s",
-            available_instruments,
-        )
         self._available_instruments = available_instruments
 
     @staticmethod
@@ -66,9 +62,7 @@ class InstrumentsRepository:
                 f"Errors fetching data: {', '.join(tickers_errors)}"
             )
 
-        return [
-            InstrumentsRepository._get_basic_info(ticker) for ticker in tickers_data
-        ]
+        return [YFinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
 
     @staticmethod
     def get_instrument_detailed_info(
@@ -93,7 +87,7 @@ class InstrumentsRepository:
             info = y_ticker.info
             if not info or not info.get("symbol"):
                 raise FetchInstrumentInfoException(f"Invalid ticker: {ticker}")
-            detailed_info = InstrumentsRepository._get_detailed_info(y_ticker)
+            detailed_info = YFinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
 
@@ -147,7 +141,7 @@ class InstrumentsRepository:
     def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
         ticker_info = ticker.info
 
-        basic_schema_instance = InstrumentsRepository._get_basic_info(ticker_info)
+        basic_schema_instance = YFinanceRepository._get_basic_info(ticker_info)
 
         earnings_timestamp = ticker_info.get("earningsTimestamp")
         earnings_date_value = (
