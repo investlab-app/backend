@@ -1,0 +1,25 @@
+instruments:
+  available:
+    - AAPL
+    - MSFT
+    - GOOGL
+    - AMZN
+    - META
+    - TSLA
+    - NVDA
+    - JPM
+    - V
+    - WMT
+  settings:
+    pagination:
+      default_page_size: 20
+      max_page_size: 100
+    caching:
+      enabled: true
+      ttl: 300  # 5 minutes
+    api:
+      rate_limit: 100  # requests per minute
+      timeout: 30  # seconds
+    logging:
+      level: "INFO"
+      format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s" 

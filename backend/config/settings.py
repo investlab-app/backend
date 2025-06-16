@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from config import str_to_bool, str_to_list
+from config.utils import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
 # from django.utils.translation import gettext_lazy as _
@@ -44,21 +44,21 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.users",
     "modules.prices",
+    "modules.instruments",
 ]
 
 if DEBUG:
     INSTALLED_APPS.insert(0, "daphne")
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
     "django.contrib.messages.middleware.MessageMiddleware",
     "django.middleware.clickjacking.XFrameOptionsMiddleware",
-    "whitenoise.middleware.WhiteNoiseMiddleware",
 ]
 
 ROOT_URLCONF = "config.urls"

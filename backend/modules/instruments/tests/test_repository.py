@@ -3,7 +3,7 @@ from decimal import Decimal
 import pytest
 
 from modules.instruments.exceptions import FetchInstrumentInfoException
-from modules.instruments.repositories import YfinanceRepository
+from modules.instruments.repositories import InstrumentsRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
@@ -12,7 +12,7 @@ from modules.prices.tests.conftest import mock_yfinance_empty_history_ticker
 
 
 def test_get_basic_instrument_info_success(mock_yfinance_tickers):
-    repo = YfinanceRepository()
+    repo = InstrumentsRepository(available_instruments=["AAPL", "MSFT"])
     tickers = ["AAPL", "MSFT"]
     result = repo.get_instruments_info(tickers)
     assert isinstance(result, list)
@@ -25,7 +25,7 @@ def test_get_basic_instrument_info_success(mock_yfinance_tickers):
 def test_get_basic_instrument_info_empty_ticker(
     mock_yfinance_empty_history_ticker,
 ):
-    repo = YfinanceRepository()
+    repo = InstrumentsRepository(available_instruments=["AAPL", "MSFT"])
     tickers = []
     result = repo.get_instruments_info(tickers)
     assert isinstance(result, list)
@@ -35,7 +35,7 @@ def test_get_basic_instrument_info_empty_ticker(
 def test_get_detailed_instrument_info_success(
     mock_yfinance_ticker,
 ):
-    repo = YfinanceRepository()
+    repo = InstrumentsRepository(available_instruments=["AAPL", "MSFT"])
     ticker = "AAPL"
     result = repo.get_instrument_detailed_info(ticker)
     assert isinstance(result, InstrumentDetailedInfoSchema)
@@ -46,7 +46,7 @@ def test_get_detailed_instrument_info_success(
 
 
 def test_get_detailed_instrument_info_invalid_ticker():
-    repo = YfinanceRepository()
+    repo = InstrumentsRepository(available_instruments=["AAPL", "MSFT"])
     ticker = "invalid"
     with pytest.raises(FetchInstrumentInfoException):
         repo.get_instrument_detailed_info(ticker)
@@ -55,7 +55,7 @@ def test_get_detailed_instrument_info_invalid_ticker():
 def test_get_detailed_instrument_info_missing_data(
     mock_yfinance_ticker,
 ):
-    repo = YfinanceRepository()
+    repo = InstrumentsRepository(available_instruments=["AAPL", "MSFT"])
     ticker_str = "AAPL"
     result = repo.get_instrument_detailed_info(ticker_str)
     assert isinstance(result, InstrumentDetailedInfoSchema)

@@ -8,8 +8,8 @@ from typing import TypedDict
 
 import yfinance
 
-from config import parse_time_interval
 from config.logging import get_logger
+from config.utils import parse_time_interval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import ClientInfo, InstrumentPriceSchema, PriceUpdateHandler
@@ -23,9 +23,9 @@ class PriceHistoryWithStats(TypedDict):
     max_price: Decimal
 
 
-class PricesServiceMinimal:
-    def __init__(self):
-        self._repository = YfinanceRepository()
+class PricesService:
+    def __init__(self, repository: YfinanceRepository):
+        self._repository = repository
 
     def get_instrument_price_history(
         self,
@@ -63,6 +63,7 @@ class PricesServiceMinimal:
             end_date,
             parse_time_interval(interval.lower()),
         )
+        logger.debug("Got data: %s", data)
         min_price = min(d.low for d in data)
         max_price = max(d.high for d in data)
 

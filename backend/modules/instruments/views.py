@@ -1,10 +1,13 @@
 from typing import cast
 
+from dependency_injector.wiring import Provide
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from config.containers import AppContainer
+from config.logging import get_logger
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
@@ -15,10 +18,22 @@ from modules.instruments.serializers import (
     InstrumentsListQueryParams,
     PaginatedInstrumentsResponseSerializer,
 )
-from modules.instruments.services import InstrumentsServiceMinimal
+from modules.instruments.services import InstrumentsService
+
+logger = get_logger(__name__)
 
 
 class InstrumentsAvailableView(generics.GenericAPIView):
+    def __init__(
+        self,
+        service: InstrumentsService = Provide[
+            AppContainer.instruments_container.instruments_service
+        ],
+    ):
+        super().__init__()
+        logger.debug("Initializing InstrumentsAvailableView with service: %s", service)
+        self.service = service
+
     @extend_schema(
         responses={
             "200": {
@@ -33,14 +48,23 @@ class InstrumentsAvailableView(generics.GenericAPIView):
         """
         Get a list of some available instruments (from S&P 500 for 6/9/2025).
         """
-        service = InstrumentsServiceMinimal()
-
-        instruments: list[str] = service.get_instruments_available()
+        logger.debug("Getting available instruments from service: %s", self.service)
+        instruments: list[str] = self.service.get_instruments_available()
+        logger.debug("Got instruments: %s", instruments)
 
         return Response(data={"instruments": instruments}, status=status.HTTP_200_OK)
 
 
 class InstrumentsListView(generics.GenericAPIView):
+    def __init__(
+        self,
+        service: InstrumentsService = Provide[
+            AppContainer.instruments_container.instruments_service
+        ],
+    ):
+        super().__init__()
+        self.service = service
+
     @extend_schema(
         parameters=[InstrumentsListQueryParams],
         responses=[PaginatedInstrumentsResponseSerializer],
@@ -63,10 +87,9 @@ class InstrumentsListView(generics.GenericAPIView):
         tickers = list(
             {t.upper() for t in (piece.strip() for piece in raw_tickers) if t}
         )
-        service = InstrumentsServiceMinimal()
 
         try:
-            result = service.get_instruments_list(
+            result = self.service.get_instruments_list(
                 tickers=tickers,
                 page=validated.get("page", 1),
                 page_size=validated.get("page_size", 10),
@@ -103,6 +126,15 @@ class InstrumentsListView(generics.GenericAPIView):
 
 
 class InstrumentDetailView(generics.GenericAPIView):
+    def __init__(
+        self,
+        service: InstrumentsService = Provide[
+            AppContainer.instruments_container.instruments_service
+        ],
+    ):
+        super().__init__()
+        self.service = service
+
     @extend_schema(
         responses=[InstrumentDetailedInfoSerializer],
     )
@@ -110,10 +142,8 @@ class InstrumentDetailView(generics.GenericAPIView):
         """
         Get detailed information for a single instrument.
         """
-        service = InstrumentsServiceMinimal()
-
         try:
-            result = service.get_instrument_detailed_info(ticker)
+            result = self.service.get_instrument_detailed_info(ticker)
         except FetchInstrumentInfoException as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -133,6 +163,15 @@ class InstrumentDetailView(generics.GenericAPIView):
 
 
 class InstrumentNewsView(generics.GenericAPIView):
+    def __init__(
+        self,
+        service: InstrumentsService = Provide[
+            AppContainer.instruments_container.instruments_service
+        ],
+    ):
+        super().__init__()
+        self.service = service
+
     @extend_schema(
         responses={
             "200": {
@@ -154,10 +193,8 @@ class InstrumentNewsView(generics.GenericAPIView):
         Returns:
             Response: A response containing the news items for the instrument.
         """
-        service = InstrumentsServiceMinimal()
-
         try:
-            result = service.get_news(ticker)
+            result = self.service.get_news(ticker)
         except FetchInstrumentNewsException as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
