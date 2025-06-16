@@ -39,9 +39,7 @@ jobs:
           file: ./backend/Dockerfile
           load: true
           tags: stocks-backend-backend:latest
-          cache-from: |
-            type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop
-            type=gha
+          cache-from: type=gha
           cache-to: type=gha,mode=max
       - name: Run containers
         run: docker compose up -d --wait --no-build
