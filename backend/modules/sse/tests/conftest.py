@@ -43,4 +43,4 @@ def mock_prices():
 
 @pytest.fixture
 def consumer():
-    return SSEConsumerImpl()
+    return SSEConsumerImpl(live_prices=LivePrices())

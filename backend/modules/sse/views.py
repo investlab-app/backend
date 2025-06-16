@@ -20,8 +20,6 @@ class SSESubscribeView(APIView):
         live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
     ):
         super().__init__()
-        print("INIT SSESubscribeView with")
-        print(live_prices)
         self.live_prices = live_prices
 
     @extend_schema(request=SSERequestSerializer)
@@ -30,10 +28,6 @@ class SSESubscribeView(APIView):
             params = SSERequestParams.parse(request.data)
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        print(self.live_prices)
-
-        print("SUBSCRIBE to symbols:", params.symbols)
 
         connection_id = params.connection_id
         symbols = params.symbols
