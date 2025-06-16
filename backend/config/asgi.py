@@ -17,15 +17,14 @@ from django.urls import re_path
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
-from config.urls import sse_urlpatterns
+from config.urls import sse_urlpatterns  # noqa: E402
 
 http_application = get_asgi_application()
 
 application = ProtocolTypeRouter(
     {
         "http": URLRouter(
-            sse_urlpatterns
-            + [re_path("^", http_application)]  # type: ignore [arg-type]
+            sse_urlpatterns + [re_path("^", http_application)]  # type: ignore [arg-type]
         ),
     }
 )

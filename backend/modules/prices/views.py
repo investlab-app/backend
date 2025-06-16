@@ -14,7 +14,6 @@ from modules.prices.services import PricesServiceMinimal
 
 
 class PricesView(generics.GenericAPIView):
-
     @extend_schema(
         parameters=[InstrumentPriceQueryParams],
         responses=[InstrumentPriceResponseSerializer(many=True)],
@@ -27,7 +26,7 @@ class PricesView(generics.GenericAPIView):
                 {"errors": params.errors},
                 status=status.HTTP_400_BAD_REQUEST,
             )
-        validated = cast(dict, params.validated_data)
+        validated = cast("dict", params.validated_data)
 
         try:
             service = PricesServiceMinimal()
@@ -56,5 +55,5 @@ class PricesView(generics.GenericAPIView):
                 "data": serialized.data,
                 "min_price": price_history["min_price"],
                 "max_price": price_history["max_price"],
-            }
+            },
         )

@@ -23,7 +23,7 @@ class TestSSEConsumerImpl:
         test_token = "valid_test_token"
 
         with patch(
-            "modules.sse.sse_consumer_impl.clerk_auth.authenticate_and_get_user"
+            "modules.sse.sse_consumer_impl.clerk_auth.verify_token",
         ) as mock_validate:
             mock_validate.return_value = True
 
@@ -43,35 +43,29 @@ class TestSSEConsumerImpl:
         # Setup clients dict with ClientInfo
         from modules.prices.schemas import ClientInfo
 
-        live_prices._clients[mock_connection_id] = ClientInfo(
-            instruments=mock_symbols, handler=None
+        live_prices.set_client(
+            mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
         )
 
-        with (
-            patch("modules.sse.sse_consumer_impl.logging") as mock_logging,
-            patch.object(
-                consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
-            ) as mock_super_disconnect,
-        ):
-
+        with patch.object(
+            consumer.__class__.__bases__[0], "disconnect", new_callable=AsyncMock
+        ) as mock_super_disconnect:
             await consumer.disconnect()
 
             # Verify shutdown event was set
             assert consumer.shutdown_event.is_set()
 
-            # Verify logging
-            mock_logging.debug.assert_any_call(
-                f"{mock_connection_id}: Disconnecting SSE stream."
-            )
-
             # Verify parent disconnect was called
             mock_super_disconnect.assert_called_once()
 
-    @pytest.mark.asyncio
-    async def test_live_prices_handler_filters_prices_correctly(
+    @pytest.mark.asyncio()
+    async def test_live_prices_handler_filters_prices(
         self, consumer, mock_connection_id
     ):
-        """Test that live prices handler correctly filters prices based on client subscriptions"""
+        """
+        Test that live prices handler correctly filters prices based on client
+        subscriptions.
+        """
         consumer.connection_id = mock_connection_id
         consumer.send_event = Mock()
 

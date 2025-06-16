@@ -1,16 +1,17 @@
 import asyncio
-import logging
 from abc import ABC, abstractmethod
+from typing import override
 from urllib.parse import parse_qs
 
 from channels.generic.http import AsyncHttpConsumer
-from typing_extensions import override
 
+from config.logging import get_logger
 from config.settings import CORS_ALLOWED_ORIGINS
+
+logger = get_logger(__name__)
 
 
 class SSEConsumer(AsyncHttpConsumer, ABC):
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.sse_task = None
@@ -45,7 +46,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         :param bearer_token: The token to validate.
         :return: bool: True if the token is valid, False otherwise.
         """
-        raise NotImplementedError("Subclasses must implement validate_auth method.")
+        raise NotImplementedError("Subclasses must implement _validate_auth method.")
 
     async def http_request(self, message) -> None:
         """
@@ -109,20 +110,14 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
         """
         raise NotImplementedError("Subclasses must implement the handle method.")
 
-    def send_event(self, event: str, data: str):
+    def send_event(self, event: str, data: str) -> None:
         """
-        Sends an event to the client.
-        :param event: The channel name for the event.
-        :param data: The data to send in the event.
+        Send an event to the client.
+
+        Args:
+            event: The event name.
+            data: The event data.
         """
-
-        tasks = asyncio.all_tasks()
-        logging.info(f"Current tasks in event loop: {len(tasks)}")
-        for task in tasks:
-            logging.info(
-                f"Task: {task.get_name()}, Done: {task.done()}, Cancelled: {task.cancelled()}"
-            )
-
         event_data = f"event: {event}\ndata: {data}\n\n"
         asyncio.create_task(self.send_body(event_data.encode("utf-8"), more_body=True))
 
@@ -138,5 +133,5 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
             try:
                 await self.sse_task
             except asyncio.CancelledError:
-                logging.info("SSE task was successfully cancelled.")
+                logger.info("SSE task was successfully cancelled.")
         await super().disconnect()

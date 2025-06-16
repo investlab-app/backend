@@ -1,8 +1,12 @@
-from modules.authentication.clerk_auth import ClerkAuthentication, decode_token
+from modules.authentication.clerk_auth import ClerkAuthentication
 
 
 def test_auth_with_valid_authorization_header(
-    factory, mock_decode_token, user_from_payload, mock_clerk, mock_django_cache
+    factory,
+    mock_decode_token,
+    user_from_payload,
+    mock_clerk,
+    mock_django_cache,
 ):
     request = factory.get("/test", HTTP_AUTHORIZATION="Bearer mock.token")
     auth = ClerkAuthentication()

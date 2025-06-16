@@ -1,4 +1,3 @@
-import logging
 from typing import cast
 
 from drf_spectacular.utils import extend_schema
@@ -58,7 +57,7 @@ class InstrumentsListView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        validated = cast(dict, params.validated_data)  # pylint: disable=duplicate-code
+        validated = cast("dict", params.validated_data)  # pylint: disable=duplicate-code
 
         raw_tickers = (validated.get("tickers") or "").split(",")
         tickers = list(
@@ -107,9 +106,7 @@ class InstrumentDetailView(generics.GenericAPIView):
     @extend_schema(
         responses=[InstrumentDetailedInfoSerializer],
     )
-    def get(
-        self, request: Request, ticker: str
-    ) -> Response:  # pylint: disable=unused-argument
+    def get(self, request: Request, ticker: str) -> Response:  # pylint: disable=unused-argument
         """
         Get detailed information for a single instrument.
         """

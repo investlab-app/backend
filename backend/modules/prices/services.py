@@ -1,19 +1,20 @@
 import asyncio
-import logging
 import threading
 import time
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Callable, TypedDict
+from typing import TypedDict
 
 import yfinance
-from pydantic import BaseModel
 
 from config import parse_time_interval
+from config.logging import get_logger
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
 from modules.prices.schemas import ClientInfo, InstrumentPriceSchema, PriceUpdateHandler
+
+logger = get_logger(__name__)
 
 
 class PriceHistoryWithStats(TypedDict):
@@ -27,10 +28,16 @@ class PricesServiceMinimal:
         self._repository = YfinanceRepository()
 
     def get_instrument_price_history(
-        self, instrument: str, start_date: datetime, end_date: datetime, interval: str
+        self,
+        instrument: str,
+        start_date: datetime,
+        end_date: datetime,
+        interval: str,
     ) -> PriceHistoryWithStats:
         """
-        Retrieves historical price data for a given instrument with min and max price over the range.
+        Retrieves historical price data for a given instrument.
+
+        Retrieves price data with min and max price over the specified range.
 
         Args:
             instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
@@ -39,16 +46,16 @@ class PricesServiceMinimal:
             interval (str): The desired data interval (e.g., "1d", "1h").
 
         Returns:
-            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema], 'min_price', and 'max_price'
+            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema],
+                'min_price', and 'max_price'
 
         Raises:
             ValidationError: If the start_date is after the end_date.
             APIException: If an error occurs while fetching data from the repository.
         """
-
         if start_date > end_date:
             raise InvalidTimeIntervalException(
-                "Invalid date order, end date cannot preceed start date."
+                "Invalid date order, end date cannot preceed start date.",
             )
         data = self._repository.get_instrument_price_history(
             instrument,
@@ -65,7 +72,6 @@ class PricesServiceMinimal:
 
 
 class LivePrices:
-
     def __init__(self) -> None:
         self._loop: asyncio.AbstractEventLoop | None = None
         self._running = False
@@ -74,6 +80,9 @@ class LivePrices:
         self._instruments: set[str] = set()
         self._subscriptions: dict[str, int] = {}
         self._clients: dict[uuid.UUID, ClientInfo] = {}
+
+    def set_client(self, client_id: uuid.UUID, client: ClientInfo) -> None:
+        self._clients[client_id] = client
 
     def get_instruments(self) -> set[str]:
         return self._instruments.copy()
@@ -90,11 +99,11 @@ class LivePrices:
         symbols: set[str],
         handler: PriceUpdateHandler | None = None,
     ) -> None:
-        logging.debug(f"Subscribing client {client_id} to symbols: {symbols}")
+        logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
 
-        for symbol in iter(symbols):
-            self._subscriptions.setdefault(symbol, 0)
-            self._subscriptions[symbol] += 1
+        for symbol in symbols:
+            self._add_instruments({symbol})
+            self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
 
         client_info = self._clients.get(client_id, ClientInfo.empty())
 
@@ -107,12 +116,10 @@ class LivePrices:
             }
         )
 
-        self._add_instruments(symbols)
-
     def unsubscribe(
         self, client_id: uuid.UUID, symbols: set[str] | None = None
     ) -> None:
-        logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
+        logger.debug("Unsubscribing client %s with symbols: %s", client_id, symbols)
 
         instruments = (
             symbols
@@ -148,7 +155,7 @@ class LivePrices:
             asyncio.set_event_loop(self._loop)
             self._loop.run_forever()
 
-        logging.debug("Starting background event loop")
+        logger.debug("Starting background event loop")
 
         loop_thread = threading.Thread(target=run_loop, daemon=True)
         loop_thread.start()
@@ -156,7 +163,7 @@ class LivePrices:
         time.sleep(0.1)
 
     def _schedule_coroutine(self, coro):
-        logging.debug(f"Scheduling coroutine: {coro}")
+        logger.debug("Scheduling coroutine: %s", coro)
 
         if self._loop and not self._loop.is_closed():
             return asyncio.run_coroutine_threadsafe(coro, self._loop)
@@ -165,7 +172,7 @@ class LivePrices:
 
     def _add_instruments(self, instruments: set[str]) -> None:
         with self._lock:
-            logging.debug(f"Adding instruments: {instruments}")
+            logger.debug("Adding instruments: %s", instruments)
             self._instruments.update(instruments)
 
             if not self._running and self._instruments:
@@ -173,7 +180,7 @@ class LivePrices:
 
     def _remove_instruments(self, instruments: set[str]) -> None:
         with self._lock:
-            logging.debug(f"Removing instruments: {instruments}")
+            logger.debug("Removing instruments: %s", instruments)
             self._instruments.difference_update(instruments)
 
             if not self._instruments and self._running:
@@ -183,16 +190,16 @@ class LivePrices:
         if self._running:
             return
 
-        logging.debug("Starting live price fetching")
+        logger.debug("Starting live price fetching")
 
         asyncio.create_task(self._fetch_loop())
 
     async def _stop_fetching(self):
-        logging.debug("Stopping live price fetching loop")
+        logger.debug("Stopping live price fetching loop")
         self._running = False
 
     def message_handler(self, prices):
-        logging.debug(f"Handling price update: {prices}")
+        logger.debug("Handling price update: %s", prices)
 
         handlers = [
             handler
@@ -202,22 +209,20 @@ class LivePrices:
             and prices["id"] in client.instruments
         ]
 
-        print(handlers)
-
         for handler in handlers:
             try:
                 if asyncio.iscoroutinefunction(handler):
                     if self._loop and not self._loop.is_closed():
                         asyncio.run_coroutine_threadsafe(handler(prices), self._loop)
                     else:
-                        logging.error("Event loop not available for async handler")
+                        logger.error("Event loop not available for async handler")
                 else:
                     handler(prices)
             except Exception as e:
-                logging.error(f"Error in handler {handler}: {e}")
+                logger.error("Error in handler %s: %s", handler, e)
 
     async def _fetch_loop(self):
-        logging.debug("Starting fetch loop")
+        logger.debug("Starting fetch loop")
         if self._running:
             return
 
@@ -231,14 +236,14 @@ class LivePrices:
                 await ws.subscribe(instruments_to_subscribe)
                 await ws.listen(self.message_handler)
         except Exception as e:
-            logging.error(f"Error in fetch loop: {e}")
+            logger.error("Error in fetch loop: %s", e)
         finally:
             self._running = False
 
     def shutdown(self):
         """Shutdown the service"""
         with self._lock:
-            logging.debug("Starting shutdown process")
+            logger.debug("Starting shutdown process")
             self._running = False
             if self._loop and not self._loop.is_closed():
                 self._loop.call_soon_threadsafe(self._loop.stop)

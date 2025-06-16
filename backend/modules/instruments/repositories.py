@@ -1,9 +1,9 @@
-import logging
 from datetime import datetime
 from decimal import Decimal
 
 import yfinance
 
+from config.logging import get_logger
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
@@ -13,6 +13,8 @@ from modules.instruments.schemas import (
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
+
+logger = get_logger(__name__)
 
 
 class YfinanceRepository:
@@ -32,6 +34,9 @@ class YfinanceRepository:
         Raises:
             FetchInstrumentInfoException: If there's an error fetching the data.
         """
+        if not tickers:
+            return []
+
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
         y_tickers = yfinance.Tickers(tickers_str)
 
@@ -41,7 +46,11 @@ class YfinanceRepository:
         # Use batch-fetched data from y_tickers.tickers.values()
         for ticker_obj in y_tickers.tickers.values():
             try:
-                tickers_data.append(ticker_obj.info)
+                info = ticker_obj.info
+                if not info:
+                    tickers_errors.append(ticker_obj.ticker)
+                else:
+                    tickers_data.append(info)
             except Exception:
                 tickers_errors.append(ticker_obj.ticker)
 
@@ -66,11 +75,15 @@ class YfinanceRepository:
             InstrumentDetailedInfoSchema: Detailed instrument information.
 
         Raises:
-            FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
+            FetchInstrumentInfoException: If there's an error fetching the data
+            or if the ticker doesn't exist.
         """
         y_ticker = yfinance.Ticker(ticker)
 
         try:
+            info = y_ticker.info
+            if not info or not info.get("symbol"):
+                raise FetchInstrumentInfoException(f"Invalid ticker: {ticker}")
             detailed_info = YfinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
@@ -109,7 +122,9 @@ class YfinanceRepository:
             basic_info.current_price is not None
             and basic_info.previous_close is not None
         ):
-            basic_info.day_change = basic_info.current_price - basic_info.previous_close
+            basic_info.day_change = Decimal(str(basic_info.current_price)) - Decimal(
+                str(basic_info.previous_close)
+            )
             if basic_info.previous_close != Decimal(0):
                 basic_info.day_change_percent = (
                     basic_info.day_change / basic_info.previous_close
@@ -246,7 +261,7 @@ class YfinanceRepository:
     def get_news(self, ticker_str: str) -> list[NewsItem]:
         ticker = yfinance.Ticker(ticker_str)
 
-        logging.info(f"Ticker news: {ticker.news[:100]}")
+        logger.info("Ticker news: %s", ticker.news[:100])
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]

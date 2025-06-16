@@ -1,13 +1,11 @@
 import pytest
 
-from modules.users.tests.conftest import user
-
 
 @pytest.fixture
 def api_client():
     from rest_framework.test import APIClient
 
-    yield APIClient()
+    return APIClient()
 
 
 @pytest.fixture
@@ -30,7 +28,7 @@ def websocket_communicator():
         communicator = WebsocketCommunicator(application, path)
         return communicator
 
-    yield _create_communicator
+    return _create_communicator
 
 
 @pytest.fixture
@@ -44,4 +42,4 @@ def websocket_communicator_auth(user):
         communicator.scope["user"] = user
         return communicator
 
-    yield _create_communicator
+    return _create_communicator

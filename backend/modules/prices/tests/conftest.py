@@ -48,7 +48,8 @@ def mock_yfinance_empty_history_ticker():
 @pytest.fixture
 def mock_yfinance_invalid_ticker():
     with patch(
-        "yfinance.Ticker", side_effect=Exception("Some API failure")
+        "yfinance.Ticker",
+        side_effect=Exception("Some API failure"),
     ) as mock_ticker:
         yield mock_ticker
 
@@ -62,5 +63,5 @@ def expected_result_from_ticker():
             high=Decimal("110.0"),
             low=Decimal("90.0"),
             close=Decimal("105.0"),
-        )
+        ),
     ]

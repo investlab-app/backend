@@ -2,7 +2,6 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from clerk_backend_api import SDKError
-from jwcrypto import jwk
 from rest_framework.test import APIRequestFactory
 
 from modules.users.models import User
@@ -11,7 +10,7 @@ from modules.users.models import User
 @pytest.fixture
 def mock_clerk_login_serializer():
     with patch(
-        "modules.authentication.views.ClerkLoginSerializer"
+        "modules.authentication.views.ClerkLoginSerializer",
     ) as mock_serializer_class:
         mock_instance = MagicMock()
         mock_instance.is_valid.return_value = True
@@ -118,5 +117,6 @@ def mock_django_cache():
 @pytest.fixture
 def mock_decode_token(mocker, valid_payload):
     return mocker.patch(
-        "modules.authentication.clerk_auth.decode_token", return_value=valid_payload
+        "modules.authentication.clerk_auth.decode_token",
+        return_value=valid_payload,
     )

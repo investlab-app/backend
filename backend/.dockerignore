@@ -6,6 +6,7 @@
 *.pyo
 */__pycache__
 
+
 # Database
 *.sqlite3
 .coverage

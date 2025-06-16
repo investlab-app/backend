@@ -18,7 +18,9 @@ def test_clerk_sign_in_success(api_client, mock_clerk, mock_clerk_login_serializ
 
 
 def test_clerk_sign_in_wrong_password(
-    api_client, mock_clerk_invalid_password, mock_clerk_login_serializer
+    api_client,
+    mock_clerk_invalid_password,
+    mock_clerk_login_serializer,
 ):
     url = reverse("clerk-sign-in")
     payload = {"email": "test@example.com", "password": "securepassword123"}

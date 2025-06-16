@@ -49,15 +49,15 @@ class NewsThumbnailResolution(BaseModel):
 
 
 class NewsThumbnail(BaseModel):
-    originalUrl: str | None = None
-    originalWidth: int | None = None
-    originalHeight: int | None = None
+    original_url: str | None = None
+    original_width: int | None = None
+    original_height: int | None = None
     caption: str | None = None
     resolutions: list[NewsThumbnailResolution] | None = None
 
 
 class NewsProvider(BaseModel):
-    displayName: str | None = None
+    display_name: str | None = None
     url: str | None = None
 
 
@@ -69,33 +69,33 @@ class NewsUrl(BaseModel):
 
 
 class NewsMetadata(BaseModel):
-    editorsPick: bool | None = None
+    editors_pick: bool | None = None
 
 
 class NewsPremiumFinance(BaseModel):
-    isPremiumNews: bool | None = None
-    isPremiumFreeNews: bool | None = None
+    is_premium_news: bool | None = None
+    is_premium_free_news: bool | None = None
 
 
 class NewsFinance(BaseModel):
-    premiumFinance: NewsPremiumFinance | None = None
+    premium_finance: NewsPremiumFinance | None = None
 
 
 class NewsContent(BaseModel):
     id: str | None = None
-    contentType: str | None = None
+    content_type: str | None = None
     title: str | None = None
     description: str | None = None
     summary: str | None = None
-    pubDate: datetime | None = None
-    displayTime: str | None = None
-    isHosted: bool | None = None
-    bypassModal: bool | None = None
-    previewUrl: str | None = None
+    pub_date: datetime | None = None
+    display_time: str | None = None
+    is_hosted: bool | None = None
+    bypass_modal: bool | None = None
+    preview_url: str | None = None
     thumbnail: NewsThumbnail | None = None
     provider: NewsProvider | None = None
-    canonicalUrl: NewsUrl | None = None
-    clickThroughUrl: NewsUrl | None = None
+    canonical_url: NewsUrl | None = None
+    click_through_url: NewsUrl | None = None
     metadata: NewsMetadata | None = None
     finance: NewsFinance | None = None
     storyline: dict | None = None

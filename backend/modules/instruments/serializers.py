@@ -75,9 +75,9 @@ class InstrumentInfoSerializer(serializers.Serializer):
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:
-        for key in record:
-            if isinstance(record[key], Decimal):
-                record[key] = quantize_decimal(record[key], places=DECIMAL_PLACES)
+        for key, value in record.items():
+            if isinstance(value, Decimal):
+                record[key] = quantize_decimal(value, places=DECIMAL_PLACES)
         return record
 
 

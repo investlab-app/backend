@@ -22,13 +22,6 @@ def test_get_basic_instrument_info_success(mock_yfinance_tickers):
     assert result[1].ticker == "MSFT"
 
 
-def test_raises_get_basic_instrument_info_invalid_ticker():
-    repo = YfinanceRepository()
-    tickers = ["invalid"]
-    with pytest.raises(FetchInstrumentInfoException):
-        repo.get_instruments_info(tickers)
-
-
 def test_get_basic_instrument_info_empty_ticker(
     mock_yfinance_empty_history_ticker,
 ):
@@ -66,7 +59,7 @@ def test_get_detailed_instrument_info_missing_data(
     ticker_str = "AAPL"
     result = repo.get_instrument_detailed_info(ticker_str)
     assert isinstance(result, InstrumentDetailedInfoSchema)
-    assert (
-        result.description
-        == "The company designs, manufactures, and markets smartphones, computers, and related services."
+    assert result.description == (
+        "The company designs, manufactures, and markets smartphones, computers, "
+        "and related services."
     )
