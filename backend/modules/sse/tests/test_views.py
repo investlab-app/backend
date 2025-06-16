@@ -36,7 +36,6 @@ class TestSSESubscribeView:
                 "message": f"Subscribed to new events: {mock_symbols}"
             }
 
-
     def test_subscribe_put_invalid_data(self, api_client_auth):
         invalid_data = {"symbols": "AAPL"}  # Missing connectionId
 
