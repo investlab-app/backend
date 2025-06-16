@@ -35,7 +35,8 @@ jobs:
       - name: Build image for testing, using registry as cache
         uses: docker/build-push-action@v6
         with:
-          context: .
+          context: ./backend
+          file: ./backend/Dockerfile
           load: true
           tags: backend
           cache-from: |
