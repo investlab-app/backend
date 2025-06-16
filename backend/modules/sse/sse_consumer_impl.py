@@ -1,9 +1,12 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, override
 
+from dependency_injector.wiring import Provide, inject
+
+from config.containers import AppContainer
 from config.logging import get_logger
 from modules.authentication import clerk_auth
-from modules.sse import live_prices
+from modules.prices.services import LivePrices
 from modules.sse.schemas import SSERequestParams
 from modules.sse.sse_consumer import SSEConsumer
 
@@ -14,10 +17,15 @@ logger = get_logger(__name__)
 
 
 class SSEConsumerImpl(SSEConsumer):
-    def __init__(self, *args, **kwargs) -> None:
-        super().__init__(*args, **kwargs)
+    @inject
+    def __init__(
+        self,
+        live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
+    ):
+        super().__init__()
         self.shutdown_event = asyncio.Event()
         self.connection_id: uuid.UUID | None = None
+        self.live_prices = live_prices
 
     def live_prices_handler(self, prices: dict[str, Any]) -> None:
         logger.debug("Live prices handler called with prices: %s", prices)
@@ -54,7 +62,9 @@ class SSEConsumerImpl(SSEConsumer):
         )
 
         try:
-            live_prices.subscribe(self.connection_id, symbols, self.live_prices_handler)
+            self.live_prices.subscribe(
+                self.connection_id, symbols, self.live_prices_handler
+            )
 
             logger.debug("%s: Waiting for SSE stream to finish", self.connection_id)
             await self.shutdown_event.wait()
@@ -67,7 +77,7 @@ class SSEConsumerImpl(SSEConsumer):
             )
             raise
         finally:
-            live_prices.unsubscribe(self.connection_id)
+            self.live_prices.unsubscribe(self.connection_id)
             logger.debug("SSE stream generation finished.")
 
     async def disconnect(self):

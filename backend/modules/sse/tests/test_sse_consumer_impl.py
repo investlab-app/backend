@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from modules.sse import live_prices
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 
@@ -43,7 +42,7 @@ class TestSSEConsumerImpl:
         # Setup clients dict with ClientInfo
         from modules.prices.schemas import ClientInfo
 
-        live_prices.set_client(
+        consumer.live_prices.set_client(
             mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
         )
 
@@ -72,7 +71,7 @@ class TestSSEConsumerImpl:
         # Setup client with specific subscriptions
         subscribed_symbols = {"AAPL", "GOOGL"}
 
-        live_prices.subscribe(mock_connection_id, subscribed_symbols)
+        consumer.live_prices.subscribe(mock_connection_id, subscribed_symbols)
 
         # Provide prices for both subscribed and unsubscribed symbols
         all_prices = {
@@ -98,5 +97,5 @@ class TestSSEConsumerImpl:
 
         finally:
             # Cleanup
-            live_prices.unsubscribe(mock_connection_id)
-            live_prices.shutdown()
+            consumer.live_prices.unsubscribe(mock_connection_id)
+            consumer.live_prices.shutdown()

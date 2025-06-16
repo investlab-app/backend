@@ -1,10 +1,12 @@
+from dependency_injector.wiring import Provide, inject
 from drf_spectacular.utils import extend_schema
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from config.containers import AppContainer
 from config.logging import get_logger
-from modules.sse import live_prices
+from modules.prices.services import LivePrices
 from modules.sse.schemas import SSERequestParams
 from modules.sse.serializers import SSERequestSerializer
 
@@ -12,6 +14,16 @@ logger = get_logger(__name__)
 
 
 class SSESubscribeView(APIView):
+    @inject
+    def __init__(
+        self,
+        live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
+    ):
+        super().__init__()
+        print("INIT SSESubscribeView with")
+        print(live_prices)
+        self.live_prices = live_prices
+
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
         try:
@@ -19,11 +31,15 @@ class SSESubscribeView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+        print(self.live_prices)
+
+        print("SUBSCRIBE to symbols:", params.symbols)
+
         connection_id = params.connection_id
         symbols = params.symbols
 
         try:
-            live_prices.subscribe(connection_id, symbols)
+            self.live_prices.subscribe(connection_id, symbols)
             logger.debug("%s: Subscribed to symbols: %s", connection_id, symbols)
             return Response(
                 {"message": f"Subscribed to new events: {symbols}"},
@@ -43,6 +59,14 @@ class SSESubscribeView(APIView):
 
 
 class SSEUnsubscribeView(APIView):
+    @inject
+    def __init__(
+        self,
+        live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
+    ):
+        super().__init__()
+        self.live_prices = live_prices
+
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
         try:
@@ -54,7 +78,7 @@ class SSEUnsubscribeView(APIView):
         symbols = params.symbols
 
         try:
-            live_prices.unsubscribe(connection_id, symbols)
+            self.live_prices.unsubscribe(connection_id, symbols)
             logger.debug("%s: Unsubscribed from symbols: %s", connection_id, symbols)
             return Response(
                 {"message": f"Unsubscribed from events: {symbols}"},

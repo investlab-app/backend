@@ -30,6 +30,8 @@ def setup_container() -> "AppContainer":
             "modules.prices.views",
             "modules.prices.services",
             "modules.prices.repositories",
+            "modules.sse.views",
+            "modules.sse.sse_consumer_impl",
         ]
     )
     return container

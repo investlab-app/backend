@@ -1,6 +1,6 @@
 from typing import cast
 
-from dependency_injector.wiring import Provide
+from dependency_injector.wiring import Provide, inject
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.request import Request
@@ -24,6 +24,7 @@ logger = get_logger(__name__)
 
 
 class InstrumentsAvailableView(generics.GenericAPIView):
+    @inject
     def __init__(
         self,
         service: InstrumentsService = Provide[
@@ -55,6 +56,7 @@ class InstrumentsAvailableView(generics.GenericAPIView):
 
 
 class InstrumentsListView(generics.GenericAPIView):
+    @inject
     def __init__(
         self,
         service: InstrumentsService = Provide[
@@ -162,6 +164,7 @@ class InstrumentDetailView(generics.GenericAPIView):
 
 
 class InstrumentNewsView(generics.GenericAPIView):
+    @inject
     def __init__(
         self,
         service: InstrumentsService = Provide[

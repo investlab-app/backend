@@ -7,4 +7,4 @@ from modules.prices.services import LivePrices, PricesService
 class PricesContainer(containers.DeclarativeContainer):
     yfinance_repository = providers.Singleton(YfinanceRepository)
     prices_service = providers.Singleton(PricesService, repository=yfinance_repository)
-    live_prices = providers.Singleton(LivePrices, service=prices_service)
+    live_prices = providers.Singleton(LivePrices)
