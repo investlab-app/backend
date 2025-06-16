@@ -38,7 +38,7 @@ jobs:
           context: ./backend
           file: ./backend/Dockerfile
           load: true
-          tags: backend
+          tags: stocks-backend-backend:latest
           cache-from: |
             type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:develop
             type=gha
