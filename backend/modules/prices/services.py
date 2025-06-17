@@ -177,7 +177,7 @@ class LivePrices:
             self._instruments.update(instruments)
 
             if not self._running and self._instruments:
-                self._schedule_coroutine(self._start_fetching())
+                self._start_fetching()
 
     def _remove_instruments(self, instruments: set[str]) -> None:
         with self._lock:
@@ -185,17 +185,17 @@ class LivePrices:
             self._instruments.difference_update(instruments)
 
             if not self._instruments and self._running:
-                self._schedule_coroutine(self._stop_fetching())
+                self._stop_fetching()
 
-    async def _start_fetching(self):
+    def _start_fetching(self):
         if self._running:
             return
 
         logger.debug("Starting live price fetching")
 
-        asyncio.create_task(self._fetch_loop())
+        self._loop.create_task(self._fetch_loop())
 
-    async def _stop_fetching(self):
+    def _stop_fetching(self):
         logger.debug("Stopping live price fetching loop")
         self._running = False
 

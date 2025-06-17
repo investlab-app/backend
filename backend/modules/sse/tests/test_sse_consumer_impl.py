@@ -83,22 +83,16 @@ class TestSSEConsumerImpl:
             "TSLA": 250.00,
         }
 
-        try:
-            consumer.live_prices_handler(all_prices)
+        consumer.live_prices_handler(all_prices)
 
-            # Verify send_event was called
-            consumer.send_event.assert_called_once()
+        # Verify send_event was called
+        consumer.send_event.assert_called_once()
 
-            # Extract the sent data
-            call_args = consumer.send_event.call_args
-            sent_data_str = call_args[0][1]
+        # Extract the sent data
+        call_args = consumer.send_event.call_args
+        sent_data_str = call_args[0][1]
 
-            # Verify only subscribed symbols are included
-            assert "AAPL" in sent_data_str
-            assert "GOOGL" in sent_data_str
-            assert "TSLA" in sent_data_str
-
-        finally:
-            # Cleanup
-            consumer.live_prices.unsubscribe(mock_connection_id)
-            consumer.live_prices.shutdown()
+        # Verify only subscribed symbols are included
+        assert "AAPL" in sent_data_str
+        assert "GOOGL" in sent_data_str
+        assert "TSLA" in sent_data_str
