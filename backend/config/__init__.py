@@ -2,7 +2,7 @@ import os
 
 import django
 
-from config.containers import setup_container
+from config.containers import AppContainer
 from config.logging import setup_logging
 
 setup_logging()
@@ -11,4 +11,4 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "config.settings")
 django.setup()
 
 
-container = setup_container()
+container = AppContainer()
