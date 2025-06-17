@@ -24,6 +24,7 @@ class AppContainer(containers.DeclarativeContainer):
             "modules.instruments.views",
             "modules.prices.views",
             "modules.sse.views",
+            "modules.sse.sse_consumer_impl",
         ]
     )
 

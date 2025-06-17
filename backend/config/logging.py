@@ -21,6 +21,9 @@ def setup_logging() -> None:
         format=logging_config.get("format"),
     )
 
+    # Set yfinance logger to only show WARNING and above
+    logging.getLogger("yfinance").setLevel(logging.WARNING)
+
 
 def get_logger(name: str) -> logging.Logger:
     """Get a logger instance with the given name."""
