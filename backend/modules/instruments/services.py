@@ -1,11 +1,14 @@
 from typing import TypedDict
 
-from modules.instruments.repositories import YfinanceRepository
+from config.logging import get_logger
+from modules.instruments.repositories import YFinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
+
+logger = get_logger(__name__)
 
 
 class PaginatedInstruments(TypedDict):
@@ -16,9 +19,9 @@ class PaginatedInstruments(TypedDict):
     num_pages: int
 
 
-class InstrumentsServiceMinimal:
-    def __init__(self):
-        self._repository = YfinanceRepository()
+class InstrumentsService:
+    def __init__(self, repository: YFinanceRepository):
+        self._repository = repository
 
     def get_instruments_list(
         self,
@@ -100,6 +103,9 @@ class InstrumentsServiceMinimal:
         Returns:
             list[str]: List of available instrument tickers.
         """
+        logger.debug(
+            "Getting available instruments from repository: %s", self._repository
+        )
         return self._repository.get_instruments_available()
 
     def get_news(self, ticker: str) -> list[NewsItem]:

@@ -287,6 +287,23 @@ wheels = [
 ]
 
 [[package]]
+name = "dependency-injector"
+version = "4.47.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/b0/18/4b2575a5e8eee2b5b26b6343f3668b62a4a1eb0fabc0d18da52a6a400eaf/dependency_injector-4.47.1.tar.gz", hash = "sha256:b2681b054af767874bf57a17593257d303eec54950515887605e586bbe5c3f05", size = 1085817, upload-time = "2025-05-30T20:17:29.414Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/69/fa/5c571ba3a8a4f2f937521d4d159478549a2ac3e3fe08e14dc2fcff9c2745/dependency_injector-4.47.1-cp38-abi3-macosx_11_0_arm64.whl", hash = "sha256:69fc6fb277f3eb8635aa807a79fa0c7b0a57ba47179d5b24312db083aef3ce0f", size = 1609606, upload-time = "2025-05-30T20:16:21.544Z" },
+    { url = "https://files.pythonhosted.org/packages/dd/62/5198d52ec4d1e848ee62defa1520aae835fff68ab009a7c7694950c53fd2/dependency_injector-4.47.1-cp38-abi3-manylinux_2_17_aarch64.manylinux2014_aarch64.whl", hash = "sha256:6798041de0f21194c721618c5d9bab254c9b7bc1fc7b2e80375482dd084b8000", size = 1770008, upload-time = "2025-05-30T20:16:25.242Z" },
+    { url = "https://files.pythonhosted.org/packages/e5/52/27457a562019af4a7c156f95ef56ef9ff868d070ca0386e3827432f5c683/dependency_injector-4.47.1-cp38-abi3-manylinux_2_5_i686.manylinux1_i686.manylinux_2_17_i686.manylinux2014_i686.whl", hash = "sha256:3207090ee2d8d01588e0c1c967e19684653d7c36fa55558e8e4b8144cc1bc382", size = 1799498, upload-time = "2025-05-30T20:16:27.58Z" },
+    { url = "https://files.pythonhosted.org/packages/44/5a/937a42bea3fed3a7e5796b626e07de304fa6209bc26ff1fc8811502f5e66/dependency_injector-4.47.1-cp38-abi3-manylinux_2_5_x86_64.manylinux1_x86_64.manylinux_2_17_x86_64.manylinux2014_x86_64.whl", hash = "sha256:5656c7b3369caf37e13ac4714b96013de286066cec0bf9d72d5c59ba252485f7", size = 1817579, upload-time = "2025-05-30T20:16:29.978Z" },
+    { url = "https://files.pythonhosted.org/packages/4d/23/0635ec92fb17b48e6fe5fd1a8d75e6d6b4c4fac827d2d51f145195e54827/dependency_injector-4.47.1-cp38-abi3-musllinux_1_2_aarch64.whl", hash = "sha256:c3dad8274ad0f16d45743d5fb7cdcae2ecdfd5e9f6d5cf5a59211b6e7601691f", size = 1804434, upload-time = "2025-05-30T20:16:32.532Z" },
+    { url = "https://files.pythonhosted.org/packages/b0/29/3832e3cbc68610791d3cca0e461134142e25775311e63cd808b87bf10bbd/dependency_injector-4.47.1-cp38-abi3-musllinux_1_2_i686.whl", hash = "sha256:ae2f3bfbfbda19d73afa98001b91b2b50b3ce076adece1b23daa8633890b6345", size = 1832973, upload-time = "2025-05-30T20:16:34.025Z" },
+    { url = "https://files.pythonhosted.org/packages/00/32/6faba4468c4eb9a2936a853bcb6095b76a9bda068667e38a78ec8269bcc7/dependency_injector-4.47.1-cp38-abi3-musllinux_1_2_x86_64.whl", hash = "sha256:07d7cc56df5994a0004dce0f54106a9ed0b0b779161ab58fe2d41014e0c9bc36", size = 1841225, upload-time = "2025-05-30T20:16:36.034Z" },
+    { url = "https://files.pythonhosted.org/packages/55/d1/fc241d182a2418088d4e37ea13d4ebcb07487447bbf72923d25d9c5f0695/dependency_injector-4.47.1-cp38-abi3-win32.whl", hash = "sha256:5a7a24f6ab6fee574002e36e7c7daa4a86041d2c02a95259beac38d0b46fcd7f", size = 1493539, upload-time = "2025-05-30T20:16:38.864Z" },
+    { url = "https://files.pythonhosted.org/packages/67/5e/833eb937843aaa6215e1d901545cfbc8877fdadbcf4cc5b31bba796ca027/dependency_injector-4.47.1-cp38-abi3-win_amd64.whl", hash = "sha256:c04a897b761e2c55bb71986fdac721db6583d474699bc1d99c51764f11b592b6", size = 1616374, upload-time = "2025-05-30T20:16:40.61Z" },
+]
+
+[[package]]
 name = "django"
 version = "5.2.3"
 source = { registry = "https://pypi.org/simple" }
@@ -1052,6 +1069,7 @@ source = { virtual = "." }
 dependencies = [
     { name = "channels" },
     { name = "clerk-backend-api" },
+    { name = "dependency-injector" },
     { name = "django" },
     { name = "django-cors-headers" },
     { name = "django-unfold" },
@@ -1088,6 +1106,7 @@ dev = [
 requires-dist = [
     { name = "channels", specifier = ">=4.2.2" },
     { name = "clerk-backend-api", git = "https://github.com/mikolajkapica/clerk-sdk-python.git" },
+    { name = "dependency-injector", specifier = ">=4.47.1" },
     { name = "django", specifier = ">=5.2.3" },
     { name = "django-cors-headers", specifier = ">=4.7.0" },
     { name = "django-unfold", specifier = ">=0.59.0" },

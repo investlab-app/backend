@@ -1,19 +1,28 @@
 from typing import cast
 
+from dependency_injector.wiring import Provide
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from config.containers import AppContainer
 from modules.prices.exceptions import FetchPriceException, InvalidTimeIntervalException
 from modules.prices.serializers import (
     InstrumentPriceQueryParams,
     InstrumentPriceResponseSerializer,
 )
-from modules.prices.services import PricesServiceMinimal
+from modules.prices.services import PricesService
 
 
 class PricesView(generics.GenericAPIView):
+    def __init__(
+        self,
+        service: PricesService = Provide[AppContainer.prices_container.prices_service],
+    ):
+        super().__init__()
+        self._service = service
+
     @extend_schema(
         parameters=[InstrumentPriceQueryParams],
         responses=[InstrumentPriceResponseSerializer(many=True)],
@@ -29,8 +38,7 @@ class PricesView(generics.GenericAPIView):
         validated = cast("dict", params.validated_data)
 
         try:
-            service = PricesServiceMinimal()
-            price_history = service.get_instrument_price_history(
+            price_history = self._service.get_instrument_price_history(
                 validated["ticker"],
                 validated["start_date"],
                 validated["end_date"],

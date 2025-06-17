@@ -3,7 +3,6 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
-from modules.sse import live_prices
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 
@@ -43,7 +42,7 @@ class TestSSEConsumerImpl:
         # Setup clients dict with ClientInfo
         from modules.prices.schemas import ClientInfo
 
-        live_prices.set_client(
+        consumer.live_prices.set_client(
             mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
         )
 
@@ -57,6 +56,9 @@ class TestSSEConsumerImpl:
 
             # Verify parent disconnect was called
             mock_super_disconnect.assert_called_once()
+
+        consumer.live_prices.unsubscribe(mock_connection_id)
+        consumer.live_prices.shutdown()
 
     @pytest.mark.asyncio()
     async def test_live_prices_handler_filters_prices(
@@ -72,7 +74,7 @@ class TestSSEConsumerImpl:
         # Setup client with specific subscriptions
         subscribed_symbols = {"AAPL", "GOOGL"}
 
-        live_prices.subscribe(mock_connection_id, subscribed_symbols)
+        consumer.live_prices.subscribe(mock_connection_id, subscribed_symbols)
 
         # Provide prices for both subscribed and unsubscribed symbols
         all_prices = {
@@ -81,22 +83,16 @@ class TestSSEConsumerImpl:
             "TSLA": 250.00,
         }
 
-        try:
-            consumer.live_prices_handler(all_prices)
+        consumer.live_prices_handler(all_prices)
 
-            # Verify send_event was called
-            consumer.send_event.assert_called_once()
+        # Verify send_event was called
+        consumer.send_event.assert_called_once()
 
-            # Extract the sent data
-            call_args = consumer.send_event.call_args
-            sent_data_str = call_args[0][1]
+        # Extract the sent data
+        call_args = consumer.send_event.call_args
+        sent_data_str = call_args[0][1]
 
-            # Verify only subscribed symbols are included
-            assert "AAPL" in sent_data_str
-            assert "GOOGL" in sent_data_str
-            assert "TSLA" in sent_data_str
-
-        finally:
-            # Cleanup
-            live_prices.unsubscribe(mock_connection_id)
-            live_prices.shutdown()
+        # Verify only subscribed symbols are included
+        assert "AAPL" in sent_data_str
+        assert "GOOGL" in sent_data_str
+        assert "TSLA" in sent_data_str

@@ -3,7 +3,6 @@ from decimal import Decimal
 
 import yfinance
 
-from config.logging import get_logger
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
     FetchInstrumentNewsException,
@@ -14,10 +13,11 @@ from modules.instruments.schemas import (
     NewsItem,
 )
 
-logger = get_logger(__name__)
 
+class YFinanceRepository:
+    def __init__(self, available_instruments: list[str]):
+        self._available_instruments = available_instruments
 
-class YfinanceRepository:
     @staticmethod
     def get_instruments_info(
         tickers: list[str],
@@ -59,7 +59,7 @@ class YfinanceRepository:
                 f"Errors fetching data: {', '.join(tickers_errors)}"
             )
 
-        return [YfinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
+        return [YFinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
 
     @staticmethod
     def get_instrument_detailed_info(
@@ -84,7 +84,7 @@ class YfinanceRepository:
             info = y_ticker.info
             if not info or not info.get("symbol"):
                 raise FetchInstrumentInfoException(f"Invalid ticker: {ticker}")
-            detailed_info = YfinanceRepository._get_detailed_info(y_ticker)
+            detailed_info = YFinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
 
@@ -138,7 +138,7 @@ class YfinanceRepository:
     def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
         ticker_info = ticker.info
 
-        basic_schema_instance = YfinanceRepository._get_basic_info(ticker_info)
+        basic_schema_instance = YFinanceRepository._get_basic_info(ticker_info)
 
         earnings_timestamp = ticker_info.get("earningsTimestamp")
         earnings_date_value = (
@@ -203,65 +203,10 @@ class YfinanceRepository:
         Returns:
             list[str]: List of available instrument tickers.
         """
-
-        return [
-            "MMM",
-            "AOS",
-            "ABT",
-            "ABBV",
-            "ACN",
-            "ADBE",
-            "AMD",
-            "AES",
-            "AFL",
-            "A",
-            "APD",
-            "ABNB",
-            "AKAM",
-            "ALB",
-            "ARE",
-            "ALGN",
-            "ALLE",
-            "LNT",
-            "ALL",
-            "GOOGL",
-            "GOOG",
-            "MO",
-            "AMZN",
-            "AMCR",
-            "AEE",
-            "AEP",
-            "AXP",
-            "AIG",
-            "AMT",
-            "AWK",
-            "AMP",
-            "AME",
-            "AMGN",
-            "APH",
-            "ADI",
-            "ANSS",
-            "AON",
-            "APA",
-            "APO",
-            "AAPL",
-            "AMAT",
-            "APTV",
-            "ACGL",
-            "ADM",
-            "ANET",
-            "AJG",
-            "AIZ",
-            "T",
-            "ATO",
-            "ADSK",
-            "ADP",
-        ]
+        return self._available_instruments
 
     def get_news(self, ticker_str: str) -> list[NewsItem]:
         ticker = yfinance.Ticker(ticker_str)
-
-        logger.info("Ticker news: %s", ticker.news[:100])
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]

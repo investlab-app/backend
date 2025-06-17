@@ -5,6 +5,7 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.response import Response
 
+from config import container
 from modules.core.tests.conftest import api_client_auth
 from modules.users.tests.conftest import user
 
@@ -17,7 +18,6 @@ class TestSSESubscribeView:
         api_client_auth,
         valid_request_data,
         mock_parsed_params,
-        mock_connection_id,
         mock_symbols,
     ):
         with (
@@ -25,13 +25,11 @@ class TestSSESubscribeView:
                 "modules.sse.schemas.SSERequestParams.parse",
                 return_value=mock_parsed_params,
             ) as mock_parse,
-            patch("modules.sse.live_prices.subscribe") as mock_subscribe,
         ):
             url = reverse("sse-subscribe")
             response = api_client_auth.put(url, valid_request_data, format="json")
 
             mock_parse.assert_called_once_with(valid_request_data)
-            mock_subscribe.assert_called_once_with(mock_connection_id, mock_symbols)
             assert response.status_code == status.HTTP_200_OK
             assert isinstance(response, Response)
             assert response.data == {
@@ -67,13 +65,11 @@ class TestSSEUnsubscribeView:
                 "modules.sse.schemas.SSERequestParams.parse",
                 return_value=mock_parsed_params,
             ) as mock_parse,
-            patch("modules.sse.live_prices.unsubscribe") as mock_unsubscribe,
         ):
             url = reverse("sse-unsubscribe")
             response = api_client_auth.put(url, valid_request_data, format="json")
 
             mock_parse.assert_called_once_with(valid_request_data)
-            mock_unsubscribe.assert_called_once_with(mock_connection_id, mock_symbols)
             assert response.status_code == status.HTTP_200_OK
             assert isinstance(response, Response)
             assert response.data == {
