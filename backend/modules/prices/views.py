@@ -21,7 +21,7 @@ class PricesView(generics.GenericAPIView):
         service: PricesService = Provide[AppContainer.prices_container.prices_service],
     ):
         super().__init__()
-        self.service = service
+        self._service = service
 
     @extend_schema(
         parameters=[InstrumentPriceQueryParams],
@@ -38,7 +38,7 @@ class PricesView(generics.GenericAPIView):
         validated = cast("dict", params.validated_data)
 
         try:
-            price_history = self.service.get_instrument_price_history(
+            price_history = self._service.get_instrument_price_history(
                 validated["ticker"],
                 validated["start_date"],
                 validated["end_date"],

@@ -134,7 +134,7 @@ class InstrumentDetailView(generics.GenericAPIView):
         ],
     ):
         super().__init__()
-        self.service = service
+        self._service = service
 
     @extend_schema(
         responses=[InstrumentDetailedInfoSerializer],
@@ -144,7 +144,7 @@ class InstrumentDetailView(generics.GenericAPIView):
         Get detailed information for a single instrument.
         """
         try:
-            result = self.service.get_instrument_detailed_info(ticker)
+            result = self._service.get_instrument_detailed_info(ticker)
         except FetchInstrumentInfoException as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 

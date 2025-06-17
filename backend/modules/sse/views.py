@@ -20,7 +20,7 @@ class SSESubscribeView(APIView):
         live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
     ):
         super().__init__()
-        self.live_prices = live_prices
+        self._live_prices = live_prices
 
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
@@ -33,7 +33,7 @@ class SSESubscribeView(APIView):
         symbols = params.symbols
 
         try:
-            self.live_prices.subscribe(connection_id, symbols)
+            self._live_prices.subscribe(connection_id, symbols)
             logger.debug("%s: Subscribed to symbols: %s", connection_id, symbols)
             return Response(
                 {"message": f"Subscribed to new events: {symbols}"},
