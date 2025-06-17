@@ -82,6 +82,13 @@ class LivePrices:
         self._subscriptions: dict[str, int] = {}
         self._clients: dict[uuid.UUID, ClientInfo] = {}
 
+    def cleanup(self) -> None:
+        """Cleanup all subscriptions and clients."""
+        with self._lock:
+            self._instruments.clear()
+            self._subscriptions.clear()
+            self._clients.clear()
+
     def set_client(self, client_id: uuid.UUID, client: ClientInfo) -> None:
         self._clients[client_id] = client
 
