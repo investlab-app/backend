@@ -57,6 +57,9 @@ class TestSSEConsumerImpl:
             # Verify parent disconnect was called
             mock_super_disconnect.assert_called_once()
 
+        consumer.live_prices.unsubscribe(mock_connection_id)
+        consumer.live_prices.shutdown()
+
     @pytest.mark.asyncio()
     async def test_live_prices_handler_filters_prices(
         self, consumer, mock_connection_id
