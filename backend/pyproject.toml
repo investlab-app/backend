@@ -43,7 +43,6 @@ dev = [
 clerk-backend-api = { git = "https://github.com/mikolajkapica/clerk-sdk-python.git" }
 
 [tool.pytest.ini_options]
-DJANGO_SETTINGS_MODULE = "config.settings"
 python_files = ["tests.py", "test_*.py", "*_tests.py"]
 addopts = "--cov=modules --cov-report=term-missing"
 asyncio_mode = "auto"
