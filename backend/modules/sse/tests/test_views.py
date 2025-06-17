@@ -22,9 +22,9 @@ class TestSSESubscribeView:
     ):
         with (
             patch(
-                  "modules.sse.schemas.SSERequestParams.parse",
-                  return_value=mock_parsed_params,
-              ) as mock_parse,
+                "modules.sse.schemas.SSERequestParams.parse",
+                return_value=mock_parsed_params,
+            ) as mock_parse,
         ):
             url = reverse("sse-subscribe")
             response = api_client_auth.put(url, valid_request_data, format="json")
@@ -37,7 +37,7 @@ class TestSSESubscribeView:
             }
 
     def test_subscribe_put_invalid_data(self, api_client_auth):
-        invalid_data = {"symbols": "AAPL"} # Missing connectionId
+        invalid_data = {"symbols": "AAPL"}  # Missing connectionId
 
         with patch(
             "modules.sse.schemas.SSERequestParams.parse",
