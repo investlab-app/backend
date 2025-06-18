@@ -78,6 +78,7 @@ class LivePricesService:
         self._clients: dict[uuid.UUID, ClientInfo] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
         self._task: asyncio.Task | None = None
+        self._lock = threading.Lock()
 
     def _restart_task(self):
         if not self._loop:
@@ -129,63 +130,65 @@ class LivePricesService:
         symbols: set[str],
         handler: PriceUpdateHandler | None = None,
     ) -> None:
-        logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
+        with self._lock:
+            logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
 
-        for symbol in symbols:
-            if (
-                symbol
-                not in self._clients.get(client_id, ClientInfo.empty()).instruments
-            ):
-                logger.debug("Adding instrument: %s", symbol)
-                self._instruments.add(symbol)
-                self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
-                self._restart_task()
+            for symbol in symbols:
+                if (
+                    symbol
+                    not in self._clients.get(client_id, ClientInfo.empty()).instruments
+                ):
+                    logger.debug("Adding instrument: %s", symbol)
+                    self._instruments.add(symbol)
+                    self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
+                    self._restart_task()
 
-        client_info = self._clients.get(client_id, ClientInfo.empty())
+            client_info = self._clients.get(client_id, ClientInfo.empty())
 
-        self._clients.update(
-            {
-                client_id: ClientInfo(
-                    instruments=client_info.instruments | symbols,
-                    handler=handler if handler else client_info.handler,
-                )
-            }
-        )
+            self._clients.update(
+                {
+                    client_id: ClientInfo(
+                        instruments=client_info.instruments | symbols,
+                        handler=handler if handler else client_info.handler,
+                    )
+                }
+            )
 
-        logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
+            logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
 
 
     def unsubscribe(
         self, client_id: uuid.UUID, symbols: set[str] | None = None
     ) -> None:
-        logger.debug("Unsubscribing client %s with symbols: %s", client_id, symbols)
+        with self._lock:
+            logger.debug("Unsubscribing client %s with symbols: %s", client_id, symbols)
 
-        instruments = (
-            symbols
-            if symbols
-            else self._clients.get(client_id, ClientInfo.empty()).instruments
-        )
+            instruments = (
+                symbols
+                if symbols
+                else self._clients.get(client_id, ClientInfo.empty()).instruments
+            )
 
-        logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
+            for instrument in iter(instruments):
+                if instrument not in self._subscriptions:
+                    continue
+                if self._subscriptions[instrument] > 1:
+                    self._subscriptions[instrument] -= 1
+                else:
+                    logger.debug("Removing instrument: %s", instrument)
+                    del self._subscriptions[instrument]
+                    self._instruments.remove(instrument)
+                    self._restart_task()
 
-        for instrument in iter(instruments):
-            if instrument not in self._subscriptions:
-                continue
-            if self._subscriptions[instrument] > 1:
-                self._subscriptions[instrument] -= 1
-            else:
-                logger.debug("Removing instrument: %s", instrument)
-                del self._subscriptions[instrument]
-                self._instruments.remove(instrument)
-                self._restart_task()
+            client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
 
-        client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
-
-        if symbols is None:
-            self._clients.pop(client_id, None)
-        else:
-            remaining = client_symbols - symbols
-            if remaining:
-                self._clients[client_id].instruments = remaining
-            else:
+            if symbols is None:
                 self._clients.pop(client_id, None)
+            else:
+                remaining = client_symbols - symbols
+                if remaining:
+                    self._clients[client_id].instruments = remaining
+                else:
+                    self._clients.pop(client_id, None)
+
+            logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
