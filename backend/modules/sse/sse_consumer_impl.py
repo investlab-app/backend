@@ -30,8 +30,6 @@ class SSEConsumerImpl(SSEConsumer):
         self._live_prices: LivePricesService = live_prices
 
     def live_prices_handler(self, prices: dict[str, Any]) -> None:
-        logger.debug("Live prices handler called with prices: %s", prices)
-
         if not self.connection_id:
             logger.error("Connection ID is not set, cannot handle live prices.")
             return

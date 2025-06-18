@@ -110,7 +110,7 @@ class LivePricesService:
             logger.error("Error in fetch loop: %s", e)
 
     def message_handler(self, prices):
-        logger.debug("Handling price update: %s", prices)
+        logger.debug("Received message: %s", prices)
 
         handlers = [
             handler
@@ -151,6 +151,9 @@ class LivePricesService:
                 )
             }
         )
+
+        logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
+
 
     def unsubscribe(
         self, client_id: uuid.UUID, symbols: set[str] | None = None
