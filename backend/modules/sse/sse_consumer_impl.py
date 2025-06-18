@@ -6,7 +6,7 @@ from dependency_injector.wiring import Provide, inject
 from config.containers import AppContainer
 from config.logging import get_logger
 from modules.authentication import clerk_auth
-from modules.prices.services import LivePrices
+from modules.prices.services import LivePricesService
 from modules.sse.schemas import SSERequestParams
 from modules.sse.sse_consumer import SSEConsumer
 
@@ -20,7 +20,7 @@ class SSEConsumerImpl(SSEConsumer):
     @inject
     def __init__(
         self,
-        live_prices: LivePrices = Provide[AppContainer.prices_container.live_prices],
+        live_prices: LivePricesService = Provide[AppContainer.prices_container.live_prices],
     ):
         super().__init__()
         self.shutdown_event = asyncio.Event()

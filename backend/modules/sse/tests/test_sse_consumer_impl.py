@@ -3,6 +3,7 @@ from unittest.mock import AsyncMock, Mock, patch
 
 import pytest
 
+from modules.prices.schemas import ClientInfo
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 
@@ -40,10 +41,8 @@ class TestSSEConsumerImpl:
         consumer.shutdown_event = asyncio.Event()
 
         # Setup clients dict with ClientInfo
-        from modules.prices.schemas import ClientInfo
-
-        consumer.live_prices.set_client(
-            mock_connection_id, ClientInfo(instruments=mock_symbols, handler=None)
+        consumer.live_prices._clients[mock_connection_id] = ClientInfo(
+            instruments=mock_symbols, handler=None
         )
 
         with patch.object(

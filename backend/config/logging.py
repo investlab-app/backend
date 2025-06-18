@@ -22,7 +22,8 @@ def setup_logging() -> None:
     )
 
     # Set yfinance logger to only show WARNING and above
-    logging.getLogger("yfinance").setLevel(logging.WARNING)
+    logging.getLogger("yfinance").setLevel(logging.INFO)
+    logging.getLogger("websockets.client").setLevel(logging.INFO)
 
 
 def get_logger(name: str) -> logging.Logger:

@@ -36,7 +36,6 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
             headers=self._headers(response_origin),
             body=b"",
         )
-        return None
 
     @staticmethod
     @abstractmethod
@@ -74,7 +73,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
             return await self.send_response(
                 status=401,
                 body=b"Unauthorized",
-                headers=[(b"WWW-Authenticate", b"Bearer")],
+                headers=[(b"Bearer")],
             )
 
         if "body" in message:
@@ -103,7 +102,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
 
     @abstractmethod
     @override
-    async def handle(self, params):  # pylint: disable=arguments-renamed
+    async def handle(self, params):
         """
         This method should be implemented by subclasses to handle the SSE
         event stream. It will run as a background task.
