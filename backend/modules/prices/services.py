@@ -1,6 +1,5 @@
 import asyncio
 import threading
-import time
 import uuid
 from datetime import datetime
 from decimal import Decimal
@@ -78,28 +77,25 @@ class LivePricesService:
         self._subscriptions: dict[str, int] = {}
         self._clients: dict[uuid.UUID, ClientInfo] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
-        self._start_background_loop()
+        self._task: asyncio.Task | None = None
 
-    def _start_background_loop(self) -> None:
-        def run_loop():
+    def _restart_task(self):
+        if not self._loop:
+            logger.debug("Creating new event loop")
             self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
-            self._loop.run_forever()
+            prices_thread = threading.Thread(target=self._loop.run_forever, daemon=True)
+            prices_thread.start()
 
-        logger.debug("Starting background event loop")
+        def _create_task():
+            if self._task and not self._task.done():
+                logger.debug("Cancelling existing task")
+                self._task.cancel()
 
-        threading.Thread(target=run_loop, daemon=True).start()
+            logger.debug("Creating new task")
+            self._task = self._loop.create_task(self._fetch_loop())
 
-        while self._loop is None or not self._loop.is_running():
-            time.sleep(0.1)
-
-    def _restart_loop(self):
-        if self._subscriptions:
-            if not self._loop.is_running():
-                self._loop.run_forever()
-            asyncio.run_coroutine_threadsafe(self._fetch_loop(), self._loop)
-        else:
-            self._loop.stop()
+        # Schedule the task creation in the event loop thread
+        self._loop.call_soon_threadsafe(_create_task)
 
     async def _fetch_loop(self):
         logger.debug("Starting fetch loop")
@@ -107,6 +103,7 @@ class LivePricesService:
         try:
             async with yfinance.AsyncWebSocket() as ws:
                 instruments_to_subscribe = list(self._instruments)
+                logger.debug("Subscribing to instruments: %s", instruments_to_subscribe)
                 await ws.subscribe(instruments_to_subscribe)
                 await ws.listen(self.message_handler)
         except Exception as e:
@@ -126,7 +123,6 @@ class LivePricesService:
         for handler in handlers:
             handler(prices)
 
-
     def subscribe(
         self,
         client_id: uuid.UUID,
@@ -142,8 +138,8 @@ class LivePricesService:
             ):
                 logger.debug("Adding instrument: %s", symbol)
                 self._instruments.add(symbol)
-                self._restart_loop()
                 self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
+                self._restart_task()
 
         client_info = self._clients.get(client_id, ClientInfo.empty())
 
@@ -178,7 +174,7 @@ class LivePricesService:
                 logger.debug("Removing instrument: %s", instrument)
                 del self._subscriptions[instrument]
                 self._instruments.remove(instrument)
-                self._restart_loop()
+                self._restart_task()
 
         client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
 
@@ -190,4 +186,3 @@ class LivePricesService:
                 self._clients[client_id].instruments = remaining
             else:
                 self._clients.pop(client_id, None)
-

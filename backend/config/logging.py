@@ -22,8 +22,15 @@ def setup_logging() -> None:
     )
 
     # Set yfinance logger to only show WARNING and above
-    logging.getLogger("yfinance").setLevel(logging.INFO)
-    logging.getLogger("websockets.client").setLevel(logging.INFO)
+    logging.getLogger("modules.sse.sse_consumer_impl").setLevel(logging.DEBUG)
+    logging.getLogger("modules.prices.live_prices_service").setLevel(logging.DEBUG)
+    logging.getLogger("yfinance").setLevel(logging.WARNING)
+    logging.getLogger("websockets.client").setLevel(logging.WARNING)
+    logging.getLogger("httpcore.http11").setLevel(logging.WARNING)
+    logging.getLogger("httpx").setLevel(logging.WARNING)
+    logging.getLogger("daphne.http_protocol").setLevel(logging.WARNING)
+    logging.getLogger("daphne.server").setLevel(logging.WARNING)
+    logging.getLogger("urllib3.connectionpool").setLevel(logging.WARNING)
 
 
 def get_logger(name: str) -> logging.Logger:

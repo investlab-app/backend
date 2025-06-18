@@ -20,12 +20,14 @@ class SSEConsumerImpl(SSEConsumer):
     @inject
     def __init__(
         self,
-        live_prices: LivePricesService = Provide[AppContainer.prices_container.live_prices],
+        live_prices: LivePricesService = Provide[
+            AppContainer.prices_container.live_prices
+        ],
     ):
         super().__init__()
         self.shutdown_event = asyncio.Event()
         self.connection_id: uuid.UUID | None = None
-        self.live_prices = live_prices
+        self._live_prices: LivePricesService = live_prices
 
     def live_prices_handler(self, prices: dict[str, Any]) -> None:
         logger.debug("Live prices handler called with prices: %s", prices)
@@ -62,7 +64,7 @@ class SSEConsumerImpl(SSEConsumer):
         )
 
         try:
-            self.live_prices.subscribe(
+            self._live_prices.subscribe(
                 self.connection_id, symbols, self.live_prices_handler
             )
 
@@ -77,7 +79,7 @@ class SSEConsumerImpl(SSEConsumer):
             )
             raise
         finally:
-            self.live_prices.unsubscribe(self.connection_id)
+            self._live_prices.unsubscribe(self.connection_id)
             logger.debug("SSE stream generation finished.")
 
     async def disconnect(self):

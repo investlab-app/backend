@@ -73,7 +73,7 @@ class SSEConsumer(AsyncHttpConsumer, ABC):
             return await self.send_response(
                 status=401,
                 body=b"Unauthorized",
-                headers=[(b"Bearer")],
+                headers=[(b"WWW-Authenticate", b"Bearer")],
             )
 
         if "body" in message:
