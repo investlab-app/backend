@@ -60,6 +60,7 @@ class SSEConsumerImpl(SSEConsumer):
         logger.debug(
             "%s: Starting SSE stream with symbols: %s", self.connection_id, symbols
         )
+        self.send_event("connection_established", str(self.connection_id))
 
         try:
             self._live_prices.subscribe(
