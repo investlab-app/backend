@@ -155,6 +155,7 @@ class LivePricesService:
             )
 
             logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
+            logger.info("CLIENTS: %s", self._clients)
 
 
     def unsubscribe(
