@@ -75,8 +75,6 @@ class InstrumentsListView(generics.GenericAPIView):
         """
         Get a paginated, sorted, and filtered list of instruments.
         """
-        print("PROCESSING INSTRUMENTS LIST")
-        print(request.query_params)
         params = InstrumentsListQueryParams(data=request.query_params)
         if not params.is_valid():
             return Response(
@@ -84,16 +82,12 @@ class InstrumentsListView(generics.GenericAPIView):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        print("VALIDATED")
-
         validated = cast("dict", params.validated_data)  # pylint: disable=duplicate-code
 
         raw_tickers = (validated.get("tickers") or "").split(",")
         tickers = list(
             {t.upper() for t in (piece.strip() for piece in raw_tickers) if t}
         )
-
-        print("TICKERS", tickers)
 
         try:
             result = self.service.get_instruments_list(
@@ -113,8 +107,6 @@ class InstrumentsListView(generics.GenericAPIView):
             for item in result["items"]
         ]
 
-        print("PROCESSED ITEMS", processed_items)
-
         response_data = {
             "items": processed_items,
             "total": result["total"],
@@ -130,8 +122,6 @@ class InstrumentsListView(generics.GenericAPIView):
                 {"errors": serialized.errors},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
-
-        print("SERIALIZED DATA", serialized.data)
 
         return Response(serialized.data)
 

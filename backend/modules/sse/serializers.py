@@ -11,9 +11,15 @@ class SSERequestSerializer(serializers.Serializer):
         data_copy = data.copy()
 
         symbols = data_copy.get("symbols")
+
         if isinstance(symbols, str):
             symbols = [s.strip() for s in symbols.split(",") if s.strip()]
-        data_copy["symbols"] = symbols
+        elif isinstance(symbols, list):
+            symbols = [s.strip() for s in symbols if isinstance(s, str) and s.strip()]
+        else:
+            symbols = []
+
+        data_copy["symbols"] = set(symbols)
 
         connection_id = data_copy.get("connectionId")
         if connection_id:

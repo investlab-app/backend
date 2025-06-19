@@ -29,6 +29,8 @@ class SSESubscribeView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
+        logger.debug("Received SSE subscription request: %s", params)
+
         connection_id = params.connection_id
         symbols = params.symbols
 

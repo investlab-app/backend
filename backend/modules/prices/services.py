@@ -157,7 +157,6 @@ class LivePricesService:
             logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
             logger.info("CLIENTS: %s", self._clients)
 
-
     def unsubscribe(
         self, client_id: uuid.UUID, symbols: set[str] | None = None
     ) -> None:
@@ -181,7 +180,9 @@ class LivePricesService:
                     self._instruments.remove(instrument)
                     self._restart_task()
 
-            client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
+            client_symbols = self._clients.get(
+                client_id, ClientInfo.empty()
+            ).instruments
 
             if symbols is None:
                 self._clients.pop(client_id, None)
