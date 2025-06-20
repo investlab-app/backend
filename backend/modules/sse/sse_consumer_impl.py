@@ -61,6 +61,8 @@ class SSEConsumerImpl(SSEConsumer):
             "%s: Starting SSE stream with symbols: %s", self.connection_id, symbols
         )
 
+        self.send_event("connection_established", str(self.connection_id))
+
         try:
             self._live_prices.add_client(
                 self.connection_id, symbols, self.live_prices_handler
