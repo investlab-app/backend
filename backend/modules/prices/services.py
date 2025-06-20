@@ -216,5 +216,4 @@ class LivePricesService:
             )
             self._restart_task()
 
-
         logger.info("CLIENTS: %s", self._clients)
