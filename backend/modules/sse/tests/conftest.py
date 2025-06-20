@@ -7,7 +7,6 @@ from dependency_injector import containers, providers
 from modules.prices.services import LivePricesService
 from modules.sse.schemas import SSERequestParams
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
-from modules.sse.views import SSESubscribeView, SSEUnsubscribeView
 
 
 @pytest.fixture

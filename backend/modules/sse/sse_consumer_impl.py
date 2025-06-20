@@ -63,7 +63,7 @@ class SSEConsumerImpl(SSEConsumer):
         self.send_event("connection_established", str(self.connection_id))
 
         try:
-            self._live_prices.subscribe(
+            self._live_prices.add_client(
                 self.connection_id, symbols, self.live_prices_handler
             )
 
@@ -78,7 +78,17 @@ class SSEConsumerImpl(SSEConsumer):
             )
             raise
         finally:
-            self._live_prices.unsubscribe(self.connection_id)
+            # TODO(mikolajkapica): #26 Drop clients when disconnecting  # noqa: FIX002
+            # This cannot be done right now since the connnection isnt dropped quickly
+            # enough and this is showing by throwing this warning:
+            # backend-1  | 2025-06-20 15:01:50,853 - daphne.server - WARNING -
+            # Application instance <Task pending name='Task-10' coro=<ASGIStaticFilesHan
+            # dler.__call__() running at /backend/.venv/lib/python3.13/site-packages/dja
+            # ngo/contrib/staticfiles/handlers.py:101> wait_for=<Future pending cb=[Task
+            # .task_wakeup()]>> for connection <WebRequest at 0x72e52a228a50 method=GET
+            # uri=/api/sse?symbols=&connectionId=95d70fb1-728d-41b3-9750-cc6c8fe20113 cl
+            # ientproto=HTTP/1.1> took too long to shut down and was killed.
+            self._live_prices.drop_client(self.connection_id)
             logger.debug("SSE stream generation finished.")
 
     async def disconnect(self):

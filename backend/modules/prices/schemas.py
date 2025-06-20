@@ -1,3 +1,4 @@
+import uuid
 from collections.abc import Callable
 from datetime import datetime
 from decimal import Decimal
@@ -13,13 +14,15 @@ class InstrumentPriceSchema(BaseModel):
     close: Decimal
 
 
-type PriceUpdateHandler = Callable[[dict[str, float]], None]
+type HandlerFn = Callable[[dict[str, float]], None]
+type ClientId = uuid.UUID
+type TickerId = str
 
 
-class ClientInfo(BaseModel):
-    instruments: set[str]
-    handler: PriceUpdateHandler | None = None
+class Client(BaseModel):
+    tickers: set[TickerId]
+    handler: HandlerFn | None = None
 
     @staticmethod
-    def empty():
-        return ClientInfo(instruments=set(), handler=None)
+    def empty() -> "Client":
+        return Client(tickers=set(), handler=None)

@@ -11,7 +11,13 @@ from config.logging import get_logger
 from config.utils import parse_time_interval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
-from modules.prices.schemas import ClientInfo, InstrumentPriceSchema, PriceUpdateHandler
+from modules.prices.schemas import (
+    Client,
+    ClientId,
+    HandlerFn,
+    InstrumentPriceSchema,
+    TickerId,
+)
 
 logger = get_logger(__name__)
 
@@ -73,9 +79,8 @@ class PricesService:
 
 class LivePricesService:
     def __init__(self) -> None:
-        self._instruments: set[str] = set()
-        self._subscriptions: dict[str, int] = {}
-        self._clients: dict[uuid.UUID, ClientInfo] = {}
+        self._clients: dict[ClientId, Client] = {}
+        self._tickers: dict[TickerId, list[ClientId]] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
         self._task: asyncio.Task | None = None
         self._lock = threading.Lock()
@@ -103,94 +108,113 @@ class LivePricesService:
 
         try:
             async with yfinance.AsyncWebSocket() as ws:
-                instruments_to_subscribe = list(self._instruments)
-                logger.debug("Subscribing to instruments: %s", instruments_to_subscribe)
-                await ws.subscribe(instruments_to_subscribe)
+                tickers_to_subscribe = list(self._tickers.keys())
+                logger.debug("Subscribing to instruments: %s", tickers_to_subscribe)
+                await ws.subscribe(tickers_to_subscribe)
                 await ws.listen(self.message_handler)
         except Exception as e:
             logger.error("Error in fetch loop: %s", e)
 
     def message_handler(self, prices):
-        logger.debug("Received message: %s", prices)
+        # logger.debug("Received message: %s", prices)
+
+        logger.debug("clients: %s", self._clients)
 
         handlers = [
             handler
             for client in self._clients.values()
             if (handler := client.handler)
-            and client.instruments
-            and prices["id"] in client.instruments
+            and client.tickers
+            and prices["id"] in client.tickers
         ]
 
         for handler in handlers:
             handler(prices)
 
-    def subscribe(
+    def update(
         self,
         client_id: uuid.UUID,
-        symbols: set[str],
-        handler: PriceUpdateHandler | None = None,
+        tickers: set[str],
     ) -> None:
-        with self._lock:
-            logger.debug("Subscribing client %s to symbols: %s", client_id, symbols)
+        logger.debug("Updating client %s with symbols: %s", client_id, tickers)
 
-            for symbol in symbols:
-                if (
-                    symbol
-                    not in self._clients.get(client_id, ClientInfo.empty()).instruments
-                ):
-                    logger.debug("Adding instrument: %s", symbol)
-                    self._instruments.add(symbol)
-                    self._subscriptions[symbol] = self._subscriptions.get(symbol, 0) + 1
-                    self._restart_task()
+        client = self._clients.get(client_id)
 
-            client_info = self._clients.get(client_id, ClientInfo.empty())
+        if not client:
+            logger.debug("Client %s not found, not updating", client_id)
+            return
 
-            self._clients.update(
-                {
-                    client_id: ClientInfo(
-                        instruments=client_info.instruments | symbols,
-                        handler=handler if handler else client_info.handler,
-                    )
-                }
+        client_old_tickers = client.tickers
+
+        self._clients[client_id].tickers = tickers
+
+        client_added_tickers = tickers - client_old_tickers
+        client_removed_tickers = client_old_tickers - tickers
+
+        old_tickers = set(self._tickers.keys())
+
+        for ticker in client_added_tickers:
+            self._tickers.setdefault(ticker.upper(), []).append(client_id)
+
+        for ticker in client_removed_tickers:
+            if ticker in self._tickers:
+                self._tickers[ticker].remove(client_id)
+                if not self._tickers[ticker]:
+                    del self._tickers[ticker]
+
+        new_tickers = set(self._tickers.keys())
+
+        logger.debug(
+            "Old tickers: %s, New tickers: %s",
+            old_tickers,
+            new_tickers,
+        )
+
+        if old_tickers != new_tickers:
+            logger.debug(
+                "Tickers changed, restarting task: old=%s, new=%s",
+                old_tickers,
+                new_tickers,
             )
+            self._restart_task()
 
-            logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
-            logger.info("CLIENTS: %s", self._clients)
-
-    def unsubscribe(
-        self, client_id: uuid.UUID, symbols: set[str] | None = None
-    ) -> None:
-        with self._lock:
-            logger.debug("Unsubscribing client %s with symbols: %s", client_id, symbols)
-
-            instruments = (
-                symbols
-                if symbols
-                else self._clients.get(client_id, ClientInfo.empty()).instruments
+    def add_client(
+        self,
+        client_id: ClientId,
+        tickers: set[TickerId],
+        handler: HandlerFn | None = None,
+    ):
+        logger.debug("Adding client %s", client_id)
+        if client_id not in self._clients:
+            self._clients[client_id] = Client(
+                tickers=tickers,
+                handler=handler,
             )
+            logger.info("Added new client %s", client_id)
+        else:
+            logger.warning("Client %s already exists", client_id)
 
-            for instrument in iter(instruments):
-                if instrument not in self._subscriptions:
-                    continue
-                if self._subscriptions[instrument] > 1:
-                    self._subscriptions[instrument] -= 1
-                else:
-                    logger.debug("Removing instrument: %s", instrument)
-                    del self._subscriptions[instrument]
-                    self._instruments.remove(instrument)
-                    self._restart_task()
+        logger.info("CLIENTS: %s", self._clients)
 
-            client_symbols = self._clients.get(
-                client_id, ClientInfo.empty()
-            ).instruments
+    def drop_client(self, client_id: uuid.UUID) -> None:
+        logger.debug("Dropping client %s", client_id)
+        old_tickers = set(self._tickers.keys())
+        if client_id in self._clients:
+            for ticker in self._clients[client_id].tickers:
+                self._tickers[ticker].remove(client_id)
+                if not self._tickers[ticker]:
+                    del self._tickers[ticker]
+            del self._clients[client_id]
+        else:
+            logger.warning("Client %s not found", client_id)
 
-            if symbols is None:
-                self._clients.pop(client_id, None)
-            else:
-                remaining = client_symbols - symbols
-                if remaining:
-                    self._clients[client_id].instruments = remaining
-                else:
-                    self._clients.pop(client_id, None)
+        if old_tickers != set(self._tickers.keys()):
+            logger.debug(
+                "Tickers changed, restarting task: old=%s, new=%s",
+                old_tickers,
+                set(self._tickers.keys()),
+            )
+            self._restart_task()
 
-            logger.info("SUBSCRIPTIONS: %s", self._subscriptions)
+
+        logger.info("CLIENTS: %s", self._clients)

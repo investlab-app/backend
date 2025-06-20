@@ -13,11 +13,13 @@ from modules.sse.serializers import SSERequestSerializer
 logger = get_logger(__name__)
 
 
-class SSESubscribeView(APIView):
+class SSEUpdateView(APIView):
     @inject
     def __init__(
         self,
-        live_prices: LivePricesService = Provide[AppContainer.prices_container.live_prices],
+        live_prices: LivePricesService = Provide[
+            AppContainer.prices_container.live_prices
+        ],
     ):
         super().__init__()
         self._live_prices = live_prices
@@ -29,65 +31,26 @@ class SSESubscribeView(APIView):
         except ValueError as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        logger.debug("Received SSE subscription request: %s", params)
+        logger.debug("Received SSE update request: %s", params)
 
         connection_id = params.connection_id
         symbols = params.symbols
 
         try:
-            self._live_prices.subscribe(connection_id, symbols)
-            logger.debug("%s: Subscribed to symbols: %s", connection_id, symbols)
+            self._live_prices.update(connection_id, symbols)
+            logger.debug("%s: Updated symbols: %s", connection_id, symbols)
             return Response(
-                {"message": f"Subscribed to new events: {symbols}"},
+                {"message": f"Updated events for symbols: {symbols}"},
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
             logger.error(
-                "%s: Failed to subscribe to symbols %s: %s",
+                "%s: Failed to update symbols %s: %s",
                 connection_id,
                 symbols,
                 str(e),
             )
             return Response(
-                {"error": f"Failed to subscribe to symbols: {str(e)}"},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-
-class SSEUnsubscribeView(APIView):
-    @inject
-    def __init__(
-        self,
-        live_prices: LivePricesService = Provide[AppContainer.prices_container.live_prices],
-    ):
-        super().__init__()
-        self.live_prices = live_prices
-
-    @extend_schema(request=SSERequestSerializer)
-    def put(self, request):
-        try:
-            params = SSERequestParams.parse(request.data)
-        except ValueError as e:
-            return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        connection_id = params.connection_id
-        symbols = params.symbols
-
-        try:
-            self.live_prices.unsubscribe(connection_id, symbols)
-            logger.debug("%s: Unsubscribed from symbols: %s", connection_id, symbols)
-            return Response(
-                {"message": f"Unsubscribed from events: {symbols}"},
-                status=status.HTTP_200_OK,
-            )
-        except Exception as e:
-            logger.error(
-                "%s: Failed to unsubscribe from symbols %s: %s",
-                connection_id,
-                symbols,
-                str(e),
-            )
-            return Response(
-                {"error": f"Failed to unsubscribe from symbols: {str(e)}"},
+                {"error": f"Failed to update symbols: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
