@@ -14,8 +14,7 @@ DEBUG = str_to_bool(os.environ["DEBUG"])
 
 ALLOWED_HOSTS = str_to_list(os.environ["ALLOWED_HOSTS"])
 
-# Other constants
-FRONTEND_URL = os.environ.get("FRONTEND_URL")
+CORS_ALLOWED_ORIGINS = str_to_list(os.environ["CORS_ALLOWED_ORIGINS"])
 
 # Application definition
 
@@ -117,15 +116,6 @@ AUTH_PASSWORD_VALIDATORS = [
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
 ]
-
-
-CORS_ALLOW_ALL_ORIGINS = True
-
-# CORS_ALLOWED_ORIGINS = [
-#     FRONTEND_URL,
-#     "http://localhost:3000",
-#     "http://127.0.0.1:3000",
-# ]
 
 
 # Internationalization
