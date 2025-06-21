@@ -7,5 +7,5 @@ instruments:
       ADM, ANET, AJG, AIZ, T, ATO, ADSK, ADP, 
     ]
 logging:
-  level: "DEBUG"
+  level: "WARNING"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"

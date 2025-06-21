@@ -55,13 +55,6 @@ def test_instruments_list_view_success(
     assert len(response.data["items"]) > 0
 
 
-def test_instruments_list_view_missing_tickers(api_client_auth) -> None:
-    url = reverse("instruments-list")
-    response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 400
-
-
 def test_instrument_detail_view_success(
     api_client_auth, mock_yfinance_repository
 ) -> None:

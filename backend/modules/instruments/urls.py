@@ -9,22 +9,22 @@ from modules.instruments.views import (
 
 urlpatterns = [
     path(
-        "instruments/available/",
+        "available/",
         InstrumentsAvailableView.as_view(),
         name="instruments-available",
     ),
     path(
-        "instruments/",
+        "",
         InstrumentsListView.as_view(),
         name="instruments-list",
     ),
     path(
-        "instruments/<str:ticker>/",
+        "<str:ticker>/",
         InstrumentDetailView.as_view(),
         name="instrument-detail",
     ),
     path(
-        "instruments/<str:ticker>/news/",
+        "<str:ticker>/news/",
         InstrumentNewsView.as_view(),
         name="instrument-news",
     ),

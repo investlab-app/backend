@@ -10,7 +10,7 @@ DECIMAL_PLACES = 15
 
 class InstrumentsListQueryParams(serializers.Serializer):
     tickers = serializers.CharField(
-        required=True,
+        required=False,
         help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
     )
     page = serializers.IntegerField(
