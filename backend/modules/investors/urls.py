@@ -2,6 +2,7 @@ from django.urls import path
 
 from modules.investors.views import (
     AccountValueOverTimeView,
+    CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,
     InvestorListCreateView,
@@ -19,5 +20,10 @@ urlpatterns = [
         "me/account-value/",
         AccountValueOverTimeView.as_view(),
         name="account-value-over-time",
+    ),
+    path(
+        "me/current-account-value/",
+        CurrentAccountValueView.as_view(),
+        name="current-account-value",
     ),
 ]

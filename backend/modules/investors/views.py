@@ -14,6 +14,7 @@ from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
+    CurrentAccountValueSerializer,
     InvestorCreateSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
@@ -180,7 +181,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
         # Using user ID as seed for consistent data per user
-        random.seed(self.request.user.id)
+        random.seed(hash(self.request.user.id))
 
         # Generate realistic-looking stats
         invested = round(random.uniform(1000, 50000), 2)
@@ -226,7 +227,7 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
         # Using user ID as seed for consistent data per user
-        random.seed(self.request.user.id)
+        random.seed(hash(self.request.user.id))
 
         # Generate 120 data points (approximately 4 months of weekly data)
         data_points = []
@@ -259,6 +260,48 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
         description=(
             "Get account value over time data for the currently authenticated user."
         ),
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class CurrentAccountValueView(generics.RetrieveAPIView):
+    """
+    Get the current account value for the authenticated user.
+    """
+
+    serializer_class = CurrentAccountValueSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Ensure investor exists for the current user
+        try:
+            return Investor.objects.get(user=self.request.user)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        # Generate random account value for today, keeping it consistent with
+        # the AccountValueOverTimeView endpoint.
+        # Using user ID as seed for consistent data per user
+        random.seed(hash(self.request.user.id))
+
+        # This calculation mimics the first (most recent) value generated
+        # in the AccountValueOverTimeView.
+        base_value = random.uniform(100, 200)
+        variation = random.uniform(-0.1, 0.1)  # First variation
+        value = base_value * (1 + variation)
+
+        current_value = {"value": round(value, 2)}
+
+        serializer = self.get_serializer(current_value)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: CurrentAccountValueSerializer},
+        summary="Get current account value",
+        description="Get the current account value for the authenticated user.",
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)

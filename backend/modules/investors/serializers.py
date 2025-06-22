@@ -100,3 +100,7 @@ class AccountValueOverTimeSerializer(serializers.Serializer):
     data = AccountValueDataSerializer(
         many=True, help_text="List of account value data points"
     )
+
+
+class CurrentAccountValueSerializer(serializers.Serializer):
+    value = serializers.FloatField()
