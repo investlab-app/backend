@@ -13,9 +13,9 @@ class InvestorAdmin(admin.ModelAdmin):
     def user_email(self, obj):
         return obj.user.email
 
-    user_email.short_description = "Email" # type: ignore[attr-defined]
+    user_email.short_description = "Email"  # type: ignore[attr-defined]
 
     def watching_instruments_count(self, obj):
         return obj.watching_instruments.count()
 
-    watching_instruments_count.short_description = "Watching Count" # type: ignore[attr-defined]
+    watching_instruments_count.short_description = "Watching Count"  # type: ignore[attr-defined]

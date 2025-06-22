@@ -76,3 +76,27 @@ class InvestorListQueryParams(serializers.Serializer):
         required=False,
         help_text="Search by user email, first name, or last name.",
     )
+
+
+class InvestorStatsSerializer(serializers.Serializer):
+    """Serializer for investor statistics data."""
+
+    todays_return = serializers.FloatField(help_text="Today's return in currency")
+    total_return = serializers.FloatField(help_text="Total return in currency")
+    invested = serializers.FloatField(help_text="Total amount invested")
+    total_value = serializers.FloatField(help_text="Total account value")
+
+
+class AccountValueDataSerializer(serializers.Serializer):
+    """Serializer for individual account value data point."""
+
+    date = serializers.DateField(help_text="Date of the value measurement")
+    value = serializers.FloatField(help_text="Account value on this date")
+
+
+class AccountValueOverTimeSerializer(serializers.Serializer):
+    """Serializer for account value over time data."""
+
+    data = AccountValueDataSerializer(
+        many=True, help_text="List of account value data points"
+    )

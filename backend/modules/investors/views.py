@@ -1,4 +1,6 @@
 import logging
+import random
+from datetime import date, timedelta
 
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
@@ -11,9 +13,11 @@ from rest_framework.response import Response
 from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
+    AccountValueOverTimeSerializer,
     InvestorCreateSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
+    InvestorStatsSerializer,
     InvestorUpdateSerializer,
 )
 
@@ -152,6 +156,109 @@ class CurrentInvestorView(generics.RetrieveAPIView):
         responses={200: InvestorSerializer},
         summary="Get current investor",
         description="Get the investor profile for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class InvestorStatsView(generics.RetrieveAPIView):
+    """
+    Get investor statistics for the current authenticated user.
+    """
+
+    serializer_class = InvestorStatsSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Ensure investor exists for the current user
+        try:
+            return Investor.objects.get(user=self.request.user)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        # Generate random stats data
+        # Using user ID as seed for consistent data per user
+        random.seed(self.request.user.id)
+
+        # Generate realistic-looking stats
+        invested = round(random.uniform(1000, 50000), 2)
+        total_return = round(random.uniform(-invested * 0.3, invested * 0.5), 2)
+        todays_return = round(random.uniform(-invested * 0.05, invested * 0.05), 2)
+        total_value = invested + total_return
+
+        stats_data = {
+            "todays_return": todays_return,
+            "total_return": total_return,
+            "invested": invested,
+            "total_value": total_value,
+        }
+
+        serializer = self.get_serializer(stats_data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: InvestorStatsSerializer},
+        summary="Get investor stats",
+        description="Get investor statistics for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class AccountValueOverTimeView(generics.RetrieveAPIView):
+    """
+    Get account value over time data for the current authenticated user.
+    """
+
+    serializer_class = AccountValueOverTimeSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Ensure investor exists for the current user
+        try:
+            return Investor.objects.get(user=self.request.user)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        # Generate random account value data over time
+        # Using user ID as seed for consistent data per user
+        random.seed(self.request.user.id)
+
+        # Generate 120 data points (approximately 4 months of weekly data)
+        data_points = []
+        today = date.today()
+        base_value = random.uniform(100, 200)
+
+        for i in range(120):
+            # Go back in time by weeks
+            data_date = today - timedelta(weeks=i)
+
+            # Add some realistic variation to the base value
+            variation = random.uniform(-0.1, 0.1)  # ±10% variation
+            value = base_value * (1 + variation)
+
+            data_points.append(
+                {"date": data_date.isoformat(), "value": round(value, 2)}
+            )
+
+        # Reverse to get chronological order (oldest first)
+        data_points.reverse()
+
+        response_data = {"data": data_points}
+
+        serializer = self.get_serializer(response_data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: AccountValueOverTimeSerializer},
+        summary="Get account value over time",
+        description=(
+            "Get account value over time data for the currently authenticated user."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
