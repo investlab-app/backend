@@ -14,12 +14,14 @@ from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
+    AssetAllocationSerializer,
     CurrentAccountValueSerializer,
     InvestorCreateSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
+    OwnedSharesSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -302,6 +304,178 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         responses={200: CurrentAccountValueSerializer},
         summary="Get current account value",
         description="Get the current account value for the authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class AssetAllocationView(generics.RetrieveAPIView):
+    """
+    Get asset allocation data for the current authenticated user.
+    """
+
+    serializer_class = AssetAllocationSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Ensure investor exists for the current user
+        try:
+            return Investor.objects.get(user=self.request.user)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        # Using user ID as seed for consistent data per user
+        random.seed(hash(self.request.user.id))
+
+        # Generate realistic-looking stats
+        invested = round(random.uniform(20000, 75000), 2)
+        total_return_this_year = round(
+            random.uniform(-invested * 0.1, invested * 0.15), 2
+        )
+        total_value = invested + total_return_this_year
+
+        # Generate allocations
+        allocations = []
+        remaining_percentage = 1.0
+
+        # Stocks
+        stocks_percentage = round(random.uniform(0.6, 0.8), 4)
+        remaining_percentage -= stocks_percentage
+        allocations.append(
+            {
+                "asset_class_display_name": "Stocks",
+                "value": round(total_value * stocks_percentage, 2),
+                "percentage": round(stocks_percentage * 100, 2),
+            }
+        )
+
+        # Bonds
+        bonds_percentage = round(random.uniform(0.1, remaining_percentage * 0.9), 4)
+        remaining_percentage -= bonds_percentage
+        allocations.append(
+            {
+                "asset_class_display_name": "Bonds",
+                "value": round(total_value * bonds_percentage, 2),
+                "percentage": round(bonds_percentage * 100, 2),
+            }
+        )
+
+        # Unallocated
+        unallocated_percentage = remaining_percentage
+        allocations.append(
+            {
+                "asset_class_display_name": "Unallocated",
+                "value": round(total_value * unallocated_percentage, 2),
+                "percentage": round(unallocated_percentage * 100, 2),
+            }
+        )
+
+        # Recalculate total value from parts to avoid rounding errors
+        calculated_total_value = sum(item["value"] for item in allocations)
+
+        response_data = {
+            "total_value": calculated_total_value,
+            "total_return_this_year": total_return_this_year,
+            "allocations": allocations,
+        }
+
+        serializer = self.get_serializer(response_data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: AssetAllocationSerializer},
+        summary="Get asset allocation",
+        description="Get asset allocation data for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class OwnedSharesView(generics.RetrieveAPIView):
+    """
+    Get owned shares data for the current authenticated user.
+    """
+
+    serializer_class = OwnedSharesSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        # Ensure investor exists for the current user
+        try:
+            return Investor.objects.get(user=self.request.user)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(user=self.request.user)
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+
+        owned_shares_data = [
+            {
+                "name": "Apple Inc.",
+                "symbol": "AAPL",
+                "volume": round(random.uniform(1, 10), 5),
+                "value": round(random.uniform(150, 250), 2),
+                "profit": round(random.uniform(-5, 5), 2),
+            },
+            {
+                "name": "Tesla, Inc.",
+                "symbol": "TSLA",
+                "volume": round(random.uniform(1, 10), 5),
+                "value": round(random.uniform(200, 300), 2),
+                "profit": round(random.uniform(-10, 10), 2),
+            },
+            {
+                "name": "Amazon.com, Inc.",
+                "symbol": "AMZN",
+                "volume": round(random.uniform(0.1, 2), 5),
+                "value": round(random.uniform(100, 200), 2),
+                "profit": round(random.uniform(-5, 5), 2),
+            },
+            {
+                "name": "Microsoft Corp.",
+                "symbol": "MSFT",
+                "volume": round(random.uniform(1, 5), 5),
+                "value": round(random.uniform(300, 450), 2),
+                "profit": round(random.uniform(-2, 2), 2),
+            },
+            {
+                "name": "NVIDIA Corp.",
+                "symbol": "NVDA",
+                "volume": round(random.uniform(0.5, 3), 5),
+                "value": round(random.uniform(800, 1000), 2),
+                "profit": round(random.uniform(-15, 15), 2),
+            },
+            {
+                "name": "Alphabet Inc.",
+                "symbol": "GOOGL",
+                "volume": round(random.uniform(1, 2), 5),
+                "value": round(random.uniform(130, 180), 2),
+                "profit": round(random.uniform(5, 20), 2),
+            },
+        ]
+
+        # for each share, recalculate profit_percentage from value and profit
+        for share in owned_shares_data:
+            purchase_price = share["value"] - share["profit"]
+            if purchase_price != 0:
+                share["profit_percentage"] = round(
+                    (share["profit"] / purchase_price) * 100, 2
+                )
+            else:
+                share["profit_percentage"] = 0
+
+        response_data = {"owned_shares": owned_shares_data}
+
+        serializer = self.get_serializer(response_data)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: OwnedSharesSerializer},
+        summary="Get owned shares",
+        description="Get owned shares data for the currently authenticated user.",
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)

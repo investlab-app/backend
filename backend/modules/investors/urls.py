@@ -2,11 +2,13 @@ from django.urls import path
 
 from modules.investors.views import (
     AccountValueOverTimeView,
+    AssetAllocationView,
     CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,
     InvestorListCreateView,
     InvestorStatsView,
+    OwnedSharesView,
 )
 
 app_name = "investors"
@@ -26,4 +28,10 @@ urlpatterns = [
         CurrentAccountValueView.as_view(),
         name="current-account-value",
     ),
+    path(
+        "me/asset-allocation",
+        AssetAllocationView.as_view(),
+        name="asset-allocation",
+    ),
+    path("me/owned-shares", OwnedSharesView.as_view(), name="owned-shares"),
 ]

@@ -104,3 +104,28 @@ class AccountValueOverTimeSerializer(serializers.Serializer):
 
 class CurrentAccountValueSerializer(serializers.Serializer):
     value = serializers.FloatField()
+
+
+class AssetAllocationItemSerializer(serializers.Serializer):
+    asset_class_display_name = serializers.CharField(max_length=100)
+    value = serializers.FloatField()
+    percentage = serializers.FloatField()
+
+
+class AssetAllocationSerializer(serializers.Serializer):
+    total_value = serializers.FloatField()
+    total_return_this_year = serializers.FloatField()
+    allocations = AssetAllocationItemSerializer(many=True)
+
+
+class OwnedShareItemSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=100)
+    symbol = serializers.CharField(max_length=10)
+    volume = serializers.FloatField()
+    value = serializers.FloatField()
+    profit = serializers.FloatField()
+    profit_percentage = serializers.FloatField()
+
+
+class OwnedSharesSerializer(serializers.Serializer):
+    owned_shares = OwnedShareItemSerializer(many=True)
