@@ -1,4 +1,5 @@
 import pytest
+
 from modules.authentication.clerk_auth import ClerkAuthentication, decode_token
 
 

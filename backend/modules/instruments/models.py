@@ -1,4 +1,3 @@
-import uuid
 
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
@@ -7,7 +6,6 @@ from django.db.models import Q
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
-from modules.core.utils import get_local_datetime
 from modules.instruments.constants import FiatCurrencyEnum, InstrumentTypeEnum
 
 
@@ -76,9 +74,8 @@ class CompanyDetails(BaseModel):
         max_length=100,
         blank=True,
         null=True,
-        # TODO: add enum
+        # TODO: add enum  
     )
-    ...  # Add fields according to what API provides
     website = models.URLField(verbose_name=_("Website"), blank=True, null=True)
 
     class Meta:
@@ -94,7 +91,6 @@ class IndexDetails(BaseModel):
     fund_name = models.CharField(
         verbose_name=_("Fund Name"), max_length=255, blank=True, null=True
     )
-    ...  # Add fields according to what API provides
 
     class Meta:
         verbose_name = _("Index Details")

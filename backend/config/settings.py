@@ -162,7 +162,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -184,7 +184,7 @@ SPECTACULAR_SETTINGS = {
             "type": "http",
             "scheme": "bearer",
             "bearerFormat": "JWT",
-            "description": "Clerk JWT authentication. Use format: 'Bearer <token>'"
+            "description": "Clerk JWT authentication. Use format: 'Bearer <token>'",
         }
     },
     "PREPROCESSING_HOOKS": [

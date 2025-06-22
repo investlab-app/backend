@@ -1,9 +1,9 @@
 from django.urls import path
 
 from modules.investors.views import (
-    InvestorListCreateView,
-    InvestorDetailView,
     CurrentInvestorView,
+    InvestorDetailView,
+    InvestorListCreateView,
 )
 
 app_name = "investors"
