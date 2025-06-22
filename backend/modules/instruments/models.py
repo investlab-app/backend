@@ -1,4 +1,3 @@
-
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
 from django.db import models
@@ -37,7 +36,10 @@ class Instrument(BaseModel):
     )
     details = GenericForeignKey("details_type", "details_id")
 
-    # synchronized_at = models.DateTimeField(verbose_name=_("Synchronized at"), default=get_local_datetime)
+    # synchronized_at = models.DateTimeField(
+    #     verbose_name=_("Synchronized at"),
+    #     default=get_local_datetime,
+    # )
 
     class Meta:
         verbose_name = _("Instrument")
@@ -74,7 +76,7 @@ class CompanyDetails(BaseModel):
         max_length=100,
         blank=True,
         null=True,
-        # TODO: add enum  
+        # TODO: add enum
     )
     website = models.URLField(verbose_name=_("Website"), blank=True, null=True)
 

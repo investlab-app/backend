@@ -1,6 +1,12 @@
 from django.urls import reverse
 from rest_framework import status
 
+from modules.authentication.tests.conftest import (
+    mock_clerk,
+    mock_clerk_login_serializer,
+)
+from modules.core.tests.conftest import api_client
+
 
 def test_clerk_sign_in_success(api_client, mock_clerk, mock_clerk_login_serializer):
     url = reverse("clerk-sign-in")

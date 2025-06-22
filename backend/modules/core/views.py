@@ -41,7 +41,9 @@ class StatusView(GenericAPIView):
             )
         },
         summary="Get application status",
-        description="Returns a simple status message indicating the application is running.",
+        description=(
+            "Returns a simple status message indicating the application is running."
+        ),
     )
     def get(self, _):
         return Response({"message": "App is running!"})
