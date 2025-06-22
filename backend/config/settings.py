@@ -1,7 +1,7 @@
 import os
 from pathlib import Path
 
-from config import str_to_bool, str_to_list
+from config.utils import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
 # from django.utils.translation import gettext_lazy as _
@@ -14,20 +14,18 @@ DEBUG = str_to_bool(os.environ["DEBUG"])
 
 ALLOWED_HOSTS = str_to_list(os.environ["ALLOWED_HOSTS"])
 
-# Other constants
-FRONTEND_URL = os.environ.get("FRONTEND_URL")
+CORS_ALLOWED_ORIGINS = str_to_list(os.environ["CORS_ALLOWED_ORIGINS"])
 
 # Application definition
 
 INSTALLED_APPS = [
-    # Unfold modules
-    "unfold",
-    # "unfold.contrib.filters",  # optional, if special filters are needed
-    # "unfold.contrib.forms",  # optional, if special form elements are needed
-    # "unfold.contrib.inlines",  # optional, if special inlines are needed
-    # "unfold.contrib.import_export",  # optional, if django-import-export package is used
-    # "unfold.contrib.guardian",  # optional, if django-guardian package is used
-    # "unfold.contrib.simple_history",  # optional, if django-simple-history package is used
+    "unfold",  # Django admin theme
+    # "unfold.contrib.filters",  # optional, for special filters
+    # "unfold.contrib.forms",  # optional, for special form elements
+    # "unfold.contrib.inlines",  # optional, for special inlines
+    # "unfold.contrib.import_export"  # optional, for django-import-export
+    # "unfold.contrib.guardian",  # optional, for django-guardian
+    # "unfold.contrib.simple_history",  # optional, for django-simple-history
     # Django modules
     "django.contrib.admin",
     "django.contrib.auth",
@@ -55,9 +53,9 @@ if DEBUG:
     INSTALLED_APPS.insert(0, "daphne")
 
 MIDDLEWARE = [
-    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.security.SecurityMiddleware",
     "django.contrib.sessions.middleware.SessionMiddleware",
+    "corsheaders.middleware.CorsMiddleware",
     "django.middleware.common.CommonMiddleware",
     "django.middleware.csrf.CsrfViewMiddleware",
     "django.contrib.auth.middleware.AuthenticationMiddleware",
@@ -107,7 +105,9 @@ DATABASES = {
 
 AUTH_PASSWORD_VALIDATORS = [
     {
-        "NAME": "django.contrib.auth.password_validation.UserAttributeSimilarityValidator",
+        "NAME": (
+            "django.contrib.auth.password_validation.UserAttributeSimilarityValidator"
+        ),
     },
     {
         "NAME": "django.contrib.auth.password_validation.MinimumLengthValidator",
@@ -118,12 +118,6 @@ AUTH_PASSWORD_VALIDATORS = [
     {
         "NAME": "django.contrib.auth.password_validation.NumericPasswordValidator",
     },
-]
-
-CORS_ALLOWED_ORIGINS = [
-    FRONTEND_URL,
-    "http://localhost:3000",
-    "http://127.0.0.1:3000",
 ]
 
 
@@ -225,12 +219,16 @@ UNFOLD = {
         },
     ],
     # "SITE_URL": "/",
-    # # "SITE_ICON": lambda request: static("icon.svg"),  # both modes, optimise for 32px height
+    # # "SITE_ICON": (
+    #   lambda request: static("icon.svg"),  # both modes, optimise for 32px height
+    #  )
     # "SITE_ICON": {
     #     "light": lambda request: static("icon-light.svg"),  # light mode
     #     "dark": lambda request: static("icon-dark.svg"),  # dark mode
     # },
-    # # "SITE_LOGO": lambda request: static("logo.svg"),  # both modes, optimise for 32px height
+    # # "SITE_LOGO": (
+    #   lambda request: static("logo.svg"),  # both modes, optimise for 32px height
+    # )
     # "SITE_LOGO": {
     #     "light": lambda request: static("logo-light.svg"),  # light mode
     #     "dark": lambda request: static("logo-dark.svg"),  # dark mode
@@ -246,7 +244,9 @@ UNFOLD = {
     # ],
     # "SHOW_HISTORY": True,  # show/hide "History" button, default: True
     # "SHOW_VIEW_ON_SITE": True,  # show/hide "View on site" button, default: True
-    # "SHOW_BACK_BUTTON": False,  # show/hide "Back" button on changeform in header, default: False
+    # "SHOW_BACK_BUTTON": (
+    #    False,  # show/hide "Back" button on changeform in header, default: False
+    # )
     # "ENVIRONMENT": "sample_app.environment_callback",  # environment name in header
     # # environment name prefix in title tag
     # "ENVIRONMENT_TITLE_PREFIX": "sample_app.environment_title_prefix_callback",

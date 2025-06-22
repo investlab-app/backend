@@ -1,19 +1,25 @@
 import asyncio
-import logging
 import threading
-import time
 import uuid
 from datetime import datetime
 from decimal import Decimal
-from typing import Callable, TypedDict
+from typing import TypedDict
 
 import yfinance
-from pydantic import BaseModel
 
-from config import parse_time_interval
+from config.logging import get_logger
+from config.utils import parse_time_interval
 from modules.prices.exceptions import InvalidTimeIntervalException
 from modules.prices.repositories import YfinanceRepository
-from modules.prices.schemas import ClientInfo, InstrumentPriceSchema, PriceUpdateHandler
+from modules.prices.schemas import (
+    Client,
+    ClientId,
+    HandlerFn,
+    InstrumentPriceSchema,
+    TickerId,
+)
+
+logger = get_logger(__name__)
 
 
 class PriceHistoryWithStats(TypedDict):
@@ -22,9 +28,9 @@ class PriceHistoryWithStats(TypedDict):
     max_price: Decimal
 
 
-class PricesServiceMinimal:
-    def __init__(self):
-        self._repository = YfinanceRepository()
+class PricesService:
+    def __init__(self, repository: YfinanceRepository):
+        self._repository = repository
 
     def get_instrument_price_history(
         self,
@@ -34,7 +40,9 @@ class PricesServiceMinimal:
         interval: str,
     ) -> PriceHistoryWithStats:
         """
-        Retrieves historical price data for a given instrument with min and max price over the range.
+        Retrieves historical price data for a given instrument.
+
+        Retrieves price data with min and max price over the specified range.
 
         Args:
             instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
@@ -43,13 +51,13 @@ class PricesServiceMinimal:
             interval (str): The desired data interval (e.g., "1d", "1h").
 
         Returns:
-            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema], 'min_price', and 'max_price'
+            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema],
+                'min_price', and 'max_price'
 
         Raises:
             ValidationError: If the start_date is after the end_date.
             APIException: If an error occurs while fetching data from the repository.
         """
-
         if start_date > end_date:
             raise InvalidTimeIntervalException(
                 "Invalid date order, end date cannot preceed start date.",
@@ -60,6 +68,7 @@ class PricesServiceMinimal:
             end_date,
             parse_time_interval(interval.lower()),
         )
+        logger.debug("Got data: %s", data)
         min_price = min(d.low for d in data)
         max_price = max(d.high for d in data)
 
@@ -70,181 +79,143 @@ class PricesServiceMinimal:
         )
 
 
-class LivePrices:
-
+class LivePricesService:
     def __init__(self) -> None:
+        self._clients: dict[ClientId, Client] = {}
+        self._tickers: dict[TickerId, list[ClientId]] = {}
         self._loop: asyncio.AbstractEventLoop | None = None
-        self._running = False
+        self._task: asyncio.Task | None = None
         self._lock = threading.Lock()
-        self._start_background_loop()
-        self._instruments: set[str] = set()
-        self._subscriptions: dict[str, int] = {}
-        self._clients: dict[uuid.UUID, ClientInfo] = {}
 
-    def get_instruments(self) -> set[str]:
-        return self._instruments.copy()
-
-    def get_subscriptions(self) -> dict[str, int]:
-        return self._subscriptions.copy()
-
-    def get_clients(self) -> dict[uuid.UUID, ClientInfo]:
-        return self._clients.copy()
-
-    def subscribe(
-        self,
-        client_id: uuid.UUID,
-        symbols: set[str],
-        handler: PriceUpdateHandler | None = None,
-    ) -> None:
-        logging.debug(f"Subscribing client {client_id} to symbols: {symbols}")
-
-        for symbol in iter(symbols):
-            self._subscriptions.setdefault(symbol, 0)
-            self._subscriptions[symbol] += 1
-
-        client_info = self._clients.get(client_id, ClientInfo.empty())
-
-        self._clients.update(
-            {
-                client_id: ClientInfo(
-                    instruments=client_info.instruments | symbols,
-                    handler=handler if handler else client_info.handler,
-                )
-            }
-        )
-
-        self._add_instruments(symbols)
-
-    def unsubscribe(
-        self, client_id: uuid.UUID, symbols: set[str] | None = None
-    ) -> None:
-        logging.debug(f"Unsubscribing client {client_id} with symbols: {symbols}")
-
-        instruments = (
-            symbols
-            if symbols
-            else self._clients.get(client_id, ClientInfo.empty()).instruments
-        )
-
-        for instrument in iter(instruments):
-            if instrument not in self._subscriptions:
-                continue
-            if self._subscriptions[instrument] > 1:
-                self._subscriptions[instrument] -= 1
-            else:
-                del self._subscriptions[instrument]
-                self._remove_instruments({instrument})
-
-        client_symbols = self._clients.get(client_id, ClientInfo.empty()).instruments
-
-        if symbols is None:
-            # If symbols is None, remove all subscriptions for this client
-            self._clients.pop(client_id, None)
-        else:
-            # Otherwise, remove only the specified symbols
-            remaining = client_symbols - symbols
-            if remaining:
-                self._clients[client_id].instruments = remaining
-            else:
-                self._clients.pop(client_id, None)
-
-    def _start_background_loop(self) -> None:
-        def run_loop():
+    def _restart_task(self):
+        if not self._loop:
+            logger.debug("Creating new event loop")
             self._loop = asyncio.new_event_loop()
-            asyncio.set_event_loop(self._loop)
-            self._loop.run_forever()
+            prices_thread = threading.Thread(target=self._loop.run_forever, daemon=True)
+            prices_thread.start()
 
-        logging.debug("Starting background event loop")
+        def _create_task():
+            if self._task and not self._task.done():
+                logger.debug("Cancelling existing task")
+                self._task.cancel()
 
-        loop_thread = threading.Thread(target=run_loop, daemon=True)
-        loop_thread.start()
+            logger.debug("Creating new task")
+            self._task = self._loop.create_task(self._fetch_loop())
 
-        time.sleep(0.1)
+        # Schedule the task creation in the event loop thread
+        self._loop.call_soon_threadsafe(_create_task)
 
-    def _schedule_coroutine(self, coro):
-        logging.debug(f"Scheduling coroutine: {coro}")
+    async def _fetch_loop(self):
+        logger.debug("Starting fetch loop")
 
-        if self._loop and not self._loop.is_closed():
-            return asyncio.run_coroutine_threadsafe(coro, self._loop)
-
-        return None
-
-    def _add_instruments(self, instruments: set[str]) -> None:
-        with self._lock:
-            logging.debug(f"Adding instruments: {instruments}")
-            self._instruments.update(instruments)
-
-            if not self._running and self._instruments:
-                self._schedule_coroutine(self._start_fetching())
-
-    def _remove_instruments(self, instruments: set[str]) -> None:
-        with self._lock:
-            logging.debug(f"Removing instruments: {instruments}")
-            self._instruments.difference_update(instruments)
-
-            if not self._instruments and self._running:
-                self._schedule_coroutine(self._stop_fetching())
-
-    async def _start_fetching(self):
-        if self._running:
-            return
-
-        logging.debug("Starting live price fetching")
-
-        asyncio.create_task(self._fetch_loop())
-
-    async def _stop_fetching(self):
-        logging.debug("Stopping live price fetching loop")
-        self._running = False
+        try:
+            async with yfinance.AsyncWebSocket() as ws:
+                tickers_to_subscribe = list(self._tickers.keys())
+                logger.debug("Subscribing to instruments: %s", tickers_to_subscribe)
+                await ws.subscribe(tickers_to_subscribe)
+                await ws.listen(self.message_handler)
+        except Exception as e:
+            logger.error("Error in fetch loop: %s", e)
 
     def message_handler(self, prices):
-        logging.debug(f"Handling price update: {prices}")
+        # logger.debug("Received message: %s", prices)
+
+        logger.debug("clients: %s", self._clients)
 
         handlers = [
             handler
             for client in self._clients.values()
             if (handler := client.handler)
-            and client.instruments
-            and prices["id"] in client.instruments
+            and client.tickers
+            and prices["id"] in client.tickers
         ]
 
-        print(handlers)
-
         for handler in handlers:
-            try:
-                if asyncio.iscoroutinefunction(handler):
-                    if self._loop and not self._loop.is_closed():
-                        asyncio.run_coroutine_threadsafe(handler(prices), self._loop)
-                    else:
-                        logging.error("Event loop not available for async handler")
-                else:
-                    handler(prices)
-            except Exception as e:
-                logging.error(f"Error in handler {handler}: {e}")
+            handler(prices)
 
-    async def _fetch_loop(self):
-        logging.debug("Starting fetch loop")
-        if self._running:
+    def update(
+        self,
+        client_id: uuid.UUID,
+        tickers: set[str],
+    ) -> None:
+        logger.debug("Updating client %s with symbols: %s", client_id, tickers)
+
+        client = self._clients.get(client_id)
+
+        if not client:
+            logger.debug("Client %s not found, not updating", client_id)
             return
 
-        self._running = True
+        client_old_tickers = client.tickers
 
-        try:
-            async with yfinance.AsyncWebSocket() as ws:
-                # Get a copy of instruments while holding the lock
-                with self._lock:
-                    instruments_to_subscribe = list(self._instruments)
-                await ws.subscribe(instruments_to_subscribe)
-                await ws.listen(self.message_handler)
-        except Exception as e:
-            logging.error(f"Error in fetch loop: {e}")
-        finally:
-            self._running = False
+        self._clients[client_id].tickers = tickers
 
-    def shutdown(self):
-        """Shutdown the service"""
-        with self._lock:
-            logging.debug("Starting shutdown process")
-            self._running = False
-            if self._loop and not self._loop.is_closed():
-                self._loop.call_soon_threadsafe(self._loop.stop)
+        client_added_tickers = tickers - client_old_tickers
+        client_removed_tickers = client_old_tickers - tickers
+
+        old_tickers = set(self._tickers.keys())
+
+        for ticker in client_added_tickers:
+            self._tickers.setdefault(ticker.upper(), []).append(client_id)
+
+        for ticker in client_removed_tickers:
+            if ticker in self._tickers:
+                self._tickers[ticker].remove(client_id)
+                if not self._tickers[ticker]:
+                    del self._tickers[ticker]
+
+        new_tickers = set(self._tickers.keys())
+
+        logger.debug(
+            "Old tickers: %s, New tickers: %s",
+            old_tickers,
+            new_tickers,
+        )
+
+        if old_tickers != new_tickers:
+            logger.debug(
+                "Tickers changed, restarting task: old=%s, new=%s",
+                old_tickers,
+                new_tickers,
+            )
+            self._restart_task()
+
+    def add_client(
+        self,
+        client_id: ClientId,
+        tickers: set[TickerId],
+        handler: HandlerFn | None = None,
+    ):
+        logger.debug("Adding client %s", client_id)
+        if client_id not in self._clients:
+            self._clients[client_id] = Client(
+                tickers=tickers,
+                handler=handler,
+            )
+            logger.info("Added new client %s", client_id)
+        else:
+            logger.warning("Client %s already exists", client_id)
+
+        logger.info("CLIENTS: %s", self._clients)
+
+    def drop_client(self, client_id: uuid.UUID) -> None:
+        logger.debug("Dropping client %s", client_id)
+        old_tickers = set(self._tickers.keys())
+        if client_id in self._clients:
+            for ticker in self._clients[client_id].tickers:
+                self._tickers[ticker].remove(client_id)
+                if not self._tickers[ticker]:
+                    del self._tickers[ticker]
+            del self._clients[client_id]
+        else:
+            logger.warning("Client %s not found", client_id)
+
+        if old_tickers != set(self._tickers.keys()):
+            logger.debug(
+                "Tickers changed, restarting task: old=%s, new=%s",
+                old_tickers,
+                set(self._tickers.keys()),
+            )
+            self._restart_task()
+
+        logger.info("CLIENTS: %s", self._clients)

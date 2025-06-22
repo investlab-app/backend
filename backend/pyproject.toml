@@ -1,32 +1,46 @@
-[tool.isort]
-profile = "black"
-skip = [
-    "manage.py",
-    "migrations",
-    "export",
-    "media",
-    "requirements.txt",
-    "venv",
-    ".venv",
-    ".mypy_cache",
+[project]
+name = "stocks-backend"
+version = "0.1.0"
+description = "Stocks Backend"
+requires-python = ">=3.13"
+dependencies = [
+    "channels>=4.2.2",
+    "clerk-backend-api>=2.2.0",
+    "dependency-injector>=4.47.1",
+    "django-cors-headers>=4.7.0",
+    "django-unfold>=0.59.0",
+    "django>=5.2.3",
+    "djangorestframework-simplejwt>=5.5.0",
+    "djangorestframework>=3.16.0",
+    "drf-spectacular>=0.28.0",
+    "jwcrypto>=1.5.6",
+    "pandas>=2.3.0",
+    "psycopg>=3.2.9",
+    "pydantic>=2.11.6",
+    "uvicorn>=0.34.3",
+    "whitenoise>=6.9.0",
+    "yfinance>=0.2.63",
 ]
 
-[tool.black]
-line-length = 88
-target-version = ['py312']
-exclude = '''
-/(
-    manage.py
-|   migrations
-|   export
-|   media
-|   requirements.txt
-|   venv
-|   .git
-|   .venv
-|   .mypy_cache
-)/
-'''
+[dependency-groups]
+dev = [
+    "daphne>=4.2.0",
+    "django-stubs>=5.2.0",
+    "djangorestframework-stubs>=3.16.0",
+    "pandas-stubs>=2.2.3.250527",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    "pytest-django>=4.11.1",
+    "pytest-mock>=3.14.1",
+    "pytest>=8.4.0",
+    "ruff>=0.11.13",
+    "ty>=0.0.1a10",
+    "types-jwcrypto>=1.5.0.20250516",
+    "uv>=0.7.13",
+]
+
+[tool.uv.sources]
+clerk-backend-api = { git = "https://github.com/mikolajkapica/clerk-sdk-python.git" }
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
@@ -41,43 +55,72 @@ omit = [
     "*/migrations/*",
     "*/tests/*",
     "*/__init__.py",
-    # */apps.py",
 ]
 
-[tool.mypy]
-plugins = ["mypy_django_plugin.main", "mypy_drf_plugin.main"]
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = [
+    "manage.py",
+    "migrations",
+    "export",
+    "media",
+    "requirements.txt",
+    "venv",
+    ".venv",
+    "*.egg-info",
+    ".ruff_cache",
+]
 
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",     # docstring issues
+    "ANN",   # type annotation issues
+    "ARG",   # argument issues
+    "BLE",   # blind exception issues
+    "COM812", # missing-trailing-comma issues
+    "DTZ",   # datetime issues
+    "EM",    # exception message issues
+    "INP",   # implicit namespace package issues
+    "PGH",   # type ignore issues
+    "PLR",   # magic number issues
+    "RET",   # return issues
+    "RUF",   # ruff specific issues
+    "S",     # security issues
+    "TRY",   # try/except issues
+    "T",     # print issues
+    "N818",  # exception naming issues
+    "DJ001", # Django specific issues
+    "ERA001", # commented out code
+    "EXE",
+]
 
-[[tool.mypy.overrides]]
-module = ["yfinance.*", "unfold.*", "channels.*"]
-ignore_missing_imports = true
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = [
+    "D",      # docstring issues
+    "ANN",    # type annotation issues
+    "ARG",    # argument issues
+    "BLE",    # blind exception issues
+    "DTZ",    # datetime issues
+    "EM",     # exception message issues
+    "INP",    # implicit namespace package issues
+    "PGH",    # type ignore issues
+    "PLR",    # magic number issues
+    "RET",    # return issues
+    "RUF",    # ruff specific issues
+    "S",      # security issues
+    "TRY",    # try/except issues
+    "T",      # print issues
+    "SLF001", # self reference issues
+    "F",     # pyflakes issues
+    "PT",    # pytest issues
+]
+
+[tool.ty.src]
+exclude = [
+    "*/migrations/*",
+] 
 
 [tool.django-stubs]
 django_settings_module = "config.settings"
-
-[tool.pylint]
-disable = [
-    "R0903", # too-few-public-methods
-    "C0114", # missing-module-docstring
-    "C0115", # missing-class-docstring
-    "C0415", # import-outside-toplevel
-    "C0301", # line-too-long
-    "W0223", # abstract-method
-    "W1203", # logging-fstring-interpolation
-    "C0411", # wrong-import-order
-    "R0913", # too-many-arguments
-    "R0917", # too-many-positional-arguments
-    "W0718", # broad-exception-caught
-    "W0613", # unused-argument
-    "C0413", # wrong-import-position
-]
-ignore = ["migrations"]
-load-plugins = ["pylint_pytest"]
-
-[tool.pylint."**/tests/**/*"]
-disable = [
-    "C0116", # missing-function-docstring
-    "W0611", # unused-import
-    "W0212", # protected-access
-
-]

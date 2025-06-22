@@ -1,11 +1,14 @@
 from typing import TypedDict
 
-from modules.instruments.repositories import YfinanceRepository
+from config.logging import get_logger
+from modules.instruments.repositories import YFinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
+
+logger = get_logger(__name__)
 
 
 class PaginatedInstruments(TypedDict):
@@ -16,9 +19,9 @@ class PaginatedInstruments(TypedDict):
     num_pages: int
 
 
-class InstrumentsServiceMinimal:
-    def __init__(self):
-        self._repository = YfinanceRepository()
+class InstrumentsService:
+    def __init__(self, repository: YFinanceRepository):
+        self._repository = repository
 
     def get_instruments_list(
         self,
@@ -43,7 +46,8 @@ class InstrumentsServiceMinimal:
             filter_industry: Filter by industry name
 
         Returns:
-            PaginatedInstruments: Paginated list of instruments with total count and page info
+            PaginatedInstruments: Paginated list of instruments with total count and
+            page info.
         """
         instruments = self._repository.get_instruments_info(tickers)
 
@@ -54,13 +58,11 @@ class InstrumentsServiceMinimal:
             instruments = [i for i in instruments if i.industry == filter_industry]
 
         if sort_by and hasattr(InstrumentBasicInfoSchema, sort_by):
+            assert isinstance(sort_by, str)
             reverse = sort_direction.lower() == "desc"
+            default_sort_value = float("-inf") if reverse else float("inf")
             instruments.sort(
-                key=lambda x: (
-                    getattr(x, sort_by)
-                    if getattr(x, sort_by) is not None
-                    else (0 if reverse else float("inf"))
-                ),
+                key=lambda x, key=sort_by: getattr(x, key, default_sort_value),
                 reverse=reverse,
             )
 
@@ -101,6 +103,9 @@ class InstrumentsServiceMinimal:
         Returns:
             list[str]: List of available instrument tickers.
         """
+        logger.debug(
+            "Getting available instruments from repository: %s", self._repository
+        )
         return self._repository.get_instruments_available()
 
     def get_news(self, ticker: str) -> list[NewsItem]:

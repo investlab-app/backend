@@ -18,12 +18,13 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+      packages: read
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
       - name: Make .env file
         run: cp .env.ci .env
-      - name: Build and run containers
+      - name: Run containers
         run: docker compose up --build -d --wait
       - name: Run lint checks
         run: make lint
@@ -33,7 +34,6 @@ jobs:
         run: make typecheck
       - name: Run tests
         run: make test
-
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     needs: test
@@ -57,10 +57,21 @@ jobs:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate tags
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=raw,value=latest
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
           push: true
-          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
           platforms: linux/amd64,linux/arm64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

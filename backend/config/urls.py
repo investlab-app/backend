@@ -8,7 +8,7 @@ from drf_spectacular.views import (
 
 from modules.core.views import StatusView
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
-from modules.sse.views import SSESubscribeView, SSEUnsubscribeView
+from modules.sse.views import SSEUpdateView
 
 API_PREFIX = "api"
 
@@ -17,14 +17,7 @@ sse_urlpatterns = [
 ]
 
 urlpatterns = [
-    path(
-        f"{API_PREFIX}/sse/subscribe", SSESubscribeView.as_view(), name="sse-subscribe"
-    ),
-    path(
-        f"{API_PREFIX}/sse/unsubscribe",
-        SSEUnsubscribeView.as_view(),
-        name="sse-unsubscribe",
-    ),
+    path(f"{API_PREFIX}/sse/update", SSEUpdateView.as_view(), name="sse-update"),
     path(f"{API_PREFIX}/admin/", admin.site.urls),
     path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs

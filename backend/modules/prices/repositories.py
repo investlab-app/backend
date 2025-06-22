@@ -19,16 +19,21 @@ class YfinanceRepository:
         interval: YFinanceTimeInterval,
     ) -> list[InstrumentPriceSchema]:
         """
-        Fetches historical price data for a specified financial instrument using the yfinance library.
+        Fetches historical price data for a specified financial instrument.
+
+        Uses the yfinance library to retrieve historical price data for the given
+        instrument.
 
         Args:
             instrument (str): The ticker symbol of the instrument (e.g., "aapl").
             start_date (datetime): The start of the time period to retrieve data for.
             end_date (datetime): The end of the time period to retrieve data for.
-            interval (TimeInterval): The time interval for the historical data (e.g., "ONE_MINUTE", "ONE_DAY").
+            interval (TimeInterval): The time interval for the historical data
+                (e.g., "ONE_MINUTE", "ONE_DAY").
 
         Returns:
-            list[InstrumentPriceSchema]: A list of Pydantic models containing the instrument's historical prices.
+            list[InstrumentPriceSchema]: A list of Pydantic models containing the
+                instrument's historical prices.
 
         Raises:
             FetchPriceException: If the ticker is invalid or no data is returned.
@@ -42,14 +47,16 @@ class YfinanceRepository:
             raise FetchPriceException(str(e)) from e
 
         if history.empty:
-            raise FetchPriceException(f"History is empty for the ticker {instrument}")
+            raise FetchPriceException(
+                f"History is empty for the ticker {instrument}",
+            )
         return YfinanceRepository._convert_prices_to_schema(history)
 
     @staticmethod
     def _convert_prices_to_schema(dataframe: DataFrame) -> list[InstrumentPriceSchema]:
         prices = []
         for index, row in dataframe.iterrows():
-            ts = cast(Timestamp, index)
+            ts = cast("Timestamp", index)
             prices.append(
                 InstrumentPriceSchema(
                     timestamp=ts.to_pydatetime(),

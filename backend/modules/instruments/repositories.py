@@ -1,4 +1,3 @@
-import logging
 from datetime import datetime
 from decimal import Decimal
 
@@ -15,7 +14,10 @@ from modules.instruments.schemas import (
 )
 
 
-class YfinanceRepository:
+class YFinanceRepository:
+    def __init__(self, available_instruments: list[str]):
+        self._available_instruments = available_instruments
+
     @staticmethod
     def get_instruments_info(
         tickers: list[str],
@@ -32,6 +34,9 @@ class YfinanceRepository:
         Raises:
             FetchInstrumentInfoException: If there's an error fetching the data.
         """
+        if not tickers:
+            return []
+
         tickers_str = " ".join(ticker.lower() for ticker in tickers)
         y_tickers = yfinance.Tickers(tickers_str)
 
@@ -41,7 +46,11 @@ class YfinanceRepository:
         # Use batch-fetched data from y_tickers.tickers.values()
         for ticker_obj in y_tickers.tickers.values():
             try:
-                tickers_data.append(ticker_obj.info)
+                info = ticker_obj.info
+                if not info:
+                    tickers_errors.append(ticker_obj.ticker)
+                else:
+                    tickers_data.append(info)
             except Exception:
                 tickers_errors.append(ticker_obj.ticker)
 
@@ -50,7 +59,7 @@ class YfinanceRepository:
                 f"Errors fetching data: {', '.join(tickers_errors)}"
             )
 
-        return [YfinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
+        return [YFinanceRepository._get_basic_info(ticker) for ticker in tickers_data]
 
     @staticmethod
     def get_instrument_detailed_info(
@@ -66,12 +75,16 @@ class YfinanceRepository:
             InstrumentDetailedInfoSchema: Detailed instrument information.
 
         Raises:
-            FetchInstrumentInfoException: If there's an error fetching the data or if the ticker doesn't exist.
+            FetchInstrumentInfoException: If there's an error fetching the data
+            or if the ticker doesn't exist.
         """
         y_ticker = yfinance.Ticker(ticker)
 
         try:
-            detailed_info = YfinanceRepository._get_detailed_info(y_ticker)
+            info = y_ticker.info
+            if not info or not info.get("symbol"):
+                raise FetchInstrumentInfoException(f"Invalid ticker: {ticker}")
+            detailed_info = YFinanceRepository._get_detailed_info(y_ticker)
         except Exception as e:
             raise FetchInstrumentInfoException(str(e)) from e
 
@@ -109,7 +122,9 @@ class YfinanceRepository:
             basic_info.current_price is not None
             and basic_info.previous_close is not None
         ):
-            basic_info.day_change = basic_info.current_price - basic_info.previous_close
+            basic_info.day_change = Decimal(str(basic_info.current_price)) - Decimal(
+                str(basic_info.previous_close)
+            )
             if basic_info.previous_close != Decimal(0):
                 basic_info.day_change_percent = (
                     basic_info.day_change / basic_info.previous_close
@@ -123,7 +138,7 @@ class YfinanceRepository:
     def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
         ticker_info = ticker.info
 
-        basic_schema_instance = YfinanceRepository._get_basic_info(ticker_info)
+        basic_schema_instance = YFinanceRepository._get_basic_info(ticker_info)
 
         earnings_timestamp = ticker_info.get("earningsTimestamp")
         earnings_date_value = (
@@ -188,65 +203,10 @@ class YfinanceRepository:
         Returns:
             list[str]: List of available instrument tickers.
         """
-
-        return [
-            "MMM",
-            "AOS",
-            "ABT",
-            "ABBV",
-            "ACN",
-            "ADBE",
-            "AMD",
-            "AES",
-            "AFL",
-            "A",
-            "APD",
-            "ABNB",
-            "AKAM",
-            "ALB",
-            "ARE",
-            "ALGN",
-            "ALLE",
-            "LNT",
-            "ALL",
-            "GOOGL",
-            "GOOG",
-            "MO",
-            "AMZN",
-            "AMCR",
-            "AEE",
-            "AEP",
-            "AXP",
-            "AIG",
-            "AMT",
-            "AWK",
-            "AMP",
-            "AME",
-            "AMGN",
-            "APH",
-            "ADI",
-            "ANSS",
-            "AON",
-            "APA",
-            "APO",
-            "AAPL",
-            "AMAT",
-            "APTV",
-            "ACGL",
-            "ADM",
-            "ANET",
-            "AJG",
-            "AIZ",
-            "T",
-            "ATO",
-            "ADSK",
-            "ADP",
-        ]
+        return self._available_instruments
 
     def get_news(self, ticker_str: str) -> list[NewsItem]:
         ticker = yfinance.Ticker(ticker_str)
-
-        logging.info(f"Ticker news: {ticker.news[:100]}")
 
         try:
             news_items = [NewsItem(**item) for item in ticker.news]

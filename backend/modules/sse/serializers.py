@@ -1,15 +1,30 @@
+from typing import override
+
 from rest_framework import serializers
-from typing_extensions import override
 
 
 class SSERequestSerializer(serializers.Serializer):
+    """Serializer for SSE request parameters."""
+
     @override
     def to_internal_value(self, data):
         data_copy = data.copy()
+
         symbols = data_copy.get("symbols")
+
         if isinstance(symbols, str):
             symbols = [s.strip() for s in symbols.split(",") if s.strip()]
-        data_copy["symbols"] = symbols
+        elif isinstance(symbols, list):
+            symbols = [s.strip() for s in symbols if isinstance(s, str) and s.strip()]
+        else:
+            symbols = []
+
+        data_copy["symbols"] = set(symbols)
+
+        connection_id = data_copy.get("connectionId")
+        if connection_id:
+            data_copy["connection_id"] = connection_id
+
         return super().to_internal_value(data_copy)
 
     symbols = serializers.ListField(
@@ -19,8 +34,9 @@ class SSERequestSerializer(serializers.Serializer):
         required=True,
         help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
     )
-    connectionId = serializers.UUIDField(
-        required=True, help_text="Unique identifier for the SSE connection."
+    connection_id = serializers.UUIDField(
+        required=True,
+        help_text="Unique identifier for the SSE connection.",
     )
 
 

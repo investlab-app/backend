@@ -5,6 +5,7 @@ from django.conf import settings
 from django.core.cache import cache
 from jwcrypto import jwk
 from jwt.exceptions import PyJWTError
+from requests.exceptions import RequestException
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 
@@ -17,7 +18,7 @@ def _get_jwks():
         response = requests.get(settings.CLERK_JWKS_URL, timeout=5)
         response.raise_for_status()
         return response.json()
-    except requests.exceptions.RequestException as e:
+    except RequestException as e:
         raise AuthenticationFailed(f"Failed to fetch JWKS: {e!s}") from e
 
 
@@ -33,9 +34,10 @@ def decode_token(token):
     """
     Decodes and verifies a Clerk-issued JWT.
 
-    This function extracts the `kid` (key ID) from the token header, retrieves the corresponding
-    public key from Clerk's JWKS endpoint, and uses it to verify and decode the token. It ensures
-    the token was signed with RS256 and issued by the expected Clerk issuer.
+    This function extracts the `kid` (key ID) from the token header, retrieves the
+    corresponding public key from Clerk's JWKS endpoint, and uses it to verify and
+    decode the token. It ensures the token was signed with RS256 and issued by the
+    expected Clerk issuer.
 
     Args:
         token (str): The JWT to decode.
@@ -44,8 +46,9 @@ def decode_token(token):
         dict: The decoded JWT payload if the token is valid.
 
     Raises:
-        AuthenticationFailed: If the token is invalid, expired, has incorrect padding,
-        signature issues, or if the public key could not be retrieved.
+        AuthenticationFailed: If the token is invalid, expired, has incorrect
+        padding, signature issues, or if the public key could not be retrieved.
+
     """
     try:
         headers = jwt.get_unverified_header(token)
@@ -98,7 +101,7 @@ def _parse_user_from_payload(payload) -> User:
     return user
 
 
-def authenticate_and_get_user(token: str) -> User:
+def verify_token(token: str) -> User:
     """
     Authenticates a Clerk JWT and returns the corresponding User object.
 
@@ -134,5 +137,5 @@ class ClerkAuthentication(BaseAuthentication):
             if token == "null":
                 return None, None
 
-        user = authenticate_and_get_user(token)
+        user = verify_token(token)
         return user, token
