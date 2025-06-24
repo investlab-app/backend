@@ -1,6 +1,7 @@
 import asyncio
 from typing import TYPE_CHECKING, Any, override
 
+from asgiref.sync import sync_to_async
 from dependency_injector.wiring import Provide, inject
 
 from config.containers import AppContainer
@@ -40,7 +41,7 @@ class SSEConsumerImpl(SSEConsumer):
     @override
     async def _validate_auth(token: str) -> bool:
         try:
-            clerk_auth.verify_token(token)
+            await sync_to_async(clerk_auth.verify_token)(token)
             return True
         except clerk_auth.AuthenticationFailed as e:
             logger.error("Authentication failed: %s", e)

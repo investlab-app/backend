@@ -41,9 +41,12 @@ INSTALLED_APPS = [
     # Local modules
     "modules.authentication",
     "modules.core",
-    "modules.users",
-    "modules.prices",
     "modules.instruments",
+    "modules.investors",
+    "modules.orders",
+    "modules.prices",
+    "modules.transactions",
+    "modules.users",
 ]
 
 if DEBUG:
@@ -159,7 +162,7 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        "rest_framework_simplejwt.authentication.JWTAuthentication",
+        # "rest_framework_simplejwt.authentication.JWTAuthentication",
         # 'rest_framework.authentication.BearerAuthentication',
     ),
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
@@ -168,23 +171,28 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Stocks API",
-    "DESCRIPTION": "",
+    "DESCRIPTION": "API for stock market data and trading operations",
     "VERSION": "0.0.1",
     "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
+    "SCHEMA_PATH_PREFIX": "/api/",
     "SECURITY": [
-        {"BearerAuth": []},
+        {"ClerkAuth": []},
     ],
-    #     # OTHER SETTINGS
-    #     "SECURITY": [{"BearerAuth": []}],
-    #     "COMPONENT_SPLIT_REQUEST": True,
-    #     "SCHEMA_PATH_PREFIX": "/api/",  # Optional
-    #     "COMPONENT_SECURITY_SCHEMES": {
-    #         "BearerAuth": {
-    #             "type": "http",
-    #             "scheme": "bearer",
-    #             "bearerFormat": "JWT",
-    #         }
-    #     },
+    "COMPONENT_SECURITY_SCHEMES": {
+        "ClerkAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "bearerFormat": "JWT",
+            "description": "Clerk JWT authentication. Use format: 'Bearer <token>'",
+        }
+    },
+    "PREPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.preprocess_exclude_path_format",
+    ],
+    "POSTPROCESSING_HOOKS": [
+        "drf_spectacular.hooks.postprocess_schema_enums",
+    ],
 }
 
 AUTH_USER_MODEL = "users.User"

@@ -25,8 +25,9 @@ class PricesView(generics.GenericAPIView):
 
     @extend_schema(
         parameters=[InstrumentPriceQueryParams],
-        responses=[InstrumentPriceResponseSerializer(many=True)],
-        request=InstrumentPriceQueryParams,
+        responses={200: InstrumentPriceResponseSerializer(many=True)},
+        summary="Get instrument prices",
+        description="Get price data for financial instruments",
     )
     def get(self, request: Request) -> Response:
         params = InstrumentPriceQueryParams(data=request.query_params)

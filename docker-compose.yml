@@ -26,6 +26,7 @@ services:
       - "8000:8000"
     volumes:
       - ./backend:/backend:delegated
+      - /backend/.venv
     networks:
       - app_network
 

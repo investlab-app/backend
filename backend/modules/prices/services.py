@@ -73,7 +73,9 @@ class PricesService:
         max_price = max(d.high for d in data)
 
         return PriceHistoryWithStats(
-            data=data, min_price=min_price, max_price=max_price
+            data=data,
+            min_price=min_price,
+            max_price=max_price,
         )
 
 

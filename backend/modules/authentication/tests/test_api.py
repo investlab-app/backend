@@ -1,9 +1,11 @@
-import pytest
 from django.urls import reverse
 from rest_framework import status
 
+from modules.authentication.tests.conftest import (
+    mock_clerk,
+    mock_clerk_login_serializer,
+)
 from modules.core.tests.conftest import api_client
-from modules.users.tests.conftest import user
 
 
 def test_clerk_sign_in_success(api_client, mock_clerk, mock_clerk_login_serializer):
