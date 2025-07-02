@@ -7,8 +7,8 @@ from dependency_injector.wiring import Provide, inject
 from config.containers import AppContainer
 from config.logging import get_logger
 from modules.authentication import clerk_auth
-from modules.prices.services import LivePricesService
 from modules.sse.schemas import SSERequestParams
+from modules.sse.services import SSEService
 from modules.sse.sse_consumer import SSEConsumer
 
 if TYPE_CHECKING:
@@ -21,21 +21,24 @@ class SSEConsumerImpl(SSEConsumer):
     @inject
     def __init__(
         self,
-        live_prices: LivePricesService = Provide[
-            AppContainer.prices_container.live_prices
-        ],
+        sse_service: SSEService = Provide[AppContainer.prices_container.sse_service],
     ):
         super().__init__()
         self.shutdown_event = asyncio.Event()
         self.connection_id: uuid.UUID | None = None
-        self._live_prices: LivePricesService = live_prices
+        self._sse_service: SSEService = sse_service
 
-    def live_prices_handler(self, prices: dict[str, Any]) -> None:
+    def sse_handler(self, prices: dict[str, Any]) -> None:
         if not self.connection_id:
             logger.error("Connection ID is not set, cannot handle live prices.")
             return
 
-        self.send_event("price_update", str(prices))
+        instrument_id = prices.get("id")
+        if instrument_id is None:
+            logger.warning("Received price update without 'id': %s", prices)
+            return
+
+        self.send_event(f"PRICE_UPDATE_{instrument_id}", str(prices))
 
     @staticmethod
     @override
@@ -56,18 +59,17 @@ class SSEConsumerImpl(SSEConsumer):
             raise
 
         self.connection_id = params.connection_id
-        symbols = params.symbols
+        events = params.events
 
         logger.debug(
-            "%s: Starting SSE stream with symbols: %s", self.connection_id, symbols
+            "%s: Starting SSE stream with events: %s", self.connection_id, events
         )
 
         self.send_event("connection_established", str(self.connection_id))
 
         try:
-            self._live_prices.add_client(
-                self.connection_id, symbols, self.live_prices_handler
-            )
+            self._sse_service.add_client(self.connection_id, self.sse_handler)
+            self._sse_service.update(self.connection_id, events)
 
             logger.debug("%s: Waiting for SSE stream to finish", self.connection_id)
             await self.shutdown_event.wait()
@@ -80,7 +82,7 @@ class SSEConsumerImpl(SSEConsumer):
             )
             raise
         finally:
-            self._live_prices.drop_client(self.connection_id)
+            self._sse_service.drop_client(self.connection_id)
             logger.debug("SSE stream generation finished.")
 
     async def disconnect(self):

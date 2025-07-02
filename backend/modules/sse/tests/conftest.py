@@ -4,8 +4,8 @@ from unittest.mock import Mock
 import pytest
 from dependency_injector import containers, providers
 
-from modules.prices.services import LivePricesService
 from modules.sse.schemas import SSERequestParams
+from modules.sse.services import SSEService
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 
 
@@ -46,10 +46,10 @@ def cleanup_test_environment():
 
 
 @pytest.fixture
-def live_prices():
-    return LivePricesService()
+def sse_service():
+    return SSEService()
 
 
 @pytest.fixture
-def consumer(live_prices):
-    return SSEConsumerImpl(live_prices=live_prices)
+def consumer(sse_service):
+    return SSEConsumerImpl(sse_service=sse_service)

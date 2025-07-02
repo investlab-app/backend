@@ -1,25 +1,22 @@
-from typing import override
-
 from rest_framework import serializers
 
 
 class SSERequestSerializer(serializers.Serializer):
     """Serializer for SSE request parameters."""
 
-    @override
-    def to_internal_value(self, data):
+    def to_internal_value(self, data: dict) -> dict:
         data_copy = data.copy()
 
-        symbols = data_copy.get("symbols")
+        events = data_copy.get("events")
 
-        if isinstance(symbols, str):
-            symbols = [s.strip() for s in symbols.split(",") if s.strip()]
-        elif isinstance(symbols, list):
-            symbols = [s.strip() for s in symbols if isinstance(s, str) and s.strip()]
+        if isinstance(events, str):
+            events = [s.strip() for s in events.split(",") if s.strip()]
+        elif isinstance(events, list):
+            events = [s.strip() for s in events if isinstance(s, str) and s.strip()]
         else:
-            symbols = []
+            events = []
 
-        data_copy["symbols"] = set(symbols)
+        data_copy["events"] = set(events)
 
         connection_id = data_copy.get("connectionId")
         if connection_id:
@@ -27,12 +24,18 @@ class SSERequestSerializer(serializers.Serializer):
 
         return super().to_internal_value(data_copy)
 
-    symbols = serializers.ListField(
+    events = serializers.ListField(
         child=serializers.CharField(
-            help_text="List of stock symbols to subscribe to, e.g. ['AAPL', 'GOOGL']."
+            help_text=(
+                "List of events to subscribe to, "
+                "e.g. ['PRICE_UPDATE_AAPL', 'PRICE_UPDATE_GOOGL']."
+            )
         ),
         required=True,
-        help_text="Comma-separated list of ticker symbols (e.g., 'AAPL,MSFT,GOOG').",
+        help_text=(
+            "Comma-separated list of events "
+            "(e.g., 'PRICE_UPDATE_AAPL,PRICE_UPDATE_GOOGL')."
+        ),
     )
     connection_id = serializers.UUIDField(
         required=True,

@@ -6,6 +6,10 @@
 *.pyo
 */__pycache__
 
+# Virtual Environment
+.venv/
+venv/
+env/
 
 # Database
 *.sqlite3

@@ -6,7 +6,7 @@ from modules.sse.serializers import SSERequestSerializer
 
 
 class SSERequestParams(BaseModel):
-    symbols: set[str]
+    events: set[str]
     connection_id: uuid.UUID
 
     class ConfigDict:
