@@ -1,11 +1,15 @@
+import json
 from drf_spectacular.utils import OpenApiResponse, extend_schema
-from rest_framework import permissions, serializers
+from rest_framework import permissions, serializers, status
 from rest_framework.generics import GenericAPIView
+from alpaca.data import CryptoHistoricalDataClient, StockHistoricalDataClient, OptionHistoricalDataClient
+
+from django.conf import settings
 from rest_framework.permissions import AllowAny, IsAuthenticated
 from rest_framework.response import Response
-
+from polygon import RESTClient
 from modules.authentication.permissions import IsAdmin
-
+from alpaca.data.requests import StockLatestBarRequest
 
 class StatusResponseSerializer(serializers.Serializer):
     """Serializer for status endpoint response"""
@@ -114,3 +118,47 @@ class UnauthTestView(GenericAPIView):
     )
     def get(self, _):
         return Response({"OK": "OK"})
+
+class PolygonTestView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = SimpleResponseSerializer
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                response=SimpleResponseSerializer,
+                description="Last trade result from Polygon",
+            )
+        },
+        summary="Fetch last trade from Polygon.io",
+        description="Receives a ticker in request body and returns the last trade data from Polygon.io.",
+    )
+    def get(self, _):
+        client = RESTClient(api_key=settings.POLYGON_SECRET_KEY)
+        resp = client.get_previous_close_agg(
+            "AAPL",
+            adjusted=True,
+        )
+        print(resp)
+        return Response(str(resp))
+        
+
+class AlpacaTestView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = SimpleResponseSerializer
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                response=SimpleResponseSerializer,
+                description="Last trade result from Alpaca",
+            )
+        },
+        summary="Fetch last trade from Alpaca",
+        description="Receives a ticker in request body and returns the last trade data from Alpaca API.",
+    )
+    def get(self, _):
+        client = StockHistoricalDataClient(settings.ALPACA_PUBLIC_KEY, settings.ALPACA_SECRET_KEY)
+        request = StockLatestBarRequest(symbol_or_symbols="AAPL")
+        response = client.get_stock_latest_bar(request_params=request)
+        print(response)
+        return Response(str(response))
+    
