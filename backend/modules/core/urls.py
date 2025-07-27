@@ -1,6 +1,12 @@
 from django.urls import path
 
-from modules.core.views import AdminTestView, AlpacaTestView, AuthTestView, PolygonTestView, UnauthTestView
+from modules.core.views import (
+    AdminTestView,
+    AlpacaTestView,
+    AuthTestView,
+    PolygonTestView,
+    UnauthTestView,
+)
 
 urlpatterns = [
     path(
