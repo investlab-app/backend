@@ -48,6 +48,52 @@ class InstrumentsListQueryParams(serializers.Serializer):
         help_text="Filter by industry.",
     )
 
+class InstrumentV2InfoSerializer(serializers.Serializer):
+    ticker = serializers.CharField()
+    ticker_type = serializers.CharField()
+    delisted = serializers.BooleanField()
+    icon_url = serializers.URLField()
+
+    market_cap = serializers.DecimalField(
+        max_digits=30, decimal_places=15
+    )
+    currency_name = serializers.CharField()
+    sector = serializers.CharField()
+
+class InstrumentV2DetailSerializer(serializers.Serializer):
+    ticker = serializers.CharField()
+    ticker_type = serializers.CharField()
+
+    delisted = serializers.BooleanField()
+
+    description = serializers.CharField()
+    icon_url = serializers.URLField()
+    logo_url = serializers.URLField()
+    homepage_url = serializers.URLField()
+
+    address1 = serializers.CharField()
+    address2 = serializers.CharField()
+    city = serializers.CharField()
+    postal_code = serializers.CharField()
+    state = serializers.CharField()
+
+    currency_name = serializers.CharField()
+    market = serializers.CharField()
+    market_cap = serializers.DecimalField(
+        max_digits=30, decimal_places=15
+    )
+    phone_number = serializers.CharField()
+    sector = serializers.CharField()
+    total_employess = serializers.IntegerField
+
+    @staticmethod
+    def sanitize_output(record: dict) -> dict:
+        for key, value in record.items():
+            if isinstance(value, Decimal):
+                record[key] = quantize_decimal(value, places=DECIMAL_PLACES)
+        return record
+
+    
 
 class InstrumentInfoSerializer(serializers.Serializer):
     ticker = serializers.CharField()

@@ -26,9 +26,7 @@ class InstrumentV2(BaseModel):
 
     currency_name = models.CharField()
     market = models.CharField()
-    market_cap = models.DecimalField(
-        max_digits=30, decimal_places=15, allow_null=True
-    )
+    market_cap = models.DecimalField(max_digits=30, decimal_places=15)
     phone_number = models.CharField()
     sector = models.CharField()
     total_employess = models.IntegerField
