@@ -7,6 +7,22 @@ from django.utils.translation import gettext_lazy as _
 from modules.core.models import BaseModel
 from modules.instruments.constants import FiatCurrencyEnum, InstrumentTypeEnum
 
+class InstrumentV2(BaseModel):
+    ticker = models.CharField(unique=True)
+    ticker_type = models.CharField()
+    description = models.TextField(blank=True)
+    icon_url = models.URLField()
+    logo_url = models.URLField()
+    homepage_url = models.URLField()
+    currency_name = models.CharField()
+    market = models.CharField()
+    market_cap = models.DecimalField(
+        max_digits=30, decimal_places=15, allow_null=True
+    )
+    phone_number = models.CharField()
+    sector = models.CharField()
+    total_employess = models.IntegerField
+    
 
 class Instrument(BaseModel):
     type = models.CharField(
