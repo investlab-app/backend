@@ -10,10 +10,20 @@ from modules.instruments.constants import FiatCurrencyEnum, InstrumentTypeEnum
 class InstrumentV2(BaseModel):
     ticker = models.CharField(unique=True)
     ticker_type = models.CharField()
+
+    delisted = models.BooleanField()
+
     description = models.TextField(blank=True)
     icon_url = models.URLField()
     logo_url = models.URLField()
     homepage_url = models.URLField()
+
+    address1 = models.CharField()
+    address2 = models.CharField()
+    city = models.CharField()
+    postal_code = models.CharField()
+    state = models.CharField()
+
     currency_name = models.CharField()
     market = models.CharField()
     market_cap = models.DecimalField(
