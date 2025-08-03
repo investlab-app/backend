@@ -17,8 +17,9 @@ from modules.instruments.serializers import (
     InstrumentInfoSerializer,
     InstrumentsListQueryParams,
     PaginatedInstrumentsResponseSerializer,
+    InstrumentV2InfoSerializer
 )
-from modules.instruments.services import InstrumentsService
+from modules.instruments.services import InstrumentsService, InstrumentServiceV2
 
 logger = get_logger(__name__)
 
@@ -208,3 +209,11 @@ class InstrumentNewsView(generics.GenericAPIView):
         result_dict = [item.model_dump() for item in result]
 
         return Response(result_dict)
+
+class InstrumentPullView(generics.GenericAPIView):
+    serializer_class = InstrumentV2InfoSerializer
+    queryset = None
+
+    def get(self, request: Request) -> Response:
+        InstrumentServiceV2.pull_all_instruments()
+        return Response("done")

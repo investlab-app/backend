@@ -1,12 +1,21 @@
 from typing import TypedDict
+from django.db import transaction
+import traceback
+from dataclasses import asdict
+from concurrent.futures import ThreadPoolExecutor
+import polygon
+from django.db.utils import IntegrityError
 
 from config.logging import get_logger
+from config.polygon import client
 from modules.instruments.repositories import YFinanceRepository
 from modules.instruments.schemas import (
     InstrumentBasicInfoSchema,
     InstrumentDetailedInfoSchema,
     NewsItem,
 )
+from modules.instruments.models import InstrumentV2
+from modules.instruments.serializers import TickerOverviewResultSerializer, TestSerializer
 
 logger = get_logger(__name__)
 
@@ -119,3 +128,76 @@ class InstrumentsService:
             list[NewsItem]: List of news items
         """
         return self._repository.get_news(ticker)
+
+class InstrumentServiceV2:
+    a = 0
+
+    @staticmethod
+    def pull_instrument_details(ticker):
+        InstrumentServiceV2.a += 1
+        if InstrumentServiceV2.a % 50 == 0:
+            print(InstrumentServiceV2.a)
+        return asdict(client.get_ticker_details(ticker))
+
+    @staticmethod
+    def pull_all_instruments():
+        tickers = []
+        i = 0
+        for t in client.list_tickers(limit=1000):
+            tickers.append(t)
+            i += 1
+            if i % 50 == 0:
+                print(i)
+
+        names = [t.ticker for t in tickers]
+        results = []
+        with ThreadPoolExecutor(max_workers=50) as executor:
+            f = InstrumentServiceV2.pull_instrument_details
+            results = list(executor.map(f, names))
+
+        serializers = []
+        for r in results:
+            serializers.append(TickerOverviewResultSerializer(data=r))
+
+        with transaction.atomic():
+            for s in serializers:
+                if s.is_valid():
+                    i = s.save()
+                    print(f"Saved {i.ticker}")
+                else:
+                    print(f'{s.initial_data["ticker"]} is invalid')
+                    print(s.errors)
+
+
+
+        
+
+
+        # for t in results:
+        #     print('-'*60)
+        #     print(f'{t.ticker}')
+        #     print('-'*60)
+        #     print(t)
+        #     print('\n')
+        print(f'Fetched {len(results)} results')
+        # a = client.get_ticker_details("AAPL")
+        # s = TickerOverviewResultSerializer(data=asdict(a))
+        # print(s.is_valid())
+        # if s.is_valid():
+        #     i = s.save()
+        #     i.save()
+        # print(asdict(a))
+        # print(s.is_valid())
+        # print(s.validated_data)
+
+        #s = InstrumentApiSerializer(data=d)
+        #print(s.is_valid())
+        #s.save()
+
+    # @staticmethod
+    # def PolygonDetailToInstrument(details :polygon.rest.reference.TickerDetails):
+    #     instrument = InstrumentV2()
+    #     instrument.delisted = details.active
+    #     if details.address:
+    #         instrument.address1 = 
+    #     instrument.icon_url = details.branding.icon_url

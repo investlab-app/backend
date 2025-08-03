@@ -13,23 +13,22 @@ class InstrumentV2(BaseModel):
 
     delisted = models.BooleanField()
 
-    description = models.TextField(blank=True)
-    icon_url = models.URLField()
-    logo_url = models.URLField()
-    homepage_url = models.URLField()
+    description = models.TextField(blank=True, default="No description")
+    icon_url = models.URLField(null=True)
+    logo_url = models.URLField(null=True)
+    homepage_url = models.URLField(null=True)
 
-    address1 = models.CharField()
-    address2 = models.CharField()
-    city = models.CharField()
-    postal_code = models.CharField()
-    state = models.CharField()
+    # address = models.CharField()
+    # city = models.CharField()
+    # postal_code = models.CharField()
+    # state = models.CharField()
 
-    currency_name = models.CharField()
-    market = models.CharField()
-    market_cap = models.DecimalField(max_digits=30, decimal_places=15)
-    phone_number = models.CharField()
-    sector = models.CharField()
-    total_employess = models.IntegerField
+    currency_name = models.CharField(null=True)
+    market = models.CharField(null=True)
+    market_cap = models.DecimalField(max_digits=30, decimal_places=15, null=True)
+    phone_number = models.CharField(null=True)
+    sector = models.CharField(null=True)
+    total_employess = models.IntegerField(null=True)
     
 
 class Instrument(BaseModel):

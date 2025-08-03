@@ -1,7 +1,7 @@
 from datetime import datetime
 from decimal import Decimal
 
-import yfinance
+import polygon
 
 from modules.instruments.exceptions import (
     FetchInstrumentInfoException,
@@ -16,12 +16,14 @@ from modules.instruments.schemas import (
 
 class YFinanceRepository:
     def __init__(self, available_instruments: list[str]):
+        return
         self._available_instruments = available_instruments
 
     @staticmethod
     def get_instruments_info(
         tickers: list[str],
     ) -> list[InstrumentBasicInfoSchema]:
+        return
         """
         Fetches basic information for multiple instruments in a single batch request.
 
@@ -65,6 +67,7 @@ class YFinanceRepository:
     def get_instrument_detailed_info(
         ticker: str,
     ) -> InstrumentDetailedInfoSchema:
+        return
         """
         Fetches detailed information for a single instrument.
 
@@ -92,6 +95,7 @@ class YFinanceRepository:
 
     @staticmethod
     def _get_basic_info(ticker_info: dict) -> InstrumentBasicInfoSchema:
+        return
         ticker_symbol = ticker_info.get("symbol", "")
         basic_info = InstrumentBasicInfoSchema(
             ticker=ticker_symbol.upper(),
@@ -135,7 +139,8 @@ class YFinanceRepository:
         return basic_info
 
     @staticmethod
-    def _get_detailed_info(ticker: yfinance.Ticker) -> InstrumentDetailedInfoSchema:
+    def _get_detailed_info(ticker) -> InstrumentDetailedInfoSchema:
+        return
         ticker_info = ticker.info
 
         basic_schema_instance = YFinanceRepository._get_basic_info(ticker_info)
@@ -197,6 +202,7 @@ class YFinanceRepository:
         return detailed_ticker_info
 
     def get_instruments_available(self) -> list[str]:
+        return
         """
         Retrieves a list of available instruments (top S&P50 for 10/6/25).
 
@@ -206,6 +212,7 @@ class YFinanceRepository:
         return self._available_instruments
 
     def get_news(self, ticker_str: str) -> list[NewsItem]:
+        return
         ticker = yfinance.Ticker(ticker_str)
 
         try:
