@@ -3,25 +3,25 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from modules.core.utils import quantize_decimal
-from modules.instruments.models import InstrumentV2
+from modules.instruments.models import Instrument
 
 MAX_DIGITS = 30
 DECIMAL_PLACES = 15
 
 
-class InstrumentV2InfoSerializer(serializers.Serializer):
+class InstrumentInfoSerializer(serializers.Serializer):
     ticker = serializers.CharField()
     ticker_type = serializers.CharField()
     delisted = serializers.BooleanField()
     icon_url = serializers.URLField()
 
     market_cap = serializers.DecimalField(
-        max_digits=30, decimal_places=15
+        max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES
     )
     currency_name = serializers.CharField()
     sector = serializers.CharField()
 
-class InstrumentV2DetailSerializer(serializers.Serializer):
+class InstrumentDetailSerializer(serializers.Serializer):
     ticker = serializers.CharField()
     ticker_type = serializers.CharField()
 
@@ -35,7 +35,7 @@ class InstrumentV2DetailSerializer(serializers.Serializer):
     currency_name = serializers.CharField()
     market = serializers.CharField()
     market_cap = serializers.DecimalField(
-        max_digits=30, decimal_places=15
+        max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES
     )
     phone_number = serializers.CharField()
     sector = serializers.CharField()
@@ -83,13 +83,13 @@ class TickerOverviewResultSerializer(serializers.Serializer):
     list_date = serializers.DateField(required=False, allow_null=True)
     locale = serializers.CharField()
     market = serializers.CharField()
-    market_cap = serializers.DecimalField(max_digits=30, decimal_places=15, required=False, allow_null=True)
+    market_cap = serializers.DecimalField(max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES, required=False, allow_null=True)
     name = serializers.CharField()
     phone_number = serializers.CharField(required=False, allow_null=True)
     primary_exchange = serializers.CharField(required=False, allow_null=True)
     round_lot = serializers.IntegerField(required=False, allow_null=True)
     share_class_figi = serializers.CharField(required=False, allow_null=True)
-    share_class_shares_outstanding = serializers.DecimalField(max_digits=20, decimal_places=0, required=False, allow_null=True)
+    share_class_shares_outstanding = serializers.DecimalField(max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES, required=False, allow_null=True)
     sic_code = serializers.CharField(required=False, allow_null=True)
     sic_description = serializers.CharField(required=False, allow_null=True)
     ticker = serializers.CharField()
@@ -97,7 +97,7 @@ class TickerOverviewResultSerializer(serializers.Serializer):
     ticker_suffix = serializers.CharField(required=False, allow_null=True)
     total_employees = serializers.IntegerField(required=False, allow_null=True)
     type = serializers.CharField(required=False, allow_null=True)
-    weighted_shares_outstanding = serializers.DecimalField(max_digits=20, decimal_places=0, required=False, allow_null=True) 
+    weighted_shares_outstanding = serializers.DecimalField(max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES, required=False, allow_null=True) 
 
     def create(self, validated_data):
         kwargs = dict(validated_data)
@@ -108,7 +108,7 @@ class TickerOverviewResultSerializer(serializers.Serializer):
             kwargs["description"] = "No description"
 
         # Discard unnecessary fields
-        model_fields = [f.name for f in InstrumentV2._meta.get_fields()]
+        model_fields = [f.name for f in Instrument._meta.get_fields()]
         kwargs = {k: v for k, v in kwargs.items() if k in model_fields} 
 
-        return InstrumentV2.objects.create(**kwargs)
+        return Instrument.objects.create(**kwargs)

@@ -4,11 +4,11 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from modules.instruments.serializers import (
-    InstrumentV2InfoSerializer,
-    InstrumentV2DetailSerializer
+    InstrumentInfoSerializer,
+    InstrumentDetailSerializer
 )
 from modules.instruments.services import InstrumentServiceV2
-from modules.instruments.models import InstrumentV2
+from modules.instruments.models import Instrument
 
 
 class HeheXD(PageNumberPagination):
@@ -17,13 +17,16 @@ class HeheXD(PageNumberPagination):
     max_page_size = 1000
 
 class InstrumentV2ListView(generics.ListAPIView):
-    queryset = InstrumentV2.objects.exclude(icon_url__isnull=True).exclude(market_cap__isnull=True)
-    serializer_class = InstrumentV2InfoSerializer
+    # That's my recommendation to limit tickers, it still returns around 4k of them
+    # queryset = Instrument.objects.exclude(icon_url__isnull=True).exclude(market_cap__isnull=True)
+
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentInfoSerializer
     pagination_class = HeheXD
 
 class InstrumentV2DetailView(generics.RetrieveAPIView):
-    queryset = InstrumentV2.objects.all()
-    serializer_class = InstrumentV2DetailSerializer
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentDetailSerializer
     lookup_field = 'ticker'
 
 class InstrumentPullView(generics.GenericAPIView):

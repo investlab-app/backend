@@ -1,4 +1,4 @@
 from django.contrib import admin
-from modules.instruments.models import InstrumentV2
+from modules.instruments.models import Instrument
 
-admin.site.register(InstrumentV2)
+admin.site.register(Instrument)

@@ -1,7 +1,7 @@
 from django.db import models
 from modules.core.models import BaseModel
 
-class InstrumentV2(BaseModel):
+class Instrument(BaseModel):
     ticker = models.CharField(unique=True)
     ticker_type = models.CharField()
     delisted = models.BooleanField()
