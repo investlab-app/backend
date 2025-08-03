@@ -5,6 +5,8 @@ from modules.instruments.views import (
     InstrumentNewsView,
     InstrumentsAvailableView,
     InstrumentsListView,
+    InstrumentV2ListView,
+    InstrumentV2DetailView,
     InstrumentPullView
 )
 
@@ -23,6 +25,16 @@ urlpatterns = [
         'pull/',
         InstrumentPullView.as_view(),
         name="instruments-pull"
+    ),
+    path(
+        'instrumetv2/',
+        InstrumentV2ListView.as_view(),
+        name="instrumentsv2-list"
+    ),
+    path(
+        'instrumetv2/<str:ticker>/',
+        InstrumentV2DetailView.as_view(),
+        name="instrumentsv2-detail"
     ),
     path(
         "<str:ticker>/",

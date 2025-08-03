@@ -72,12 +72,6 @@ class InstrumentV2DetailSerializer(serializers.Serializer):
     logo_url = serializers.URLField()
     homepage_url = serializers.URLField()
 
-    address1 = serializers.CharField()
-    address2 = serializers.CharField()
-    city = serializers.CharField()
-    postal_code = serializers.CharField()
-    state = serializers.CharField()
-
     currency_name = serializers.CharField()
     market = serializers.CharField()
     market_cap = serializers.DecimalField(

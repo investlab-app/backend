@@ -2,6 +2,7 @@ from typing import cast
 
 from dependency_injector.wiring import Provide, inject
 from drf_spectacular.utils import extend_schema
+from rest_framework.pagination import PageNumberPagination
 from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -17,9 +18,11 @@ from modules.instruments.serializers import (
     InstrumentInfoSerializer,
     InstrumentsListQueryParams,
     PaginatedInstrumentsResponseSerializer,
-    InstrumentV2InfoSerializer
+    InstrumentV2InfoSerializer,
+    InstrumentV2DetailSerializer
 )
 from modules.instruments.services import InstrumentsService, InstrumentServiceV2
+from modules.instruments.models import InstrumentV2
 
 logger = get_logger(__name__)
 
@@ -209,6 +212,22 @@ class InstrumentNewsView(generics.GenericAPIView):
         result_dict = [item.model_dump() for item in result]
 
         return Response(result_dict)
+
+class HeheXD(PageNumberPagination):
+    page_size = 100
+    page_size_query_param = 'page_size'
+    max_page_size = 1000
+
+class InstrumentV2ListView(generics.ListAPIView):
+    queryset = InstrumentV2.objects.exclude(icon_url__isnull=True).exclude(market_cap__isnull=True)
+    serializer_class = InstrumentV2InfoSerializer
+    pagination_class = HeheXD
+
+class InstrumentV2DetailView(generics.RetrieveAPIView):
+    queryset = InstrumentV2.objects.all()
+    serializer_class = InstrumentV2DetailSerializer
+    lookup_field = 'ticker'
+
 
 class InstrumentPullView(generics.GenericAPIView):
     serializer_class = InstrumentV2InfoSerializer
