@@ -18,7 +18,7 @@ urlpatterns = [
         name="instruments-list"
     ),
     path(
-        'instrumetv2/<str:ticker>/',
+        '<str:ticker>/',
         InstrumentV2DetailView.as_view(),
         name="instrumentsv2-detail"
     ),

@@ -1,6 +1,7 @@
 from django.db import models
 from modules.core.models import BaseModel
 
+# TODO: Make fields description, at least one icon and sector required
 class Instrument(BaseModel):
     ticker = models.CharField(unique=True)
     ticker_type = models.CharField()

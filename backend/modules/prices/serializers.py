@@ -3,48 +3,34 @@ from decimal import Decimal
 from rest_framework import serializers
 
 from modules.core.utils import get_local_datetime, quantize_decimal
+from modules.core import defaults
+from modules.prices.constants import POLYGON_INTERVALS
 
 MAX_DIGITS = 30
 DECIMAL_PLACES = 15
 
-
-class InstrumentPriceQueryParams(serializers.Serializer):
-    ticker = serializers.CharField(
-        required=True,
-        help_text="A ticker for which a price will be get.",
-        max_length=6,
-    )
-    start_date = serializers.DateTimeField(
-        required=True,
-        help_text="The starting date and time for the price data.",
-        input_formats=["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"],
-    )
+class InstrumentV2PriceQueryParams(serializers.Serializer):
+    ticker = serializers.CharField(required = True, max_length=6)
+    start_date = serializers.DateTimeField(required=True, input_formats=["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"])
     end_date = serializers.DateTimeField(
-        required=False,
-        help_text="The ending date and time for the price data.",
-        default=get_local_datetime().strftime("%Y-%m-%dT%H:%M:%S"),
         input_formats=["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"],
+        default=get_local_datetime().strftime("%Y-%m-%dT%H:%M:%S")
     )
-    interval = serializers.CharField(
-        required=False,
-        default="1d",
-        help_text="The interval for the price data (e.g., 1m, 1h, 1d).",
-        max_length=3,
-    )
+    interval = serializers.ChoiceField(choices=POLYGON_INTERVALS)
+    interval_multiplier = serializers.IntegerField(default = 1, min_value=1)
 
+    def validate(self, attrs):
+        if attrs['start_date'] > attrs['end_date']:
+            raise serializers.ValidationError('Start date must be before end date')
+
+        return super().validate(attrs)
 
 class InstrumentPriceResponseSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
-    high = serializers.DecimalField(
-        max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES
-    )
-    low = serializers.DecimalField(max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES)
-    open = serializers.DecimalField(
-        max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES
-    )
-    close = serializers.DecimalField(
-        max_digits=MAX_DIGITS, decimal_places=DECIMAL_PLACES
-    )
+    high = defaults.DecimalField()
+    low = defaults.DecimalField()
+    open = defaults.DecimalField()
+    close = defaults.DecimalField()
 
     @staticmethod
     def sanitize_output(record: dict) -> dict:

@@ -1,17 +1,9 @@
 import uuid
 from collections.abc import Callable
-from datetime import datetime
-from decimal import Decimal
 
 from pydantic import BaseModel
 
 
-class InstrumentPriceSchema(BaseModel):
-    timestamp: datetime
-    open: Decimal
-    high: Decimal
-    low: Decimal
-    close: Decimal
 
 
 type HandlerFn = Callable[[dict[str, float]], None]

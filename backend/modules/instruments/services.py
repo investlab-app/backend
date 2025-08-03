@@ -2,51 +2,45 @@ from django.db import transaction
 from dataclasses import asdict
 from concurrent.futures import ThreadPoolExecutor
 
-from config.logging import get_logger
 from config.polygon import client
 from modules.instruments.serializers import TickerOverviewResultSerializer
 
-logger = get_logger(__name__)
-
-
 
 class InstrumentServiceV2:
-    a = 0
 
-    @staticmethod
-    def pull_instrument_details(ticker):
-        InstrumentServiceV2.a += 1
-        if InstrumentServiceV2.a % 50 == 0:
-            print(InstrumentServiceV2.a)
-        return asdict(client.get_ticker_details(ticker))
+    @classmethod
+    def pull_all_instruments(cls):
+        tickers = [t for t in client.list_tickers(limit=1000)]
+        tickers_details = cls._pull_instruments_asynchronously(tickers)
+        validated_serializers = cls._serialize_and_validate(tickers_details)
+        cls._insert_into_db(validated_serializers)
 
-    @staticmethod
-    def pull_all_instruments():
-        tickers = []
-        i = 0
-        for t in client.list_tickers(limit=1000):
-            tickers.append(t)
-            i += 1
-            if i % 50 == 0:
-                print(i)
+        return len(validated_serializers)
 
+    @classmethod
+    def _pull_instruments_asynchronously(cls, tickers):
         names = [t.ticker for t in tickers]
         results = []
         with ThreadPoolExecutor(max_workers=50) as executor:
-            f = InstrumentServiceV2.pull_instrument_details
+            f = InstrumentServiceV2._pull_instrument_details
             results = list(executor.map(f, names))
+        return results
 
+    @classmethod
+    def _pull_instrument_details(cls, ticker):
+        return asdict(client.get_ticker_details(ticker))
+
+    @classmethod
+    def _serialize_and_validate(cls, ticker_details):
         serializers = []
-        for r in results:
-            serializers.append(TickerOverviewResultSerializer(data=r))
+        for d in ticker_details:
+            serializer = TickerOverviewResultSerializer(data = d)
+            if serializer.is_valid():
+                serializers.append(serializer)
+        return serializers
 
+    @classmethod
+    def _insert_into_db(cls, serializers):
         with transaction.atomic():
             for s in serializers:
-                if s.is_valid():
-                    i = s.save()
-                    print(f"Saved {i.ticker}")
-                else:
-                    print(f'{s.initial_data["ticker"]} is invalid')
-                    print(s.errors)
-
-        print(f'Fetched {len(results)} results')
+                s.save()
