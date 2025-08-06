@@ -2,7 +2,7 @@ from django.db import transaction
 from dataclasses import asdict
 from concurrent.futures import ThreadPoolExecutor
 
-from config.polygon import client
+from config.polygon import client, asset_type, exchange
 from modules.instruments.serializers import TickerOverviewResultSerializer
 
 
@@ -10,7 +10,7 @@ class InstrumentServiceV2:
 
     @classmethod
     def pull_all_instruments(cls):
-        tickers = [t for t in client.list_tickers(limit=1000)]
+        tickers = [t for t in client.list_tickers(market=asset_type, exchange=exchange, limit=1000)]
         tickers_details = cls._pull_instruments_asynchronously(tickers)
         validated_serializers = cls._serialize_and_validate(tickers_details)
         cls._insert_into_db(validated_serializers)

@@ -1,4 +1,6 @@
 from polygon import RESTClient
-import os
+import settings
 
-client = RESTClient(os.getenv("POLYGON_API_KEY"))
+client = settings.POLYGON_SECRET_KEY
+exchange = "XNAS"
+asset_type = "stocks"
