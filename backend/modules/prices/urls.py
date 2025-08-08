@@ -4,7 +4,7 @@ from modules.prices.views import PricesV2View
 
 urlpatterns = [
     path(
-        "ohcl/",
+        "ohlc/",
         PricesV2View.as_view(),
         name="prices",
     )

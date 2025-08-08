@@ -1,4 +1,3 @@
-
 from dataclasses import asdict
 from datetime import datetime
 
@@ -23,10 +22,9 @@ class PricesV2Service:
     ):
         get_object_or_404(Instrument, ticker=ticker.upper())
         aggs = client.list_aggs(
-            ticker.lower(), interval_multiplier, interval.lower(), start_date, end_date
+            ticker.upper(), interval_multiplier, interval.lower(), start_date, end_date
         )
         return PricesV2Service._aggs_to_json(aggs, max_aggs=10_000)
-
 
     @staticmethod
     def _aggs_to_json(aggs, max_aggs):
@@ -35,6 +33,7 @@ class PricesV2Service:
             bars.append(PricesV2Service._agg_to_json(a))
             if len(bars) > max_aggs:
                 raise PayloadTooLarge
+        return bars
 
     @staticmethod
     def _agg_to_json(agg):
