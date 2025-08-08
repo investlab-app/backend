@@ -5,4 +5,3 @@ from modules.sse.services import SSEService
 
 class PricesContainer(containers.DeclarativeContainer):
     sse_service = providers.Singleton(SSEService)
-

@@ -2,9 +2,10 @@ from decimal import Decimal
 
 from rest_framework import serializers
 
+from modules.core import defaults
 from modules.core.utils import quantize_decimal
 from modules.instruments.models import Instrument
-from modules.core import defaults
+
 
 class InstrumentInfoSerializer(serializers.Serializer):
     ticker = serializers.CharField()
@@ -15,6 +16,7 @@ class InstrumentInfoSerializer(serializers.Serializer):
     market_cap = defaults.DecimalField()
     currency_name = serializers.CharField()
     sector = serializers.CharField()
+
 
 class InstrumentDetailSerializer(serializers.Serializer):
     ticker = serializers.CharField()
@@ -43,15 +45,17 @@ class InstrumentDetailSerializer(serializers.Serializer):
 
 
 class AddressSerializer(serializers.Serializer):
-    address1 = serializers.CharField(source='address', required=False, allow_null=True)
+    address1 = serializers.CharField(source="address", required=False, allow_null=True)
     address2 = serializers.CharField(required=False, allow_null=True)
     city = serializers.CharField(required=False, allow_null=True)
     postal_code = serializers.CharField(required=False, allow_null=True)
     state = serializers.CharField(required=False, allow_null=True)
 
+
 class BrandingSerializer(serializers.Serializer):
     icon_url = serializers.URLField(required=False, allow_null=True)
     logo_url = serializers.URLField(required=False, allow_null=True)
+
 
 class TickerOverviewResultSerializer(serializers.Serializer):
     active = serializers.BooleanField(default=True)
@@ -72,33 +76,34 @@ class TickerOverviewResultSerializer(serializers.Serializer):
     primary_exchange = serializers.CharField(required=False, allow_null=True)
     round_lot = serializers.IntegerField(required=False, allow_null=True)
     share_class_figi = serializers.CharField(required=False, allow_null=True)
-    share_class_shares_outstanding = defaults.DecimalField(required=False, allow_null=True)
+    share_class_shares_outstanding = defaults.DecimalField(
+        required=False, allow_null=True
+    )
     sic_code = serializers.CharField(required=False, allow_null=True)
-    sic_description = serializers.CharField(source='sector')
+    sic_description = serializers.CharField(source="sector")
     ticker = serializers.CharField()
     ticker_root = serializers.CharField(required=False, allow_null=True)
     ticker_suffix = serializers.CharField(required=False, allow_null=True)
     total_employees = serializers.IntegerField(required=False, allow_null=True)
-    type = serializers.CharField(source='ticker_type')
-    weighted_shares_outstanding = defaults.DecimalField(required=False, allow_null=True) 
+    type = serializers.CharField(source="ticker_type")
+    weighted_shares_outstanding = defaults.DecimalField(required=False, allow_null=True)
 
     def create(self, validated_data):
         kwargs = dict(validated_data)
-        kwargs['delisted'] = not kwargs['active']
+        kwargs["delisted"] = not kwargs["active"]
         kwargs.update(validated_data["branding"])
 
-        model_fields = [f.name for f in Instrument._meta.get_fields()]
-        kwargs = {k: v for k, v in kwargs.items() if k in model_fields} 
+        model_fields = [f.name for f in Instrument._meta.get_fields()]  # noqa: SLF001
+        kwargs = {k: v for k, v in kwargs.items() if k in model_fields}
 
         return Instrument.objects.create(**kwargs)
-    
+
     def update(self, instance, validated_data):
         kwargs = dict(validated_data)
-        kwargs['delisted'] = not kwargs['active']
-        model_fields = [f.name for f in Instrument._meta.get_fields()]
+        kwargs["delisted"] = not kwargs["active"]
+        model_fields = [f.name for f in Instrument._meta.get_fields()]  # noqa: SLF001
         for field in model_fields:
-            if field in kwargs.keys():
+            if field in kwargs:
                 setattr(instance, field, kwargs[field])
         instance.save()
         return instance
-        

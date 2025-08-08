@@ -3,9 +3,6 @@ from collections.abc import Callable
 
 from pydantic import BaseModel
 
-
-
-
 type HandlerFn = Callable[[dict[str, float]], None]
 type ClientId = uuid.UUID
 type TickerId = str

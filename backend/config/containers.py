@@ -20,8 +20,6 @@ class AppContainer(containers.DeclarativeContainer):
 
     wiring_config = containers.WiringConfiguration(
         modules=[
-            "modules.instruments.views",
-            "modules.prices.views",
             "modules.sse.views",
             "modules.sse.sse_consumer_impl",
         ]

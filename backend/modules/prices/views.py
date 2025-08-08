@@ -4,17 +4,18 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from modules.prices.serializers import (
-    InstrumentV2PriceQueryParams,
     InstrumentPriceResponseSerializer,
+    InstrumentV2PriceQueryParams,
 )
 from modules.prices.services import PricesV2Service
+
 
 class PricesV2View(generics.GenericAPIView):
     serializer_class = InstrumentPriceResponseSerializer
 
     @extend_schema(parameters=[InstrumentV2PriceQueryParams])
     def get(self, request: Request) -> Response:
-        params = InstrumentV2PriceQueryParams(data = request.query_params)
+        params = InstrumentV2PriceQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
         data = PricesV2Service.get_ohlc(**params.validated_data)
         serializer = InstrumentPriceResponseSerializer(many=True, data=data)
@@ -23,5 +24,5 @@ class PricesV2View(generics.GenericAPIView):
         return Response(json_data)
 
     def get_serializer(self, *args, **kwargs):
-        kwargs['many'] = True
+        kwargs["many"] = True
         return super().get_serializer(*args, **kwargs)

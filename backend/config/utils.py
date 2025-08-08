@@ -1,4 +1,3 @@
-
 TRUE_STRING_VALUES = ("1", "true", "True", "TRUE", "on", "yes")
 
 
@@ -10,4 +9,3 @@ def str_to_list(val: str | None) -> list[str]:
     if not val:
         return []
     return list(map(str.strip, val.split(",")))
-
