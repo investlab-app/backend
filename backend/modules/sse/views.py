@@ -6,9 +6,9 @@ from rest_framework.views import APIView
 
 from config.containers import AppContainer
 from config.logging import get_logger
-from modules.prices.services import LivePricesService
 from modules.sse.schemas import SSERequestParams
 from modules.sse.serializers import SSERequestSerializer
+from modules.sse.services import SSEService
 
 logger = get_logger(__name__)
 
@@ -17,12 +17,10 @@ class SSEUpdateView(APIView):
     @inject
     def __init__(
         self,
-        live_prices: LivePricesService = Provide[
-            AppContainer.prices_container.live_prices
-        ],
+        sse_service: SSEService = Provide[AppContainer.prices_container.sse_service],
     ):
         super().__init__()
-        self._live_prices = live_prices
+        self._sse_service = sse_service
 
     @extend_schema(request=SSERequestSerializer)
     def put(self, request):
@@ -34,23 +32,23 @@ class SSEUpdateView(APIView):
         logger.debug("Received SSE update request: %s", params)
 
         connection_id = params.connection_id
-        symbols = params.symbols
+        events = params.events
 
         try:
-            self._live_prices.update(connection_id, symbols)
-            logger.debug("%s: Updated symbols: %s", connection_id, symbols)
+            self._sse_service.update(connection_id, events)
+            logger.debug("%s: Updated events: %s", connection_id, events)
             return Response(
-                {"message": f"Updated events for symbols: {symbols}"},
+                {"message": f"Updated events: {events}"},
                 status=status.HTTP_200_OK,
             )
         except Exception as e:
             logger.error(
-                "%s: Failed to update symbols %s: %s",
+                "%s: Failed to update events %s: %s",
                 connection_id,
-                symbols,
+                events,
                 str(e),
             )
             return Response(
-                {"error": f"Failed to update symbols: {str(e)}"},
+                {"error": f"Failed to update events: {str(e)}"},
                 status=status.HTTP_500_INTERNAL_SERVER_ERROR,
             )
