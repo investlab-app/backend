@@ -82,13 +82,23 @@ class TickerOverviewResultSerializer(serializers.Serializer):
     type = serializers.CharField(source='ticker_type')
     weighted_shares_outstanding = defaults.DecimalField(required=False, allow_null=True) 
 
-    def create(self, validated_data): #TODO: implement object update
+    def create(self, validated_data):
         kwargs = dict(validated_data)
         kwargs['delisted'] = not kwargs['active']
         kwargs.update(validated_data["branding"])
 
-        # Discard unnecessary fields
         model_fields = [f.name for f in Instrument._meta.get_fields()]
         kwargs = {k: v for k, v in kwargs.items() if k in model_fields} 
 
         return Instrument.objects.create(**kwargs)
+    
+    def update(self, instance, validated_data):
+        kwargs = dict(validated_data)
+        kwargs['delisted'] = not kwargs['active']
+        model_fields = [f.name for f in Instrument._meta.get_fields()]
+        for field in model_fields:
+            if field in kwargs.keys():
+                setattr(instance, field, kwargs[field])
+        instance.save()
+        return instance
+        

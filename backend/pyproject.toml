@@ -9,6 +9,7 @@ dependencies = [
     "clerk-backend-api>=2.2.0",
     "dependency-injector>=4.47.1",
     "django-cors-headers>=4.7.0",
+    "django-filter>=25.1",
     "django-unfold>=0.59.0",
     "django>=5.2.3",
     "djangorestframework-simplejwt>=5.5.0",

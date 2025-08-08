@@ -20,9 +20,8 @@ class InstrumentV2PriceQueryParams(serializers.Serializer):
     interval_multiplier = serializers.IntegerField(default = 1, min_value=1)
 
     def validate(self, attrs):
-        if attrs['start_date'] > attrs['end_date']:
+        if attrs['start_date'] >= attrs['end_date']:
             raise serializers.ValidationError('Start date must be before end date')
-
         return super().validate(attrs)
 
 class InstrumentPriceResponseSerializer(serializers.Serializer):

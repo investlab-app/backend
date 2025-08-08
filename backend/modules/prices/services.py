@@ -16,21 +16,21 @@ class PricesV2Service:
 
     @staticmethod
     def get_ohlc(
-        ticker :str,
+        ticker: str,
         start_date: datetime,
         end_date: datetime,
         interval: str,
         interval_multiplier: int
     ):
-        get_object_or_404(Instrument, ticker=ticker)
+        get_object_or_404(Instrument, ticker=ticker.upper())
         aggs = client.list_aggs(
-            ticker, 
+            ticker.lower(), 
             interval_multiplier, 
             interval.lower(), 
             start_date, 
             end_date
         )
-        return PricesV2Service._aggs_to_json(aggs, max_aggs = 1000)
+        return PricesV2Service._aggs_to_json(aggs, max_aggs = 10_000)
 
 
     @staticmethod
