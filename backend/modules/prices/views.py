@@ -1,68 +1,28 @@
-from typing import cast
-
-from dependency_injector.wiring import Provide
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from config.containers import AppContainer
-from modules.prices.exceptions import FetchPriceException, InvalidTimeIntervalException
 from modules.prices.serializers import (
-    InstrumentPriceQueryParams,
     InstrumentPriceResponseSerializer,
+    InstrumentV2PriceQueryParams,
 )
-from modules.prices.services import PricesService
+from modules.prices.services import PricesV2Service
 
 
-class PricesView(generics.GenericAPIView):
-    def __init__(
-        self,
-        service: PricesService = Provide[AppContainer.prices_container.prices_service],
-    ):
-        super().__init__()
-        self._service = service
+class PricesV2View(generics.GenericAPIView):
+    serializer_class = InstrumentPriceResponseSerializer
 
-    @extend_schema(
-        parameters=[InstrumentPriceQueryParams],
-        responses={200: InstrumentPriceResponseSerializer(many=True)},
-        summary="Get instrument prices",
-        description="Get price data for financial instruments",
-    )
+    @extend_schema(parameters=[InstrumentV2PriceQueryParams])
     def get(self, request: Request) -> Response:
-        params = InstrumentPriceQueryParams(data=request.query_params)
-        if not params.is_valid():
-            return Response(
-                {"errors": params.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        validated = cast("dict", params.validated_data)
+        params = InstrumentV2PriceQueryParams(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        data = PricesV2Service.get_ohlc(**params.validated_data)
+        serializer = InstrumentPriceResponseSerializer(many=True, data=data)
+        serializer.is_valid(raise_exception=True)
+        json_data = serializer.validated_data
+        return Response(json_data)
 
-        try:
-            price_history = self._service.get_instrument_price_history(
-                validated["ticker"],
-                validated["start_date"],
-                validated["end_date"],
-                validated["interval"],
-            )
-        except (FetchPriceException, InvalidTimeIntervalException) as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        records = [
-            InstrumentPriceResponseSerializer.sanitize_output(item.model_dump())
-            for item in price_history["data"]
-        ]
-        serialized = InstrumentPriceResponseSerializer(data=records, many=True)
-
-        if not serialized.is_valid():
-            return Response(
-                {"errors": serialized.errors},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        return Response(
-            {
-                "data": serialized.data,
-                "min_price": price_history["min_price"],
-                "max_price": price_history["max_price"],
-            },
-        )
+    def get_serializer(self, *args, **kwargs):
+        kwargs["many"] = True
+        return super().get_serializer(*args, **kwargs)
