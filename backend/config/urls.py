@@ -16,10 +16,6 @@ websocket_urlpatterns = [
     path(r"ws/test/<str:name>", PriceStreamConsumer.as_asgi()),
 ]
 
-websocket_urlpatterns = [
-    path(r"ws/test/<str:name>", PriceStreamConsumer.as_asgi()),
-]
-
 urlpatterns = [
     path(f"{API_PREFIX}/admin/", admin.site.urls),
     path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
