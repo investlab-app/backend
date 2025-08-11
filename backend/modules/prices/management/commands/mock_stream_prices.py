@@ -42,9 +42,5 @@ class Command(BaseCommand):
         print(f'Starting broadcasting fake stocks...')
         sb = PriceStreamMock()
         tickers = [i.ticker for i in Instrument.objects.all()]
-<<<<<<< Updated upstream
-        print(f'Broadcasting {len(tickers)}')
-=======
         print(f'Broadcasting {len(tickers)} stocks')
->>>>>>> Stashed changes
         asyncio.run(sb.start(tickers))

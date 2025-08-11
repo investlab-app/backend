@@ -7,11 +7,6 @@ from drf_spectacular.views import (
 )
 
 from modules.core.views import StatusView
-<<<<<<< Updated upstream
-from modules.sse.sse_consumer_impl import SSEConsumerImpl
-from modules.sse.views import SSEUpdateView
-=======
->>>>>>> Stashed changes
 from modules.prices.consumers import PriceStreamConsumer
 
 API_PREFIX = "api"
