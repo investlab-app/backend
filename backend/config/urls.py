@@ -7,17 +7,25 @@ from drf_spectacular.views import (
 )
 
 from modules.core.views import StatusView
+<<<<<<< Updated upstream
 from modules.sse.sse_consumer_impl import SSEConsumerImpl
 from modules.sse.views import SSEUpdateView
+=======
+>>>>>>> Stashed changes
+from modules.prices.consumers import PriceStreamConsumer
 
 API_PREFIX = "api"
 
-sse_urlpatterns = [
-    re_path(f"^{API_PREFIX}/sse/?$", SSEConsumerImpl.as_asgi()),
+
+websocket_urlpatterns = [
+    path(r"ws/test/<str:name>", PriceStreamConsumer.as_asgi()),
+]
+
+websocket_urlpatterns = [
+    path(r"ws/test/<str:name>", PriceStreamConsumer.as_asgi()),
 ]
 
 urlpatterns = [
-    path(f"{API_PREFIX}/sse/update", SSEUpdateView.as_view(), name="sse-update"),
     path(f"{API_PREFIX}/admin/", admin.site.urls),
     path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs

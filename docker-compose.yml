@@ -15,12 +15,24 @@ services:
     networks:
       - app_network
 
+  redis:
+    image: redis:7
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+       test: ["CMD", "redis-cli","ping"]
+    networks:
+      - app_network
+
   backend:
     build: ./backend
     env_file: .env
     restart: unless-stopped
     depends_on:
       postgres:
+        condition: service_healthy
+      redis:
         condition: service_healthy
     ports:
       - "8000:8000"
@@ -29,6 +41,22 @@ services:
       - /backend/.venv
     networks:
       - app_network
+
+  backend-price-stream:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - /backend/.venv
+    networks:
+      - app_network
+    command: uv run manage.py mock_stream_prices
+
 
 volumes:
   postgres_data:
