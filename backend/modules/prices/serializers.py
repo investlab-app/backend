@@ -1,3 +1,4 @@
+from datetime import datetime
 from decimal import Decimal
 
 from rest_framework import serializers
@@ -40,4 +41,51 @@ class InstrumentPriceResponseSerializer(serializers.Serializer):
         for key, value in record.items():
             if isinstance(value, Decimal):
                 record[key] = quantize_decimal(value, places=DECIMAL_PLACES)
+        return record
+
+
+class DailySummarySerializer(serializers.Serializer):
+    open = defaults.DecimalField()
+    high = defaults.DecimalField()
+    low = defaults.DecimalField()
+    close = defaults.DecimalField()
+    volume = serializers.IntegerField()
+    volume_weighted_average_price = defaults.DecimalField()
+
+    @staticmethod
+    def sanitize_output(record: dict) -> dict:
+        for key, value in record.items():
+            if isinstance(value, float):
+                record[key] = quantize_decimal(Decimal(value), places=DECIMAL_PLACES)
+            elif isinstance(value, Decimal):
+                record[key] = quantize_decimal(value, places=DECIMAL_PLACES)
+        return record
+
+
+class PriceInfoResponseSerializer(serializers.Serializer):
+    current_price = defaults.DecimalField()
+    daily_summary = DailySummarySerializer()
+    todays_change = defaults.DecimalField()
+    todays_change_percent = defaults.DecimalField()
+    last_updated = serializers.DateTimeField()
+
+    @staticmethod
+    def sanitize_output(record: dict) -> dict:
+        for key, value in record.items():
+            if isinstance(value, float):
+                record[key] = quantize_decimal(Decimal(value), places=DECIMAL_PLACES)
+            elif isinstance(value, Decimal):
+                record[key] = quantize_decimal(value, places=DECIMAL_PLACES)
+
+        if record.get("daily_summary"):
+            record["daily_summary"] = DailySummarySerializer.sanitize_output(
+                record["daily_summary"]
+            )
+
+        if record.get("last_updated"):
+            nanoseconds_in_second = 1e9
+            record["last_updated"] = datetime.fromtimestamp(
+                record["last_updated"] / nanoseconds_in_second
+            )
+
         return record

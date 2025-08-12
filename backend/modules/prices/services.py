@@ -1,10 +1,11 @@
 from dataclasses import asdict
 from datetime import datetime
+from http.client import HTTPResponse
 
 from django.shortcuts import get_object_or_404
 
 from config.logging import get_logger
-from config.polygon import client
+from config.polygon import asset_type, client
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
 
@@ -40,3 +41,52 @@ class PricesV2Service:
         data = asdict(agg)
         data["timestamp"] = datetime.fromtimestamp(data["timestamp"] / 1000)
         return data
+
+    @staticmethod
+    def get_price_info(ticker: str):
+        ticker_upper = ticker.upper()
+        get_object_or_404(Instrument, ticker=ticker_upper)
+
+        ticker_snapshot = client.get_snapshot_ticker(
+            market_type=asset_type, ticker=ticker_upper
+        )
+
+        if isinstance(ticker_snapshot, HTTPResponse):
+            raise ValueError(
+                f"HTTP error {ticker_snapshot.status}: "
+                f"{ticker_snapshot.reason} - {ticker_snapshot.msg}"
+            )
+
+        if not ticker_snapshot.min:
+            raise ValueError(f"No minute data found for ticker {ticker_upper}")
+
+        if not ticker_snapshot.day:
+            raise ValueError(f"No daily summary found for ticker {ticker_upper}")
+
+        if not ticker_snapshot.todays_change:
+            raise ValueError(f"No today's change found for ticker {ticker_upper}")
+
+        if not ticker_snapshot.todays_change_percent:
+            raise ValueError(
+                f"No today's change percentage found for ticker {ticker_upper}"
+            )
+
+        if not ticker_snapshot.updated:
+            raise ValueError(
+                f"No last updated timestamp found for ticker {ticker_upper}"
+            )
+
+        return {
+            "current_price": ticker_snapshot.min.close,
+            "daily_summary": {
+                "open": ticker_snapshot.day.open,
+                "high": ticker_snapshot.day.high,
+                "low": ticker_snapshot.day.low,
+                "close": ticker_snapshot.day.close,
+                "volume": ticker_snapshot.day.volume,
+                "volume_weighted_average_price": ticker_snapshot.day.vwap,
+            },
+            "todays_change": ticker_snapshot.todays_change,
+            "todays_change_percent": ticker_snapshot.todays_change_percent,
+            "last_updated": ticker_snapshot.updated,
+        }
