@@ -17,5 +17,7 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
         await self.accept()
 
     async def broadcast_receive(self, event):
+        print(event)
         selected_tickers = [event['data'][ticker] for ticker in self.names if ticker in event['data']]
+        print(selected_tickers)
         await self.send(text_data=json.dumps({"message": selected_tickers}))

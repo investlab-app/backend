@@ -52,10 +52,11 @@ services:
       redis:
         condition: service_healthy
     volumes:
+      - ./backend:/backend:delegated
       - /backend/.venv
     networks:
       - app_network
-    command: uv run manage.py mock_stream_prices
+    command: uv run manage.py mock_price_stream
 
 
 volumes:
