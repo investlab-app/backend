@@ -42,6 +42,8 @@ services:
       - postgres
     volumes:
       - ./backend:/backend
+      - /backend/.venv
+      - /backend/staticfiles
     networks:
       - app_network
 
