@@ -20,7 +20,7 @@ class PriceStream:
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add("tickers_broadcast", "broadcast")
         tickers = ["A." + t for t in tickers]
-        tickers = ",".join(tickers) # ty: ignore
+        tickers = ",".join(tickers)  # ty: ignore
         self.client.subscribe(tickers)
         await self.client.connect(self._handle_msg)
 
@@ -36,6 +36,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Starting broadcasting real stocks...")
         sb = PriceStream()
-        tickers = [i.ticker for i in Instrument.objects.all()] # ty: ignore
+        tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
         print(f"Broadcasting {len(tickers)} stocks")
         asyncio.run(sb.start(tickers))
