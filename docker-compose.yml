@@ -25,9 +25,8 @@ services:
     ports:
       - "8000:8000"
     volumes:
-      - ./backend:/backend
+      - ./backend:/backend:delegated
       - /backend/.venv
-      - /backend/staticfiles
     networks:
       - app_network
 

@@ -3,16 +3,8 @@ FROM ghcr.io/astral-sh/uv:python3.13-bookworm
 RUN apt-get update \
   && apt-get install -y --no-install-recommends netcat-traditional git \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
-  && apt-get clean
-
-# Create non-root user to run the app
-RUN groupadd -g 1000 app \
-  && useradd -m -u 1000 -g app -s /bin/bash app \
-  && mkdir -p /backend /backend/staticfiles /home/app/.cache/uv \
-  && chown -R app:app /backend /home/app/.cache/uv
-
-# Switch to the non-root user
-USER app
+  && apt-get clean \
+  && mkdir /backend
 
 # Set the working directory inside the container
 WORKDIR /backend
@@ -26,15 +18,15 @@ ENV PYTHONUNBUFFERED=1
 ENV UV_LINK_MODE=copy
 
 # Install the project's dependencies using the lockfile and settings
-RUN --mount=type=cache,target=/home/app/.cache/uv,uid=1000,gid=1000 \
+RUN --mount=type=cache,target=/root/.cache/uv \
   --mount=type=bind,source=uv.lock,target=uv.lock \
   --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
   uv sync --locked --no-install-project
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
-COPY --chown=app:app . /backend
-RUN --mount=type=cache,target=/home/app/.cache/uv,uid=1000,gid=1000 \
+COPY . /backend
+RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync --locked
 
 # Expose the Django port
