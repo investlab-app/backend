@@ -13,7 +13,7 @@ API_PREFIX = "api"
 
 
 websocket_urlpatterns = [
-    path(r"ws/test/<str:name>", PriceStreamConsumer.as_asgi()),
+    path(r"ws/prices/<str:name>", PriceStreamConsumer.as_asgi()),
 ]
 
 urlpatterns = [

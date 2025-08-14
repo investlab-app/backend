@@ -11,7 +11,7 @@ def _get_websocket_communicator(user, ticker_names = ''):
         'url_route': {'kwargs': {'name': ticker_names}}
     }
 
-    communicator = WebsocketCommunicator(PriceStreamConsumer.as_asgi(), f'/ws/test/{ticker_names}/')
+    communicator = WebsocketCommunicator(PriceStreamConsumer.as_asgi(), f'/ws/prices/{ticker_names}/')
     communicator.scope.update(scope)
     return communicator
 

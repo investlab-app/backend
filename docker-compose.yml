@@ -56,7 +56,7 @@ services:
       - /backend/.venv
     networks:
       - app_network
-    command: uv run manage.py mock_price_stream
+    command: uv run manage.py mock_stream_prices
 
 
 volumes:
