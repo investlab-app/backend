@@ -43,6 +43,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         print("Starting broadcasting fake stocks...")
         sb = PriceStreamMock()
-        tickers = [i.ticker for i in Instrument.objects.all()]
+        tickers = [i.ticker for i in Instrument.objects.all()] # ty: ignore
         print(f"Broadcasting {len(tickers)} stocks")
         asyncio.run(sb.start(tickers))
