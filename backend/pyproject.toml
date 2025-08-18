@@ -52,7 +52,7 @@ addopts = "--cov=modules --cov-report=term-missing"
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
 filterwarnings = [
-    "ignore:.*:DeprecationWarning:.*\\.venv.*",
+    "ignore:.*:DeprecationWarning:.*site-packages.*",
 ]
 
 [tool.coverage.run]
