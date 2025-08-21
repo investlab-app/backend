@@ -7,15 +7,22 @@ from rest_framework.exceptions import AuthenticationFailed
 from modules.authentication.clerk_auth import verify_token
 
 
-class JWTAuthMiddleware:
+class CookieWebsocketAuthMiddleware:
     def __init__(self, app):
         self.app = app
 
-    async def __call__(self, scope, *args, **kwargs):
-        qs = parse_qs(scope["query_string"].decode())
-        token = qs.get("token", [None])[0]
+    async def __call__(self, scope, receive, send):
+        headers = dict(scope["headers"])
+        cookies = {}
+        if b"cookie" in headers:
+            cookie_header = headers[b"cookie"].decode()
+            for kv in cookie_header.split(";"):
+                k, v = kv.strip().split("=", 1)
+                cookies[k] = v
+
+        token = cookies.get("auth_token")
         try:
             scope["user"] = await sync_to_async(verify_token)(token)
         except AuthenticationFailed:
             scope["user"] = AnonymousUser()
-        return await self.app(scope, *args, **kwargs)
+        return await self.app(scope, receive, send)

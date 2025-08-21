@@ -12,8 +12,7 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
             await self.close()
             return
 
-        self.names = self.scope["url_route"]["kwargs"]["name"].split(",")
-        self.names = [n.strip().upper() for n in self.names]
+        self.names = []
         self.layer = get_channel_layer()
         await self.layer.group_add("tickers_broadcast", self.channel_name)
         await self.accept()
@@ -22,4 +21,24 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
         selected_tickers = [
             event["data"][ticker] for ticker in self.names if ticker in event["data"]
         ]
-        await self.send(text_data=json.dumps({"message": selected_tickers}))
+        if selected_tickers != []:
+            await self.send(text_data=json.dumps({"message": selected_tickers}))
+
+    async def receive(self, text_data=None, bytes_data=None):
+        try:
+            json_data = json.loads(text_data)
+        except:
+            return
+
+        sub_list = json_data.get("subscribe", [])
+        unsub_list = json_data.get("unsubscribe", [])
+        self._process_sub_unsub_lists(sub_list, unsub_list)
+
+    def _process_sub_unsub_lists(self, sub_list, unsub_list):
+        for ticker in sub_list:
+            if not ticker in self.names:
+                self.names.append(ticker)
+
+        for ticker in unsub_list:
+            if ticker in self.names:
+                self.names.remove(ticker)
