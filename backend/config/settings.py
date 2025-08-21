@@ -43,6 +43,7 @@ INSTALLED_APPS = [
     "modules.authentication",
     "modules.core",
     "modules.instruments",
+    "modules.instruments_v3",
     "modules.investors",
     "modules.orders",
     "modules.prices",
@@ -356,7 +357,11 @@ CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
 CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
 CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
 
-# APIs
+# Polygon
 POLYGON_SECRET_KEY = os.environ.get("POLYGON_SECRET_KEY")
+POLYGON_EXCHANGE = "XNAS"
+POLYGON_ASSET_TYPE = "stocks"
+
+# Alpaca
 ALPACA_PUBLIC_KEY = os.environ.get("ALPACA_PUBLIC_KEY")
 ALPACA_SECRET_KEY = os.environ.get("ALPACA_SECRET_KEY")

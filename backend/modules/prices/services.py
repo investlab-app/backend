@@ -5,7 +5,7 @@ from http.client import HTTPResponse
 from django.shortcuts import get_object_or_404
 
 from config.logging import get_logger
-from config.polygon import asset_type, client
+from config.clients import asset_type, polygon_client
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
 
@@ -22,7 +22,7 @@ class PricesV2Service:
         interval_multiplier: int,
     ):
         get_object_or_404(Instrument, ticker=ticker.upper())
-        aggs = client.list_aggs(
+        aggs = polygon_client.list_aggs(
             ticker.upper(), interval_multiplier, interval.lower(), start_date, end_date
         )
         return PricesV2Service._aggs_to_json(aggs, max_aggs=10_000)
@@ -47,7 +47,7 @@ class PricesV2Service:
         ticker_upper = ticker.upper()
         get_object_or_404(Instrument, ticker=ticker_upper)
 
-        ticker_snapshot = client.get_snapshot_ticker(
+        ticker_snapshot = polygon_client.get_snapshot_ticker(
             market_type=asset_type, ticker=ticker_upper
         )
 

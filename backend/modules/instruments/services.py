@@ -3,14 +3,15 @@ from dataclasses import asdict
 
 from django.db import transaction
 
-from config.polygon import asset_type, client, exchange
+from config.clients import polygon_client
+from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE
 from modules.instruments.serializers import TickerOverviewResultSerializer
 
 
 class InstrumentServiceV2:
     @classmethod
     def pull_all_instruments(cls):
-        tickers = client.list_tickers(market=asset_type, exchange=exchange, limit=1000)
+        tickers = polygon_client.list_tickers(market=POLYGON_ASSET_TYPE, exchange=POLYGON_EXCHANGE, limit=1000)
         tickers_details = cls._pull_instruments_asynchronously(tickers)
         validated_serializers = cls._serialize_and_validate(tickers_details)
         cls._insert_into_db(validated_serializers)
@@ -28,7 +29,7 @@ class InstrumentServiceV2:
 
     @classmethod
     def _pull_instrument_details(cls, ticker):
-        return asdict(client.get_ticker_details(ticker))  # ty: ignore
+        return asdict(polygon_client.get_ticker_details(ticker))  # ty: ignore
 
     @classmethod
     def _serialize_and_validate(cls, ticker_details):
