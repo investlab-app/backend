@@ -1,4 +1,5 @@
 import asyncio
+import logging
 from dataclasses import asdict
 
 from channels.layers import get_channel_layer
@@ -7,22 +8,20 @@ from polygon import WebSocketClient
 from polygon.websocket.models import Feed, Market, WebSocketMessage
 
 from config.settings import POLYGON_SECRET_KEY
+from config.polygon import websocket_client
 from modules.instruments.models import Instrument
 
 
 class PriceStream:
     def __init__(self):
-        self.client = WebSocketClient(
-            api_key=POLYGON_SECRET_KEY, feed=Feed.Delayed, market=Market.Stocks
-        )
         self.channel_layer = get_channel_layer()
 
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add("tickers_broadcast", "broadcast")
         tickers = ["A." + t for t in tickers]
-        tickers = ",".join(tickers)  # ty: ignore
-        self.client.subscribe(tickers)
-        await self.client.connect(self._handle_msg)
+        tickers_str = ",".join(tickers)
+        websocket_client.subscribe(tickers_str)
+        await websocket_client.connect(self._handle_msg)
 
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
@@ -34,8 +33,8 @@ class PriceStream:
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        print("Starting broadcasting real stocks...")
+        logging.info("Starting broadcasting real stocks...")
         sb = PriceStream()
         tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
-        print(f"Broadcasting {len(tickers)} stocks")
+        logging.info(f"Broadcasting {len(tickers)} stocks")
         asyncio.run(sb.start(tickers))

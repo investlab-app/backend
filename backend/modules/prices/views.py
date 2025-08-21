@@ -15,7 +15,7 @@ class PricesV2View(generics.GenericAPIView):
 
     @extend_schema(parameters=[InstrumentV2PriceQueryParams])
     def get(self, request: Request) -> Response:
-        params = InstrumentV2PriceQueryParams(data=request.query_params.dict())
+        params = InstrumentV2PriceQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
         data = PricesV2Service.get_ohlc(**params.validated_data)
         serializer = InstrumentPriceResponseSerializer(many=True, data=data)

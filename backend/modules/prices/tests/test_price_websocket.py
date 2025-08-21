@@ -6,6 +6,7 @@ from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 
 from modules.prices.consumers import PriceStreamConsumer
+from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 
 def _get_websocket_communicator(user):
@@ -18,13 +19,13 @@ def _get_websocket_communicator(user):
 
 async def _get_layer():
     layer = get_channel_layer()
-    await layer.group_add("tickers_broadcast", "broadcast")
+    await layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
     return layer
 
 
 async def _send_ticker_data(layer, msg):
     await layer.group_send(
-        "tickers_broadcast", {"type": "broadcast.receive", "data": msg}
+        PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": msg}
     )
 
 
@@ -69,7 +70,7 @@ async def test_single_ticker_subscription():
         layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
     )
 
-    await _assert_communicator_output(communicator, {"message": ["some_data"]})
+    await _assert_communicator_output(communicator, {"prices": ["some_data"]})
     await communicator.disconnect()
 
 
@@ -84,7 +85,7 @@ async def test_multiple_ticker_subscription():
     )
 
     await _assert_communicator_output(
-        communicator, {"message": ["some_data", "more_data"]}
+        communicator, {"prices": ["some_data", "more_data"]}
     )
     await communicator.disconnect()
 
@@ -100,7 +101,7 @@ async def test_unsubscribe():
         layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
     )
 
-    await _assert_communicator_output(communicator, {"message": ["more_data"]})
+    await _assert_communicator_output(communicator, {"prices": ["more_data"]})
     await communicator.disconnect()
 
 
@@ -114,5 +115,5 @@ async def test_does_not_send_empty_messages():
         layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
     )
 
-    assert await communicator.receive_nothing(timeout=0.1)
+    assert await communicator.receive_nothing()
     await communicator.disconnect()

@@ -1,6 +1,7 @@
 import asyncio
 import random
 import time
+import logging
 
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
@@ -41,8 +42,8 @@ class PriceStreamMock:
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        print("Starting broadcasting fake stocks...")
+        logging.info("Starting broadcasting fake stocks...")
         sb = PriceStreamMock()
         tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
-        print(f"Broadcasting {len(tickers)} stocks")
+        logging.info(f"Broadcasting {len(tickers)} stocks")
         asyncio.run(sb.start(tickers))
