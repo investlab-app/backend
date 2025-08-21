@@ -5,9 +5,9 @@ import time
 
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
-from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 from modules.instruments.models import Instrument
+from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 logger = logging.getLogger(__name__)
 

@@ -5,10 +5,10 @@ from dataclasses import asdict
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 from polygon.websocket.models import WebSocketMessage
-from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 from config.polygon import websocket_client
 from modules.instruments.models import Instrument
+from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 logger = logging.getLogger(__name__)
 
