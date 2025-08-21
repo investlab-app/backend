@@ -46,7 +46,6 @@ class PriceStreamMock:
 class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("Starting broadcasting fake stocks...")
-        print("shit yourself HUEHUEHUEHUEUHEUHE")
         sb = PriceStreamMock()
         tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
         logger.info("Broadcasting %s stocks", len(tickers))
