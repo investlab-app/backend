@@ -5,6 +5,7 @@ import time
 
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
+from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 from modules.instruments.models import Instrument
 
@@ -14,11 +15,11 @@ logger = logging.getLogger(__name__)
 class PriceStreamMock:
     async def start(self, tickers: list[str]):
         channel_layer = get_channel_layer()
-        await channel_layer.group_add("tickers_broadcast", "broadcast")
+        await channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
             await channel_layer.group_send(
-                "tickers_broadcast", {"type": "broadcast.receive", "data": data}
+                PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
             )
 
             await asyncio.sleep(1)
@@ -45,6 +46,7 @@ class PriceStreamMock:
 class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("Starting broadcasting fake stocks...")
+        print("shit yourself HUEHUEHUEHUEUHEUHE")
         sb = PriceStreamMock()
         tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
         logger.info("Broadcasting %s stocks", len(tickers))
