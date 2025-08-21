@@ -28,8 +28,8 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data=None, bytes_data=None):
         try:
-            json_data = json.loads(text_data)
-        except:
+            json_data = json.loads(text_data)  # ty: ignore
+        except Exception:
             return
 
         sub_list = json_data.get("subscribe", [])
@@ -38,7 +38,7 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
 
     def _process_sub_unsub_lists(self, sub_list, unsub_list):
         for ticker in sub_list:
-            if not ticker in self.names:
+            if ticker not in self.names:
                 self.names.append(ticker)
 
         for ticker in unsub_list:

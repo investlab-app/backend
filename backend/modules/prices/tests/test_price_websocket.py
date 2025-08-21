@@ -5,8 +5,8 @@ import pytest
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 
-from modules.prices.consumers import PriceStreamConsumer
 from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.consumers import PriceStreamConsumer
 
 
 def _get_websocket_communicator(user):
