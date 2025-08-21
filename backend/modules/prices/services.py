@@ -5,7 +5,8 @@ from http.client import HTTPResponse
 from django.shortcuts import get_object_or_404
 
 from config.logging import get_logger
-from config.clients import asset_type, polygon_client
+from config.clients import polygon_client
+from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
 
@@ -48,7 +49,7 @@ class PricesV2Service:
         get_object_or_404(Instrument, ticker=ticker_upper)
 
         ticker_snapshot = polygon_client.get_snapshot_ticker(
-            market_type=asset_type, ticker=ticker_upper
+            market_type=POLYGON_ASSET_TYPE, ticker=ticker_upper
         )
 
         if isinstance(ticker_snapshot, HTTPResponse):
