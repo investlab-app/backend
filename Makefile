@@ -14,6 +14,7 @@ format-check:
 
 lint:
 	docker compose exec backend uv run ruff check .
+
 lintfix:
 	docker compose exec backend uv run ruff check --fix .
 
