@@ -1,3 +1,9 @@
 from django.contrib import admin
 
-# Register your models here.
+from unfold.admin import ModelAdmin
+from modules.instruments_v3.models import Ticker
+
+
+@admin.register(Ticker)
+class UserAdmin(ModelAdmin):
+    pass

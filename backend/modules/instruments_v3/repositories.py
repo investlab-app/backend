@@ -15,7 +15,6 @@ class PolygonInstrumentsRepository:
 
     def list_tickers(
         self,
-        limit: int = 100,
         market: str = POLYGON_ASSET_TYPE,
         exchange: str = POLYGON_EXCHANGE,
         *args,
@@ -24,7 +23,7 @@ class PolygonInstrumentsRepository:
         """List tickers from Polygon API."""
 
         response = self.polygon_client.list_tickers(
-            limit=limit,
+            limit=500,  # Max tickers per one request
             market=market,
             exchange=exchange,
             *args,
