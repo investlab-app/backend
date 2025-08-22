@@ -5,15 +5,13 @@ from modules.core.models import BaseModel
 from modules.instruments_v3.constants import LocaleChoices, MarketChoices
 
 
-class Ticker(BaseModel):
-    """Model stores information about a stock ticker retrieved from the Polygon API."""
+class Instrument(BaseModel):
+    """Model stores information about an instrument retrieved from the Polygon API."""
 
-    # Polygon Fields
+    # Polygon Ticker Fields
     active = models.BooleanField(
         verbose_name=_("Active"),
         help_text=_("Indicates whether the ticker is actively traded."),
-        blank=True,
-        null=True,
     )
     cik = models.CharField(
         verbose_name=_("CIK"),
@@ -33,8 +31,6 @@ class Ticker(BaseModel):
         verbose_name=_("Currency Name"),
         help_text=_("Full name of the currency."),
         max_length=50,
-        blank=True,
-        null=True,
     )
     currency_symbol = models.CharField(
         verbose_name=_("Currency Symbol"),
@@ -118,6 +114,155 @@ class Ticker(BaseModel):
         verbose_name=_("Source Feed"),
         help_text=_("Indicates the data source feed."),
         max_length=100,
+        blank=True,
+        null=True,
+    )
+
+    # Polygon TickerDetails Fields
+    description = models.TextField(
+        verbose_name=_("Description"),
+        help_text=_("Business description of the company."),
+        blank=True,
+        null=True,
+    )
+    ticker_root = models.CharField(
+        verbose_name=_("Ticker Root"),
+        help_text=_("Base symbol for related tickers."),
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+    ticker_suffix = models.CharField(
+        verbose_name=_("Ticker Suffix"),
+        help_text=_("Suffix for ticker if applicable."),
+        max_length=50,
+        blank=True,
+        null=True,
+    )
+    homepage_url = models.URLField(
+        verbose_name=_("Homepage URL"),
+        help_text=_("Company homepage URL."),
+        blank=True,
+        null=True,
+    )
+    list_date = models.DateField(
+        verbose_name=_("List Date"),
+        help_text=_("Date when the ticker was first listed."),
+        blank=True,
+        null=True,
+    )
+    market_cap = models.DecimalField(
+        verbose_name=_("Market Cap"),
+        help_text=_("Market capitalization."),
+        max_digits=20,
+        decimal_places=2,
+        blank=True,
+        null=True,
+    )
+    phone_number = models.CharField(
+        verbose_name=_("Phone Number"),
+        help_text=_("Company contact phone number."),
+        max_length=30,
+        blank=True,
+        null=True,
+    )
+    share_class_shares_outstanding = models.BigIntegerField(
+        verbose_name=_("Shares Outstanding (Share Class)"),
+        help_text=_("Number of shares outstanding for this share class."),
+        blank=True,
+        null=True,
+    )
+    sic_code = models.CharField(
+        verbose_name=_("SIC Code"),
+        help_text=_("Standard Industrial Classification code."),
+        max_length=10,
+        blank=True,
+        null=True,
+    )
+    sic_description = models.CharField(
+        verbose_name=_("SIC Description"),
+        help_text=_("Description of the SIC code."),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    total_employees = models.IntegerField(
+        verbose_name=_("Total Employees"),
+        help_text=_("Total number of employees."),
+        blank=True,
+        null=True,
+    )
+    weighted_shares_outstanding = models.BigIntegerField(
+        verbose_name=_("Weighted Shares Outstanding"),
+        help_text=_("Weighted shares outstanding."),
+        blank=True,
+        null=True,
+    )
+
+    # Polygon CompanyAddress fields
+    address1 = models.CharField(
+        verbose_name=_("Address Line 1"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    address2 = models.CharField(
+        verbose_name=_("Address Line 2"),
+        max_length=255,
+        blank=True,
+        null=True,
+    )
+    city = models.CharField(
+        verbose_name=_("City"),
+        max_length=100,
+        blank=True,
+        null=True,
+    )
+    state = models.CharField(
+        verbose_name=_("State"),
+        max_length=100,
+        blank=True,
+        null=True,
+    )
+    country = models.CharField(
+        verbose_name=_("Country"),
+        max_length=100,
+        blank=True,
+        null=True,
+    )
+    postal_code = models.CharField(
+        verbose_name=_("Postal Code"),
+        max_length=20,
+        blank=True,
+        null=True,
+    )
+
+    # Polygon Branding fields
+    icon_url = models.URLField(
+        verbose_name=_("Icon URL"),
+        blank=True,
+        null=True,
+    )
+    logo_url = models.URLField(
+        verbose_name=_("Logo URL"),
+        blank=True,
+        null=True,
+    )
+    accent_color = models.CharField(
+        verbose_name=_("Accent Color"),
+        max_length=20,
+        blank=True,
+        null=True,
+    )
+    light_color = models.CharField(
+        verbose_name=_("Light Color"),
+        max_length=20,
+        blank=True,
+        null=True,
+    )
+    dark_color = models.CharField(
+        verbose_name=_("Dark Color"),
+        max_length=20,
         blank=True,
         null=True,
     )

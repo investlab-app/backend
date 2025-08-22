@@ -1,9 +1,9 @@
 from django.contrib import admin
 
 from unfold.admin import ModelAdmin
-from modules.instruments_v3.models import Ticker
+from modules.instruments_v3.models import Instrument
 
 
-@admin.register(Ticker)
+@admin.register(Instrument)
 class UserAdmin(ModelAdmin):
     pass
