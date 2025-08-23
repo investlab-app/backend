@@ -276,8 +276,8 @@ class Instrument(BaseModel):
     # )
 
     class Meta:
-        verbose_name = _("Ticker")
-        verbose_name_plural = _("Tickers")
+        verbose_name = _("Instrument")
+        verbose_name_plural = _("Instruments")
         ordering = ["ticker"]
 
     def __str__(self):

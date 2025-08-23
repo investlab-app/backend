@@ -5,5 +5,5 @@ from modules.instruments_v3.models import Instrument
 
 
 @admin.register(Instrument)
-class UserAdmin(ModelAdmin):
+class InstrumentAdmin(ModelAdmin):
     pass
