@@ -29,12 +29,10 @@ class Instrument(BaseModel):
     )
     currency_name = models.CharField(
         verbose_name=_("Currency Name"),
-        help_text=_("Full name of the currency."),
         max_length=50,
     )
     currency_symbol = models.CharField(
         verbose_name=_("Currency Symbol"),
-        help_text=_("Currency ISO symbol."),
         max_length=10,
         blank=True,
         null=True,
@@ -61,7 +59,7 @@ class Instrument(BaseModel):
     )
     last_updated_utc = models.DateTimeField(
         verbose_name=_("Last Updated (UTC)"),
-        help_text=_("The date and time when the ticker data was last updated."),
+        help_text=_("When the ticker data was last updated in Polygon."),
         blank=True,
         null=True,
     )
@@ -73,13 +71,11 @@ class Instrument(BaseModel):
     )
     market = models.CharField(
         verbose_name=_("Market"),
-        help_text=_("Market type, e.g. 'stocks', 'crypto', 'fx'."),
         max_length=20,
         choices=MarketChoices.choices,
     )
     name = models.CharField(
-        verbose_name=_("Company Name"),
-        help_text=_("Full name of the company or instrument."),
+        verbose_name=_("Name"),
         max_length=255,
     )
     primary_exchange = models.CharField(
@@ -91,14 +87,12 @@ class Instrument(BaseModel):
     )
     share_class_figi = models.CharField(
         verbose_name=_("Share Class FIGI"),
-        help_text=_("Share class-specific FIGI."),
         max_length=20,
         blank=True,
         null=True,
     )
     ticker = models.CharField(
         verbose_name=_("Ticker Symbol"),
-        help_text=_("Unique ticker symbol, e.g. 'AAPL'."),
         max_length=20,
         unique=True,
         db_index=True,
@@ -121,7 +115,6 @@ class Instrument(BaseModel):
     # Polygon TickerDetails Fields
     description = models.TextField(
         verbose_name=_("Description"),
-        help_text=_("Business description of the company."),
         blank=True,
         null=True,
     )
@@ -141,7 +134,6 @@ class Instrument(BaseModel):
     )
     homepage_url = models.URLField(
         verbose_name=_("Homepage URL"),
-        help_text=_("Company homepage URL."),
         blank=True,
         null=True,
     )
@@ -153,7 +145,6 @@ class Instrument(BaseModel):
     )
     market_cap = models.DecimalField(
         verbose_name=_("Market Cap"),
-        help_text=_("Market capitalization."),
         max_digits=20,
         decimal_places=2,
         blank=True,
@@ -161,7 +152,6 @@ class Instrument(BaseModel):
     )
     phone_number = models.CharField(
         verbose_name=_("Phone Number"),
-        help_text=_("Company contact phone number."),
         max_length=30,
         blank=True,
         null=True,
@@ -181,20 +171,17 @@ class Instrument(BaseModel):
     )
     sic_description = models.CharField(
         verbose_name=_("SIC Description"),
-        help_text=_("Description of the SIC code."),
         max_length=255,
         blank=True,
         null=True,
     )
     total_employees = models.IntegerField(
         verbose_name=_("Total Employees"),
-        help_text=_("Total number of employees."),
         blank=True,
         null=True,
     )
     weighted_shares_outstanding = models.BigIntegerField(
         verbose_name=_("Weighted Shares Outstanding"),
-        help_text=_("Weighted shares outstanding."),
         blank=True,
         null=True,
     )
@@ -270,7 +257,7 @@ class Instrument(BaseModel):
     # Technical Fields
     # last_sync_at = models.DateTimeField(
     #     verbose_name=_("Last Sync At"),
-    #     help_text=_("The last time the ticker data was synchronized."),
+    #     help_text=_("The last time the instrument data was synchronized."),
     #     blank=True,
     #     null=True,
     # )
