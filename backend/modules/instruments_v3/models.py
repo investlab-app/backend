@@ -51,12 +51,6 @@ class Instrument(BaseModel):
         blank=True,
         null=True,
     )
-    delisted_utc = models.DateTimeField(
-        verbose_name=_("Delisted Date (UTC)"),
-        help_text=_("The date and time when the ticker was delisted."),
-        blank=True,
-        null=True,
-    )
     last_updated_utc = models.DateTimeField(
         verbose_name=_("Last Updated (UTC)"),
         help_text=_("When the ticker data was last updated in Polygon."),
@@ -101,13 +95,6 @@ class Instrument(BaseModel):
         verbose_name=_("Type"),
         help_text=_("Security type, e.g. 'CS' (Common Stock), 'ETF', 'Crypto'."),
         max_length=50,
-        blank=True,
-        null=True,
-    )
-    source_feed = models.CharField(
-        verbose_name=_("Source Feed"),
-        help_text=_("Indicates the data source feed."),
-        max_length=100,
         blank=True,
         null=True,
     )
@@ -232,24 +219,6 @@ class Instrument(BaseModel):
     )
     logo_url = models.URLField(
         verbose_name=_("Logo URL"),
-        blank=True,
-        null=True,
-    )
-    accent_color = models.CharField(
-        verbose_name=_("Accent Color"),
-        max_length=20,
-        blank=True,
-        null=True,
-    )
-    light_color = models.CharField(
-        verbose_name=_("Light Color"),
-        max_length=20,
-        blank=True,
-        null=True,
-    )
-    dark_color = models.CharField(
-        verbose_name=_("Dark Color"),
-        max_length=20,
         blank=True,
         null=True,
     )

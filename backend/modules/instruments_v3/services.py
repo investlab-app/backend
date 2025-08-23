@@ -15,7 +15,6 @@ class SyncInstrumentsBaseInfoService:
         "currency_symbol": "currency_symbol",
         "base_currency_symbol": "base_currency_symbol",
         "base_currency_name": "base_currency_name",
-        "delisted_utc": "delisted_utc",
         # "last_updated_utc": "last_updated_utc",
         "locale": "locale",
         "market": "market",
@@ -97,7 +96,6 @@ class SyncInstrumentsDetailInfoService:
         "currency_symbol": "currency_symbol",
         "base_currency_symbol": "base_currency_symbol",
         "base_currency_name": "base_currency_name",
-        "delisted_utc": "delisted_utc",
         "description": "description",
         "ticker_root": "ticker_root",
         "ticker_suffix": "ticker_suffix",
@@ -116,7 +114,6 @@ class SyncInstrumentsDetailInfoService:
         "total_employees": "total_employees",
         "type": "type",
         "weighted_shares_outstanding": "weighted_shares_outstanding",
-        "source_feed": "source_feed",
         # Flatten address fields
         "address__address1": "address1",
         "address__address2": "address2",
@@ -127,9 +124,6 @@ class SyncInstrumentsDetailInfoService:
         # Flatten branding fields
         "branding__icon_url": "icon_url",
         "branding__logo_url": "logo_url",
-        "branding__accent_color": "accent_color",
-        "branding__light_color": "light_color",
-        "branding__dark_color": "dark_color",
     }
 
     def __init__(

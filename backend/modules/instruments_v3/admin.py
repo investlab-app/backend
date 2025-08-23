@@ -62,7 +62,6 @@ class InstrumentAdmin(ModelAdmin):
                 "currency_symbol",
                 "base_currency_name",
                 "base_currency_symbol",
-                "source_feed",
             )
         }),
         (_("FIGI & Identifiers"), {
@@ -90,9 +89,6 @@ class InstrumentAdmin(ModelAdmin):
             "fields": (
                 "icon_url",
                 "logo_url",
-                "accent_color",
-                "light_color",
-                "dark_color",
             )
         }),
         (_("Extra Info"), {
@@ -104,7 +100,6 @@ class InstrumentAdmin(ModelAdmin):
                 "ticker_root",
                 "ticker_suffix",
                 "list_date",
-                "delisted_utc",
             )
         }),
         (
