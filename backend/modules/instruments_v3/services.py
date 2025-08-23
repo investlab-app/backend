@@ -15,7 +15,6 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         "currency_symbol": "currency_symbol",
         "base_currency_symbol": "base_currency_symbol",
         "base_currency_name": "base_currency_name",
-        # "last_updated_utc": "last_updated_utc",  # TODO Decide what to do with this field
         "locale": "locale",
         "market": "market",
         "name": "name",

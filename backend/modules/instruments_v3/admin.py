@@ -12,10 +12,9 @@ class InstrumentAdmin(ModelAdmin):
         "name",
         "market",
         "locale",
-        "active",
-        "currency_name",
         "primary_exchange",
-        "last_updated_utc",
+        "currency_name",
+        "active",
     )
     list_filter = (
         "active",
@@ -37,7 +36,6 @@ class InstrumentAdmin(ModelAdmin):
         "ticker",
         "created_at",
         "updated_at",
-        "last_updated_utc",
     )
 
     fieldsets = (
@@ -104,6 +102,6 @@ class InstrumentAdmin(ModelAdmin):
         }),
         (
             _("Timestamps"),
-            {"fields": ("last_updated_utc", "created_at", "updated_at")},
+            {"fields": ("created_at", "updated_at")},
         ),
     )

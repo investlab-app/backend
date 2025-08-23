@@ -51,12 +51,6 @@ class Instrument(BaseModel):
         blank=True,
         null=True,
     )
-    last_updated_utc = models.DateTimeField(
-        verbose_name=_("Last Updated (UTC)"),
-        help_text=_("When the ticker data was last updated in Polygon."),
-        blank=True,
-        null=True,
-    )
     locale = models.CharField(
         verbose_name=_("Locale"),
         help_text=_("Locale where the ticker is traded, e.g. 'US'."),
