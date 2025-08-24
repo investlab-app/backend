@@ -222,12 +222,12 @@ class Instrument(BaseModel):
         verbose_name=_("Icon URL"),
         blank=True,
         null=True,
-    )
+    )  # TODO save and return from local storage
     logo_url = models.URLField(
         verbose_name=_("Logo URL"),
         blank=True,
         null=True,
-    )
+    )  # TODO save and return from local storage
 
     # Technical Fields
     # last_sync_at = models.DateTimeField(

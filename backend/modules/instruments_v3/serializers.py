@@ -15,8 +15,8 @@ class InstrumentListSerializer(serializers.ModelSerializer):
             "market",
             "market_cap",
             "currency_name",
-            # "icon_url",
-            # "logo_url"  # TODO save and return from local storage
+            "icon_url",
+            "logo_url",
         ]
 
 
@@ -34,15 +34,12 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "market_cap",
             "composite_figi",
             "currency_name",
-            # "currency_symbol",
-            # "base_currency_symbol",
-            # "base_currency_name",
             "locale",
             "primary_exchange",
             "share_class_figi",
             "description",
             "ticker_root",
-            # "ticker_suffix",
+            "ticker_suffix",
             "homepage_url",
             "list_date",
             "phone_number",
