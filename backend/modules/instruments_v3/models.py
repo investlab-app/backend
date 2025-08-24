@@ -1,8 +1,20 @@
+from dataclasses import dataclass
+from typing import TypedDict
+
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
 from modules.instruments_v3.constants import LocaleChoices, MarketChoices
+
+
+class AddressDict(TypedDict):
+    address1: str | None
+    address2: str | None
+    city: str | None
+    state: str | None
+    country: str | None
+    postal_code: str | None
 
 
 class Instrument(BaseModel):
@@ -224,6 +236,17 @@ class Instrument(BaseModel):
     #     blank=True,
     #     null=True,
     # )
+
+    @property
+    def address(self) -> AddressDict:
+        return AddressDict(
+            address1=self.address1,
+            address2=self.address2,
+            city=self.city,
+            state=self.state,
+            country=self.country,
+            postal_code=self.postal_code,
+        )
 
     class Meta:
         verbose_name = _("Instrument")
