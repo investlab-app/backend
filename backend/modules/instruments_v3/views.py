@@ -51,7 +51,7 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
     )
     def get(self, request, *args, **kwargs):
         criteria = {
-            field: request.query_params.get(field)
+            field: request.query_params.get(field).upper()
             for field in self.lookup_fields
             if request.query_params.get(field)
         }
