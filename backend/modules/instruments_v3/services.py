@@ -37,9 +37,13 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         no_changes = 0
 
         for ticker_data in tickers_data:
-            if instrument := Instrument.objects.filter(ticker=ticker_data.ticker).first():
+            if instrument := Instrument.objects.filter(
+                ticker=ticker_data.ticker
+            ).first():
                 # Update existing instrument
-                updated_instrument, updated = self.update_with_mapping(instrument, ticker_data)
+                updated_instrument, updated = self.update_with_mapping(
+                    instrument, ticker_data
+                )
                 if updated:
                     to_update.append(updated_instrument)
                 else:
@@ -53,7 +57,7 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         Instrument.objects.bulk_update(
             to_update,
             fields=list(self.EDITABLE_FIELDS_MAPPING.values()),
-            batch_size=self.BATCH_SIZE
+            batch_size=self.BATCH_SIZE,
         )
 
         return {
@@ -106,7 +110,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
     def __init__(
         self,
         instruments: Iterable[Instrument] = None,
-        repository: PolygonTickersRepository = None
+        repository: PolygonTickersRepository = None,
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.repository = repository or PolygonTickersRepository()
@@ -123,7 +127,9 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
                 errors += 1
                 continue
 
-            updated_instrument, updated = self.update_with_mapping(instrument, ticker_details)
+            updated_instrument, updated = self.update_with_mapping(
+                instrument, ticker_details
+            )
             if updated:
                 to_update.append(updated_instrument)
             else:
@@ -132,7 +138,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         Instrument.objects.bulk_update(
             to_update,
             fields=list(self.EDITABLE_FIELDS_MAPPING.values()),
-            batch_size=self.BATCH_SIZE
+            batch_size=self.BATCH_SIZE,
         )
 
         return {

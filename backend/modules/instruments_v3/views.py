@@ -5,7 +5,10 @@ from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from modules.core.pagination import DynamicPageSizePagination
 from modules.instruments_v3.models import Instrument
-from modules.instruments_v3.serializers import InstrumentListSerializer, InstrumentRetrieveSerializer
+from modules.instruments_v3.serializers import (
+    InstrumentListSerializer,
+    InstrumentRetrieveSerializer,
+)
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -59,7 +62,7 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
             return Response(
                 "Please provide exactly one of the following query parameters: "
                 "id, ticker, cik, composite_figi, or share_class_figi.",
-                status=400
+                status=400,
             )
 
         instrument = get_object_or_404(self.get_queryset(), **criteria)

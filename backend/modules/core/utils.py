@@ -30,7 +30,7 @@ def quantize_decimal(value: Decimal, places: int = 15) -> Decimal:
     return value.quantize(quant, rounding=ROUND_HALF_UP)
 
 
-def get_attr(obj, attr_path: str, scope_operator: str = '__'):
+def get_attr(obj, attr_path: str, scope_operator: str = "__"):
     """Get nested attribute from an object using a scope operator."""
     for attr in attr_path.split(scope_operator):
         obj = getattr(obj, attr, None)

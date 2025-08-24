@@ -53,5 +53,5 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "weighted_shares_outstanding",
             "address",
             "icon_url",
-            "logo_url"
+            "logo_url",
         ]

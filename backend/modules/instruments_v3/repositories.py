@@ -7,7 +7,6 @@ from urllib3 import HTTPResponse
 
 
 class PolygonTickersRepository:
-
     def __init__(self, polygon_client: PolygonClient = None):
         self.polygon_client = polygon_client or PolygonClient(POLYGON_SECRET_KEY)
 
@@ -26,7 +25,7 @@ class PolygonTickersRepository:
             market=market,
             exchange=exchange,
             *args,
-            **kwargs
+            **kwargs,
         )
         if isinstance(response, HTTPResponse):
             raise ValueError("Tickers incorrectly fetched from Polygon API")
@@ -39,6 +38,8 @@ class PolygonTickersRepository:
 
         response = self.polygon_client.get_ticker_details(ticker)
         if isinstance(response, HTTPResponse):
-            raise ValueError(f"Ticker {ticker} details incorrectly fetched from Polygon API")
+            raise ValueError(
+                f"Ticker {ticker} details incorrectly fetched from Polygon API"
+            )
 
         return response
