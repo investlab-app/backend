@@ -1,4 +1,4 @@
-from typing import Iterable
+from collections.abc import Iterable
 
 from modules.core.mixins import CreateWithMappingMixin, UpdateWithMappingMixin
 from modules.instruments.models import Instrument

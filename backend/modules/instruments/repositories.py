@@ -1,9 +1,10 @@
-from typing import Iterator
+from collections.abc import Iterator
 
-from config.settings import POLYGON_SECRET_KEY, POLYGON_EXCHANGE, POLYGON_ASSET_TYPE
 from polygon import RESTClient as PolygonClient
 from polygon.rest.models.tickers import Ticker, TickerDetails
 from urllib3 import HTTPResponse
+
+from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE, POLYGON_SECRET_KEY
 
 
 class PolygonTickersRepository:

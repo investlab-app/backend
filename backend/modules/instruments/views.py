@@ -1,7 +1,7 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics
 from rest_framework.response import Response
-from drf_spectacular.utils import extend_schema, OpenApiParameter
 
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
@@ -23,6 +23,7 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
     Retrieve an instrument by one of the following query parameters:
     id, ticker, cik, composite_figi, share_class_figi
     """
+
     queryset = Instrument.objects.all()
     serializer_class = InstrumentRetrieveSerializer
     lookup_fields = ["id", "ticker", "cik", "composite_figi", "share_class_figi"]

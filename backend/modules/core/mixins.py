@@ -1,4 +1,3 @@
-from typing import Type
 
 from modules.core.utils import get_attr
 
@@ -20,7 +19,7 @@ class UpdateWithMappingMixin:
 class CreateWithMappingMixin:
     CREATABLE_FIELDS_MAPPING: dict[str, str] = {}
 
-    def create_with_mapping[T](self, source, target_class: Type[T]) -> T:
+    def create_with_mapping[T](self, source, target_class: type[T]) -> T:
         """Create a new model instance from the provided data based on the mapping."""
         return target_class(
             **{

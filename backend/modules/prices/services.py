@@ -4,8 +4,8 @@ from http.client import HTTPResponse
 
 from django.shortcuts import get_object_or_404
 
-from config.logging import get_logger
 from config.clients import polygon_client
+from config.logging import get_logger
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge

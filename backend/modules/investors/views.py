@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -31,6 +30,7 @@ class InvestorListCreateView(generics.ListCreateAPIView):
     """
     List all investors or create a new investor.
     """
+
     queryset = Investor.objects.select_related("user").prefetch_related(
         "watching_instruments"
     )
