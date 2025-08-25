@@ -3,7 +3,6 @@ from rest_framework import filters, generics
 from rest_framework.response import Response
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 
-from modules.core.pagination import DynamicPageSizePagination
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     InstrumentListSerializer,
@@ -14,7 +13,6 @@ from modules.instruments.serializers import (
 class InstrumentsListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentListSerializer
-    pagination_class = DynamicPageSizePagination
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["ticker"]
     ordering_fields = ["ticker"]

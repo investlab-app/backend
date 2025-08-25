@@ -27,24 +27,16 @@ from modules.investors.serializers import (
 logger = logging.getLogger(__name__)
 
 
-class InvestorPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
 class InvestorListCreateView(generics.ListCreateAPIView):
     """
     List all investors or create a new investor.
     """
-
     queryset = Investor.objects.select_related("user").prefetch_related(
         "watching_instruments"
     )
     serializer_class = InvestorSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-    pagination_class = InvestorPagination
 
     def get_serializer_class(self):
         if self.request.method == "POST":

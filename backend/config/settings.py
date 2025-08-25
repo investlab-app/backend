@@ -163,9 +163,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        # "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # 'rest_framework.authentication.BearerAuthentication',
     ),
+    'DEFAULT_PAGINATION_CLASS': 'modules.core.pagination.DynamicPageSizePagination',
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
