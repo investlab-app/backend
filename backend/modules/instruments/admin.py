@@ -1,6 +1,125 @@
 from django.contrib import admin
+from django.utils.translation import gettext_lazy as _
 
+from unfold.admin import ModelAdmin
 from modules.instruments.models import Instrument
 
-# TODO: Create actual admin model
-admin.site.register(Instrument)
+
+@admin.register(Instrument)
+class InstrumentAdmin(ModelAdmin):
+    list_display = (
+        "ticker",
+        "name",
+        "market",
+        "locale",
+        "primary_exchange",
+        "currency_name",
+        "active",
+    )
+    list_filter = (
+        "active",
+        "locale",
+        "market",
+        "type",
+    )
+    search_fields = (
+        "ticker",
+        "name",
+        "cik",
+        "composite_figi",
+        "share_class_figi",
+    )
+    ordering = ("ticker",)
+
+    readonly_fields = (
+        "id",
+        "ticker",
+        "created_at",
+        "updated_at",
+    )
+
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "id",
+                    "ticker",
+                    "name",
+                    "active",
+                    "type",
+                    "description",
+                    "homepage_url",
+                    "phone_number",
+                )
+            },
+        ),
+        (
+            _("Market Data"),
+            {
+                "fields": (
+                    "market",
+                    "locale",
+                    "market_cap",
+                    "currency_name",
+                    "currency_symbol",
+                    "base_currency_name",
+                    "base_currency_symbol",
+                )
+            },
+        ),
+        (
+            _("FIGI & Identifiers"),
+            {
+                "fields": (
+                    "cik",
+                    "composite_figi",
+                    "share_class_figi",
+                    "share_class_shares_outstanding",
+                    "weighted_shares_outstanding",
+                )
+            },
+        ),
+        (
+            _("Address Information"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "address1",
+                    "address2",
+                    "city",
+                    "state",
+                    "country",
+                    "postal_code",
+                ),
+            },
+        ),
+        (
+            _("Branding"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "icon_url",
+                    "logo_url",
+                ),
+            },
+        ),
+        (
+            _("Extra Info"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "sic_code",
+                    "sic_description",
+                    "total_employees",
+                    "ticker_root",
+                    "ticker_suffix",
+                    "list_date",
+                ),
+            },
+        ),
+        (
+            _("Timestamps"),
+            {"fields": ("created_at", "updated_at")},
+        ),
+    )

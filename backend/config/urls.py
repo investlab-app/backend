@@ -43,7 +43,7 @@ urlpatterns = [
     ),
     # Modules
     path(f"{PREFIX}/prices/", include("modules.prices.urls")),
-    path(f"{PREFIX}/instruments/", include("modules.instruments_v3.urls")),
+    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
     path(f"{PREFIX}/test/", include("modules.core.urls")),
