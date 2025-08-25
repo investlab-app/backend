@@ -9,18 +9,30 @@ from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.prices.consumers import PriceStreamConsumer
 
 
-def _get_websocket_communicator(user):
-    scope = {"user": user}
+@pytest.fixture
+async def communicator():
+    user = MagicMock(is_authenticated=True)
+    communicator = _get_websocket_communicator(user)
+    _, _ = await communicator.connect()
+    yield communicator
+    await communicator.disconnect()
 
-    communicator = WebsocketCommunicator(PriceStreamConsumer.as_asgi(), f"/ws/prices/")
-    communicator.scope.update(scope)
-    return communicator
 
-
-async def _get_layer():
+@pytest.fixture
+async def layer():
     layer = get_channel_layer()
     await layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
     return layer
+
+
+def _get_websocket_communicator(user, tickers=""):
+    scope = {"user": user, "url_route": {"kwargs": {"names": tickers}}}
+
+    communicator = WebsocketCommunicator(
+        PriceStreamConsumer.as_asgi(), f"/ws/prices/{tickers}"
+    )
+    communicator.scope.update(scope)
+    return communicator
 
 
 async def _send_ticker_data(layer, msg):
@@ -29,18 +41,9 @@ async def _send_ticker_data(layer, msg):
     )
 
 
-async def _get_connected_communicator():
-    user = MagicMock(is_authenticated=True)
-    communicator = _get_websocket_communicator(user)
-    connected, _ = await communicator.connect()
-    assert connected
-    return communicator
-
-
-async def _assert_communicator_output(communicator, expected_output):
+async def _get_communicator_output(communicator):
     output = await communicator.receive_output()
-    output = json.loads(output["text"])
-    assert output == expected_output
+    return json.loads(output["text"])
 
 
 @pytest.mark.asyncio
@@ -61,59 +64,77 @@ async def test_failed_connection():
 
 
 @pytest.mark.asyncio
-async def test_single_ticker_subscription():
-    communicator = await _get_connected_communicator()
-    await communicator.send_to(text_data=json.dumps({"subscribe": ["AAPL"]}))
-
-    layer = await _get_layer()
-    await _send_ticker_data(
-        layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
-    )
-
-    await _assert_communicator_output(communicator, {"prices": ["some_data"]})
-    await communicator.disconnect()
-
-
-@pytest.mark.asyncio
-async def test_multiple_ticker_subscription():
-    communicator = await _get_connected_communicator()
-    await communicator.send_to(text_data=json.dumps({"subscribe": ["AAPL", "ABC"]}))
-
-    layer = await _get_layer()
-    await _send_ticker_data(
-        layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
-    )
-
-    await _assert_communicator_output(
-        communicator, {"prices": ["some_data", "more_data"]}
-    )
-    await communicator.disconnect()
-
-
-@pytest.mark.asyncio
-async def test_unsubscribe():
-    communicator = await _get_connected_communicator()
-    await communicator.send_to(text_data=json.dumps({"subscribe": ["AAPL", "ABC"]}))
-    await communicator.send_to(text_data=json.dumps({"unsubscribe": ["AAPL"]}))
-
-    layer = await _get_layer()
-    await _send_ticker_data(
-        layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
-    )
-
-    await _assert_communicator_output(communicator, {"prices": ["more_data"]})
-    await communicator.disconnect()
-
-
-@pytest.mark.asyncio
-async def test_does_not_send_empty_messages():
-    communicator = await _get_connected_communicator()
-    await communicator.send_to(text_data=json.dumps({"subscribe": ["IS_NOT_THERE"]}))
-
-    layer = await _get_layer()
-    await _send_ticker_data(
-        layer, {"AAPL": "some_data", "XYZ": "other_data", "ABC": "more_data"}
-    )
+async def test_no_subscriptions(communicator, layer):
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
 
     assert await communicator.receive_nothing()
-    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+async def test_empty_subscription(communicator, layer):
+    await communicator.send_to(text_data=json.dumps({"set_subscription": []}))
+
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
+
+    assert await communicator.receive_nothing()
+
+
+@pytest.mark.asyncio
+async def test_single_subscription(communicator, layer):
+    await communicator.send_to(text_data=json.dumps({"set_subscription": ["AAPL"]}))
+
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
+
+    output = await _get_communicator_output(communicator)
+    assert output == {"prices": ["XXXX"]}
+
+
+@pytest.mark.asyncio
+async def test_multi_subscription(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
+
+    output = await _get_communicator_output(communicator)
+    assert output == {"prices": ["XXXX", "ZZZZ"]}
+
+
+@pytest.mark.asyncio
+async def test_resubscription(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["XYZ", "ABC"]})
+    )
+
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
+
+    output = await _get_communicator_output(communicator)
+    assert output == {"prices": ["YYYY", "ZZZZ"]}
+
+
+@pytest.mark.asyncio
+async def test_does_not_send_empty_msgs(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+
+    await _send_ticker_data(layer, {"XYZ": "YYYY"})
+
+    assert communicator.receive_nothing()
+
+
+@pytest.mark.asyncio
+async def test_tickers_in_query_params(layer):
+    communicator = _get_websocket_communicator(
+        MagicMock(is_authenticated=True), "AAPL,ABC"
+    )
+    await communicator.connect()
+
+    await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
+
+    output = await _get_communicator_output(communicator)
+    assert output == {"prices": ["XXXX", "ZZZZ"]}
