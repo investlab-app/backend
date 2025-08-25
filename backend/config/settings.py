@@ -43,7 +43,6 @@ INSTALLED_APPS = [
     "modules.authentication",
     "modules.core",
     "modules.instruments",
-    "modules.instruments_v3",
     "modules.investors",
     "modules.orders",
     "modules.prices",
