@@ -23,13 +23,8 @@ class InstrumentsListView(generics.ListAPIView):
 class InstrumentsRetrieveView(generics.GenericAPIView):
     """
     Retrieve an instrument by one of the following query parameters:
-        GET /api/instruments/detail/?id=a9c013ae-8d4d-4f81-b92e-a2f1d348cd3f
-        GET /api/instruments/detail/?ticker=APPL
-        GET /api/instruments/detail/?cik=0000320193
-        GET /api/instruments/detail/?composite_figi=BBG000B9XRY4
-        GET /api/instruments/detail/?share_class_figi=BBG001S5N8V8
+    id, ticker, cik, composite_figi, share_class_figi
     """
-
     queryset = Instrument.objects.all()
     serializer_class = InstrumentRetrieveSerializer
     lookup_fields = ["id", "ticker", "cik", "composite_figi", "share_class_figi"]

@@ -13,7 +13,6 @@ class AddressDict(TypedDict):
     address2: str | None
     city: str | None
     state: str | None
-    # country: str | None
     postal_code: str | None
 
 
@@ -222,12 +221,12 @@ class Instrument(BaseModel):
         verbose_name=_("Icon URL"),
         blank=True,
         null=True,
-    )  # TODO save and return from local storage
+    )
     logo_url = models.URLField(
         verbose_name=_("Logo URL"),
         blank=True,
         null=True,
-    )  # TODO save and return from local storage
+    )
 
     @property
     def address(self) -> AddressDict:
@@ -236,7 +235,6 @@ class Instrument(BaseModel):
             address2=self.address2,
             city=self.city,
             state=self.state,
-            # country=self.country,
             postal_code=self.postal_code,
         )
 
