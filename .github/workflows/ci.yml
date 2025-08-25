@@ -30,8 +30,8 @@ jobs:
         run: make lint
       - name: Run format checks
         run: make format-check
-#      - name: Run type checks
-#        run: make typecheck
+      - name: Run type checks
+        run: make typecheck
       - name: Run tests
         run: make test
   publish:
