@@ -16,7 +16,6 @@ class PolygonTickersRepository:
         market: str = POLYGON_ASSET_TYPE,
         exchange: str = POLYGON_EXCHANGE,
         tickers_per_page: int = 500,
-        *args,
         **kwargs,
     ) -> Iterator[Ticker]:
         """List tickers from Polygon API."""
@@ -25,7 +24,6 @@ class PolygonTickersRepository:
             limit=tickers_per_page,  # Max tickers per one request
             market=market,
             exchange=exchange,
-            *args,
             **kwargs,
         )
         if isinstance(response, HTTPResponse):
