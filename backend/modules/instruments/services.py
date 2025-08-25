@@ -27,7 +27,7 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         **EDITABLE_FIELDS_MAPPING,
     }
 
-    def __init__(self, repository: PolygonTickersRepository = None):
+    def __init__(self, repository: PolygonTickersRepository = None):  # type: ignore
         self.repository = repository or PolygonTickersRepository()
 
     def sync_instruments(self) -> dict[str, int]:
@@ -109,8 +109,8 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
     def __init__(
         self,
-        instruments: Iterable[Instrument] = None,
-        repository: PolygonTickersRepository = None,
+        instruments: Iterable[Instrument] = None,  # type: ignore
+        repository: PolygonTickersRepository = None,  # type: ignore
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.repository = repository or PolygonTickersRepository()
