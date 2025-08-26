@@ -342,6 +342,15 @@ UNFOLD = {
     # ],
 }
 
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [("redis", 6379)],
+        },
+    },
+}
+
 # Clerk settings
 CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
 CLERK_ISSUER = os.environ.get("CLERK_ISSUER")

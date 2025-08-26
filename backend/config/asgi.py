@@ -7,18 +7,24 @@ For more information on this file, see
 https://docs.djangoproject.com/en/5.1/howto/deployment/asgi/
 """
 
+from channels.auth import AuthMiddlewareStack
 from channels.routing import ProtocolTypeRouter, URLRouter
+from channels.security.websocket import AllowedHostsOriginValidator
 from django.core.asgi import get_asgi_application
 from django.urls import re_path
 
-from config.urls import sse_urlpatterns  # noqa: E402
+from config.urls import websocket_urlpatterns  # noqa: E402
+from modules.authentication.middlewares import CookieWebsocketAuthMiddleware
 
 http_application = get_asgi_application()
 
 application = ProtocolTypeRouter(
     {
-        "http": URLRouter(
-            sse_urlpatterns + [re_path("^", http_application)]  # type: ignore [arg-type]
+        "http": URLRouter([re_path("^", http_application)]),
+        "websocket": AllowedHostsOriginValidator(
+            CookieWebsocketAuthMiddleware(
+                AuthMiddlewareStack(URLRouter(websocket_urlpatterns))
+            )
         ),
     },
 )

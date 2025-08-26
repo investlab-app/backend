@@ -8,3 +8,5 @@ POLYGON_INTERVALS = [
     "QUARTER",
     "YEAR",
 ]
+
+PRICES_CHANNEL_LAYER = "ticker_price_broadcast"

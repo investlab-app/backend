@@ -5,6 +5,7 @@ description = "Stocks Backend"
 requires-python = ">=3.13"
 dependencies = [
     "alpaca-py>=0.42.0",
+    "channels-redis>=4.3.0",
     "channels>=4.2.2",
     "clerk-backend-api>=2.2.0",
     "dependency-injector>=4.47.1",
