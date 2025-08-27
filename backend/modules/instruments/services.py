@@ -1,9 +1,9 @@
 from concurrent.futures import ThreadPoolExecutor
+from dataclasses import asdict
 
 from django.db import transaction
 
 from config.polygon import asset_type, client, exchange
-from dataclasses import asdict
 from modules.instruments.serializers import TickerOverviewResultSerializer
 
 
@@ -28,7 +28,7 @@ class InstrumentServiceV2:
 
     @classmethod
     def _pull_instrument_details(cls, ticker):
-        return asdict(client.get_ticker_details(ticker))
+        return asdict(client.get_ticker_details(ticker))  # ty: ignore
 
     @classmethod
     def _serialize_and_validate(cls, ticker_details):
