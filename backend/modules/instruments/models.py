@@ -64,12 +64,12 @@ class Instrument(BaseModel):
     locale = models.CharField(
         verbose_name=_("Locale"),
         help_text=_("Locale where the ticker is traded, e.g. 'US'."),
-        max_length=10,
+        max_length=50,
         choices=LocaleChoices.choices,
     )
     market = models.CharField(
         verbose_name=_("Market"),
-        max_length=20,
+        max_length=50,
         choices=MarketChoices.choices,
     )
     name = models.CharField(

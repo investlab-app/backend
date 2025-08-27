@@ -33,7 +33,6 @@ class InstrumentAdmin(ModelAdmin):
 
     readonly_fields = (
         "id",
-        "ticker",
         "created_at",
         "updated_at",
     )

@@ -4,5 +4,5 @@ from modules.instruments.views import InstrumentsListView, InstrumentsRetrieveVi
 
 urlpatterns = [
     path("", InstrumentsListView.as_view(), name="instruments-list"),
-    path("details/", InstrumentsRetrieveView.as_view(), name="instruments-details"),
+    path("detail/", InstrumentsRetrieveView.as_view(), name="instrument-detail"),
 ]
