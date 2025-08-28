@@ -60,7 +60,9 @@ async def test_failed_connection():
     user = MagicMock(is_authenticated=False)
     communicator = _get_websocket_communicator(user)
     connected, _ = await communicator.connect()
-    assert connected is False
+    msg = await communicator.receive_output(None)
+    assert msg == {'type': 'websocket.close'}
+    await communicator.disconnect()
 
 
 @pytest.mark.asyncio

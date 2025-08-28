@@ -1,4 +1,5 @@
 import json
+import asyncio
 
 from channels.exceptions import DenyConnection
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -10,9 +11,13 @@ from modules.prices.constants import PRICES_CHANNEL_LAYER
 class PriceStreamConsumer(AsyncWebsocketConsumer):
     names: list[str] = []
 
+
     async def connect(self):
+
         if not self.scope["user"].is_authenticated:
-            raise DenyConnection("User is not authenticated")
+            await self.accept()
+            await self.close()
+            return
 
         self.names = self.scope["url_route"]["kwargs"].get("names", "").split(",")
         self.layer = get_channel_layer()
