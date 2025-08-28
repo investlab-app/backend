@@ -11,7 +11,7 @@ if [[ "$DEBUG" =~ ^(1|true|True|TRUE|on|yes)$ ]]; then
 else
     echo "Collecting static files"
     uv run manage.py collectstatic --noinput
-    echo "Starting Uvicorn server"
+    echo "Starting Gunicorn server"
     exec uv run gunicorn config.asgi:application \
     --bind 0.0.0.0:"${PORT:-8000}" \
     --workers "${WEB_CONCURRENCY:-2}" \
