@@ -43,6 +43,3 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
             return
 
         self.names = json_data.get("set_subscription", [])
-
-    async def close(self, code=None, reason=None):
-        return
