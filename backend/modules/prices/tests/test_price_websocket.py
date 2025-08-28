@@ -61,7 +61,7 @@ async def test_failed_connection():
     communicator = _get_websocket_communicator(user)
     connected, _ = await communicator.connect()
     msg = await communicator.receive_output(None)
-    assert msg == {'type': 'websocket.close'}
+    assert msg == {"type": "websocket.close"}
     await communicator.disconnect()
 
 
