@@ -1,8 +1,23 @@
-from asgiref.sync import sync_to_async
-from django.contrib.auth.models import AnonymousUser
-from rest_framework.exceptions import AuthenticationFailed
+from collections.abc import Mapping
 
-from modules.authentication.clerk_auth import verify_token
+from asgiref.sync import sync_to_async
+from clerk_backend_api.jwks_helpers.authenticaterequest import (
+    AuthenticateRequestOptions,
+    Requestish,
+)
+from django.contrib.auth.models import AnonymousUser
+
+from config.clerk import client as clerk_sdk
+from modules.authentication.clerk_auth import parse_user_from_payload
+
+
+class ClerkRequestAdapter(Requestish):
+    def __init__(self, headers: Mapping[str, str]):
+        self._headers = headers
+
+    @property
+    def headers(self) -> Mapping[str, str]:
+        return self._headers
 
 
 class CookieWebsocketAuthMiddleware:
@@ -10,17 +25,16 @@ class CookieWebsocketAuthMiddleware:
         self.app = app
 
     async def __call__(self, scope, receive, send):
-        headers = dict(scope["headers"])
-        cookies = {}
-        if b"cookie" in headers:
-            cookie_header = headers[b"cookie"].decode()
-            for kv in cookie_header.split(";"):
-                k, v = kv.strip().split("=", 1)
-                cookies[k] = v
+        headers = {k.decode(): v.decode() for k, v in scope["headers"]}
+        request = ClerkRequestAdapter(headers)
+        request_state = clerk_sdk.authenticate_request(
+            request, AuthenticateRequestOptions()
+        )
 
-        token = cookies.get("auth_token")
-        try:
-            scope["user"] = await sync_to_async(verify_token)(token)
-        except AuthenticationFailed:
+        if request_state.is_signed_in:
+            payload = request_state.payload
+            scope["user"] = await sync_to_async(parse_user_from_payload)(payload)
+        else:
             scope["user"] = AnonymousUser()
+
         return await self.app(scope, receive, send)

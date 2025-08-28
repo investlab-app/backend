@@ -355,6 +355,7 @@ CHANNEL_LAYERS = {
 CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
 CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
 CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
+CLERK_JWT_KEY = os.environ.get("CLERK_JWT_KEY")
 
 # APIs
 POLYGON_SECRET_KEY = os.environ.get("POLYGON_SECRET_KEY")

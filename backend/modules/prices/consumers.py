@@ -1,5 +1,6 @@
 import json
 
+from channels.exceptions import DenyConnection
 from channels.generic.websocket import AsyncWebsocketConsumer
 from channels.layers import get_channel_layer
 
@@ -7,14 +8,13 @@ from modules.prices.constants import PRICES_CHANNEL_LAYER
 
 
 class PriceStreamConsumer(AsyncWebsocketConsumer):
-    names = []
+    names: list[str] = []
 
     async def connect(self):
         if not self.scope["user"].is_authenticated:
-            await self.close()
-            return
+            raise DenyConnection("User is not authenticated")
 
-        self.names = self.scope["url_route"]["kwargs"]["names"].split(",")
+        self.names = self.scope["url_route"]["kwargs"].get("names", "").split(",")
         self.layer = get_channel_layer()
         await self.layer.group_add(PRICES_CHANNEL_LAYER, self.channel_name)
         await self.accept()
@@ -27,9 +27,22 @@ class PriceStreamConsumer(AsyncWebsocketConsumer):
             await self.send(text_data=json.dumps({"prices": selected_tickers}))
 
     async def receive(self, text_data=None, _=None):
+        if text_data is None:
+            return
+
+        if isinstance(text_data, (bytes, bytearray)):
+            text_data = text_data.decode("utf-8")
+
+        if text_data == "ping":
+            await self.send(text_data="pong")
+            return
+
         try:
-            json_data = json.loads(text_data)  # ty: ignore
+            json_data = json.loads(text_data)
         except Exception:
             return
 
         self.names = json_data.get("set_subscription", [])
+
+    async def close(self, code=None, reason=None):
+        return

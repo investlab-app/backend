@@ -1,10 +1,8 @@
 from clerk_backend_api import (
-    Clerk,
     CreateSessionRequestBodyTypedDict,
     GetUserListRequestTypedDict,
 )
 from clerk_backend_api.models import SDKError
-from django.conf import settings
 from django.utils.decorators import method_decorator
 from django.views.decorators.csrf import csrf_exempt
 from drf_spectacular.utils import OpenApiResponse, extend_schema
@@ -13,6 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from config.clerk import client as clerk_sdk
 from modules.authentication.serializers import ClerkLoginSerializer
 
 
@@ -53,7 +52,6 @@ class ClerkUsernamePasswordSignInView(APIView):
 
         email = serializer.validated_data["email"]
         password = serializer.validated_data["password"]
-        clerk_sdk = Clerk(settings.CLERK_SECRET_KEY)
 
         users = clerk_sdk.users.list(
             request=GetUserListRequestTypedDict(email_address=[email]),
