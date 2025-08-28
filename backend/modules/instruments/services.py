@@ -31,7 +31,7 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         self.repository = repository or PolygonTickersRepository()
 
     def sync_instruments(self) -> dict[str, int]:
-        """Synchronize instruments base on Polygon Tickers."""
+        """Synchronize instruments based on Polygon Tickers."""
         tickers_data = self.repository.list_tickers()
         to_create, to_update = [], []
         no_changes = 0
