@@ -1,5 +1,5 @@
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -16,7 +16,6 @@ websocket_urlpatterns = [
 ]
 
 urlpatterns = [
-    path(f"{PREFIX}/sse/update", SSEUpdateView.as_view(), name="sse-update"),
     path(f"{PREFIX}/admin/", admin.site.urls),
     path(f"{PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs

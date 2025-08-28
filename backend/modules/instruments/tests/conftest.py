@@ -1,12 +1,11 @@
 import random
 
 import pytest
+from faker import Faker
 
-from modules.instruments.constants import MarketChoices, LocaleChoices
+from modules.instruments.constants import LocaleChoices, MarketChoices
 from modules.instruments.models import Instrument
 from modules.users.tests.conftest import user  # noqa: F401
-
-from faker import Faker
 
 fake = Faker()
 

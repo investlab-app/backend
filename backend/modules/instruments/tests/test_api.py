@@ -1,13 +1,12 @@
 import pytest
 from django.urls import reverse
 
-from modules.core.tests.conftest import api_client_auth, api_client  # noqa: F401
+from modules.core.tests.conftest import api_client, api_client_auth  # noqa: F401
 
 pytestmark = pytest.mark.django_db
 
 
 class TestInstrumentListEndpoint:
-
     @pytest.fixture(autouse=True)
     def setup(self, instruments_factory):
         self.instruments = [instruments_factory() for _ in range(3)]
@@ -16,7 +15,7 @@ class TestInstrumentListEndpoint:
     def test_happy(self, api_client_auth, instruments_factory):
         response = api_client_auth.get(self.url)
         assert response.status_code == 200
-        assert len(response.data['results']) == len(self.instruments)
+        assert len(response.data["results"]) == len(self.instruments)
 
     def test_no_auth(self, api_client, instruments_factory):
         response = api_client.get(self.url)
@@ -24,7 +23,6 @@ class TestInstrumentListEndpoint:
 
 
 class TestInstrumentDetailEndpoint:
-
     @pytest.fixture(autouse=True)
     def setup(self, instruments_factory):
         self.instruments = [instruments_factory() for _ in range(3)]
@@ -39,7 +37,7 @@ class TestInstrumentDetailEndpoint:
         assert response.data["name"] == instrument.name
 
     def test_not_found(self, api_client_auth):
-        url = reverse("instrument-detail", query={"ticker": '999'})
+        url = reverse("instrument-detail", query={"ticker": "999"})
         response = api_client_auth.get(url)
         assert response.status_code == 404
 
@@ -51,7 +49,9 @@ class TestInstrumentDetailEndpoint:
 
     def test_incorrect_query_params(self, api_client_auth):
         instrument = self.instruments[0]
-        url = reverse("instrument-detail", query={"ticker": instrument.ticker, "cik": "123"})
+        url = reverse(
+            "instrument-detail", query={"ticker": instrument.ticker, "cik": "123"}
+        )
         response = api_client_auth.get(url)
         assert response.status_code == 400
 
