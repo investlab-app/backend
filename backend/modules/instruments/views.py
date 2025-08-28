@@ -1,42 +1,64 @@
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.request import Request
 from rest_framework.response import Response
 
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
-    InstrumentDetailSerializer,
-    InstrumentInfoSerializer,
+    InstrumentListSerializer,
+    InstrumentRetrieveSerializer,
 )
-from modules.instruments.services import InstrumentServiceV2
 
 
-class InstrumentV2ListView(generics.ListAPIView):
-    class _InstrumentListPagination(PageNumberPagination):
-        page_size = 100
-        page_size_query_param = "page_size"
-        max_page_size = 1000
-
+class InstrumentsListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
-    serializer_class = InstrumentInfoSerializer
-    pagination_class = _InstrumentListPagination
+    serializer_class = InstrumentListSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["ticker"]
     ordering_fields = ["ticker"]
 
 
-class InstrumentV2DetailView(generics.RetrieveAPIView):
+class InstrumentsRetrieveView(generics.GenericAPIView):
+    """
+    Retrieve an instrument by one of the following query parameters:
+    id, ticker, cik, composite_figi, share_class_figi
+    """
+
     queryset = Instrument.objects.all()
-    serializer_class = InstrumentDetailSerializer
-    lookup_field = "ticker"
+    serializer_class = InstrumentRetrieveSerializer
+    lookup_fields = ["id", "ticker", "cik", "composite_figi", "share_class_figi"]
 
-    def get_object(self):
-        uppercase_ticker = self.kwargs.get(self.lookup_field, "").upper()
-        return generics.get_object_or_404(
-            self.get_queryset(), **{self.lookup_field: uppercase_ticker}
-        )
+    @extend_schema(
+        responses=InstrumentRetrieveSerializer,
+        parameters=[
+            OpenApiParameter(
+                name=field,
+                description=f"Filter by {field}.",
+                required=False,
+                location=OpenApiParameter.QUERY,
+                type=str,
+            )
+            for field in lookup_fields
+        ],
+        description=(
+            "Retrieve an instrument by one of the following query parameters: "
+            "id, ticker, cik, composite_figi, or share_class_figi. "
+            "Provide exactly one of these fields."
+        ),
+    )
+    def get(self, request, *args, **kwargs):
+        criteria = {
+            field: request.query_params.get(field).upper()
+            for field in self.lookup_fields
+            if request.query_params.get(field)
+        }
+        if not criteria or len(criteria) > 1:
+            return Response(
+                "Please provide exactly one of the following query parameters: "
+                "id, ticker, cik, composite_figi, or share_class_figi.",
+                status=400,
+            )
 
-
-class InstrumentPullView(generics.GenericAPIView):
-    def get(self, request: Request) -> Response:
-        return Response(InstrumentServiceV2.pull_all_instruments())
+        instrument = get_object_or_404(self.get_queryset(), **criteria)
+        serializer = self.get_serializer(instrument)
+        return Response(serializer.data)

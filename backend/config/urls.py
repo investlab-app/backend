@@ -9,24 +9,23 @@ from drf_spectacular.views import (
 from modules.core.views import StatusView
 from modules.prices.consumers import PriceStreamConsumer
 
-API_PREFIX = "api"
-
+PREFIX = "api"
 
 websocket_urlpatterns = [
     path(r"ws/prices/<str:names>", PriceStreamConsumer.as_asgi()),
 ]
 
 urlpatterns = [
-    path(f"{API_PREFIX}/admin/", admin.site.urls),
-    path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
+    path(f"{PREFIX}/admin/", admin.site.urls),
+    path(f"{PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs
     path(
-        f"{API_PREFIX}/schema/",
+        f"{PREFIX}/schema/",
         SpectacularAPIView.as_view(authentication_classes=[]),
         name="schema",
     ),
     path(
-        f"{API_PREFIX}/docs/",
+        f"{PREFIX}/docs/",
         SpectacularSwaggerView.as_view(
             url_name="schema",
             authentication_classes=[],
@@ -34,16 +33,17 @@ urlpatterns = [
         name="swagger",
     ),
     path(
-        f"{API_PREFIX}/redoc/",
+        f"{PREFIX}/redoc/",
         SpectacularRedocView.as_view(
             url_name="schema",
             authentication_classes=[],
         ),
         name="redoc",
-    ),  # Modules
-    path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
-    path(f"{API_PREFIX}/instruments/", include("modules.instruments.urls")),
-    path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
-    path(f"{API_PREFIX}/investors/", include("modules.investors.urls")),
-    path(f"{API_PREFIX}/test/", include("modules.core.urls")),
+    ),
+    # Modules
+    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
+    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
+    path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/investors/", include("modules.investors.urls")),
+    path(f"{PREFIX}/test/", include("modules.core.urls")),
 ]

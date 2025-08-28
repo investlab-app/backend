@@ -6,7 +6,7 @@ from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 from polygon.websocket.models import WebSocketMessage
 
-from config.polygon import websocket_client
+from config.clients import polygon_websocket_client
 from modules.instruments.models import Instrument
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 
@@ -21,8 +21,8 @@ class PriceStream:
         await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
         tickers = ["A." + t for t in tickers]
         tickers_str = ",".join(tickers)
-        websocket_client.subscribe(tickers_str)
-        await websocket_client.connect(self._handle_msg)
+        polygon_websocket_client.subscribe(tickers_str)
+        await polygon_websocket_client.connect(self._handle_msg)
 
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
