@@ -27,11 +27,11 @@ jobs:
       - name: Run containers
         run: docker compose up --build -d --wait
       - name: Run lint checks
-        run: make lint
+        run: make lint-check
       - name: Run format checks
         run: make format-check
       - name: Run type checks
-        run: make typecheck
+        run: make type-check
       - name: Run tests
         run: make test
   publish:
