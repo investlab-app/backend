@@ -353,7 +353,6 @@ CHANNEL_LAYERS = {
 # Clerk settings
 CLERK_SECRET_KEY = os.environ["CLERK_SECRET_KEY"]
 CLERK_ISSUER = os.environ["CLERK_ISSUER"]
-CLERK_JWKS_URL = os.environ["CLERK_JWKS_URL"]
 CLERK_JWT_KEY = os.environ["CLERK_JWT_KEY"]
 
 # Polygon
