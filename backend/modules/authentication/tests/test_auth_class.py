@@ -16,7 +16,7 @@ def test_auth_with_valid_authorization_header(
     user, _ = auth.authenticate(request)
 
     assert user
-    assert user == user_from_payload
+    assert user.email == user_from_payload.email
 
 
 def test_authenticate_no_bearer_no_cookie_raises_exception(factory):

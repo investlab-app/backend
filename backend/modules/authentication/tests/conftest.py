@@ -38,7 +38,7 @@ def valid_payload():
 @pytest.fixture()
 def user_from_payload(valid_payload):
     return User(
-        id=valid_payload["sub"],
+        clerk_id=valid_payload["sub"],
         email=valid_payload["email"],
         first_name=valid_payload["first_name"],
         last_name=valid_payload["last_name"],
