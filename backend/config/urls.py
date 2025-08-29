@@ -12,7 +12,8 @@ from modules.prices.consumers import PriceStreamConsumer
 PREFIX = "api"
 
 websocket_urlpatterns = [
-    path(r"ws/prices/<str:names>", PriceStreamConsumer.as_asgi()),
+    path("ws/prices/", PriceStreamConsumer.as_asgi()),
+    path("ws/prices/<str:names>/", PriceStreamConsumer.as_asgi()),
 ]
 
 urlpatterns = [
