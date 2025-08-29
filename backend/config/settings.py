@@ -163,9 +163,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        # "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # 'rest_framework.authentication.BearerAuthentication',
     ),
+    "DEFAULT_PAGINATION_CLASS": "modules.core.pagination.DynamicPageSizePagination",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
@@ -357,7 +356,11 @@ CLERK_ISSUER = os.environ["CLERK_ISSUER"]
 CLERK_JWKS_URL = os.environ["CLERK_JWKS_URL"]
 CLERK_JWT_KEY = os.environ["CLERK_JWT_KEY"]
 
-# APIs
+# Polygon
 POLYGON_SECRET_KEY = os.environ["POLYGON_SECRET_KEY"]
+POLYGON_EXCHANGE = "XNAS"
+POLYGON_ASSET_TYPE = "stocks"
+
+# Alpaca
 ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
 ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]

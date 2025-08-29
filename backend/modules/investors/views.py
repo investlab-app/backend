@@ -5,7 +5,6 @@ from datetime import date, timedelta
 from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
@@ -27,12 +26,6 @@ from modules.investors.serializers import (
 logger = logging.getLogger(__name__)
 
 
-class InvestorPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
 class InvestorListCreateView(generics.ListCreateAPIView):
     """
     List all investors or create a new investor.
@@ -44,7 +37,6 @@ class InvestorListCreateView(generics.ListCreateAPIView):
     serializer_class = InvestorSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-    pagination_class = InvestorPagination
 
     def get_serializer_class(self):
         if self.request.method == "POST":
