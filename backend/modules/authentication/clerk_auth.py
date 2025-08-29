@@ -13,15 +13,15 @@ from modules.users.models import User
 
 
 def parse_user_from_payload(payload: dict[str, Any]) -> User:
-    user_id = payload.get("sub")
-    if not user_id:
+    clerk_user_id = payload.get("sub")
+    if not clerk_user_id:
         raise AuthenticationFailed("User ID (sub) not found in token")
 
-    cache_key = f"clerk_user_{user_id}"
+    cache_key = f"clerk_user_{clerk_user_id}"
     clerk_user = cache.get(cache_key)
 
     if not clerk_user:
-        clerk_user = clerk_sdk.users.get(user_id=user_id)
+        clerk_user = clerk_sdk.users.get(user_id=clerk_user_id)
         cache.set(cache_key, clerk_user, timeout=300)
 
     if not clerk_user:
@@ -30,17 +30,19 @@ def parse_user_from_payload(payload: dict[str, Any]) -> User:
     metadata = clerk_user.public_metadata
     email = clerk_user.email_addresses[0].email_address
     role = metadata.get("role", "investor")
-    user, _ = User.objects.get_or_create(
-        id=user_id,
-        email=email,
-        first_name=clerk_user.first_name,
-        last_name=clerk_user.last_name,
-        image_url=clerk_user.image_url,
-        has_image=clerk_user.has_image,
-        clerk_role=role,
+    user, _ = User.objects.update_or_create(
+        email=email,  # Deletion not handled; reusing email breaks uniqueness.
+        defaults={
+            "clerk_id": clerk_user_id,
+            "first_name": clerk_user.first_name,
+            "last_name": clerk_user.last_name,
+            "image_url": clerk_user.image_url,
+            "has_image": clerk_user.has_image,
+            "clerk_role": role,
+        },
     )
 
-    Investor.objects.get_or_create(user=user)
+    Investor.objects.update_or_create(user=user)
 
     return user
 
