@@ -1,6 +1,9 @@
 #!/bin/bash
 set -euo pipefail # Stop the script if any command fails
 
+# echo "Make migrations"
+# uv run manage.py makemigrations --noinput
+
 echo "Migrating database"
 uv run manage.py migrate --noinput
 

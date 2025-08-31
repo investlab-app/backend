@@ -31,7 +31,7 @@ class InvestorListCreateView(generics.ListCreateAPIView):
     List all investors or create a new investor.
     """
 
-    queryset = Investor.objects.select_related("user").prefetch_related(
+    queryset = Investor.objects.prefetch_related(
         "watching_instruments"
     )
     serializer_class = InvestorSerializer
@@ -42,19 +42,6 @@ class InvestorListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return InvestorCreateSerializer
         return InvestorSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.query_params.get("search", "")
-
-        if search:
-            queryset = queryset.filter(
-                Q(user__email__icontains=search)
-                | Q(user__first_name__icontains=search)
-                | Q(user__last_name__icontains=search)
-            )
-
-        return queryset.order_by("-id")
 
     @extend_schema(
         parameters=[InvestorListQueryParams],
@@ -80,7 +67,7 @@ class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
     Retrieve, update, or delete an investor.
     """
 
-    queryset = Investor.objects.select_related("user").prefetch_related(
+    queryset = Investor.objects.prefetch_related(
         "watching_instruments"
     )
     serializer_class = InvestorSerializer
@@ -139,13 +126,13 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     def get_object(self):
         try:
             return (
-                Investor.objects.select_related("user")
+                Investor.objects
                 .prefetch_related("watching_instruments")
-                .get(user=self.request.user)
+                .get(clerk_id=self.request.user)
             )
         except Investor.DoesNotExist:
             # Create investor if it doesn't exist
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user)
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -168,9 +155,9 @@ class InvestorStatsView(generics.RetrieveAPIView):
     def get_object(self):
         # Ensure investor exists for the current user
         try:
-            return Investor.objects.get(user=self.request.user)
+            return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
@@ -271,9 +258,9 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     def get_object(self):
         # Ensure investor exists for the current user
         try:
-            return Investor.objects.get(user=self.request.user)
+            return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value for today, keeping it consistent with
@@ -313,9 +300,9 @@ class AssetAllocationView(generics.RetrieveAPIView):
     def get_object(self):
         # Ensure investor exists for the current user
         try:
-            return Investor.objects.get(user=self.request.user)
+            return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Using user ID as seed for consistent data per user
@@ -397,9 +384,9 @@ class OwnedSharesView(generics.RetrieveAPIView):
     def get_object(self):
         # Ensure investor exists for the current user
         try:
-            return Investor.objects.get(user=self.request.user)
+            return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))
