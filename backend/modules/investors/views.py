@@ -128,11 +128,11 @@ class CurrentInvestorView(generics.RetrieveAPIView):
             return (
                 Investor.objects
                 .prefetch_related("watching_instruments")
-                .get(clerk_id=self.request.user)
+                .get(clerk_id=self.request.user.id)
             )
         except Investor.DoesNotExist:
             # Create investor if it doesn't exist
-            return Investor.objects.create(clerk_id=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -201,9 +201,9 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     def get_object(self):
         # Ensure investor exists for the current user
         try:
-            return Investor.objects.get(user=self.request.user)
+            return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
