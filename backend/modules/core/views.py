@@ -98,7 +98,7 @@ class AuthTestView(GenericAPIView):
         return Response(
             {
                 "message": "Authenticated successfully!",
-                "user_email": user.email,
+                "user_rolel": user.role,
                 "user_id": user.id,
             },
         )
