@@ -5,9 +5,9 @@ from modules.investors.models import Investor
 
 @admin.register(Investor)
 class InvestorAdmin(admin.ModelAdmin):
-    list_display = ["id", "user", "user_email", "watching_instruments_count"]
-    list_filter = ["user__clerk_role"]
-    search_fields = ["user__email", "user__first_name", "user__last_name"]
+    list_display = ["id",  "watching_instruments_count"]
+    # list_filter = ["user__clerk_role"]
+    # search_fields = ["user__email", "user__first_name", "user__last_name"]
     filter_horizontal = ["watching_instruments"]
 
     def user_email(self, obj):

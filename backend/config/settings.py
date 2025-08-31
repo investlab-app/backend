@@ -47,7 +47,7 @@ INSTALLED_APPS = [
     "modules.orders",
     "modules.prices",
     "modules.transactions",
-    "modules.users",
+    # "modules.users",
 ]
 
 if DEBUG:
@@ -195,7 +195,7 @@ SPECTACULAR_SETTINGS = {
     ],
 }
 
-AUTH_USER_MODEL = "users.User"
+# AUTH_USER_MODEL = "users.User"
 
 # SIMPLE_JWT = {
 #     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
