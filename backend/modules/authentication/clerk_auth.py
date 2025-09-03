@@ -10,11 +10,13 @@ from rest_framework.request import Request
 from config.clerk import client as clerk_sdk
 from modules.investors.models import Investor
 
+
 class ClerkUser:
-    def __init__(self, id, role):
-        self.id = id
-        self.role =role
+    def __init__(self, clerk_id, role):
+        self.id = clerk_id
+        self.role = role
         self.is_authenticated = True
+
 
 def parse_clerk_user_from_payload(payload: dict[str, Any]) -> ClerkUser:
     clerk_user_id = payload.get("sub")
@@ -32,7 +34,7 @@ def parse_clerk_user_from_payload(payload: dict[str, Any]) -> ClerkUser:
         raise AuthenticationFailed("Could not retrieve clerk user")
 
     role = clerk_user.public_metadata.get("role", "user")
-    Investor.objects.update_or_create(clerk_id = clerk_user_id)
+    Investor.objects.update_or_create(clerk_id=clerk_user_id)
     return ClerkUser(clerk_user_id, role)
 
 
@@ -62,4 +64,3 @@ class ClerkAuthentication(BaseAuthentication):
         clerk_user = parse_clerk_user_from_payload(payload)
         token = request_state.token
         return clerk_user, token
-
