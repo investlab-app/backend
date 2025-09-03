@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "modules.orders",
     "modules.prices",
     "modules.transactions",
-    # "modules.users",
 ]
 
 if DEBUG:

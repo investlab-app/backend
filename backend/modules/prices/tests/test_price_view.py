@@ -2,18 +2,17 @@ from datetime import datetime
 from decimal import Decimal
 from unittest.mock import patch
 
-import pytest
 from django.urls import reverse
 from rest_framework.test import APIClient
 
-from modules.users.models import User
+from modules.authentication.clerk_auth import ClerkUser
 
 
 @patch("modules.prices.views.PricesV2Service.get_ohlc")
 def test_price_view(ohlc_mock):
     client = APIClient()
-    user = User()
-    client.force_authenticate(user)
+    user = ClerkUser("id1", "user")
+    client.force_authenticate(user)  # type: ignore[arg-type]
     url = reverse("prices")
 
     ohlc_mock.return_value = [
