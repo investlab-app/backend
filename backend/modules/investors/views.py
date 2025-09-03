@@ -2,7 +2,6 @@ import logging
 import random
 from datetime import date, timedelta
 
-from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +14,6 @@ from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
     AssetAllocationSerializer,
     CurrentAccountValueSerializer,
-    InvestorCreateSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
     InvestorStatsSerializer,
@@ -26,21 +24,17 @@ from modules.investors.serializers import (
 logger = logging.getLogger(__name__)
 
 
-class InvestorListCreateView(generics.ListCreateAPIView):
+class InvestorListView(generics.ListAPIView):
     """
-    List all investors or create a new investor.
+    List all investors.
     """
 
-    queryset = Investor.objects.prefetch_related(
-        "watching_instruments"
-    )
+    queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.request.method == "POST":
-            return InvestorCreateSerializer
         return InvestorSerializer
 
     @extend_schema(
@@ -52,27 +46,17 @@ class InvestorListCreateView(generics.ListCreateAPIView):
     def get(self, request: Request) -> Response:
         return super().get(request)
 
-    @extend_schema(
-        request=InvestorCreateSerializer,
-        responses={201: InvestorSerializer},
-        summary="Create investor",
-        description="Create a new investor associated with a user.",
-    )
-    def post(self, request: Request) -> Response:
-        return super().post(request)
 
-
-class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
+class InvestorDetailView(generics.RetrieveUpdateAPIView):
     """
-    Retrieve, update, or delete an investor.
+    Retrieve or update an investor.
     """
 
-    queryset = Investor.objects.prefetch_related(
-        "watching_instruments"
-    )
+    queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
+    lookup_field = "clerk_id"
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -105,14 +89,6 @@ class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
     def patch(self, request: Request, *args, **kwargs) -> Response:
         return super().patch(request, *args, **kwargs)
 
-    @extend_schema(
-        responses={204: None},
-        summary="Delete investor",
-        description="Delete an investor.",
-    )
-    def delete(self, request: Request, *args, **kwargs) -> Response:
-        return super().delete(request, *args, **kwargs)
-
 
 class CurrentInvestorView(generics.RetrieveAPIView):
     """
@@ -125,13 +101,11 @@ class CurrentInvestorView(generics.RetrieveAPIView):
 
     def get_object(self):
         try:
-            return (
-                Investor.objects
-                .prefetch_related("watching_instruments")
-                .get(clerk_id=self.request.user.id)
+            print(self.request.user.id)
+            return Investor.objects.prefetch_related("watching_instruments").get(
+                clerk_id=self.request.user.id
             )
         except Investor.DoesNotExist:
-            # Create investor if it doesn't exist
             return Investor.objects.create(clerk_id=self.request.user.id)
 
     @extend_schema(
@@ -153,7 +127,6 @@ class InvestorStatsView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Ensure investor exists for the current user
         try:
             return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
@@ -199,7 +172,6 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Ensure investor exists for the current user
         try:
             return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
@@ -256,7 +228,6 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Ensure investor exists for the current user
         try:
             return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
@@ -298,7 +269,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Ensure investor exists for the current user
         try:
             return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
@@ -382,7 +352,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        # Ensure investor exists for the current user
         try:
             return Investor.objects.get(clerk_id=self.request.user.id)
         except Investor.DoesNotExist:
