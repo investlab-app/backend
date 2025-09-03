@@ -1,7 +1,6 @@
 from rest_framework import serializers
 
 from modules.investors.models import Investor
-# from modules.users.models import User
 
 
 class InvestorSerializer(serializers.ModelSerializer):
@@ -12,20 +11,18 @@ class InvestorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
         fields = [
-            "id",
+            "clerk_id",
             "watching_instruments",
             "watching_instruments_count",
         ]
-        read_only_fields = ["id"]
+        read_only_fields = ["clerk_id"]
 
 
 class InvestorCreateSerializer(serializers.ModelSerializer):
     clerk_id = serializers.CharField(write_only=True)
-
     class Meta:
         model = Investor
         fields = ["clerk_id", "watching_instruments"]
-
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
