@@ -5,10 +5,13 @@ description = "Stocks Backend"
 requires-python = ">=3.13"
 dependencies = [
     "alpaca-py>=0.42.0",
+    "celery[redis]>=5.5.3",
     "channels-redis>=4.3.0",
     "channels>=4.2.2",
     "clerk-backend-api>=2.2.0",
     "dependency-injector>=4.47.1",
+    "django-celery-beat>=2.8.1",
+    "django-celery-results>=2.6.0",
     "django-cors-headers>=4.7.0",
     "django-filter>=25.1",
     "django-unfold>=0.59.0",

@@ -26,6 +26,28 @@ services:
     networks:
       - app_network
 
+  celery:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    command: uv run celery -A config worker -l info
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - app_network
+
+  celery-beat:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    command: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    depends_on:
+      - redis
+      - backend
+    networks:
+      - app_network
+
   backend:
     build: ./backend
     env_file: .env
@@ -63,7 +85,6 @@ services:
     networks:
       - app_network
     command: uv run manage.py mock_stream_prices
-
 
 volumes:
   postgres_data:
