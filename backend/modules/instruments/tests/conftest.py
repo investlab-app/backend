@@ -3,9 +3,9 @@ import random
 import pytest
 from faker import Faker
 
+from modules.authentication.tests.conftest import user
 from modules.instruments.constants import LocaleChoices, MarketChoices
 from modules.instruments.models import Instrument
-from modules.users.tests.conftest import user  # noqa: F401
 
 fake = Faker()
 
