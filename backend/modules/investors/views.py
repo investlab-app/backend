@@ -14,6 +14,7 @@ from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
     AssetAllocationSerializer,
     CurrentAccountValueSerializer,
+    InvestorExpSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
     InvestorStatsSerializer,
@@ -112,6 +113,31 @@ class CurrentInvestorView(generics.RetrieveAPIView):
         responses={200: InvestorSerializer},
         summary="Get current investor",
         description="Get the investor profile for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class InvestorExpView(generics.RetrieveAPIView):
+    """
+    Get investor exp and level for the current authenticated user.
+    """
+    serializer_class = InvestorExpSerializer
+    authentication_classes = [ClerkAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        try:
+            return Investor.objects.get(clerk_id=self.request.user.id)
+        except Investor.DoesNotExist:
+            return Investor.objects.create(clerk_id=self.request.user.id)
+
+    @extend_schema(
+        responses={200: InvestorExpSerializer},
+        summary="Get investor's exp and level",
+        description=(
+            "Get investor exp and level for the currently authenticated user."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)

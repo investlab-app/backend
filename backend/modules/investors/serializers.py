@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from modules.investors.services import InvestorsService
 from modules.investors.models import Investor
 
 
@@ -12,6 +13,7 @@ class InvestorSerializer(serializers.ModelSerializer):
         model = Investor
         fields = [
             "clerk_id",
+            "exp",
             "watching_instruments",
             "watching_instruments_count",
         ]
@@ -21,7 +23,17 @@ class InvestorSerializer(serializers.ModelSerializer):
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
-        fields = ["watching_instruments"]
+        fields = ["watching_instruments", "exp"]
+
+
+class InvestorExpSerializer(serializers.ModelSerializer):
+    level = serializers.SerializerMethodField()
+    class Meta:
+        model = Investor
+        fields = ["exp", "level"]
+
+    def get_level(self, obj):
+        return InvestorsService.get_level_from_exp(obj.exp)
 
 
 class InvestorListQueryParams(serializers.Serializer):

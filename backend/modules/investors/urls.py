@@ -6,6 +6,7 @@ from modules.investors.views import (
     CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,
+    InvestorExpView,
     InvestorListView,
     InvestorStatsView,
     OwnedSharesView,
@@ -18,6 +19,7 @@ urlpatterns = [
     path("me/", CurrentInvestorView.as_view(), name="current-investor"),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
     path("me/stats/", InvestorStatsView.as_view(), name="investor-stats"),
+    path("me/exp/", InvestorExpView.as_view(), name="investor-exp"),
     path(
         "me/account-value/",
         AccountValueOverTimeView.as_view(),
