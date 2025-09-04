@@ -15,8 +15,8 @@ class InstrumentListSerializer(serializers.ModelSerializer):
             "market",
             "market_cap",
             "currency_name",
-            "icon_url",
-            "logo_url",
+            "icon",
+            "logo",
         ]
 
 
@@ -49,6 +49,6 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "total_employees",
             "weighted_shares_outstanding",
             "address",
-            "icon_url",
-            "logo_url",
+            "icon",
+            "logo",
         ]

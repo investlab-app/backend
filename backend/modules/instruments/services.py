@@ -103,8 +103,8 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         "address__country": "country",
         "address__postal_code": "postal_code",
         # Flatten branding fields
-        "branding__icon_url": "icon_url",
-        "branding__logo_url": "logo_url",
+        "branding__icon_polygon_url": "icon_url",
+        "branding__logo_polygon_url": "logo_url",
     }
 
     def __init__(
