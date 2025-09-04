@@ -8,8 +8,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,7 +29,12 @@ services:
     build: ./backend
     env_file: .env
     restart: unless-stopped
-    command: uv run celery -A config worker -l info
+    command: ["uv", "run", "celery", "-A", "config", "worker", "-l", "info"]
+    healthcheck:
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping", "-d", "celery@$(hostname)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
     depends_on:
       - redis
       - backend
@@ -41,7 +45,13 @@ services:
     build: ./backend
     env_file: .env
     restart: unless-stopped
-    command: uv run celery -A config beat -l info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    command: ["uv", "run", "celery", "-A", "config", "beat", "-l", "info"]
+    healthcheck:
+      test: [ "CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+
     depends_on:
       - redis
       - backend
