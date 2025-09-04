@@ -1,4 +1,3 @@
-from dataclasses import asdict
 from itertools import islice
 
 from modules.news.repositories import PolygonNewsRepository
@@ -10,7 +9,6 @@ from drf_spectacular.utils import extend_schema
 
 
 class NewsListView(views.APIView):
-    NEWS_NUMBER = 30
 
     @extend_schema(
         parameters=[NewsListQueryParams],
@@ -33,6 +31,7 @@ class NewsListView(views.APIView):
             published_utc_gte=validated_data.get("published_utc_gte"),
             sort=validated_data.get("sort"),
             order=validated_data.get("order"),
+            news_per_page=30,
         )
 
         if news_iterator is None:
@@ -40,7 +39,7 @@ class NewsListView(views.APIView):
                 "Failed to fetch news.", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        news_list = list(islice(news_iterator, self.NEWS_NUMBER))
+        news_list = list(islice(news_iterator, validated_data.get("number_of_news")))
         serialized_news = TickerNewsSerializer(news_list, many=True)
 
         return Response(serialized_news.data)
