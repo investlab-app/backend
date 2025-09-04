@@ -15,8 +15,8 @@ class TestInvestorExpView:
     def test_happy(self, api_client_auth, user):
         investor = Investor.objects.create(clerk_id=user.id, exp=1000)
         expected_level = str(
-            InvestorsService.get_level_from_exp(investor.exp)
-        )  # ty: ignore
+            InvestorsService.get_level_from_exp(investor.exp)  # ty: ignore
+        )
 
         url = reverse(self.endpoint)
         response = api_client_auth.get(url)
