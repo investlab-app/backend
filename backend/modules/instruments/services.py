@@ -1,14 +1,13 @@
 import mimetypes
-
-from django.core.files.base import ContentFile
-
-import requests
 from collections.abc import Iterable
 
+import requests
+from django.core.files.base import ContentFile
+
+from config.settings import POLYGON_SECRET_KEY
 from modules.core.mixins import CreateWithMappingMixin, UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
-from config.settings import POLYGON_SECRET_KEY
 
 
 class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMixin):
@@ -39,6 +38,9 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
     def sync_instruments(self) -> dict[str, int]:
         """Synchronize instruments based on Polygon Tickers."""
         tickers_data = self.repository.list_tickers()
+        if not tickers_data:
+            raise RuntimeError("Failed to fetch tickers from Polygon API.")
+
         to_create, to_update = [], []
         no_changes = 0
 
@@ -127,9 +129,8 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         no_changes, errors = 0, 0
 
         for instrument in self.instruments:
-            try:
-                ticker_details = self.repository.get_ticker_details(instrument.ticker)
-            except ValueError:
+            ticker_details = self.repository.get_ticker_details(instrument.ticker)
+            if not ticker_details:
                 errors += 1
                 continue
 
@@ -155,7 +156,6 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
 
 class SyncInstrumentImages:
-
     def __init__(
         self,
         instruments: Iterable[Instrument] = None,  # type: ignore
@@ -187,7 +187,7 @@ class SyncInstrumentImages:
     def sync_instrument_images(self) -> dict[str, int]:
         """Synchronize instrument images (icon and logo) from Polygon."""
         to_update = []
-        no_changes, errors = 0, 0
+        no_logo, errors = 0, 0
 
         for instrument in self.instruments:
             updated = False
@@ -214,7 +214,7 @@ class SyncInstrumentImages:
             if updated:
                 to_update.append(instrument)
             else:
-                no_changes += 1
+                no_logo += 1
 
         Instrument.objects.bulk_update(
             to_update,
@@ -224,6 +224,6 @@ class SyncInstrumentImages:
 
         return {
             "updated": len(to_update),
-            "no_changes": no_changes,
+            "no_logo": no_logo,
             "errors": errors,
         }
