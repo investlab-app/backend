@@ -31,13 +31,15 @@ services:
     restart: unless-stopped
     command: ["uv", "run", "celery", "-A", "config", "worker", "-l", "info"]
     healthcheck:
-      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping", "-d", "celery@$(hostname)"]
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
     depends_on:
-      - redis
-      - backend
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -51,10 +53,11 @@ services:
       interval: 30s
       timeout: 10s
       retries: 5
-
     depends_on:
-      - redis
-      - backend
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - app_network
 
