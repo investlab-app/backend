@@ -1,15 +1,14 @@
 from itertools import islice
 
-from modules.news.repositories import PolygonNewsRepository
-from rest_framework import views
-from rest_framework.response import Response
-from rest_framework import status
-from modules.news.serializers import NewsListQueryParams, TickerNewsSerializer
 from drf_spectacular.utils import extend_schema
+from rest_framework import status, views
+from rest_framework.response import Response
+
+from modules.news.repositories import PolygonNewsRepository
+from modules.news.serializers import NewsListQueryParams, TickerNewsSerializer
 
 
 class NewsListView(views.APIView):
-
     @extend_schema(
         parameters=[NewsListQueryParams],
         responses=TickerNewsSerializer(many=True),

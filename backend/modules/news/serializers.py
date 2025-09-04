@@ -1,6 +1,6 @@
+from polygon.rest.models.tickers import TickerNews
 from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
-from polygon.rest.models.tickers import TickerNews
 
 
 class NewsListQueryParams(serializers.Serializer):
@@ -11,8 +11,12 @@ class NewsListQueryParams(serializers.Serializer):
     published_utc_gt = serializers.DateTimeField(required=False)
     published_utc_gte = serializers.DateTimeField(required=False)
     sort = serializers.CharField(required=False, default="published_utc")
-    order = serializers.ChoiceField(choices=["asc", "desc"], required=False, default="desc")
-    number_of_news = serializers.IntegerField(required=False, default=30, min_value=1, max_value=100)
+    order = serializers.ChoiceField(
+        choices=["asc", "desc"], required=False, default="desc"
+    )
+    number_of_news = serializers.IntegerField(
+        required=False, default=30, min_value=1, max_value=100
+    )
 
 
 class TickerNewsSerializer(DataclassSerializer):

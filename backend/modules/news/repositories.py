@@ -13,14 +13,14 @@ class PolygonNewsRepository:
 
     def list_news(
         self,
-        ticker: str = None,
-        published_utc: str = None,
-        published_utc_lt: str = None,
-        published_utc_lte: str = None,
-        published_utc_gt: str = None,
-        published_utc_gte: str = None,
-        sort: str = None,
-        order: str = None,
+        ticker: str = None,  # type: ignore
+        published_utc: str = None,  # type: ignore
+        published_utc_lt: str = None,  # type: ignore
+        published_utc_lte: str = None,  # type: ignore
+        published_utc_gt: str = None,  # type: ignore
+        published_utc_gte: str = None,  # type: ignore
+        sort: str = None,  # type: ignore
+        order: str = None,  # type: ignore
         news_per_page: int = 30,
         **kwargs,
     ) -> Iterator[TickerNews] | None:
