@@ -122,6 +122,7 @@ class InvestorExpView(generics.RetrieveAPIView):
     """
     Get investor exp and level for the current authenticated user.
     """
+
     serializer_class = InvestorExpSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
