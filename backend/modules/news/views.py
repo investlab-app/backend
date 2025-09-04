@@ -5,7 +5,7 @@ from modules.news.repositories import PolygonNewsRepository
 from rest_framework import views
 from rest_framework.response import Response
 from rest_framework import status
-from modules.news.serializers import NewsListQueryParams
+from modules.news.serializers import NewsListQueryParams, TickerNewsSerializer
 from drf_spectacular.utils import extend_schema
 
 
@@ -14,7 +14,7 @@ class NewsListView(views.APIView):
 
     @extend_schema(
         parameters=[NewsListQueryParams],
-        responses={200: list[dict]},
+        responses=TickerNewsSerializer(many=True),
         description="Retrieve a list of 30 news articles.",
     )
     def get(self, request, *args, **kwargs):
@@ -40,8 +40,7 @@ class NewsListView(views.APIView):
                 "Failed to fetch news.", status=status.HTTP_500_INTERNAL_SERVER_ERROR
             )
 
-        news_list: list[dict] = [
-            asdict(news) for news in islice(news_iterator, self.NEWS_NUMBER)
-        ]
+        news_list = list(islice(news_iterator, self.NEWS_NUMBER))
+        serialized_news = TickerNewsSerializer(news_list, many=True)
 
-        return Response(news_list, status=status.HTTP_200_OK)
+        return Response(serialized_news.data)
