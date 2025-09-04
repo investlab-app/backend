@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
+from modules.core.utils import get_upload_to
 from modules.instruments.constants import LocaleChoices, MarketChoices
 
 
@@ -229,13 +230,13 @@ class Instrument(BaseModel):
 
     # Stored images
     icon = models.ImageField(
-        upload_to="instruments/icons/",
+        upload_to=get_upload_to("instruments/icons/"),
         verbose_name=_("Icon"),
         blank=True,
         null=True,
     )
     logo = models.ImageField(
-        upload_to="instruments/logos/",
+        upload_to=get_upload_to("instruments/logos/"),
         verbose_name=_("Logo"),
         blank=True,
         null=True,
