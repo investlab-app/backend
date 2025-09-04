@@ -44,10 +44,11 @@ urlpatterns = [
         name="redoc",
     ),
     # Modules
-    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
-    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
+    path(f"{PREFIX}/news/", include("modules.news.urls")),
+    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
     path(f"{PREFIX}/test/", include("modules.core.urls")),
 ]
 

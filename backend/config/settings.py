@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.instruments",
     "modules.investors",
+    "modules.news",
     "modules.orders",
     "modules.prices",
     "modules.transactions",
