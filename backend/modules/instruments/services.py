@@ -155,7 +155,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         }
 
 
-class SyncInstrumentImages:
+class SyncInstrumentsImages:
     def __init__(
         self,
         instruments: Iterable[Instrument] = None,  # type: ignore
@@ -184,7 +184,7 @@ class SyncInstrumentImages:
             return image_bytes, extension
         return None
 
-    def sync_instrument_images(self) -> dict[str, int]:
+    def sync_instruments_images(self) -> dict[str, int]:
         """Synchronize instrument images (icon and logo) from Polygon."""
         to_update = []
         no_logo, errors = 0, 0
