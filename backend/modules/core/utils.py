@@ -1,11 +1,11 @@
 import base64
 import random
 import uuid
-from collections.abc import Callable
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
 
 from django.utils import timezone
+from django.utils.deconstruct import deconstructible
 
 
 def get_local_datetime():
@@ -49,13 +49,39 @@ def uuid_ascii() -> str:
     return base64.urlsafe_b64encode(u.bytes).rstrip(b"=").decode("ascii")
 
 
-def get_upload_to(folder_path: str) -> Callable:
-    """Generate a callable for the upload_to parameter in FileField/ImageField."""
+def upload_to(
+    instance, filename, folder_path: str = "_default/", *, uuid_as_name: bool = True
+):
+    """
+    Function for upload_to FileField/ImageField model parameter.
+    To pass folder_path and uuid_as_name please use with functools.partial.
 
-    def upload_to(instance, filename):
-        path = Path(filename)
-        ext = path.suffix
-        new_filename = f"{uuid_ascii()}{ext}"
-        return Path(folder_path) / new_filename
+    Usage:
+        image = models.ImageField(upload_to=partial(upload_to, folder_path='images/'))
 
-    return upload_to
+    """
+    name = uuid_ascii() if uuid_as_name else Path(filename).stem
+    ext = Path(filename).suffix
+    return Path(folder_path) / f"{name}{ext}"
+
+
+@deconstructible
+class UploadTo:
+    """
+    Callable class for upload_to FileField/ImageField model parameter.
+
+    Usage:
+        image = models.ImageField(upload_to=UploadTo('images/'))
+    """
+
+    def __init__(self, folder_path: str, *, uuid_as_name: bool = True):
+        self.folder_path = folder_path
+        self.uuid_as_name = uuid_as_name
+
+    def __call__(self, instance, filename):
+        return str(self.generate_path(filename))
+
+    def generate_path(self, filename: str) -> Path:
+        name = uuid_ascii() if self.uuid_as_name else Path(filename).stem
+        ext = Path(filename).suffix
+        return Path(self.folder_path) / f"{name}{ext}"
