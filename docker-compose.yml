@@ -40,6 +40,9 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    volumes:
+      - ./backend:/backend:delegated
+      - /backend/.venv
     networks:
       - app_network
 
@@ -58,6 +61,9 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    volumes:
+      - ./backend:/backend:delegated
+      - /backend/.venv
     networks:
       - app_network
 

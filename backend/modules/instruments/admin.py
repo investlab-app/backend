@@ -98,8 +98,8 @@ class InstrumentAdmin(ModelAdmin):
             {
                 "classes": ("collapse",),
                 "fields": (
-                    "icon_url",
-                    "logo_url",
+                    "icon",
+                    "logo",
                 ),
             },
         ),
