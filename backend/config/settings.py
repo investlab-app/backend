@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from config.utils import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
@@ -33,6 +35,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_results",
+    "django_celery_beat",
     "django_filters",
     # External modules
     "rest_framework",
@@ -349,6 +353,24 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# Celery settings
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXTENDED = True
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+CELERY_BEAT_SCHEDULE = {
+    "modules.instruments.tasks.sync_instruments_base_info": {
+        "task": "modules.instruments.tasks.sync_instruments_base_info",
+        "schedule": crontab(hour=4, minute=0),
+    },
+    "modules.instruments.tasks.sync_instruments_detail_info": {
+        "task": "modules.instruments.tasks.sync_instruments_detail_info",
+        "schedule": crontab(hour=5, minute=0),
+    },
+}
+
 
 # Clerk settings
 CLERK_SECRET_KEY = os.environ["CLERK_SECRET_KEY"]

@@ -8,8 +8,7 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test:
-        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -23,6 +22,42 @@ services:
       - "6379:6379"
     healthcheck:
        test: ["CMD", "redis-cli","ping"]
+    networks:
+      - app_network
+
+  celery:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    command: ["uv", "run", "celery", "-A", "config", "worker", "-l", "info"]
+    healthcheck:
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    networks:
+      - app_network
+
+  celery-beat:
+    build: ./backend
+    env_file: .env
+    restart: unless-stopped
+    command: ["uv", "run", "celery", "-A", "config", "beat", "-l", "info"]
+    healthcheck:
+      test: [ "CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping" ]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
     networks:
       - app_network
 
@@ -63,7 +98,6 @@ services:
     networks:
       - app_network
     command: uv run manage.py mock_stream_prices
-
 
 volumes:
   postgres_data:
