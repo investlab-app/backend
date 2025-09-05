@@ -1,10 +1,10 @@
 from celery import shared_task
 
-from modules.instruments.services import (
-    SyncInstrumentsBaseInfoService,
+from modules.instruments.services.sync_base_info import SyncInstrumentsBaseInfoService
+from modules.instruments.services.sync_detail_info import (
     SyncInstrumentsDetailInfoService,
-    SyncInstrumentsImages,
 )
+from modules.instruments.services.sync_images import SyncInstrumentsImages
 
 
 @shared_task
