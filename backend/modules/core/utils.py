@@ -50,7 +50,7 @@ def uuid_ascii() -> str:
 
 
 def upload_to(
-    instance, filename, folder_path: str = "_default/", *, uuid_as_name: bool = True
+    instance, filename, *, folder_path: str = "_uploads/", uuid_as_name: bool = True
 ):
     """
     Function for upload_to FileField/ImageField model parameter.
