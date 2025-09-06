@@ -4,11 +4,9 @@ from datetime import date, timedelta
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
