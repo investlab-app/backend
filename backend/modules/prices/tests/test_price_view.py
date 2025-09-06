@@ -3,16 +3,10 @@ from decimal import Decimal
 from unittest.mock import patch
 
 from django.urls import reverse
-from rest_framework.test import APIClient
-
-from modules.authentication.clerk_auth import ClerkUser
 
 
 @patch("modules.prices.views.PricesV2Service.get_ohlc")
-def test_price_view(ohlc_mock):
-    client = APIClient()
-    user = ClerkUser("id1", "user")
-    client.force_authenticate(user)  # type: ignore[arg-type]
+def test_price_view(ohlc_mock, api_client_auth):
     url = reverse("prices")
 
     ohlc_mock.return_value = [
@@ -41,7 +35,7 @@ def test_price_view(ohlc_mock):
         }
     ]
 
-    response = client.get(url, data=query_params, format="json")
+    response = api_client_auth.get(url, data=query_params, format="json")
     response.data[0]["timestamp"] = response.data[0]["timestamp"].replace(tzinfo=None)
     assert response.data == expected
     assert response.status_code == 200

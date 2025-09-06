@@ -31,8 +31,6 @@ class InvestorListView(generics.ListAPIView):
 
     queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         return InvestorSerializer
@@ -54,8 +52,6 @@ class InvestorDetailView(generics.RetrieveUpdateAPIView):
 
     queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
     lookup_field = "clerk_id"
 
     def get_serializer_class(self):
@@ -96,8 +92,6 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return Investor.objects.prefetch_related("watching_instruments").get(
@@ -119,8 +113,6 @@ class InvestorStatsView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorStatsSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
@@ -158,8 +150,6 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     """
 
     serializer_class = AccountValueOverTimeSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
@@ -208,8 +198,6 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     """
 
     serializer_class = CurrentAccountValueSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value for today, keeping it consistent with
@@ -243,8 +231,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     """
 
     serializer_class = AssetAllocationSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         # Using user ID as seed for consistent data per user
@@ -320,8 +306,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
     """
 
     serializer_class = OwnedSharesSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))
