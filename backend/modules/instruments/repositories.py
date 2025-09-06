@@ -1,10 +1,10 @@
 from collections.abc import Iterator
 
-from config.clients import polygon_client
 from polygon import RESTClient as PolygonClient
 from polygon.exceptions import BadResponse
 from polygon.rest.models.tickers import Ticker, TickerDetails
 
+from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE
 
 

@@ -1,9 +1,10 @@
 from collections.abc import Iterator
 
-from config.clients import polygon_client
 from polygon import RESTClient as PolygonClient
 from polygon.exceptions import BadResponse
 from polygon.rest.models.tickers import TickerNews
+
+from config.clients import polygon_client
 
 
 class PolygonNewsRepository:
