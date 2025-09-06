@@ -42,7 +42,7 @@ class ClerkAuthentication(BaseAuthentication):
     """
     Custom authentication class that verifies Clerk JWTs.
     Sets `request.user` to a custom ClerkUser class not saved in the database
-    Sets `request.token to the retrived token`
+    Sets `request.token to the retrieved token`
     """
 
     def authenticate(self, request: Request) -> tuple[ClerkUser, str | None]:

@@ -25,7 +25,7 @@ class AuthTestResponseSerializer(serializers.Serializer):
     """Serializer for authentication test response"""
 
     message = serializers.CharField(help_text="Authentication success message")
-    user_email = serializers.EmailField(help_text="Email of the authenticated user")
+    user_role = serializers.CharField(help_text="Role of the authenticated user")
     user_id = serializers.IntegerField(help_text="ID of the authenticated user")
 
 
@@ -98,7 +98,7 @@ class AuthTestView(GenericAPIView):
         return Response(
             {
                 "message": "Authenticated successfully!",
-                "user_rolel": user.role,
+                "user_role": user.role,
                 "user_id": user.id,
             },
         )

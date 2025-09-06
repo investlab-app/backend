@@ -100,13 +100,9 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        try:
-            print(self.request.user.id)
-            return Investor.objects.prefetch_related("watching_instruments").get(
-                clerk_id=self.request.user.id
-            )
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
+        return Investor.objects.prefetch_related("watching_instruments").get(
+            clerk_id=self.request.user.id
+        )
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -125,12 +121,6 @@ class InvestorStatsView(generics.RetrieveAPIView):
     serializer_class = InvestorStatsSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
@@ -170,12 +160,6 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     serializer_class = AccountValueOverTimeSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
@@ -227,12 +211,6 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
-
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value for today, keeping it consistent with
         # the AccountValueOverTimeView endpoint.
@@ -267,12 +245,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     serializer_class = AssetAllocationSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Using user ID as seed for consistent data per user
@@ -350,12 +322,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
     serializer_class = OwnedSharesSerializer
     authentication_classes = [ClerkAuthentication]
     permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))
