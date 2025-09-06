@@ -1,15 +1,16 @@
 from collections.abc import Iterator
 
+from config.clients import polygon_client
 from polygon import RESTClient as PolygonClient
 from polygon.exceptions import BadResponse
 from polygon.rest.models.tickers import Ticker, TickerDetails
 
-from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE, POLYGON_SECRET_KEY
+from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE
 
 
 class PolygonTickersRepository:
-    def __init__(self, polygon_client: PolygonClient = None):  # type: ignore
-        self.polygon_client = polygon_client or PolygonClient(POLYGON_SECRET_KEY)
+    def __init__(self, client: PolygonClient = None):  # type: ignore
+        self.polygon_client = client or polygon_client
 
     def list_tickers(
         self,

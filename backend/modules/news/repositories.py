@@ -1,15 +1,14 @@
 from collections.abc import Iterator
 
+from config.clients import polygon_client
 from polygon import RESTClient as PolygonClient
 from polygon.exceptions import BadResponse
 from polygon.rest.models.tickers import TickerNews
 
-from config.settings import POLYGON_SECRET_KEY
-
 
 class PolygonNewsRepository:
-    def __init__(self, polygon_client: PolygonClient = None):  # type: ignore
-        self.polygon_client = polygon_client or PolygonClient(POLYGON_SECRET_KEY)
+    def __init__(self, client: PolygonClient = None):  # type: ignore
+        self.polygon_client = client or polygon_client
 
     def list_news(
         self,

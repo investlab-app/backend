@@ -24,9 +24,7 @@ class NewsListView(views.APIView):
         news_iterator = repository.list_news(
             ticker=validated_data.get("ticker"),
             published_utc=validated_data.get("published_utc"),
-            published_utc_lt=validated_data.get("published_utc_lt"),
             published_utc_lte=validated_data.get("published_utc_lte"),
-            published_utc_gt=validated_data.get("published_utc_gt"),
             published_utc_gte=validated_data.get("published_utc_gte"),
             sort=validated_data.get("sort"),
             order=validated_data.get("order"),
