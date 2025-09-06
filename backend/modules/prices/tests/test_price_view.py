@@ -4,16 +4,14 @@ from unittest.mock import patch
 
 import pytest
 from django.urls import reverse
-from rest_framework.test import APIClient
 
-from modules.users.models import User
+from modules.core.tests.conftest import api_client_auth  # noqa: F401
+
+pytestmark = pytest.mark.django_db
 
 
 @patch("modules.prices.views.PricesV2Service.get_ohlc")
-def test_price_view(ohlc_mock):
-    client = APIClient()
-    user = User()
-    client.force_authenticate(user)
+def test_price_view(ohlc_mock, api_client_auth):
     url = reverse("prices")
 
     ohlc_mock.return_value = [
@@ -42,7 +40,7 @@ def test_price_view(ohlc_mock):
         }
     ]
 
-    response = client.get(url, data=query_params, format="json")
+    response = api_client_auth.get(url, data=query_params, format="json")
     response.data[0]["timestamp"] = response.data[0]["timestamp"].replace(tzinfo=None)
     assert response.data == expected
     assert response.status_code == 200

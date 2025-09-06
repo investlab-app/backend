@@ -2,20 +2,16 @@ import logging
 import random
 from datetime import date, timedelta
 
-from django.db.models import Q
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
     AssetAllocationSerializer,
     CurrentAccountValueSerializer,
-    InvestorCreateSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
     InvestorStatsSerializer,
@@ -26,35 +22,16 @@ from modules.investors.serializers import (
 logger = logging.getLogger(__name__)
 
 
-class InvestorListCreateView(generics.ListCreateAPIView):
+class InvestorListView(generics.ListAPIView):
     """
-    List all investors or create a new investor.
+    List all investors.
     """
 
-    queryset = Investor.objects.select_related("user").prefetch_related(
-        "watching_instruments"
-    )
+    queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
-        if self.request.method == "POST":
-            return InvestorCreateSerializer
         return InvestorSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.query_params.get("search", "")
-
-        if search:
-            queryset = queryset.filter(
-                Q(user__email__icontains=search)
-                | Q(user__first_name__icontains=search)
-                | Q(user__last_name__icontains=search)
-            )
-
-        return queryset.order_by("-id")
 
     @extend_schema(
         parameters=[InvestorListQueryParams],
@@ -65,27 +42,15 @@ class InvestorListCreateView(generics.ListCreateAPIView):
     def get(self, request: Request) -> Response:
         return super().get(request)
 
-    @extend_schema(
-        request=InvestorCreateSerializer,
-        responses={201: InvestorSerializer},
-        summary="Create investor",
-        description="Create a new investor associated with a user.",
-    )
-    def post(self, request: Request) -> Response:
-        return super().post(request)
 
-
-class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
+class InvestorDetailView(generics.RetrieveUpdateAPIView):
     """
-    Retrieve, update, or delete an investor.
+    Retrieve or update an investor.
     """
 
-    queryset = Investor.objects.select_related("user").prefetch_related(
-        "watching_instruments"
-    )
+    queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
+    lookup_field = "clerk_id"
 
     def get_serializer_class(self):
         if self.request.method in ["PUT", "PATCH"]:
@@ -118,14 +83,6 @@ class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
     def patch(self, request: Request, *args, **kwargs) -> Response:
         return super().patch(request, *args, **kwargs)
 
-    @extend_schema(
-        responses={204: None},
-        summary="Delete investor",
-        description="Delete an investor.",
-    )
-    def delete(self, request: Request, *args, **kwargs) -> Response:
-        return super().delete(request, *args, **kwargs)
-
 
 class CurrentInvestorView(generics.RetrieveAPIView):
     """
@@ -133,19 +90,11 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        try:
-            return (
-                Investor.objects.select_related("user")
-                .prefetch_related("watching_instruments")
-                .get(user=self.request.user)
-            )
-        except Investor.DoesNotExist:
-            # Create investor if it doesn't exist
-            return Investor.objects.create(user=self.request.user)
+        return Investor.objects.prefetch_related("watching_instruments").get(
+            clerk_id=self.request.user.id
+        )
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -162,15 +111,6 @@ class InvestorStatsView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorStatsSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
@@ -208,15 +148,6 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     """
 
     serializer_class = AccountValueOverTimeSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
@@ -265,15 +196,6 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     """
 
     serializer_class = CurrentAccountValueSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value for today, keeping it consistent with
@@ -307,15 +229,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     """
 
     serializer_class = AssetAllocationSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         # Using user ID as seed for consistent data per user
@@ -391,15 +304,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
     """
 
     serializer_class = OwnedSharesSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
 
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))

@@ -1,5 +1,7 @@
 import pytest
 
+from modules.authentication.tests.conftest import user
+
 
 @pytest.fixture()
 def api_client():

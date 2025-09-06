@@ -4,7 +4,15 @@ import pytest
 from clerk_backend_api import SDKError
 from rest_framework.test import APIRequestFactory
 
-from modules.users.models import User
+from modules.authentication.clerk_auth import ClerkUser
+
+
+@pytest.fixture()
+def user():
+    return ClerkUser(
+        clerk_id="id",
+        role="admin",
+    )
 
 
 @pytest.fixture()
@@ -37,14 +45,9 @@ def valid_payload():
 
 @pytest.fixture()
 def user_from_payload(valid_payload):
-    return User(
+    return ClerkUser(
         clerk_id=valid_payload["sub"],
-        email=valid_payload["email"],
-        first_name=valid_payload["first_name"],
-        last_name=valid_payload["last_name"],
-        image_url=valid_payload["img_url"],
-        has_image=valid_payload["has_img"],
-        clerk_role=valid_payload["meta"]["role"],
+        role=valid_payload["meta"]["role"],
     )
 
 
@@ -63,12 +66,7 @@ def mock_clerk(valid_payload):
         mock_clerk_views.authenticate_request.return_value = mock_request_state
 
         mock_user = MagicMock(
-            id=valid_payload["sub"],
-            email_addresses=[MagicMock(email_address=valid_payload["email"])],
-            first_name=valid_payload["first_name"],
-            last_name=valid_payload["last_name"],
-            image_url=valid_payload["img_url"],
-            has_image=valid_payload["has_img"],
+            clerk_id=valid_payload["sub"],
             public_metadata=valid_payload["meta"],
         )
 
@@ -93,7 +91,7 @@ def mock_clerk(valid_payload):
 def mock_clerk_invalid_password():
     with patch("modules.authentication.views.clerk_sdk") as mock_clerk_class:
         mock_user = MagicMock()
-        mock_user.id = "user_123"
+        mock_user.clerk_id = "user_123"
         mock_clerk_class.users.list.return_value = [mock_user]
 
         mock_clerk_class.users.verify_password.side_effect = SDKError(

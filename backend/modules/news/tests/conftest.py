@@ -1,8 +1,8 @@
 import pytest
 from polygon.rest.models.tickers import TickerNews
 
+from modules.authentication.tests.conftest import user
 from modules.core.utils import get_local_datetime
-from modules.users.tests.conftest import user  # noqa: F401
 
 
 @pytest.fixture

@@ -52,7 +52,6 @@ INSTALLED_APPS = [
     "modules.orders",
     "modules.prices",
     "modules.transactions",
-    "modules.users",
 ]
 
 if DEBUG:
@@ -203,8 +202,6 @@ SPECTACULAR_SETTINGS = {
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
 }
-
-AUTH_USER_MODEL = "users.User"
 
 # SIMPLE_JWT = {
 #     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),

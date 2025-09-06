@@ -6,7 +6,7 @@ from modules.investors.views import (
     CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,
-    InvestorListCreateView,
+    InvestorListView,
     InvestorStatsView,
     OwnedSharesView,
 )
@@ -14,9 +14,9 @@ from modules.investors.views import (
 app_name = "investors"
 
 urlpatterns = [
-    path("", InvestorListCreateView.as_view(), name="investor-list-create"),
-    path("<int:pk>/", InvestorDetailView.as_view(), name="investor-detail"),
+    path("", InvestorListView.as_view(), name="investor-list-create"),
     path("me/", CurrentInvestorView.as_view(), name="current-investor"),
+    path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
     path("me/stats/", InvestorStatsView.as_view(), name="investor-stats"),
     path(
         "me/account-value/",
