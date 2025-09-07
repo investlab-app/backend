@@ -30,10 +30,10 @@ urlpatterns = [
         name="current-account-value",
     ),
     path(
-        "me/asset-allocation/",
+        "asset-allocation/",
         AssetAllocationView.as_view(),
         name="asset-allocation",
     ),
-    path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
-    path("me/assets/", AssetListView.as_view(), name="assets"),
+    path("owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
+    path("assets/", AssetListView.as_view(), name="assets"),
 ]

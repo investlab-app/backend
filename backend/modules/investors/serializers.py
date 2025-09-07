@@ -98,8 +98,3 @@ class AssetSerializer(serializers.ModelSerializer):
         model = Asset
         fields = ["ticker", "volume"]
 
-
-class InvestorIDSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Investor
-        fields = ["id"]
