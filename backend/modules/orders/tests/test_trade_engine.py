@@ -48,7 +48,11 @@ def test_market_buy_order__no_money__no_transaction():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1", investor_id=42, ticker="AAPL", volume=Decimal(1), is_buy=True
+                    id="1",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(1),
+                    is_buy=True,
                 )
             ],
             assets=[],
@@ -66,7 +70,11 @@ def test_market_buy_order__not_enough_money__buys_partial():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1", investor_id=42, ticker="AAPL", volume=Decimal(1), is_buy=True
+                    id="1",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(1),
+                    is_buy=True,
                 )
             ],
             assets=[],
@@ -74,7 +82,9 @@ def test_market_buy_order__not_enough_money__buys_partial():
             balances={42: Decimal(5)},
         ),
         transactions=[
-            EngineTransaction(ticker="AAPL", volume=Decimal(0.5), is_buy=True, investor_id=42)
+            EngineTransaction(
+                ticker="AAPL", volume=Decimal(0.5), is_buy=True, investor_id=42
+            )
         ],
         modified_orders=["1"],
         completed_orders=[],
@@ -86,7 +96,11 @@ def test_market_buy_order__success():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5", investor_id=42, ticker="AAPL", volume=Decimal(1), is_buy=True
+                    id="5",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(1),
+                    is_buy=True,
                 )
             ],
             assets=[],
@@ -94,7 +108,9 @@ def test_market_buy_order__success():
             balances={42: Decimal(15)},
         ),
         transactions=[
-            EngineTransaction(ticker="AAPL", volume=Decimal(1), is_buy=True, investor_id=42)
+            EngineTransaction(
+                ticker="AAPL", volume=Decimal(1), is_buy=True, investor_id=42
+            )
         ],
         modified_orders=[],
         completed_orders=["5"],
@@ -106,7 +122,11 @@ def test_market_sell_order__success():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5", investor_id=42, ticker="AAPL", volume=Decimal(1), is_buy=False
+                    id="5",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(1),
+                    is_buy=False,
                 )
             ],
             assets=[EngineAsset(investor_id=42, ticker="AAPL", volume=Decimal(1))],
@@ -114,7 +134,9 @@ def test_market_sell_order__success():
             balances={42: Decimal(25)},
         ),
         transactions=[
-            EngineTransaction(ticker="AAPL", volume=Decimal(1), is_buy=False, investor_id=42)
+            EngineTransaction(
+                ticker="AAPL", volume=Decimal(1), is_buy=False, investor_id=42
+            )
         ],
         modified_orders=[],
         completed_orders=["5"],
@@ -126,10 +148,18 @@ def test_order__price_not_given__ignores_order():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1", investor_id=42, ticker="AAPL", volume=Decimal(1), is_buy=False
+                    id="1",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(1),
+                    is_buy=False,
                 ),
                 MarketEngineOrder(
-                    id="2", investor_id=42, ticker="MSFT", volume=Decimal(1), is_buy=False
+                    id="2",
+                    investor_id=42,
+                    ticker="MSFT",
+                    volume=Decimal(1),
+                    is_buy=False,
                 ),
             ],
             assets=[
@@ -140,7 +170,9 @@ def test_order__price_not_given__ignores_order():
             balances={42: Decimal(100)},
         ),
         transactions=[
-            EngineTransaction(ticker="AAPL", volume=Decimal(1), is_buy=False, investor_id=42)
+            EngineTransaction(
+                ticker="AAPL", volume=Decimal(1), is_buy=False, investor_id=42
+            )
         ],
         modified_orders=[],
         completed_orders=["1"],
@@ -152,7 +184,11 @@ def test_market_sell_order__not_enough_assets__sells_partial():
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1", investor_id=42, ticker="AAPL", volume=Decimal(10), is_buy=False
+                    id="1",
+                    investor_id=42,
+                    ticker="AAPL",
+                    volume=Decimal(10),
+                    is_buy=False,
                 )
             ],
             assets=[EngineAsset(investor_id=42, ticker="AAPL", volume=Decimal(5))],
@@ -160,7 +196,9 @@ def test_market_sell_order__not_enough_assets__sells_partial():
             balances={42: Decimal(100)},
         ),
         transactions=[
-            EngineTransaction(ticker="AAPL", volume=Decimal(5), is_buy=False, investor_id=42)
+            EngineTransaction(
+                ticker="AAPL", volume=Decimal(5), is_buy=False, investor_id=42
+            )
         ],
         modified_orders=["1"],
         completed_orders=[],
