@@ -16,7 +16,7 @@ class Investor(models.Model):
 class Asset(models.Model):
     pk = models.CompositePrimaryKey("investor", "ticker")
     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
-    ticker = models.CharField()
+    ticker = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     volume = models.DecimalField(max_digits=15, decimal_places=2)
 
     def __str__(self):

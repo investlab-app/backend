@@ -18,9 +18,6 @@ class Order(BaseModel):
     class Meta:
         indexes = [models.Index(fields=["detail_type", "detail_id"])]
 
-    def __str__(self):
-        return f"Order for {self.ticker.ticker} by investor {self.investor}"
-
 
 class MarketOrder(models.Model):
     volume = models.DecimalField(max_digits=15, decimal_places=2)
@@ -28,7 +25,4 @@ class MarketOrder(models.Model):
     is_buy = models.BooleanField()
 
     def __str__(self):
-        if self.is_buy:
-            return f"Market buy order for volume: {self.volume}"
-        else:
-            return f"Market sell order for volume: {self.volume}"
+        return f"Market order for volume: {self.volume}. Buy: {self.is_buy}"

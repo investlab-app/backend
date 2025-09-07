@@ -1,18 +1,20 @@
 from dataclasses import dataclass
+from decimal import Decimal
 
 import pytest
+from pydantic import BaseModel, ConfigDict
 
+from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
 from modules.transactions.services import buy, sell
 
 
-@dataclass
-class TransactionData:
+class TransactionData(BaseModel):
     investor: Investor
-    ticker: str
-    volume: float
-    price: float
+    ticker: Instrument
+    volume: Decimal
+    price: Decimal
     is_buy: bool
 
     def __eq__(self, value):
@@ -26,12 +28,14 @@ class TransactionData:
             and self.is_buy == value.is_buy
         )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 @dataclass
 class AssetData:
     investor: Investor
-    ticker: str
-    volume: float
+    ticker: Instrument
+    volume: Decimal
 
     def __eq__(self, value):
         if not isinstance(value, Asset):
@@ -43,12 +47,14 @@ class AssetData:
             and self.volume == value.volume
         )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 @dataclass
 class TransactionHelperData:
     buy_transaction: TransactionData
     sell_transaction: TransactionData
-    volume: int
+    volume: Decimal
 
     def __eq__(self, value):
         if not isinstance(value, TransactionHelper):
@@ -59,10 +65,17 @@ class TransactionHelperData:
             and self.volume == value.volume
         )
 
+    model_config = ConfigDict(arbitrary_types_allowed=True)
+
 
 def get_investor(balance=0):
     investor = Investor.objects.create(clerk_id="asdf", balance=balance)
     return investor
+
+
+@pytest.fixture
+def ticker():
+    return Instrument.objects.create(ticker="AAPL", active=True)
 
 
 def assert_db_state(
@@ -76,36 +89,56 @@ def assert_db_state(
 
 
 @pytest.mark.django_db
-def test_simple_buy():
+def test_simple_buy(ticker):
     investor = get_investor(100)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=5)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(5))
 
     investor.refresh_from_db()
     assert investor.balance == 50
     assert_db_state(
-        transactions=[TransactionData(investor, "A", volume=10, price=50, is_buy=True)],
+        transactions=[
+            TransactionData(
+                investor=investor,
+                ticker=ticker,
+                volume=Decimal(10),
+                price=Decimal(50),
+                is_buy=True,
+            )
+        ],
         transaction_helpers=[],
-        assets=[AssetData(investor, "A", 10)],
+        assets=[AssetData(investor, ticker, Decimal(10))],
     )
 
 
 @pytest.mark.django_db
-def test_buy_sell_same_amount():
+def test_buy_sell_same_amount(ticker):
     investor = get_investor(100)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=5)
-    sell(investor=investor, ticker="A", volume=10, action_price=7)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(5))
+    sell(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(7))
 
     transactions = [
-        TransactionData(investor, "A", volume=10, price=50, is_buy=True),
-        TransactionData(investor, "A", volume=10, price=70, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(50),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(70),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
             buy_transaction=transactions[0],
             sell_transaction=transactions[1],
-            volume=10,
+            volume=Decimal(10),
         )
     ]
     assets = []
@@ -120,24 +153,46 @@ def test_buy_sell_same_amount():
 
 
 @pytest.mark.django_db
-def test_two_buys_one_sell__sells_all():
+def test_two_buys_one_sell__sells_all(ticker):
     investor = get_investor(200)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=5)
-    buy(investor=investor, ticker="A", volume=10, action_price=6)
-    sell(investor=investor, ticker="A", volume=20, action_price=8)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(5))
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(6))
+    sell(investor=investor, ticker=ticker, volume=Decimal(20), action_price=Decimal(8))
 
     transactions = [
-        TransactionData(investor, "A", volume=10, price=50, is_buy=True),
-        TransactionData(investor, "A", volume=10, price=60, is_buy=True),
-        TransactionData(investor, "A", volume=20, price=160, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(50),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(60),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(20),
+            price=Decimal(160),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[2], volume=10
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[2],
+            volume=Decimal(10),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[1], sell_transaction=transactions[2], volume=10
+            buy_transaction=transactions[1],
+            sell_transaction=transactions[2],
+            volume=Decimal(10),
         ),
     ]
     assets = []
@@ -153,24 +208,46 @@ def test_two_buys_one_sell__sells_all():
 
 
 @pytest.mark.django_db
-def test_one_buy_two_sells__sells_all():
+def test_one_buy_two_sells__sells_all(ticker):
     investor = get_investor(200)
 
-    buy(investor=investor, ticker="A", volume=20, action_price=5)
-    sell(investor=investor, ticker="A", volume=10, action_price=7)
-    sell(investor=investor, ticker="A", volume=10, action_price=8)
+    buy(investor=investor, ticker=ticker, volume=Decimal(20), action_price=Decimal(5))
+    sell(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(7))
+    sell(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(8))
 
     transactions = [
-        TransactionData(investor, "A", volume=20, price=100, is_buy=True),
-        TransactionData(investor, "A", volume=10, price=70, is_buy=False),
-        TransactionData(investor, "A", volume=10, price=80, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(20),
+            price=Decimal(100),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(70),
+            is_buy=False,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(80),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[1], volume=10
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[1],
+            volume=Decimal(10),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[2], volume=10
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[2],
+            volume=Decimal(10),
         ),
     ]
     assets = []
@@ -186,22 +263,36 @@ def test_one_buy_two_sells__sells_all():
 
 
 @pytest.mark.django_db
-def test_one_buy_one_sell__sells_partial_action():
+def test_one_buy_one_sell__sells_partial_action(ticker):
     investor = get_investor(100)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=5)
-    sell(investor=investor, ticker="A", volume=5, action_price=8)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(5))
+    sell(investor=investor, ticker=ticker, volume=Decimal(5), action_price=Decimal(8))
 
     transactions = [
-        TransactionData(investor, "A", volume=10, price=50, is_buy=True),
-        TransactionData(investor, "A", volume=5, price=40, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(50),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(5),
+            price=Decimal(40),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[1], volume=5
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[1],
+            volume=Decimal(5),
         )
     ]
-    assets = [AssetData(investor, "A", 5)]
+    assets = [AssetData(investor, ticker, Decimal(5))]
 
     investor.refresh_from_db()
     assert investor.balance == 90
@@ -214,37 +305,75 @@ def test_one_buy_one_sell__sells_partial_action():
 
 
 @pytest.mark.django_db
-def test_two_buys_three_sells__all_transactions_overlap__asset_remains():
+def test_two_buys_three_sells__all_transactions_overlap__asset_remains(ticker):
     investor = get_investor(500)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=10)
-    buy(investor=investor, ticker="A", volume=15, action_price=12)
-    sell(investor=investor, ticker="A", volume=5, action_price=15)
-    sell(investor=investor, ticker="A", volume=10, action_price=16)
-    sell(investor=investor, ticker="A", volume=5, action_price=14)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(10))
+    buy(investor=investor, ticker=ticker, volume=Decimal(15), action_price=Decimal(12))
+    sell(investor=investor, ticker=ticker, volume=Decimal(5), action_price=Decimal(15))
+    sell(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(16))
+    sell(investor=investor, ticker=ticker, volume=Decimal(5), action_price=Decimal(14))
 
     transactions = [
-        TransactionData(investor, "A", volume=10, price=100, is_buy=True),
-        TransactionData(investor, "A", volume=15, price=180, is_buy=True),
-        TransactionData(investor, "A", volume=5, price=75, is_buy=False),
-        TransactionData(investor, "A", volume=10, price=160, is_buy=False),
-        TransactionData(investor, "A", volume=5, price=70, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(100),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(15),
+            price=Decimal(180),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(5),
+            price=Decimal(75),
+            is_buy=False,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(160),
+            is_buy=False,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(5),
+            price=Decimal(70),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[2], volume=5
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[2],
+            volume=Decimal(5),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[3], volume=5
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[3],
+            volume=Decimal(5),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[1], sell_transaction=transactions[3], volume=5
+            buy_transaction=transactions[1],
+            sell_transaction=transactions[3],
+            volume=Decimal(5),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[1], sell_transaction=transactions[4], volume=5
+            buy_transaction=transactions[1],
+            sell_transaction=transactions[4],
+            volume=Decimal(5),
         ),
     ]
-    assets = [AssetData(investor, "A", 5)]
+    assets = [AssetData(investor, ticker, Decimal(5))]
 
     investor.refresh_from_db()
     assert investor.balance == 525
@@ -257,37 +386,75 @@ def test_two_buys_three_sells__all_transactions_overlap__asset_remains():
 
 
 @pytest.mark.django_db
-def test_three_buys_two_sells__all_transactions_overlap__asset_remains():
+def test_three_buys_two_sells__all_transactions_overlap__asset_remains(ticker):
     investor = get_investor(400)
 
-    buy(investor=investor, ticker="A", volume=10, action_price=10)
-    buy(investor=investor, ticker="A", volume=10, action_price=12)
-    buy(investor=investor, ticker="A", volume=10, action_price=14)
-    sell(investor=investor, ticker="A", volume=15, action_price=15)
-    sell(investor=investor, ticker="A", volume=10, action_price=16)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(10))
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(12))
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(14))
+    sell(investor=investor, ticker=ticker, volume=Decimal(15), action_price=Decimal(15))
+    sell(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(16))
 
     transactions = [
-        TransactionData(investor, "A", volume=10, price=100, is_buy=True),
-        TransactionData(investor, "A", volume=10, price=120, is_buy=True),
-        TransactionData(investor, "A", volume=10, price=140, is_buy=True),
-        TransactionData(investor, "A", volume=15, price=225, is_buy=False),
-        TransactionData(investor, "A", volume=10, price=160, is_buy=False),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(100),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(120),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(140),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(15),
+            price=Decimal(225),
+            is_buy=False,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            price=Decimal(160),
+            is_buy=False,
+        ),
     ]
     transaction_helpers = [
         TransactionHelperData(
-            buy_transaction=transactions[0], sell_transaction=transactions[3], volume=10
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[3],
+            volume=Decimal(10),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[1], sell_transaction=transactions[3], volume=5
+            buy_transaction=transactions[1],
+            sell_transaction=transactions[3],
+            volume=Decimal(5),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[1], sell_transaction=transactions[4], volume=5
+            buy_transaction=transactions[1],
+            sell_transaction=transactions[4],
+            volume=Decimal(5),
         ),
         TransactionHelperData(
-            buy_transaction=transactions[2], sell_transaction=transactions[4], volume=5
+            buy_transaction=transactions[2],
+            sell_transaction=transactions[4],
+            volume=Decimal(5),
         ),
     ]
-    assets = [AssetData(investor, "A", 5)]
+    assets = [AssetData(investor, ticker, Decimal(5))]
 
     investor.refresh_from_db()
     assert investor.balance == 425
@@ -300,17 +467,27 @@ def test_three_buys_two_sells__all_transactions_overlap__asset_remains():
 
 
 @pytest.mark.django_db
-def test_sell_not_enough_assets():
+def test_sell_not_enough_assets(ticker):
     investor = get_investor(100)
-    buy(investor=investor, ticker="A", volume=10, action_price=5)
+    buy(investor=investor, ticker=ticker, volume=Decimal(10), action_price=Decimal(5))
 
     with pytest.raises(RuntimeError):
-        sell(investor=investor, ticker="A", volume=15, action_price=8)
+        sell(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(15),
+            action_price=Decimal(8),
+        )
 
 
 @pytest.mark.django_db
-def test_sell_asset_does_not_exist():
+def test_sell_asset_does_not_exist(ticker):
     investor = get_investor(100)
 
     with pytest.raises(RuntimeError):
-        sell(investor=investor, ticker="A", volume=10, action_price=8)
+        sell(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(10),
+            action_price=Decimal(8),
+        )

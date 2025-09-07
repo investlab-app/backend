@@ -1,14 +1,13 @@
 from rest_framework import serializers
 
-from modules.core import defaults
 from modules.transactions.models import Transaction
 
 
 class TransactionSerializer(serializers.ModelSerializer):
-    current_price = defaults.DecimalField()
-    volume_sold = serializers.IntegerField()
-    sold_price = defaults.DecimalField()
-    gain = defaults.DecimalField()
+    current_price = serializers.DecimalField(max_digits=15, decimal_places=2)
+    volume_sold = serializers.DecimalField(max_digits=15, decimal_places=2)
+    sold_price = serializers.DecimalField(max_digits=15, decimal_places=2)
+    gain = serializers.DecimalField(max_digits=15, decimal_places=2)
     percentage_gain = serializers.FloatField()
 
     class Meta:

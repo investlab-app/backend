@@ -1,10 +1,15 @@
+from decimal import Decimal
+
 from django import db
 
+from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
 
 
-def buy(investor: Investor, ticker: str, volume: int, action_price: float):
+def buy(investor: Investor, ticker: Instrument, volume: Decimal, action_price: Decimal):
+    assert isinstance(volume, Decimal)
+    assert isinstance(action_price, Decimal)
     _check_investor_has_enough_money(investor, action_price * volume)
 
     transaction = Transaction(
@@ -27,7 +32,7 @@ def _check_investor_has_enough_money(investor, min_money):
 
 def _add_volume_to_asset(investor, ticker, volume):
     asset, _ = Asset.objects.get_or_create(
-        investor=investor, ticker=ticker, defaults={"volume": 0}
+        investor=investor, ticker=ticker, defaults={"volume": Decimal(0)}
     )
     asset.volume += volume
     return asset
@@ -89,8 +94,8 @@ def _create_transaction_helpers(sell_transaction):
 
         helpers.append(
             TransactionHelper(
-                buyTransaction=buy_transaction,
-                sellTransaction=sell_transaction,
+                buy_transaction=buy_transaction,
+                sell_transaction=sell_transaction,
                 volume=match_volume,
             )
         )
@@ -107,7 +112,7 @@ def _get_buy_transactions(investor, ticker):
 
 def _get_remaining_buy_volume(buy_transaction):
     sold_volume_sum = (
-        TransactionHelper.objects.filter(buyTransaction=buy_transaction).aggregate(
+        TransactionHelper.objects.filter(buy_transaction=buy_transaction).aggregate(
             sold_volume=db.models.Sum("volume")
         )["sold_volume"]
         or 0
