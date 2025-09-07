@@ -19,19 +19,19 @@ urlpatterns = [
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
     path("me/stats/", InvestorStatsView.as_view(), name="investor-stats"),
     path(
-        "me/account-value/",
+        "balance-history/",
         AccountValueOverTimeView.as_view(),
         name="account-value-over-time",
     ),
     path(
-        "me/current-account-value/",
+        "balance/",
         CurrentAccountValueView.as_view(),
         name="current-account-value",
     ),
     path(
-        "me/asset-allocation",
+        "me/asset-allocation/",
         AssetAllocationView.as_view(),
         name="asset-allocation",
     ),
-    path("me/owned-shares", OwnedSharesView.as_view(), name="owned-shares"),
+    path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
 ]

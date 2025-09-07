@@ -2,13 +2,16 @@ from dataclasses import asdict
 from datetime import datetime
 from http.client import HTTPResponse
 
+from channels.layers import get_channel_layer
 from django.shortcuts import get_object_or_404
 
 from config.clients import polygon_client
 from config.logging import get_logger
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
+from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.prices.exceptions import PayloadTooLarge
+from modules.prices.models import LatestPrice
 
 logger = get_logger(__name__)
 
@@ -91,3 +94,25 @@ class PricesV2Service:
             "todays_change_percent": ticker_snapshot.todays_change_percent,
             "last_updated": ticker_snapshot.updated,
         }
+
+class LatestPriceSaveService:
+    def __init__(self):
+        self.channel_layer = get_channel_layer()
+
+    async def run(self):
+        channel_name = await self.channel_layer.new_channel()
+        await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, channel_name)
+        logger.info("Listening for prices...")
+
+        while True:
+            message = await self.channel_layer.receive(channel_name)
+            if message["type"] == "broadcast.receive":
+                await self.save_prices(message["data"])
+
+    @staticmethod
+    async def save_prices(data):
+        for ticker, values in data.items():
+            price = (values["low"] + values["high"]) / 2
+            await LatestPrice.objects.aupdate_or_create(
+                ticker=ticker, defaults={"price": price}
+            )
