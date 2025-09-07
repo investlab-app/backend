@@ -3,7 +3,6 @@ from django.utils.translation import gettext_lazy as _
 
 from modules.instruments.models import Instrument
 
-from modules.core.models import BaseModel
 
 class Investor(models.Model):
     clerk_id = models.CharField(unique=True, max_length=255, verbose_name=_("Clerk ID"))
@@ -13,8 +12,12 @@ class Investor(models.Model):
     def __str__(self):
         return f"Investor: {self.clerk_id}"
 
+
 class Asset(models.Model):
     pk = models.CompositePrimaryKey("investor", "ticker")
     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
     ticker = models.CharField()
-    volume = models.IntegerField()
+    volume = models.DecimalField(max_digits=15, decimal_places=2)
+
+    def __str__(self):
+        return f"{self.ticker} Asset. Volume: {self.volume}"

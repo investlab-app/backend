@@ -1,10 +1,6 @@
 from django.urls import path
 
-from modules.orders.views import (
-    CreateMarketOrderView,
-    ListOrderView,
-    DestroyOrderView
-)
+from modules.orders.views import CreateMarketOrderView, DestroyOrderView, ListOrderView
 
 urlpatterns = [
     path("market/", CreateMarketOrderView.as_view()),

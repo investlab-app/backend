@@ -1,15 +1,26 @@
 import asyncio
 import copy
+
 from channels.db import database_sync_to_async
-from django.db import transaction
 from channels.layers import get_channel_layer
-from modules.orders.order_engine.structures import TradeEngineInput, TradeEngineOutput, Transaction, EngineOrder, MarketEngineOrder
-from modules.orders.order_engine.converters import AssetToEngineAsset, OrderToEngineOrder
-from modules.orders.order_engine.engine import TradeEngine
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from django.db import transaction
+
 from modules.investors.models import Asset, Investor
 from modules.orders.models import Order
-from modules.transactions.services import buy, sell
+from modules.orders.order_engine.converters import (
+    asset_to_engine_asset,
+    order_to_engine_order,
+)
+from modules.orders.order_engine.engine import TradeEngine
+from modules.orders.order_engine.structures import (
+    EngineOrder,
+    EngineTransaction,
+    MarketEngineOrder,
+    TradeEngineInput,
+    TradeEngineOutput,
+)
+from modules.prices.constants import PRICES_CHANNEL_LAYER
+
 
 class RunOrderEngineService:
     async def run(self):
@@ -26,8 +37,8 @@ class RunOrderEngineService:
         while True:
             prices = {}
             ticker_data = await layer.receive(channel)
-            for ticker, data in ticker_data['data'].items():
-                prices[ticker] = (data['high'] + data['low']) / 2
+            for ticker, data in ticker_data["data"].items():
+                prices[ticker] = (data["high"] + data["low"]) / 2
 
             self.prices = prices
 
@@ -46,21 +57,19 @@ class RunOrderEngineService:
             await asyncio.sleep(1)
 
 
-class TradeEngineAsyncInput: 
+class TradeEngineAsyncInput:
     def __init__(self):
         self.prices = {}
 
     def _prefetch_data_sync(self):
         with transaction.atomic():
             assets = list(Asset.objects.all())
-            orders = list(Order.objects.prefetch_related('detail'))
+            orders = list(Order.objects.prefetch_related("detail"))
             investors = list(Investor.objects.all())
 
-            engine_orders = [OrderToEngineOrder(o) for o in orders]
-            engine_assets = [AssetToEngineAsset(a) for a in assets]
-            balances = {str(i.id): i.balance for i in investors}
-
-            print(balances)
+            engine_orders = [order_to_engine_order(o) for o in orders]
+            engine_assets = [asset_to_engine_asset(a) for a in assets]
+            balances = {i.id: i.balance for i in investors}
 
             return engine_orders, engine_assets, balances
 
@@ -73,27 +82,20 @@ class TradeEngineAsyncInput:
 
     def __call__(self) -> TradeEngineInput:
         i = TradeEngineInput(
-            self.engine_orders,
-            self.engine_assets,
-            self.prices,
-            self.balances,
+            orders=self.engine_orders,
+            assets=self.engine_assets,
+            prices=self.prices,
+            balances=self.balances,
         )
-        print('Input: ')
-        print(f'Orders: {self.engine_orders}')
-        print(f'Assets: {self.engine_assets}')
-        print(f'Balances: {self.balances}')
         return i
 
+
 class TradeEngineAsyncOutput:
-    def __call__(self, output :TradeEngineOutput, prices :dict[str, float]):
-        print('Received output')
-        print(output)
-        print('\n\n\n\n\n')
+    def __call__(self, output: TradeEngineOutput, prices: dict[str, float]):
         self.output = output
         self.prices = prices
 
     async def handle_output(self):
-        print('Handling output')
         await database_sync_to_async(self._handle_output_sync)(self.output, self.prices)
 
     def _handle_output_sync(self, output: TradeEngineOutput, prices: dict[str, float]):
@@ -102,14 +104,14 @@ class TradeEngineAsyncOutput:
             self._handle_updated_orders(output.updated_orders)
             self._handle_transactions(output.transactions, prices)
 
-    def _handle_completed_orders(self, orders :list[EngineOrder]):
+    def _handle_completed_orders(self, orders: list[EngineOrder]):
         ids = [o.id for o in orders]
-        Order.objects.filter(id__in = ids).delete()
+        Order.objects.filter(id__in=ids).delete()
 
-    def _handle_updated_orders(self, orders :list[EngineOrder]):
+    def _handle_updated_orders(self, orders: list[EngineOrder]):
         ids = [o.id for o in orders]
         orders = {o.id: o for o in orders}
-        real_orders = Order.objects.filter(id__in = ids).prefetch_related('details')
+        real_orders = Order.objects.filter(id__in=ids).prefetch_related("details")
 
         for o in real_orders:
             corresponding_engine_order = orders[o.id]
@@ -119,19 +121,27 @@ class TradeEngineAsyncOutput:
             else:
                 raise ValueError("Object not supported")
 
-    def _handle_transactions(self, transactions: list[Transaction], prices :dict[str, float]):
+    def _handle_transactions(
+        self, transactions: list[EngineTransaction], prices: dict[str, float]
+    ):
         investor_ids = [t.investor_id for t in transactions]
         investors = Investor.objects.filter(id__in=investor_ids)
         investors = {i.id: i for i in investors}
 
         for t in transactions:
-            investor = investors[int(t.investor_id)]
             if t.is_buy:
-                print(f'Bought some shit')
-                print(f'Ticker: {t.ticker}')
-                print(f'Volume: {t.volume}')
-                print(f'Price: {prices[t.ticker]}')
+                # TODO: there should be an actual call to buy/sell
+                print("Bought some shit")
+                print(f"Ticker: {t.ticker}")
+                print(f"Volume: {t.volume}")
+                print(f"Price: {prices[t.ticker]}")
+                print("\n\n\n")
                 # buy(investor, t.ticker, t.volume, prices[t.ticker])
             else:
-                pass
+                # TODO: there should be an actual call to buy/sell
+                print("Sold some shit")
+                print(f"Ticker: {t.ticker}")
+                print(f"Volume: {t.volume}")
+                print(f"Price: {prices[t.ticker]}")
+                print("\n\n\n")
                 # sell(investor, t.ticker, t.volume, prices[t.ticker])

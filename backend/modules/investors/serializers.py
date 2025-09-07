@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from modules.investors.models import Investor, Asset
+from modules.investors.models import Asset, Investor
 
 
 class InvestorSerializer(serializers.ModelSerializer):
@@ -92,7 +92,14 @@ class OwnedShareItemSerializer(serializers.Serializer):
 class OwnedSharesSerializer(serializers.Serializer):
     owned_shares = OwnedShareItemSerializer(many=True)
 
+
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
-        fields = ['ticker', 'volume']
+        fields = ["ticker", "volume"]
+
+
+class InvestorIDSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Investor
+        fields = ["id"]

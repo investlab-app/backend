@@ -53,7 +53,8 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "logo",
         ]
 
+
 class InstrumentNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrument
-        fields = ['ticker']
+        fields = ["ticker"]

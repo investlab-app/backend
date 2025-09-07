@@ -7,17 +7,17 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.investors.models import Investor, Asset
+from modules.investors.models import Asset, Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
     AssetAllocationSerializer,
+    AssetSerializer,
     CurrentAccountValueSerializer,
     InvestorListQueryParams,
     InvestorSerializer,
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
     OwnedSharesSerializer,
-    AssetSerializer
 )
 
 logger = logging.getLogger(__name__)
@@ -377,9 +377,10 @@ class OwnedSharesView(generics.RetrieveAPIView):
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
 
+
 class AssetListView(generics.ListAPIView):
     serializer_class = AssetSerializer
 
     def get_queryset(self):
-        investor = Investor.objects.get(clerk_id = self.request.user.id)
-        return Asset.objects.filter(investor = investor)
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return Asset.objects.filter(investor=investor)

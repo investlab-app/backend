@@ -1,7 +1,7 @@
 from django import db
 
+from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
-from modules.investors.models import Investor, Asset
 
 
 def buy(investor: Investor, ticker: str, volume: int, action_price: float):
@@ -66,7 +66,7 @@ def _check_for_enough_assets(investor, ticker, volume):
             raise RuntimeError("Not enough assets to sell")
         return asset
     except Asset.DoesNotExist:
-        raise RuntimeError("No assets to sell")
+        raise RuntimeError("No assets to sell") from None
 
 
 def _create_transaction_helpers(sell_transaction):

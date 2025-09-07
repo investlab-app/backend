@@ -1,9 +1,10 @@
-import pytest
 from dataclasses import dataclass
 
-from modules.transactions.services import buy, sell
-from modules.transactions.models import Transaction, TransactionHelper
+import pytest
+
 from modules.investors.models import Asset, Investor
+from modules.transactions.models import Transaction, TransactionHelper
+from modules.transactions.services import buy, sell
 
 
 @dataclass
@@ -27,7 +28,7 @@ class TransactionData:
 
 
 @dataclass
-class AssetTest:
+class AssetData:
     investor: Investor
     ticker: str
     volume: float
@@ -53,8 +54,8 @@ class TransactionHelperData:
         if not isinstance(value, TransactionHelper):
             return
         return (
-            self.buy_transaction == value.buyTransaction
-            and self.sell_transaction == value.sellTransaction
+            self.buy_transaction == value.buy_transaction
+            and self.sell_transaction == value.sell_transaction
             and self.volume == value.volume
         )
 
@@ -67,7 +68,7 @@ def get_investor(balance=0):
 def assert_db_state(
     transactions: list[TransactionData],
     transaction_helpers: list[TransactionHelperData],
-    assets: list[AssetTest],
+    assets: list[AssetData],
 ):
     assert list(Transaction.objects.all()) == transactions
     assert list(TransactionHelper.objects.all()) == transaction_helpers
@@ -85,7 +86,7 @@ def test_simple_buy():
     assert_db_state(
         transactions=[TransactionData(investor, "A", volume=10, price=50, is_buy=True)],
         transaction_helpers=[],
-        assets=[AssetTest(investor, "A", 10)],
+        assets=[AssetData(investor, "A", 10)],
     )
 
 
@@ -200,7 +201,7 @@ def test_one_buy_one_sell__sells_partial_action():
             buy_transaction=transactions[0], sell_transaction=transactions[1], volume=5
         )
     ]
-    assets = [AssetTest(investor, "A", 5)]
+    assets = [AssetData(investor, "A", 5)]
 
     investor.refresh_from_db()
     assert investor.balance == 90
@@ -243,7 +244,7 @@ def test_two_buys_three_sells__all_transactions_overlap__asset_remains():
             buy_transaction=transactions[1], sell_transaction=transactions[4], volume=5
         ),
     ]
-    assets = [AssetTest(investor, "A", 5)]
+    assets = [AssetData(investor, "A", 5)]
 
     investor.refresh_from_db()
     assert investor.balance == 525
@@ -286,7 +287,7 @@ def test_three_buys_two_sells__all_transactions_overlap__asset_remains():
             buy_transaction=transactions[2], sell_transaction=transactions[4], volume=5
         ),
     ]
-    assets = [AssetTest(investor, "A", 5)]
+    assets = [AssetData(investor, "A", 5)]
 
     investor.refresh_from_db()
     assert investor.balance == 425

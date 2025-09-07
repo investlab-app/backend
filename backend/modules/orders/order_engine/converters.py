@@ -1,26 +1,26 @@
 from modules.investors.models import Asset
-from modules.orders.models import Order, MarketOrder
+from modules.orders.models import MarketOrder, Order
 from modules.orders.order_engine.structures import (
+    EngineAsset,
     EngineOrder,
     MarketEngineOrder,
-    EngineAsset
 )
 
-def OrderToEngineOrder(order :Order) -> EngineOrder | None:
+
+def order_to_engine_order(order: Order) -> EngineOrder | None:
     if isinstance(order.detail, MarketOrder):
         return MarketEngineOrder(
             id=str(order.id),
             ticker=order.ticker.ticker,
-            investor_id=str(order.investor.id),
+            investor_id=order.investor.id,
             volume=order.detail.volume,
             is_buy=order.detail.is_buy,
-            volume_processed=order.detail.volume_processed
+            volume_processed=order.detail.volume_processed,
         )
     return None
 
-def AssetToEngineAsset(asset :Asset) -> EngineAsset:
+
+def asset_to_engine_asset(asset: Asset) -> EngineAsset:
     return EngineAsset(
-        investor_id=str(asset.investor.id),
-        volume=asset.volume,
-        ticker=asset.ticker
+        investor_id=asset.investor.id, volume=asset.volume, ticker=asset.ticker
     )

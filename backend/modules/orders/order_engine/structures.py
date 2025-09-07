@@ -1,42 +1,41 @@
-from dataclasses import dataclass
-from typing import Optional
 from decimal import Decimal
 
-@dataclass
-class EngineOrder:
-    id :str
-    ticker :str
-    investor_id :str
+from pydantic import BaseModel
 
 
-@dataclass
-class MarketEngineOrder(EngineOrder):
-    volume :int
-    is_buy :bool
-    volume_processed :int = 0
-
-@dataclass
-class EngineAsset:
-    investor_id :str
-    volume :int
-    ticker :str
-
-@dataclass
-class Transaction:
+class EngineOrder(BaseModel):
+    id: str
     ticker: str
-    volume: int
+    investor_id: int
+
+
+class MarketEngineOrder(EngineOrder):
+    volume: Decimal
     is_buy: bool
-    investor_id: Optional[str] = None
+    volume_processed: Decimal = 0
 
-@dataclass
-class TradeEngineInput:
-    orders :list[EngineOrder]
-    assets :list[EngineAsset]
-    prices :list[dict[str, Decimal]]
-    balances :dict[str, Decimal]
 
-@dataclass
-class TradeEngineOutput:
-    transactions: list[Transaction]
+class EngineAsset(BaseModel):
+    investor_id: int
+    volume: Decimal
+    ticker: str
+
+
+class EngineTransaction(BaseModel):
+    ticker: str
+    volume: Decimal
+    is_buy: bool
+    investor_id: int | None = None
+
+
+class TradeEngineInput(BaseModel):
+    orders: list[EngineOrder]
+    assets: list[EngineAsset]
+    prices: dict[str, Decimal]
+    balances: dict[int, Decimal]
+
+
+class TradeEngineOutput(BaseModel):
+    transactions: list[EngineTransaction]
     updated_orders: list[EngineOrder]
     completed_orders: list[EngineOrder]
