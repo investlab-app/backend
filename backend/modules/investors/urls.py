@@ -9,6 +9,7 @@ from modules.investors.views import (
     InvestorListView,
     InvestorStatsView,
     OwnedSharesView,
+    AssetListView,
 )
 
 app_name = "investors"
@@ -34,4 +35,5 @@ urlpatterns = [
         name="asset-allocation",
     ),
     path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
+    path("me/assets/", AssetListView.as_view(), name="assets"),
 ]

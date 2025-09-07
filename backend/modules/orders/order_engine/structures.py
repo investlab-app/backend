@@ -1,17 +1,15 @@
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional
+from decimal import Decimal
 
-@dataclass(eq=True)
+@dataclass
 class EngineOrder:
     id :str
     ticker :str
     investor_id :str
 
-    def __hash__(self):
-        return hash(self.id)
 
-
-@dataclass(eq=True)
+@dataclass
 class MarketEngineOrder(EngineOrder):
     volume :int
     is_buy :bool
@@ -34,11 +32,11 @@ class Transaction:
 class TradeEngineInput:
     orders :list[EngineOrder]
     assets :list[EngineAsset]
-    prices :list[dict[str, float]]
-    balances :dict[str, float]
+    prices :list[dict[str, Decimal]]
+    balances :dict[str, Decimal]
 
 @dataclass
 class TradeEngineOutput:
     transactions: list[Transaction]
-    updated_orders: list[str]
-    completed_orders: list[str]
+    updated_orders: list[EngineOrder]
+    completed_orders: list[EngineOrder]

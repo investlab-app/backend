@@ -20,7 +20,7 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
         
         detail = MarketOrder.objects.create(
             volume=validated_data['volume'],
-            volume_processed=validated_data['volume'],
+            volume_processed=0,
             is_buy=validated_data['is_buy']
         )
 

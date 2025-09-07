@@ -9,14 +9,14 @@ class CreateMarketOrderView(generics.CreateAPIView):
     serializer_class = CreateMarketOrderSerializer
 
     def perform_create(self, serializer):
-        investor = get_object_or_404(Investor, user=self.request.user)
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         serializer.save(investor=investor)
 
 class ListOrderView(generics.ListAPIView):
     serializer_class = OrderSerializer
 
     def get_queryset(self):
-        investor = get_object_or_404(Investor, user=self.request.user)
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         return Order.objects.filter(investor = investor)
 
 
@@ -25,6 +25,6 @@ class DestroyOrderView(generics.DestroyAPIView):
     lookup_field = 'id'
 
     def get_queryset(self):
-        investor = get_object_or_404(Investor, user=self.request.user)
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         return Order.objects.filter(investor = investor)
     

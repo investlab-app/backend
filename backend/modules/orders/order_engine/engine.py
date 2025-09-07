@@ -1,4 +1,5 @@
 from collections import defaultdict
+from decimal import Decimal
 import math
 from typing import Callable, Any
 
@@ -15,7 +16,7 @@ class TradeEngine:
     def __init__(
         self, 
         engine_input_fetcher :Callable[[], TradeEngineInput], 
-        result_handler :Callable[[TradeEngineOutput, dict[str, float]], None]
+        result_handler :Callable[[TradeEngineOutput, dict[str, Decimal]], None]
     ):
         self._engine_input_fetcher = engine_input_fetcher
         self._result_handler = result_handler
@@ -67,7 +68,7 @@ class TradeEngineLogic:
 
     def _group_assets_by_investor(
         self, assets: list[EngineAsset]
-    ) -> dict[Any, dict[str, float]]:
+    ) -> dict[Any, dict[str, Decimal]]:
         result = defaultdict(dict)
         for asset in assets:
             result[asset.investor_id][asset.ticker] = asset.volume
@@ -83,8 +84,8 @@ class SingleInvestorTradeEngine:
         self,
         orders: list[EngineOrder],
         assets: list[EngineAsset],
-        prices: dict[str, float],
-        balance: float,
+        prices: dict[str, Decimal],
+        balance: Decimal,
     ):
         self._orders = orders
         self._assets = assets
@@ -92,8 +93,8 @@ class SingleInvestorTradeEngine:
         self._balance = balance
 
         self._transactions = []
-        self._modified_orders = set()
-        self._completed_orders = set()
+        self._modified_orders = []
+        self._completed_orders = []
 
         self._process_order_group()
 
@@ -117,25 +118,20 @@ class SingleInvestorTradeEngine:
         ticker = order.ticker
         price = self._prices[ticker]
 
-        print(balance)
-        print(ticker)
-        print(price)
-
         volume_needed = order.volume - order.volume_processed
-        volume = min(volume_needed, math.floor(balance / price))
+        volume = min(volume_needed, math.floor(Decimal(balance) / price))
         if volume == 0:
             return
-        print('got here, adding transaction')
 
         self._transactions.append(
             Transaction(ticker=ticker, volume=volume, is_buy=True)
         )
-        self._balance -= volume * price
+        self._balance -= Decimal(volume * price)
         order.volume_processed += volume
         if order.volume == order.volume_processed:
-            self._completed_orders.add(order.id)
+            self._completed_orders.append(order)
         else:
-            self._modified_orders.add(order.id)
+            self._modified_orders.append(order)
 
     def _handle_market_sell(self, order: MarketEngineOrder):
         ticker = order.ticker
@@ -155,10 +151,10 @@ class SingleInvestorTradeEngine:
                 is_buy=False,
             )
         )
-        self._balance += volume * price
+        self._balance +=  Decimal(volume * price)
         order.volume_processed += volume
         self._assets[ticker] -= volume
         if order.volume == order.volume_processed:
-            self._completed_orders.add(order.id)
+            self._completed_orders.append(order)
         else:
-            self._modified_orders.add(order.id)
+            self._modified_orders.append(order)
