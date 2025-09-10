@@ -97,4 +97,3 @@ class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset
         fields = ["ticker", "volume"]
-

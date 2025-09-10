@@ -88,6 +88,8 @@ class TradeEngineLogic:
 
 
 class SingleInvestorTradeEngine:
+    _engine_precisioin = 0.000_000_000_000_1
+
     def process_orders(
         self,
         orders: list[EngineOrder],
@@ -138,7 +140,7 @@ class SingleInvestorTradeEngine:
         )
         self._balance -= volume * price
         order.volume_processed += volume
-        if order.volume == order.volume_processed:
+        if abs(order.volume - order.volume_processed) < self._engine_precisioin:
             self._completed_orders.append(order)
         else:
             self._modified_orders.append(order)
@@ -164,7 +166,7 @@ class SingleInvestorTradeEngine:
         self._balance += volume * price
         order.volume_processed += volume
         self._assets[ticker] -= volume
-        if order.volume == order.volume_processed:
+        if abs(order.volume - order.volume_processed) < self._engine_precisioin:
             self._completed_orders.append(order)
         else:
             self._modified_orders.append(order)
