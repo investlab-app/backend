@@ -1,6 +1,7 @@
 from decimal import Decimal
 from unittest.mock import Mock
 
+from modules.core.defaults import PrecisionType
 from modules.orders.order_engine.engine import TradeEngine
 from modules.orders.order_engine.structures import (
     EngineAsset,
@@ -15,7 +16,6 @@ def _order_ids_match(orders, ids):
 
 
 def _transactions_match(done_transactions, expected_transactions):
-    precision = 0.000_000_000_001
     for tx1, tx2 in zip(done_transactions, expected_transactions, strict=False):
         if tx1.ticker != tx2.ticker:
             return False
@@ -23,7 +23,7 @@ def _transactions_match(done_transactions, expected_transactions):
             return False
         if tx1.investor_id != tx2.investor_id:
             return False
-        if abs(tx1.volume - tx2.volume) > Decimal(precision):
+        if abs(tx1.volume - tx2.volume) > PrecisionType.volume.precision:
             return False
     return True
 

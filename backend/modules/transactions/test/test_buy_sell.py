@@ -4,6 +4,7 @@ from decimal import Decimal
 import pytest
 from pydantic import BaseModel, ConfigDict
 
+from modules.core.defaults import PrecisionType
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
@@ -23,8 +24,9 @@ class TransactionData(BaseModel):
         return (
             self.investor == value.investor
             and self.ticker == value.ticker
-            and self.volume == value.volume
-            and self.price == value.transaction_price
+            and abs(self.volume - value.volume) < PrecisionType.volume.precision
+            and abs(self.price - value.transaction_price)
+            < PrecisionType.price.precision
             and self.is_buy == value.is_buy
         )
 
@@ -44,7 +46,7 @@ class AssetData:
         return (
             self.investor == value.investor
             and self.ticker == value.ticker
-            and self.volume == value.volume
+            and abs(self.volume - value.volume) < PrecisionType.volume.precision
         )
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
@@ -62,14 +64,14 @@ class TransactionHelperData:
         return (
             self.buy_transaction == value.buy_transaction
             and self.sell_transaction == value.sell_transaction
-            and self.volume == value.volume
+            and abs(self.volume - value.volume) < PrecisionType.volume.precision
         )
 
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
 
 def get_investor(balance=0):
-    investor = Investor.objects.create(clerk_id="asdf", balance=balance)
+    investor = Investor.objects.create(clerk_id="asdf", balance=Decimal(balance))
     return investor
 
 
@@ -83,6 +85,7 @@ def assert_db_state(
     transaction_helpers: list[TransactionHelperData],
     assets: list[AssetData],
 ):
+    print(list(Transaction.objects.all()), transactions)
     assert list(Transaction.objects.all()) == transactions
     assert list(TransactionHelper.objects.all()) == transaction_helpers
     assert list(Asset.objects.all()) == assets
@@ -481,6 +484,19 @@ def test_sell_not_enough_assets(ticker):
 
 
 @pytest.mark.django_db
+def test_buy_not_enough_balance(ticker):
+    investor = get_investor(100)
+
+    with pytest.raises(RuntimeError):
+        buy(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(2),
+            action_price=Decimal(90),
+        )
+
+
+@pytest.mark.django_db
 def test_sell_asset_does_not_exist(ticker):
     investor = get_investor(100)
 
@@ -491,3 +507,243 @@ def test_sell_asset_does_not_exist(ticker):
             volume=Decimal(10),
             action_price=Decimal(8),
         )
+
+
+@pytest.mark.django_db
+def test_buy_partial_volume(ticker):
+    balance = 100
+    investor = get_investor(balance)
+    volume = Decimal(0.5)
+    price = Decimal(150)
+
+    buy(
+        investor=investor,
+        ticker=ticker,
+        volume=volume,
+        action_price=price,
+    )
+
+    transactions = [
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=volume,
+            price=(volume * price),
+            is_buy=True,
+        )
+    ]
+    transaction_helpers = []
+    assets = [
+        AssetData(
+            investor=investor,
+            ticker=ticker,
+            volume=volume,
+        )
+    ]
+
+    investor.refresh_from_db()
+    assert (
+        abs(investor.balance - (Decimal(balance) - (volume * price)))
+        < PrecisionType.price.precision
+    )
+
+    assert_db_state(
+        transactions=transactions,
+        transaction_helpers=transaction_helpers,
+        assets=assets,
+    )
+
+
+@pytest.mark.django_db
+def test_sell_partial_volume(ticker):
+    balance = 100
+    investor = get_investor(balance)
+    buy_volume = Decimal(0.24)
+    buy_price = Decimal(235.5)
+    sell_volume = Decimal(0.108)
+    sell_price = Decimal(300.90)
+
+    buy(
+        investor=investor,
+        ticker=ticker,
+        volume=buy_volume,
+        action_price=buy_price,
+    )
+    sell(
+        investor=investor,
+        ticker=ticker,
+        volume=sell_volume,
+        action_price=sell_price,
+    )
+
+    transactions = [
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=buy_volume,
+            price=(buy_volume * buy_price),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=sell_volume,
+            price=(sell_volume * sell_price),
+            is_buy=False,
+        ),
+    ]
+    transaction_helpers = [
+        TransactionHelperData(
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[1],
+            volume=sell_volume,
+        )
+    ]
+    assets = [
+        AssetData(
+            investor=investor,
+            ticker=ticker,
+            volume=buy_volume - sell_volume,
+        )
+    ]
+
+    investor.refresh_from_db()
+    assert (
+        abs(
+            investor.balance
+            - (Decimal(balance) - (buy_volume * buy_price) + (sell_volume * sell_price))
+        )
+        < PrecisionType.price.precision
+    )
+
+    assert_db_state(
+        transactions=transactions,
+        transaction_helpers=transaction_helpers,
+        assets=assets,
+    )
+
+
+@pytest.mark.django_db
+def test_buy_sell_same_partial_volume(ticker):
+    balance = 100.80
+    investor = get_investor(balance)
+    volume = Decimal(0.2450009)
+    buy_price = Decimal(235.5)
+    sell_price = Decimal(300.90)
+
+    buy(
+        investor=investor,
+        ticker=ticker,
+        volume=volume,
+        action_price=buy_price,
+    )
+
+    sell(
+        investor=investor,
+        ticker=ticker,
+        volume=volume,
+        action_price=sell_price,
+    )
+    transactions = [
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=volume,
+            price=(volume * buy_price),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=volume,
+            price=(volume * sell_price),
+            is_buy=False,
+        ),
+    ]
+    transaction_helpers = [
+        TransactionHelperData(
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[1],
+            volume=volume,
+        )
+    ]
+    assets = []
+
+    investor.refresh_from_db()
+    assert (
+        abs(
+            investor.balance
+            - (Decimal(balance) - (volume * buy_price) + (volume * sell_price))
+        )
+        < PrecisionType.price.precision
+    )
+
+    assert_db_state(
+        transactions=transactions,
+        transaction_helpers=transaction_helpers,
+        assets=assets,
+    )
+
+
+@pytest.mark.django_db
+def test_very_large_buy_and_sell(ticker):
+    balance = 100_000_000_000
+    investor = get_investor(balance)
+    buy_volume = Decimal(100_000_000_000)
+    buy_price = Decimal(0.05)
+    sell_price = Decimal(0.1)
+
+    buy(
+        investor=investor,
+        ticker=ticker,
+        volume=buy_volume,
+        action_price=buy_price,
+    )
+
+    sell(
+        investor=investor,
+        ticker=ticker,
+        volume=buy_volume,
+        action_price=sell_price,
+    )
+
+    transactions = [
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=buy_volume,
+            price=(buy_volume * buy_price),
+            is_buy=True,
+        ),
+        TransactionData(
+            investor=investor,
+            ticker=ticker,
+            volume=buy_volume,
+            price=(buy_volume * sell_price),
+            is_buy=False,
+        ),
+    ]
+
+    transaction_helpers = [
+        TransactionHelperData(
+            buy_transaction=transactions[0],
+            sell_transaction=transactions[1],
+            volume=buy_volume,
+        )
+    ]
+    assets = []
+
+    investor.refresh_from_db()
+    assert (
+        abs(
+            investor.balance
+            - (Decimal(balance) - (buy_volume * buy_price) + (buy_volume * sell_price))
+        )
+        < PrecisionType.price.precision
+    )
+
+    assert_db_state(
+        transactions=transactions,
+        transaction_helpers=transaction_helpers,
+        assets=assets,
+    )

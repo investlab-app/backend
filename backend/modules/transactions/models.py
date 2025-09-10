@@ -10,7 +10,7 @@ class Transaction(BaseModel):
     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     transaction_time = models.DateTimeField(default=get_local_datetime)
-    volume = models.DecimalField(max_digits=15, decimal_places=2)
+    volume = models.DecimalField(max_digits=30, decimal_places=15)
     transaction_price = models.DecimalField(max_digits=20, decimal_places=2)
     is_buy = models.BooleanField()
 
@@ -22,4 +22,4 @@ class TransactionHelper(BaseModel):
     sell_transaction = models.ForeignKey(
         Transaction, on_delete=models.CASCADE, related_name="sell"
     )
-    volume = models.DecimalField(max_digits=15, decimal_places=2)
+    volume = models.DecimalField(max_digits=30, decimal_places=15)

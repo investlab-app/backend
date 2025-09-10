@@ -2,6 +2,7 @@ from decimal import Decimal
 
 from django import db
 
+from modules.core.defaults import PrecisionType
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
@@ -9,6 +10,7 @@ from modules.transactions.models import Transaction, TransactionHelper
 
 def buy(investor: Investor, ticker: Instrument, volume: Decimal, action_price: Decimal):
     assert isinstance(volume, Decimal)
+    assert isinstance(investor.balance, Decimal)
     assert isinstance(action_price, Decimal)
     _check_investor_has_enough_money(investor, action_price * volume)
 
@@ -46,6 +48,7 @@ def _save_to_db(transaction, asset, investor):
 
 
 def sell(investor, ticker, volume, action_price):
+    assert isinstance(investor.balance, Decimal)
     asset = _check_for_enough_assets(investor, ticker, volume)
 
     sell_transaction = Transaction(
@@ -128,7 +131,7 @@ def _sell_save(investor, sell_transaction, asset, helpers):
         for helper in helpers:
             helper.save()
 
-        if asset.volume == 0:
+        if asset.volume < PrecisionType.volume.precision:
             asset.delete()
         else:
             asset.save()
