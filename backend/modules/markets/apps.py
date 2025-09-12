@@ -3,5 +3,5 @@ from django.utils.translation import gettext_lazy as _
 
 
 class MarketsConfig(AppConfig):
-    name = 'modules.markets'
+    name = "modules.markets"
     verbose_name = _("Markets")

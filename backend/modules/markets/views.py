@@ -12,7 +12,7 @@ from modules.markets.serializers import (
 class MarketHolidaysListView(views.APIView):
     @extend_schema(
         responses=MarketHolidaySerializer(many=True),
-        description="Retrieve a list of upcoming market holidays with their open/close times.",
+        description="Retrieve a list of upcoming market holidays.",
     )
     def get(self, request, *args, **kwargs):
         repository = PolygonMarketsRepository()
