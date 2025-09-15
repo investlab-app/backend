@@ -10,7 +10,7 @@ def api_client():
     return APIClient()
 
 
-@pytest.fixture()
+@pytest.fixture
 def api_client_auth(user):
     from rest_framework.test import APIClient
 

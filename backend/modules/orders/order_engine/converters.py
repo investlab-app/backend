@@ -10,7 +10,7 @@ from modules.orders.order_engine.structures import (
 def order_to_engine_order(order: Order) -> EngineOrder | None:
     if isinstance(order.detail, MarketOrder):
         return MarketEngineOrder(
-            id=str(order.id),
+            id=order.id,
             ticker=order.ticker.ticker,
             investor_id=order.investor.id,
             volume=order.detail.volume,
@@ -22,5 +22,5 @@ def order_to_engine_order(order: Order) -> EngineOrder | None:
 
 def asset_to_engine_asset(asset: Asset) -> EngineAsset:
     return EngineAsset(
-        investor_id=asset.investor.id, volume=asset.volume, ticker=asset.ticker
+        investor_id=asset.investor.id, volume=asset.volume, ticker=asset.ticker.ticker
     )

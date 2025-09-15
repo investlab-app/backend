@@ -1,10 +1,11 @@
+import uuid
 from decimal import Decimal
 
 from pydantic import BaseModel
 
 
 class EngineOrder(BaseModel):
-    id: str
+    id: uuid.UUID
     ticker: str
     investor_id: int
 
@@ -13,6 +14,14 @@ class MarketEngineOrder(EngineOrder):
     volume: Decimal
     is_buy: bool
     volume_processed: Decimal = 0
+
+
+class EngineOrderUpdate(BaseModel):
+    id: uuid.UUID
+
+
+class MarketEngineOrderUpdate(EngineOrderUpdate):
+    volume_processed: Decimal
 
 
 class EngineAsset(BaseModel):
@@ -37,5 +46,5 @@ class TradeEngineInput(BaseModel):
 
 class TradeEngineOutput(BaseModel):
     transactions: list[EngineTransaction]
-    updated_orders: list[EngineOrder]
-    completed_orders: list[EngineOrder]
+    updated_orders: list[EngineOrderUpdate]
+    completed_orders: list[uuid.UUID]

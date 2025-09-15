@@ -16,6 +16,8 @@ def create_fake_instrument(
     market=None,
     locale=None,
     active=None,
+    *,
+    save=False,
     **kwargs,
 ):
     ticker = (ticker or str(fake.uuid4()[:20])).upper()
@@ -24,7 +26,7 @@ def create_fake_instrument(
     locale = locale or random.choice(LocaleChoices.choices)[0]
     active = active if active is not None else True
 
-    return Instrument(
+    instrument = Instrument(
         ticker=ticker,
         name=name,
         market=market,
@@ -32,6 +34,9 @@ def create_fake_instrument(
         active=active,
         **kwargs,
     )
+    if save:
+        instrument.save()
+    return instrument
 
 
 @pytest.fixture

@@ -1,5 +1,8 @@
+import uuid
 from decimal import Decimal
 from unittest.mock import Mock
+
+import pytest
 
 from modules.core.defaults import PrecisionType
 from modules.orders.order_engine.engine import TradeEngine
@@ -9,6 +12,7 @@ from modules.orders.order_engine.structures import (
     MarketEngineOrder,
     TradeEngineInput,
 )
+from modules.orders.tests.conftest import uuids
 
 
 def _order_ids_match(orders, ids):
@@ -34,18 +38,12 @@ def _run_test(
     modified_orders: list[str],
     completed_orders: list[str],
 ):
-    output_mock = Mock()
-    engine = TradeEngine(
-        engine_input_fetcher=Mock(side_effect=[engine_input]),
-        result_handler=output_mock,
-    )
-    engine.run()
+    engine = TradeEngine()
+    result = engine.run(engine_input)
 
-    result = output_mock.call_args.args[0]
-    output_mock.assert_called_once()
     assert _transactions_match(result.transactions, transactions)
     assert _order_ids_match(result.updated_orders, modified_orders)
-    assert _order_ids_match(result.completed_orders, completed_orders)
+    assert (set(result.completed_orders)) == set(completed_orders)
 
 
 def test_no_orders():
@@ -57,12 +55,12 @@ def test_no_orders():
     )
 
 
-def test_market_buy_order__no_money__no_transaction():
+def test_market_buy_order__no_money__no_transaction(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
@@ -79,12 +77,12 @@ def test_market_buy_order__no_money__no_transaction():
     )
 
 
-def test_market_buy_order__not_enough_money__buys_partial():
+def test_market_buy_order__not_enough_money__buys_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
@@ -100,17 +98,17 @@ def test_market_buy_order__not_enough_money__buys_partial():
                 ticker="AAPL", volume=Decimal(0.5), is_buy=True, investor_id=42
             )
         ],
-        modified_orders=["1"],
+        modified_orders=[uuids[0]],
         completed_orders=[],
     )
 
 
-def test_market_buy_order__success():
+def test_market_buy_order__success(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
@@ -127,16 +125,16 @@ def test_market_buy_order__success():
             )
         ],
         modified_orders=[],
-        completed_orders=["5"],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_buy_order__decimal_values__success():
+def test_market_buy_order__decimal_values__success(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(0.00003),
@@ -153,16 +151,16 @@ def test_market_buy_order__decimal_values__success():
             )
         ],
         modified_orders=[],
-        completed_orders=["5"],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_buy_order__decimal_values__buys_partial():
+def test_market_buy_order__decimal_values__buys_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(0.003),
@@ -178,24 +176,24 @@ def test_market_buy_order__decimal_values__buys_partial():
                 ticker="AAPL", volume=Decimal(0.00182), is_buy=True, investor_id=42
             )
         ],
-        modified_orders=["5"],
+        modified_orders=[uuids[0]],
         completed_orders=[],
     )
 
 
-def test_market_two_buy_orders__not_enough_balance__one_partial():
+def test_market_two_buy_orders__not_enough_balance__one_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1.5),
                     is_buy=True,
                 ),
                 MarketEngineOrder(
-                    id="2",
+                    id=uuids[1],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(3.5),
@@ -214,17 +212,17 @@ def test_market_two_buy_orders__not_enough_balance__one_partial():
                 ticker="AAPL", volume=Decimal(0.5), is_buy=True, investor_id=42
             ),
         ],
-        modified_orders=["2"],
-        completed_orders=["1"],
+        modified_orders=[uuids[1]],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_sell_order__success():
+def test_market_sell_order__success(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
@@ -241,16 +239,16 @@ def test_market_sell_order__success():
             )
         ],
         modified_orders=[],
-        completed_orders=["5"],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_sell_order__decimal_values__success():
+def test_market_sell_order__decimal_values__success(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(0.3009),
@@ -267,16 +265,16 @@ def test_market_sell_order__decimal_values__success():
             )
         ],
         modified_orders=[],
-        completed_orders=["5"],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_sell_order__decimal_values__sells_partial():
+def test_market_sell_order__decimal_values__sells_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="5",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(0.3009),
@@ -294,24 +292,24 @@ def test_market_sell_order__decimal_values__sells_partial():
                 ticker="AAPL", volume=Decimal(0.240001), is_buy=False, investor_id=42
             )
         ],
-        modified_orders=["5"],
+        modified_orders=[uuids[0]],
         completed_orders=[],
     )
 
 
-def test_order__price_not_given__ignores_order():
+def test_order__price_not_given__ignores_order(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
                     is_buy=False,
                 ),
                 MarketEngineOrder(
-                    id="2",
+                    id=uuids[1],
                     investor_id=42,
                     ticker="MSFT",
                     volume=Decimal(1),
@@ -331,16 +329,16 @@ def test_order__price_not_given__ignores_order():
             )
         ],
         modified_orders=[],
-        completed_orders=["1"],
+        completed_orders=[uuids[0]],
     )
 
 
-def test_market_sell_order__not_enough_assets__sells_partial():
+def test_market_sell_order__not_enough_assets__sells_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(10),
@@ -356,24 +354,24 @@ def test_market_sell_order__not_enough_assets__sells_partial():
                 ticker="AAPL", volume=Decimal(5), is_buy=False, investor_id=42
             )
         ],
-        modified_orders=["1"],
+        modified_orders=[uuids[0]],
         completed_orders=[],
     )
 
 
-def test_market_two_sell_orders__enough_assets_owned__sells_all():
+def test_market_two_sell_orders__enough_assets_owned__sells_all(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
                     is_buy=False,
                 ),
                 MarketEngineOrder(
-                    id="2",
+                    id=uuids[1],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(3),
@@ -393,23 +391,23 @@ def test_market_two_sell_orders__enough_assets_owned__sells_all():
             ),
         ],
         modified_orders=[],
-        completed_orders=["1", "2"],
+        completed_orders=[uuids[0], uuids[1]],
     )
 
 
-def test_market_two_sell_orders__not_enough_assets_owned__one_partial():
+def test_market_two_sell_orders__not_enough_assets_owned__one_partial(uuids):
     _run_test(
         engine_input=TradeEngineInput(
             orders=[
                 MarketEngineOrder(
-                    id="1",
+                    id=uuids[0],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(1),
                     is_buy=False,
                 ),
                 MarketEngineOrder(
-                    id="2",
+                    id=uuids[1],
                     investor_id=42,
                     ticker="AAPL",
                     volume=Decimal(3),
@@ -428,6 +426,6 @@ def test_market_two_sell_orders__not_enough_assets_owned__one_partial():
                 ticker="AAPL", volume=Decimal(1), is_buy=False, investor_id=42
             ),
         ],
-        modified_orders=["2"],
-        completed_orders=["1"],
+        modified_orders=[uuids[1]],
+        completed_orders=[uuids[0]],
     )

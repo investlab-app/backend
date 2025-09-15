@@ -1,5 +1,4 @@
 from collections import defaultdict
-from collections.abc import Callable
 from decimal import Decimal
 from typing import Any
 
@@ -9,29 +8,14 @@ from modules.orders.order_engine.structures import (
     EngineOrder,
     EngineTransaction,
     MarketEngineOrder,
+    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
 
 
 class TradeEngine:
-    def __init__(
-        self,
-        engine_input_fetcher: Callable[[], TradeEngineInput],
-        result_handler: Callable[[TradeEngineOutput, dict[str, Decimal]], None],
-    ):
-        self._engine_input_fetcher = engine_input_fetcher
-        self._result_handler = result_handler
-
-    def run(self):
-        in_data = self._engine_input_fetcher()
-        trade_engine = TradeEngineLogic()
-        output = trade_engine.process_transactions(in_data)
-        self._result_handler(output, in_data.prices)
-
-
-class TradeEngineLogic:
-    def process_transactions(
+    def run(
         self,
         engine_input: TradeEngineInput,
     ):
@@ -140,9 +124,13 @@ class SingleInvestorTradeEngine:
         self._balance -= volume * price
         order.volume_processed += volume
         if abs(order.volume - order.volume_processed) < PrecisionType.volume.precision:
-            self._completed_orders.append(order)
+            self._completed_orders.append(order.id)
         else:
-            self._modified_orders.append(order)
+            self._modified_orders.append(
+                MarketEngineOrderUpdate(
+                    id=order.id, volume_processed=order.volume_processed
+                )
+            )
 
     def _handle_market_sell(self, order: MarketEngineOrder):
         ticker = order.ticker
@@ -166,6 +154,10 @@ class SingleInvestorTradeEngine:
         order.volume_processed += volume
         self._assets[ticker] -= volume
         if abs(order.volume - order.volume_processed) < PrecisionType.volume.precision:
-            self._completed_orders.append(order)
+            self._completed_orders.append(order.id)
         else:
-            self._modified_orders.append(order)
+            self._modified_orders.append(
+                MarketEngineOrderUpdate(
+                    id=order.id, volume_processed=order.volume_processed
+                )
+            )
