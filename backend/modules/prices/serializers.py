@@ -89,3 +89,24 @@ class PriceInfoResponseSerializer(serializers.Serializer):
             )
 
         return record
+
+
+class FullMarketSnapshotQueryParams(serializers.Serializer):
+    tickers = serializers.CharField(
+        required=False,
+        allow_blank=True,
+        help_text=(
+            "Comma separated list of tickers. Empty or omitted means all tickers."
+        ),
+    )
+    include_otc = serializers.BooleanField(required=False, default=False)
+
+    def get_tickers_list(self) -> list[str] | None:
+        tickers_str: str | None = self.validated_data.get("tickers")
+        if tickers_str is None or tickers_str.strip() == "":
+            return None
+        return [t.strip().upper() for t in tickers_str.split(",") if t.strip()]
+
+
+class TickerPriceInfoSerializer(PriceInfoResponseSerializer):
+    ticker = serializers.CharField()

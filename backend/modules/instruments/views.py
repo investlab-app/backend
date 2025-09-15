@@ -7,7 +7,9 @@ from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     InstrumentListSerializer,
     InstrumentRetrieveSerializer,
+    InstrumentWithPriceInfoSerializer,
 )
+from modules.prices.services import PricesV2Service
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -61,4 +63,31 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
 
         instrument = get_object_or_404(self.get_queryset(), **criteria)
         serializer = self.get_serializer(instrument)
+        return Response(serializer.data)
+
+
+class InstrumentsWithPriceInfoListView(generics.ListAPIView):
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentWithPriceInfoSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["ticker"]
+    ordering_fields = ["ticker"]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else queryset
+
+        tickers = [obj.ticker.upper() for obj in items]
+        try:
+            snapshot_map = PricesV2Service.get_full_market_snapshot(tickers=tickers)
+        except Exception:
+            snapshot_map = {}
+
+        context = {**self.get_serializer_context(), "snapshot_map": snapshot_map}
+        serializer = self.get_serializer(items, many=True, context=context)
+
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
         return Response(serializer.data)

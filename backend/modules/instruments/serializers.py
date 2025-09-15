@@ -52,3 +52,16 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "icon",
             "logo",
         ]
+
+
+class InstrumentWithPriceInfoSerializer(InstrumentListSerializer):
+    price_info = serializers.SerializerMethodField()
+
+    class Meta(InstrumentListSerializer.Meta):
+        fields = InstrumentListSerializer.Meta.fields + ["price_info"]
+
+    def get_price_info(self, obj: Instrument):
+        # Prefer a pre-fetched snapshot map in context to avoid N calls
+        snapshot_map: dict | None = self.context.get("snapshot_map")
+        ticker = obj.ticker.upper()
+        return snapshot_map.get(ticker)
