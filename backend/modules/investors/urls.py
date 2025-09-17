@@ -36,8 +36,20 @@ urlpatterns = [
         name="asset-allocation",
     ),
     path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
-    path("me/statistics/most-traded/", MostTradedOverviewView.as_view(), name="most-traded"),
-    path("me/statistics/profile-overview/", ProfileOverviewView.as_view(), name="profile-overview"),
-    path("me/statistics/trading-overview/", TradingOverviewView.as_view(), name="trading-overview"),
+    path(
+        "me/statistics/most-traded/",
+        MostTradedOverviewView.as_view(),
+        name="most-traded",
+    ),
+    path(
+        "me/statistics/profile-overview/",
+        ProfileOverviewView.as_view(),
+        name="profile-overview",
+    ),
+    path(
+        "me/statistics/trading-overview/",
+        TradingOverviewView.as_view(),
+        name="trading-overview",
+    ),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
 ]

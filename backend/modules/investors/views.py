@@ -217,9 +217,9 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         gain_percent = 100 * gain / start_account_value
 
         response = {
-            "total_account_value" : round(value, 2),
-            "gain" : round(gain,2),
-            "gain_percent" : round(gain_percent,2)
+            "total_account_value": round(value, 2),
+            "gain": round(gain, 2),
+            "gain_percent": round(gain_percent, 2),
         }
 
         serializer = self.get_serializer(response)
@@ -228,7 +228,10 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     @extend_schema(
         responses={200: CurrentAccountValueSerializer},
         summary="Get current account value",
-        description="Get the current account value as well as gain and percent gain for the authenticated user.",
+        description=(
+            "Get the current account value as well as gain and percent gain "
+            "for the authenticated user."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
@@ -398,7 +401,7 @@ class ProfileOverviewView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))
         response = {
-            "level" : "Newbie",
+            "level": "Newbie",
             "exp_points": random.randint(500, 1000),
             "left_to_next_level": random.randint(100, 300),
         }
@@ -409,7 +412,10 @@ class ProfileOverviewView(generics.RetrieveAPIView):
     @extend_schema(
         responses={200: ProfileOverviewSerializer},
         summary="Get info about investor's level",
-        description="Get the information about the level, exp points and points left to next level for the current investor",
+        description=(
+            "Get the information about the level, exp points"
+            " and points left to next level for the current investor"
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
@@ -432,8 +438,8 @@ class TradingOverviewView(generics.RetrieveAPIView):
             "buys": buys,
             "sells": no_trades - buys,
             "avg_gain": round(random.uniform(1, 50), 2),
-            "avg_loss":  round(random.uniform(1, 50), 2),
-            "total_return":  round(random.uniform(500, 2000), 2),
+            "avg_loss": round(random.uniform(1, 50), 2),
+            "total_return": round(random.uniform(500, 2000), 2),
         }
 
         serializer = self.get_serializer(response)
@@ -442,7 +448,10 @@ class TradingOverviewView(generics.RetrieveAPIView):
     @extend_schema(
         responses={200: TradingOverviewSerializer},
         summary="Get trading performance overview",
-        description="Returns total trades, number of buys/sells, average gain/loss, and total return for the current investor."
+        description=(
+            "Returns total trades, number of buys/sells, average gain/loss, "
+            "and total return for the current investor."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
@@ -476,14 +485,16 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
             }
             instruments.append(instrument)
 
-
         serializer = self.get_serializer({"instruments": instruments})
         return Response(serializer.data)
 
     @extend_schema(
         responses={200: MostTradedOverviewSerializer},
         summary="Get overview about the most traded instruments",
-        description="Returns number of trades, number of buys/sells, average gain/loss, and total return from the most frequently traded instruments."
+        description=(
+            "Returns number of trades, number of buys/sells, avg gain/loss, "
+            "and total return from the most frequently traded instruments."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)

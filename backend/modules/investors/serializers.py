@@ -1,6 +1,5 @@
 from rest_framework import serializers
 
-from modules.core import defaults
 from modules.investors.models import Investor
 
 
@@ -109,7 +108,7 @@ class TradingOverviewSerializer(serializers.Serializer):
     avg_gain = serializers.FloatField()
     avg_loss = serializers.FloatField()
     total_return = serializers.FloatField()
-    
+
 
 class MostTradedItemSerializer(serializers.Serializer):
     symbol = serializers.CharField(max_length=10)
@@ -120,6 +119,6 @@ class MostTradedItemSerializer(serializers.Serializer):
     avg_loss = serializers.FloatField()
     total_return = serializers.FloatField()
 
+
 class MostTradedOverviewSerializer(serializers.Serializer):
     instruments = MostTradedItemSerializer(many=True)
-    
