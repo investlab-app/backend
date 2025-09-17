@@ -160,7 +160,7 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
         # Generate 120 data points (approximately 4 months of weekly data)
         data_points = []
         today = date.today()
-        base_value = random.uniform(100, 200)
+        base_value = random.uniform(100, 2000)
 
         for i in range(120):
             # Go back in time by weeks
@@ -201,7 +201,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     serializer_class = CurrentAccountValueSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        base_value = 10_000
+        start_account_value = 1000
         # Generate random account value for today, keeping it consistent with
         # the AccountValueOverTimeView endpoint.
         # Using user ID as seed for consistent data per user
@@ -209,18 +209,17 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
 
         # This calculation mimics the first (most recent) value generated
         # in the AccountValueOverTimeView.
-        base_value = random.uniform(100, 200)
+        base_value = random.uniform(100, 2000)
         variation = random.uniform(-0.1, 0.1)  # First variation
         value = base_value * (1 + variation)
 
-        current_value = {"value": round(value, 2)}
-        gain = current_value - base_value
-        gain_percent = gain / base_value
+        gain = value - start_account_value
+        gain_percent = 100 * gain / start_account_value
 
         response = {
-            "current_value" : current_value,
-            "gain" : gain,
-            "gain_percent" : gain_percent
+            "total_account_value" : round(value, 2),
+            "gain" : round(gain,2),
+            "gain_percent" : round(gain_percent,2)
         }
 
         serializer = self.get_serializer(response)
@@ -427,14 +426,14 @@ class TradingOverviewView(generics.RetrieveAPIView):
         random.seed(hash(self.request.user.id))
 
         no_trades = random.randint(5, 20)
-        buys = random.randint(2, no_trades),
+        buys = random.randint(2, no_trades)
         response = {
             "total_trades": no_trades,
             "buys": buys,
             "sells": no_trades - buys,
-            "avg_gain": round(random.uniform(1, 10)),
-            "avg_loss":  round(random.uniform(1, 10)),
-            "total_return":  round(random.uniform(1000, 2000)),
+            "avg_gain": round(random.uniform(1, 50), 2),
+            "avg_loss":  round(random.uniform(1, 50), 2),
+            "total_return":  round(random.uniform(500, 2000), 2),
         }
 
         serializer = self.get_serializer(response)
@@ -473,12 +472,12 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
                 "sells": no_trades - buys,
                 "avg_gain": round(random.uniform(1, 10), 2),
                 "avg_loss": round(random.uniform(1, 10), 2),
-                "total_return": round(random.uniform(1000, 2000), 2),
+                "total_return": round(random.uniform(10, 200), 2),
             }
             instruments.append(instrument)
 
 
-        serializer = self.get_serializer(instruments)
+        serializer = self.get_serializer({"instruments": instruments})
         return Response(serializer.data)
 
     @extend_schema(
