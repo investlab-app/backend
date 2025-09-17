@@ -1,5 +1,6 @@
 from rest_framework import serializers
 
+from backend.modules.core import defaults
 from modules.investors.models import Investor
 
 
@@ -65,7 +66,9 @@ class AccountValueOverTimeSerializer(serializers.Serializer):
 
 
 class CurrentAccountValueSerializer(serializers.Serializer):
-    value = serializers.FloatField()
+    total_account_value = defaults.DecimalField(decimal_places=2)
+    gain = defaults.DecimalField(decimal_places=2)
+    gain_percent = defaults.DecimalField(decimal_places=2)
 
 
 class AssetAllocationItemSerializer(serializers.Serializer):
@@ -91,3 +94,32 @@ class OwnedShareItemSerializer(serializers.Serializer):
 
 class OwnedSharesSerializer(serializers.Serializer):
     owned_shares = OwnedShareItemSerializer(many=True)
+
+
+class ProfileOverviewSerializer(serializers.Serializer):
+    level = serializers.CharField(max_length=30)
+    exp_points = serializers.IntegerField()
+    left_to_next_level = serializers.IntegerField()
+
+
+class TradingOverviewSerializer(serializers.Serializer):
+    total_trades = serializers.IntegerField()
+    buys = serializers.IntegerField()
+    sells = serializers.IntegerField()
+    avg_gain = defaults.DecimalField(decimal_places=2)
+    avg_loss = defaults.DecimalField(decimal_places=2)
+    total_return = defaults.DecimalField(decimal_places=2)
+    
+
+class MostTradedItemSerializer(serializers.Serializer):
+    symbol = serializers.CharField(max_length=10)
+    no_trades = serializers.IntegerField()
+    buys = serializers.IntegerField()
+    sells = serializers.IntegerField()
+    avg_gain = defaults.DecimalField(decimal_places=2)
+    avg_loss = defaults.DecimalField(decimal_places=2)
+    total_return = defaults.DecimalField(decimal_places=2)
+
+class MostTradedOverviewSerializer(serializers.Serializer):
+    instruments = MostTradedItemSerializer(many=True)
+    

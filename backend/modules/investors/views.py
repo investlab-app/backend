@@ -16,7 +16,10 @@ from modules.investors.serializers import (
     InvestorSerializer,
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
+    MostTradedOverviewSerializer,
     OwnedSharesSerializer,
+    ProfileOverviewSerializer,
+    TradingOverviewSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -198,6 +201,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     serializer_class = CurrentAccountValueSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        base_value = 10_000
         # Generate random account value for today, keeping it consistent with
         # the AccountValueOverTimeView endpoint.
         # Using user ID as seed for consistent data per user
@@ -210,14 +214,22 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         value = base_value * (1 + variation)
 
         current_value = {"value": round(value, 2)}
+        gain = current_value - base_value
+        gain_percent = gain / base_value
 
-        serializer = self.get_serializer(current_value)
+        response = {
+            "current_value" : current_value,
+            "gain" : gain,
+            "gain_percent" : gain_percent
+        }
+
+        serializer = self.get_serializer(response)
         return Response(serializer.data)
 
     @extend_schema(
         responses={200: CurrentAccountValueSerializer},
         summary="Get current account value",
-        description="Get the current account value for the authenticated user.",
+        description="Get the current account value as well as gain and percent gain for the authenticated user.",
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
@@ -372,6 +384,107 @@ class OwnedSharesView(generics.RetrieveAPIView):
         responses={200: OwnedSharesSerializer},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class ProfileOverviewView(generics.RetrieveAPIView):
+    """
+    Get the info about the investor's level.
+    """
+
+    serializer_class = ProfileOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+        response = {
+            "level" : "Newbie",
+            "exp_points": random.randint(500, 1000),
+            "left_to_next_level": random.randint(100, 300),
+        }
+
+        serializer = self.get_serializer(response)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: ProfileOverviewSerializer},
+        summary="Get info about investor's level",
+        description="Get the information about the level, exp points and points left to next level for the current investor",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class TradingOverviewView(generics.RetrieveAPIView):
+    """
+    Get the trading statistics for the current investor.
+    """
+
+    serializer_class = TradingOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+
+        no_trades = random.randint(5, 20)
+        buys = random.randint(2, no_trades),
+        response = {
+            "total_trades": no_trades,
+            "buys": buys,
+            "sells": no_trades - buys,
+            "avg_gain": round(random.uniform(1, 10)),
+            "avg_loss":  round(random.uniform(1, 10)),
+            "total_return":  round(random.uniform(1000, 2000)),
+        }
+
+        serializer = self.get_serializer(response)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: TradingOverviewSerializer},
+        summary="Get trading performance overview",
+        description="Returns total trades, number of buys/sells, average gain/loss, and total return for the current investor."
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class MostTradedOverviewView(generics.RetrieveAPIView):
+    """
+    Get the statistics for the most traded instruments of the current investor.
+    """
+
+    serializer_class = MostTradedOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+
+        instruments = []
+        num_instruments = random.randint(4, 8)
+
+        for i in range(num_instruments):
+            no_trades = random.randint(5, 20)
+            buys = random.randint(3, no_trades)
+
+            instrument = {
+                "symbol": f"SYM{i + 1}",
+                "no_trades": no_trades,
+                "buys": buys,
+                "sells": no_trades - buys,
+                "avg_gain": round(random.uniform(1, 10), 2),
+                "avg_loss": round(random.uniform(1, 10), 2),
+                "total_return": round(random.uniform(1000, 2000), 2),
+            }
+            instruments.append(instrument)
+
+
+        serializer = self.get_serializer(instruments)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: MostTradedOverviewSerializer},
+        summary="Get overview about the most traded instruments",
+        description="Returns number of trades, number of buys/sells, average gain/loss, and total return from the most frequently traded instruments."
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
