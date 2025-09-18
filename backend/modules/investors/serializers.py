@@ -65,7 +65,9 @@ class AccountValueOverTimeSerializer(serializers.Serializer):
 
 
 class CurrentAccountValueSerializer(serializers.Serializer):
-    value = serializers.FloatField()
+    total_account_value = serializers.FloatField()
+    gain = serializers.FloatField()
+    gain_percent = serializers.FloatField()
 
 
 class AssetAllocationItemSerializer(serializers.Serializer):
@@ -91,3 +93,32 @@ class OwnedShareItemSerializer(serializers.Serializer):
 
 class OwnedSharesSerializer(serializers.Serializer):
     owned_shares = OwnedShareItemSerializer(many=True)
+
+
+class ProfileOverviewSerializer(serializers.Serializer):
+    level = serializers.CharField(max_length=30)
+    exp_points = serializers.IntegerField()
+    left_to_next_level = serializers.IntegerField()
+
+
+class TradingOverviewSerializer(serializers.Serializer):
+    total_trades = serializers.IntegerField()
+    buys = serializers.IntegerField()
+    sells = serializers.IntegerField()
+    avg_gain = serializers.FloatField()
+    avg_loss = serializers.FloatField()
+    total_return = serializers.FloatField()
+
+
+class MostTradedItemSerializer(serializers.Serializer):
+    symbol = serializers.CharField(max_length=10)
+    no_trades = serializers.IntegerField()
+    buys = serializers.IntegerField()
+    sells = serializers.IntegerField()
+    avg_gain = serializers.FloatField()
+    avg_loss = serializers.FloatField()
+    total_return = serializers.FloatField()
+
+
+class MostTradedOverviewSerializer(serializers.Serializer):
+    instruments = MostTradedItemSerializer(many=True)
