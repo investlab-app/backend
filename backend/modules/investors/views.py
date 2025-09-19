@@ -18,8 +18,10 @@ from modules.investors.serializers import (
     InvestorUpdateSerializer,
     MostTradedOverviewSerializer,
     OwnedSharesSerializer,
+    PositionSerializer,
     ProfileOverviewSerializer,
     TradingOverviewSerializer,
+    TransactionHistoryQueryParams,
 )
 
 logger = logging.getLogger(__name__)
@@ -494,6 +496,92 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         description=(
             "Returns number of trades, number of buys/sells, avg gain/loss, "
             "and total return from the most frequently traded instruments."
+        ),
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class TransactionHistoryView(generics.RetrieveAPIView):
+    """
+    Get transaction history for the current authenticated user.
+    """
+
+    def retrieve(self, request, *args, **kwargs):
+        position_type = request.query_params.get("type", "both")
+        ticker = request.query_params.get("ticker", None)
+
+        # Use user ID as seed for consistent data per user
+        random.seed(hash(self.request.user.id))
+
+        # Mock stock symbols
+        symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "NFLX", "META"]
+
+        # Filter by ticker if provided
+        if ticker:
+            symbols = [ticker] if ticker in symbols else []
+
+        positions = []
+        for symbol in symbols:
+            # Generate random transaction history for this symbol
+            transaction_count = random.randint(1, 6)
+            history = []
+
+            for _ in range(transaction_count):
+                transaction_type = random.choice(["BUY", "SELL"])
+                transaction_date = date.today() - timedelta(days=random.randint(1, 365))
+
+                history_entry = {
+                    "date": transaction_date.isoformat(),
+                    "type": transaction_type,
+                    "quantity": random.randint(1, 10),
+                    "share_price": round(random.uniform(50, 1000), 2),
+                    "acquisition_price": (
+                        round(random.uniform(50, 1000), 2)
+                        if transaction_type == "BUY"
+                        else None
+                    ),
+                    "market_value": round(random.uniform(100, 10000), 2),
+                    "gain_loss": round(random.uniform(-500, 500), 2),
+                    "gain_loss_pct": round(random.uniform(-50, 50), 2),
+                }
+                history.append(history_entry)
+
+            # Sort history by date (newest first)
+            history.sort(key=lambda x: x["date"], reverse=True)
+
+            # Calculate position totals
+            total_quantity = sum(
+                h["quantity"] if h["type"] == "BUY" else -h["quantity"] for h in history
+            )
+
+            # Only include positions based on type filter
+            if position_type == "open" and total_quantity <= 0:
+                continue
+            if position_type == "closed" and total_quantity > 0:
+                continue
+
+            position = {
+                "name": symbol,
+                "quantity": max(0, total_quantity),
+                "market_value": round(random.uniform(1000, 50000), 2),
+                "gain_loss": round(random.uniform(-1000, 1000), 2),
+                "gain_loss_pct": round(random.uniform(-25, 25), 2),
+                "history": history,
+            }
+            positions.append(position)
+
+        # Return as array directly (matching frontend expectation)
+        serializer = PositionSerializer(positions, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        parameters=[TransactionHistoryQueryParams],
+        responses={200: PositionSerializer(many=True)},
+        summary="Get transaction history",
+        description=(
+            "Get transaction history for the currently authenticated user. "
+            "Can filter by position type (open/closed/both) and ticker symbol."
         ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:

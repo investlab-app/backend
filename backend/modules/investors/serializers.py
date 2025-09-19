@@ -122,3 +122,41 @@ class MostTradedItemSerializer(serializers.Serializer):
 
 class MostTradedOverviewSerializer(serializers.Serializer):
     instruments = MostTradedItemSerializer(many=True)
+
+
+class TransactionHistoryQueryParams(serializers.Serializer):
+    type = serializers.ChoiceField(
+        choices=["open", "closed", "both"],
+        required=False,
+        default="both",
+        help_text="Type of positions to fetch: 'open', 'closed', or 'both'",
+    )
+    ticker = serializers.CharField(
+        required=False, max_length=10, help_text="Filter by specific ticker symbol"
+    )
+
+
+class HistoryEntrySerializer(serializers.Serializer):
+    date = serializers.DateTimeField(help_text="Date of the transaction")
+    type = serializers.CharField(
+        max_length=10, help_text="Transaction type: BUY or SELL"
+    )
+    quantity = serializers.IntegerField(help_text="Number of shares traded")
+    share_price = serializers.FloatField(
+        help_text="Price per share at the time of transaction"
+    )
+    acquisition_price = serializers.FloatField(
+        allow_null=True, help_text="Acquisition price (null for SELL transactions)"
+    )
+    market_value = serializers.FloatField(help_text="Current market value")
+    gain_loss = serializers.FloatField(help_text="Gain or loss amount")
+    gain_loss_pct = serializers.FloatField(help_text="Gain or loss percentage")
+
+
+class PositionSerializer(serializers.Serializer):
+    name = serializers.CharField(max_length=10, help_text="Ticker symbol")
+    quantity = serializers.IntegerField(help_text="Total quantity of shares")
+    market_value = serializers.FloatField(help_text="Current market value")
+    gain_loss = serializers.FloatField(help_text="Total gain or loss")
+    gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
+    history = HistoryEntrySerializer(many=True, help_text="Transaction history")

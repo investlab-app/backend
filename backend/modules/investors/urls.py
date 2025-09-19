@@ -12,6 +12,7 @@ from modules.investors.views import (
     OwnedSharesView,
     ProfileOverviewView,
     TradingOverviewView,
+    TransactionHistoryView,
 )
 
 app_name = "investors"
@@ -50,6 +51,11 @@ urlpatterns = [
         "me/statistics/trading-overview/",
         TradingOverviewView.as_view(),
         name="trading-overview",
+    ),
+    path(
+        "me/transactions-history/",
+        TransactionHistoryView.as_view(),
+        name="transactions-history",
     ),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
 ]
