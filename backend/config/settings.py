@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_filters",
     # External modules
+    "django_extensions",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",

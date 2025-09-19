@@ -8,6 +8,6 @@ from modules.prices.views import (
 
 urlpatterns = [
     path("", PricesListView.as_view(), name="prices-list"),
-    path("<str:ticker>/", PricesRetrieveView.as_view(), name="prices-detail"),
     path("bars/", PricesBarsView.as_view(), name="prices-bars"),
+    path("<str:ticker>/", PricesRetrieveView.as_view(), name="prices-detail"),
 ]

@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 
 @patch("modules.prices.views.PricesV2Service.get_ohlc")
 def test_price_view(ohlc_mock, api_client_auth):
-    url = reverse("prices")
+    url = reverse("prices-bars")
 
     ohlc_mock.return_value = [
         {
