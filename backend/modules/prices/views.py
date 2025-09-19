@@ -4,50 +4,19 @@ from rest_framework.request import Request
 from rest_framework.response import Response
 
 from modules.prices.serializers import (
-    FullMarketSnapshotQueryParams,
-    InstrumentPriceResponseSerializer,
-    InstrumentV2PriceQueryParams,
-    PriceInfoResponseSerializer,
+    PricesListQueryParams,
+    PriceBarSerializer,
+    PriceBarsQueryParams,
+    PriceSerializer,
     TickerPriceInfoSerializer,
 )
 from modules.prices.services import PricesV2Service
 
 
-class PricesV2View(generics.GenericAPIView):
-    serializer_class = InstrumentPriceResponseSerializer
-
-    @extend_schema(parameters=[InstrumentV2PriceQueryParams])
-    def get(self, request: Request) -> Response:
-        params = InstrumentV2PriceQueryParams(data=request.query_params)
-        params.is_valid(raise_exception=True)
-        data = PricesV2Service.get_ohlc(**params.validated_data)
-        serializer = InstrumentPriceResponseSerializer(many=True, data=data)
-        serializer.is_valid(raise_exception=True)
-        json_data = serializer.validated_data
-        return Response(json_data)
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs["many"] = True
-        return super().get_serializer(*args, **kwargs)
-
-
-class PricesInfoView(generics.GenericAPIView):
-    serializer_class = PriceInfoResponseSerializer
-
+class PricesListView(generics.GenericAPIView):
+    @extend_schema(parameters=[PricesListQueryParams])
     def get(self, request: Request, *args, **kwargs) -> Response:
-        ticker = self.kwargs.get("ticker")
-        data = PricesV2Service.get_price_info(ticker)
-        sanitized_data = PriceInfoResponseSerializer.sanitize_output(data)
-        serializer = PriceInfoResponseSerializer(data=sanitized_data)
-        serializer.is_valid(raise_exception=True)
-        json_data = serializer.validated_data
-        return Response(json_data)
-
-
-class FullMarketSnapshotView(generics.GenericAPIView):
-    @extend_schema(parameters=[FullMarketSnapshotQueryParams])
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        params = FullMarketSnapshotQueryParams(data=request.query_params)
+        params = PricesListQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
         tickers_list = params.get_tickers_list()
         include_otc = params.validated_data.get("include_otc", False)
@@ -68,3 +37,34 @@ class FullMarketSnapshotView(generics.GenericAPIView):
                 "tickers": serializer.validated_data,
             }
         )
+
+
+class PricesRetrieveView(generics.GenericAPIView):
+    serializer_class = PriceSerializer
+
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        ticker = self.kwargs.get("ticker")
+        data = PricesV2Service.get_price_info(ticker)
+        sanitized_data = PriceSerializer.sanitize_output(data)
+        serializer = PriceSerializer(data=sanitized_data)
+        serializer.is_valid(raise_exception=True)
+        json_data = serializer.validated_data
+        return Response(json_data)
+
+
+class PricesBarsView(generics.GenericAPIView):
+    serializer_class = PriceBarSerializer
+
+    @extend_schema(parameters=[PriceBarsQueryParams])
+    def get(self, request: Request) -> Response:
+        params = PriceBarsQueryParams(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        data = PricesV2Service.get_ohlc(**params.validated_data)
+        serializer = PriceBarSerializer(many=True, data=data)
+        serializer.is_valid(raise_exception=True)
+        json_data = serializer.validated_data
+        return Response(json_data)
+
+    def get_serializer(self, *args, **kwargs):
+        kwargs["many"] = True
+        return super().get_serializer(*args, **kwargs)

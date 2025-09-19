@@ -9,16 +9,17 @@ from modules.prices.constants import POLYGON_INTERVALS
 
 MAX_DIGITS = 30
 DECIMAL_PLACES = 15
+ACCEPTABLE_DATE_FORMATS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]
 
 
-class InstrumentV2PriceQueryParams(serializers.Serializer):
+class PriceBarsQueryParams(serializers.Serializer):
     ticker = serializers.CharField(required=True, max_length=6)
     start_date = serializers.DateTimeField(
-        required=True, input_formats=["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]
+        required=True, input_formats=ACCEPTABLE_DATE_FORMATS
     )
     end_date = serializers.DateTimeField(
-        input_formats=["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"],
-        default=get_local_datetime().strftime("%Y-%m-%dT%H:%M:%S"),
+        input_formats=ACCEPTABLE_DATE_FORMATS,
+        default=get_local_datetime().strftime(ACCEPTABLE_DATE_FORMATS[0]),
     )
     interval = serializers.ChoiceField(choices=POLYGON_INTERVALS)
     interval_multiplier = serializers.IntegerField(default=1, min_value=1)
@@ -29,7 +30,7 @@ class InstrumentV2PriceQueryParams(serializers.Serializer):
         return super().validate(attrs)
 
 
-class InstrumentPriceResponseSerializer(serializers.Serializer):
+class PriceBarSerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField()
     high = defaults.DecimalField()
     low = defaults.DecimalField()
@@ -62,7 +63,7 @@ class DailySummarySerializer(serializers.Serializer):
         return record
 
 
-class PriceInfoResponseSerializer(serializers.Serializer):
+class PriceSerializer(serializers.Serializer):
     current_price = defaults.DecimalField()
     daily_summary = DailySummarySerializer()
     todays_change = defaults.DecimalField()
@@ -91,7 +92,7 @@ class PriceInfoResponseSerializer(serializers.Serializer):
         return record
 
 
-class FullMarketSnapshotQueryParams(serializers.Serializer):
+class PricesListQueryParams(serializers.Serializer):
     tickers = serializers.CharField(
         required=False,
         allow_blank=True,
@@ -108,5 +109,5 @@ class FullMarketSnapshotQueryParams(serializers.Serializer):
         return [t.strip().upper() for t in tickers_str.split(",") if t.strip()]
 
 
-class TickerPriceInfoSerializer(PriceInfoResponseSerializer):
+class TickerPriceInfoSerializer(PriceSerializer):
     ticker = serializers.CharField()

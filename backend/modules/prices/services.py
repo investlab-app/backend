@@ -10,7 +10,7 @@ from config.logging import get_logger
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
-from modules.prices.serializers import PriceInfoResponseSerializer
+from modules.prices.serializers import PriceSerializer
 
 logger = get_logger(__name__)
 
@@ -168,9 +168,9 @@ class PricesV2Service:
                     "last_updated": updated,
                 }
 
-                sanitized = PriceInfoResponseSerializer.sanitize_output(data)
+                sanitized = PriceSerializer.sanitize_output(data)
                 # Validate and store normalized payload
-                serializer = PriceInfoResponseSerializer(data=sanitized)
+                serializer = PriceSerializer(data=sanitized)
                 serializer.is_valid(raise_exception=True)
                 result[str(ticker).upper()] = serializer.validated_data
             except Exception:
