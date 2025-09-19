@@ -7,7 +7,7 @@ from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     InstrumentListSerializer,
     InstrumentRetrieveSerializer,
-    InstrumentWithPriceInfoSerializer,
+    InstrumentWithPriceSerializer,
 )
 from modules.prices.services import PricesV2Service
 
@@ -66,9 +66,9 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
         return Response(serializer.data)
 
 
-class InstrumentsWithPriceInfoListView(generics.ListAPIView):
+class InstrumentsWithPricesListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
-    serializer_class = InstrumentWithPriceInfoSerializer
+    serializer_class = InstrumentWithPriceSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
     search_fields = ["ticker"]
     ordering_fields = ["ticker"]
