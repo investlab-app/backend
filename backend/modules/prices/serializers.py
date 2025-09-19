@@ -93,21 +93,15 @@ class PriceSerializer(serializers.Serializer):
 
 
 class PricesListQueryParams(serializers.Serializer):
-    tickers = serializers.CharField(
-        required=False,
-        allow_blank=True,
-        help_text=(
-            "Comma separated list of tickers. Empty or omitted means all tickers."
-        ),
+    tickers = serializers.ListField(
+        child=serializers.CharField(),
+        required=True,
+        allow_empty=False,
+        max_length=50,
+        help_text="List of ticker symbols to fetch prices for (max 50).",
     )
     include_otc = serializers.BooleanField(required=False, default=False)
 
-    def get_tickers_list(self) -> list[str] | None:
-        tickers_str: str | None = self.validated_data.get("tickers")
-        if tickers_str is None or tickers_str.strip() == "":
-            return None
-        return [t.strip().upper() for t in tickers_str.split(",") if t.strip()]
 
-
-class TickerPriceInfoSerializer(PriceSerializer):
+class PriceListSerializer(PriceSerializer):
     ticker = serializers.CharField()

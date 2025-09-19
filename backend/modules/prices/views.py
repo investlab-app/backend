@@ -8,35 +8,35 @@ from modules.prices.serializers import (
     PriceBarSerializer,
     PriceBarsQueryParams,
     PriceSerializer,
-    TickerPriceInfoSerializer,
+    PriceListSerializer,
 )
 from modules.prices.services import PricesV2Service
 
 
 class PricesListView(generics.GenericAPIView):
+
     @extend_schema(parameters=[PricesListQueryParams])
     def get(self, request: Request, *args, **kwargs) -> Response:
         params = PricesListQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
-        tickers_list = params.get_tickers_list()
-        include_otc = params.validated_data.get("include_otc", False)
+
+        tickers_list = params.validated_data.get("tickers")
+        tickers_list = [ticker.upper() for ticker in tickers_list]
+        include_otc = params.validated_data.get("include_otc")
 
         snapshot_map = PricesV2Service.get_full_market_snapshot(
             tickers=tickers_list, include_otc=include_otc
         )
 
-        # Shape: { 'AAPL': {...}, ... } -> [ { ticker: 'AAPL', ... }, ... ]
-        items = [{"ticker": ticker, **info} for ticker, info in snapshot_map.items()]
+        # Reshape: { 'AAPL': {...}, ... } -> [ { ticker: 'AAPL', ... }, ... ]
+        items = [
+            {"ticker": ticker, **info}
+            for ticker, info in snapshot_map.items()
+        ]
 
-        serializer = TickerPriceInfoSerializer(many=True, data=items)
+        serializer = PriceListSerializer(many=True, data=items)
         serializer.is_valid(raise_exception=True)
-        return Response(
-            {
-                "count": len(items),
-                "status": "OK",
-                "tickers": serializer.validated_data,
-            }
-        )
+        return Response(serializer.validated_data)
 
 
 class PricesRetrieveView(generics.GenericAPIView):
@@ -55,7 +55,10 @@ class PricesRetrieveView(generics.GenericAPIView):
 class PricesBarsView(generics.GenericAPIView):
     serializer_class = PriceBarSerializer
 
-    @extend_schema(parameters=[PriceBarsQueryParams])
+    @extend_schema(
+        parameters=[PriceBarsQueryParams],
+        responses=PriceBarsQueryParams(many=True)
+    )
     def get(self, request: Request) -> Response:
         params = PriceBarsQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
@@ -64,7 +67,3 @@ class PricesBarsView(generics.GenericAPIView):
         serializer.is_valid(raise_exception=True)
         json_data = serializer.validated_data
         return Response(json_data)
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs["many"] = True
-        return super().get_serializer(*args, **kwargs)
