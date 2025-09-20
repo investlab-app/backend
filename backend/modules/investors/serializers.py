@@ -4,7 +4,6 @@ from modules.investors.models import Investor
 from modules.investors.services import InvestorsService
 
 
-
 class InvestorSerializer(serializers.ModelSerializer):
     watching_instruments_count = serializers.IntegerField(
         source="watching_instruments.count", read_only=True
@@ -19,6 +18,7 @@ class InvestorSerializer(serializers.ModelSerializer):
             "watching_instruments_count",
         ]
         read_only_fields = ["clerk_id"]
+
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:

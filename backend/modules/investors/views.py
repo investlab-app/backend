@@ -115,7 +115,7 @@ class InvestorExpView(generics.RetrieveAPIView):
     """
     Get investor exp and level for the current authenticated user.
     """
-    
+
     serializer_class = InvestorExpSerializer
 
     def get_object(self):
@@ -139,7 +139,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
     """
     Get investor statistics for the current authenticated user.
     """
-    
+
     serializer_class = InvestorStatsSerializer
 
     def retrieve(self, request, *args, **kwargs):
