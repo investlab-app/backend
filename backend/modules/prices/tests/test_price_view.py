@@ -2,6 +2,7 @@ from datetime import datetime
 from decimal import Decimal
 from unittest.mock import patch
 
+import pytest
 from django.urls import reverse
 
 from modules.core.tests.conftest import api_client_auth  # noqa: F401

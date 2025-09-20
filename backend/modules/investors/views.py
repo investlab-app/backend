@@ -117,8 +117,6 @@ class InvestorExpView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorExpSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         try:
