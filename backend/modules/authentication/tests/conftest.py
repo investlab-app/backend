@@ -8,7 +8,7 @@ from rest_framework.test import APIRequestFactory
 from modules.authentication.clerk_auth import ClerkUser
 
 
-@pytest.fixture()
+@pytest.fixture
 def user():
     return ClerkUser(
         clerk_id="id",

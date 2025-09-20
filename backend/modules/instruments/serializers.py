@@ -1,4 +1,3 @@
-from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
@@ -71,3 +70,9 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
 
         ticker = obj.ticker.upper()
         return PriceDailySummarySerializer(snapshot_map.get(ticker)).data
+
+
+class InstrumentNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrument
+        fields = ["ticker"]

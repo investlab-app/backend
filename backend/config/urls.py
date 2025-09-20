@@ -51,6 +51,7 @@ urlpatterns = [
     path(f"{PREFIX}/news/", include("modules.news.urls")),
     path(f"{PREFIX}/prices/", include("modules.prices.urls")),
     path(f"{PREFIX}/test/", include("modules.core.urls")),
+    path(f"{PREFIX}/orders/", include("modules.orders.urls")),
 ]
 
 # Consider other media server on production
