@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from config.utils import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
@@ -33,6 +35,8 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_results",
+    "django_celery_beat",
     "django_filters",
     # External modules
     "rest_framework",
@@ -44,6 +48,8 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.instruments",
     "modules.investors",
+    "modules.markets",
+    "modules.news",
     "modules.orders",
     "modules.prices",
     "modules.transactions",
@@ -142,6 +148,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -193,8 +203,6 @@ SPECTACULAR_SETTINGS = {
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
 }
-
-# AUTH_USER_MODEL = "users.User"
 
 # SIMPLE_JWT = {
 #     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
@@ -348,6 +356,29 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+# Celery settings
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXTENDED = True
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+if not DEBUG:
+    CELERY_BEAT_SCHEDULE = {
+        "modules.instruments.tasks.sync_instruments_base_info": {
+            "task": "modules.instruments.tasks.sync_instruments_base_info",
+            "schedule": crontab(hour=4, minute=0),  # Every day at 4:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_detail_info": {
+            "task": "modules.instruments.tasks.sync_instruments_detail_info",
+            "schedule": crontab(hour=5, minute=0),  # Every day at 5:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_images": {
+            "task": "modules.instruments.tasks.sync_instruments_images",
+            "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
+        },
+    }
+
 
 # Clerk settings
 CLERK_SECRET_KEY = os.environ["CLERK_SECRET_KEY"]

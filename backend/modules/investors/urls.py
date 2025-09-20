@@ -9,7 +9,11 @@ from modules.investors.views import (
     InvestorExpView,
     InvestorListView,
     InvestorStatsView,
+    MostTradedOverviewView,
     OwnedSharesView,
+    ProfileOverviewView,
+    TradingOverviewView,
+    TransactionHistoryView,
 )
 
 app_name = "investors"
@@ -31,9 +35,30 @@ urlpatterns = [
         name="current-account-value",
     ),
     path(
-        "me/asset-allocation",
+        "me/asset-allocation/",
         AssetAllocationView.as_view(),
         name="asset-allocation",
     ),
-    path("me/owned-shares", OwnedSharesView.as_view(), name="owned-shares"),
+    path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
+    path(
+        "me/statistics/most-traded/",
+        MostTradedOverviewView.as_view(),
+        name="most-traded",
+    ),
+    path(
+        "me/statistics/profile-overview/",
+        ProfileOverviewView.as_view(),
+        name="profile-overview",
+    ),
+    path(
+        "me/statistics/trading-overview/",
+        TradingOverviewView.as_view(),
+        name="trading-overview",
+    ),
+    path(
+        "me/transactions-history/",
+        TransactionHistoryView.as_view(),
+        name="transactions-history",
+    ),
+    path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
 ]

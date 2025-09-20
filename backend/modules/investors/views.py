@@ -4,11 +4,9 @@ from datetime import date, timedelta
 
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.authentication.clerk_auth import ClerkAuthentication
 from modules.investors.models import Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
@@ -19,7 +17,12 @@ from modules.investors.serializers import (
     InvestorSerializer,
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
+    MostTradedOverviewSerializer,
     OwnedSharesSerializer,
+    PositionSerializer,
+    ProfileOverviewSerializer,
+    TradingOverviewSerializer,
+    TransactionHistoryQueryParams,
 )
 
 logger = logging.getLogger(__name__)
@@ -32,8 +35,6 @@ class InvestorListView(generics.ListAPIView):
 
     queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_serializer_class(self):
         return InvestorSerializer
@@ -55,8 +56,6 @@ class InvestorDetailView(generics.RetrieveUpdateAPIView):
 
     queryset = Investor.objects.prefetch_related("watching_instruments")
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
     lookup_field = "clerk_id"
 
     def get_serializer_class(self):
@@ -97,17 +96,11 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
 
     def get_object(self):
-        try:
-            print(self.request.user.id)
-            return Investor.objects.prefetch_related("watching_instruments").get(
-                clerk_id=self.request.user.id
-            )
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
+        return Investor.objects.prefetch_related("watching_instruments").get(
+            clerk_id=self.request.user.id
+        )
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -150,14 +143,6 @@ class InvestorStatsView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorStatsSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random stats data
@@ -195,14 +180,6 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
     """
 
     serializer_class = AccountValueOverTimeSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Generate random account value data over time
@@ -212,7 +189,7 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
         # Generate 120 data points (approximately 4 months of weekly data)
         data_points = []
         today = date.today()
-        base_value = random.uniform(100, 200)
+        base_value = random.uniform(100, 2000)
 
         for i in range(120):
             # Go back in time by weeks
@@ -251,16 +228,9 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     """
 
     serializer_class = CurrentAccountValueSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
+        start_account_value = 1000
         # Generate random account value for today, keeping it consistent with
         # the AccountValueOverTimeView endpoint.
         # Using user ID as seed for consistent data per user
@@ -268,19 +238,29 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
 
         # This calculation mimics the first (most recent) value generated
         # in the AccountValueOverTimeView.
-        base_value = random.uniform(100, 200)
+        base_value = random.uniform(100, 2000)
         variation = random.uniform(-0.1, 0.1)  # First variation
         value = base_value * (1 + variation)
 
-        current_value = {"value": round(value, 2)}
+        gain = value - start_account_value
+        gain_percent = 100 * gain / start_account_value
 
-        serializer = self.get_serializer(current_value)
+        response = {
+            "total_account_value": round(value, 2),
+            "gain": round(gain, 2),
+            "gain_percent": round(gain_percent, 2),
+        }
+
+        serializer = self.get_serializer(response)
         return Response(serializer.data)
 
     @extend_schema(
         responses={200: CurrentAccountValueSerializer},
         summary="Get current account value",
-        description="Get the current account value for the authenticated user.",
+        description=(
+            "Get the current account value as well as gain and percent gain "
+            "for the authenticated user."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
@@ -292,14 +272,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     """
 
     serializer_class = AssetAllocationSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         # Using user ID as seed for consistent data per user
@@ -375,14 +347,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
     """
 
     serializer_class = OwnedSharesSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        try:
-            return Investor.objects.get(clerk_id=self.request.user.id)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(clerk_id=self.request.user.id)
 
     def retrieve(self, request, *args, **kwargs):
         random.seed(hash(self.request.user.id))
@@ -451,6 +415,201 @@ class OwnedSharesView(generics.RetrieveAPIView):
         responses={200: OwnedSharesSerializer},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class ProfileOverviewView(generics.RetrieveAPIView):
+    """
+    Get the info about the investor's level.
+    """
+
+    serializer_class = ProfileOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+        response = {
+            "level": "Newbie",
+            "exp_points": random.randint(500, 1000),
+            "left_to_next_level": random.randint(100, 300),
+        }
+
+        serializer = self.get_serializer(response)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: ProfileOverviewSerializer},
+        summary="Get info about investor's level",
+        description=(
+            "Get the information about the level, exp points"
+            " and points left to next level for the current investor"
+        ),
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class TradingOverviewView(generics.RetrieveAPIView):
+    """
+    Get the trading statistics for the current investor.
+    """
+
+    serializer_class = TradingOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+
+        no_trades = random.randint(5, 20)
+        buys = random.randint(2, no_trades)
+        response = {
+            "total_trades": no_trades,
+            "buys": buys,
+            "sells": no_trades - buys,
+            "avg_gain": round(random.uniform(1, 50), 2),
+            "avg_loss": round(random.uniform(1, 50), 2),
+            "total_return": round(random.uniform(500, 2000), 2),
+        }
+
+        serializer = self.get_serializer(response)
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: TradingOverviewSerializer},
+        summary="Get trading performance overview",
+        description=(
+            "Returns total trades, number of buys/sells, average gain/loss, "
+            "and total return for the current investor."
+        ),
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class MostTradedOverviewView(generics.RetrieveAPIView):
+    """
+    Get the statistics for the most traded instruments of the current investor.
+    """
+
+    serializer_class = MostTradedOverviewSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        random.seed(hash(self.request.user.id))
+
+        instruments = []
+        num_instruments = random.randint(4, 8)
+
+        for i in range(num_instruments):
+            no_trades = random.randint(5, 20)
+            buys = random.randint(3, no_trades)
+
+            instrument = {
+                "symbol": f"SYM{i + 1}",
+                "no_trades": no_trades,
+                "buys": buys,
+                "sells": no_trades - buys,
+                "avg_gain": round(random.uniform(1, 10), 2),
+                "avg_loss": round(random.uniform(1, 10), 2),
+                "total_return": round(random.uniform(10, 200), 2),
+            }
+            instruments.append(instrument)
+
+        serializer = self.get_serializer({"instruments": instruments})
+        return Response(serializer.data)
+
+    @extend_schema(
+        responses={200: MostTradedOverviewSerializer},
+        summary="Get overview about the most traded instruments",
+        description=(
+            "Returns number of trades, number of buys/sells, avg gain/loss, "
+            "and total return from the most frequently traded instruments."
+        ),
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
+
+
+class TransactionHistoryView(generics.RetrieveAPIView):
+    """
+    Get transaction history for the current authenticated user.
+    """
+
+    def retrieve(self, request, *args, **kwargs):
+        position_type = request.query_params.get("type", "both")
+        ticker = request.query_params.get("ticker", None)
+
+        # Use user ID as seed for consistent data per user
+        random.seed(hash(self.request.user.id))
+
+        # Mock stock symbols
+        symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "NFLX", "META"]
+
+        # Filter by ticker if provided
+        if ticker:
+            symbols = [ticker] if ticker in symbols else []
+
+        positions = []
+        for symbol in symbols:
+            # Generate random transaction history for this symbol
+            transaction_count = random.randint(1, 6)
+            history = []
+
+            for _ in range(transaction_count):
+                transaction_type = random.choice(["BUY", "SELL"])
+                transaction_date = date.today() - timedelta(days=random.randint(1, 365))
+
+                history_entry = {
+                    "date": transaction_date.isoformat(),
+                    "type": transaction_type,
+                    "quantity": random.randint(1, 10),
+                    "share_price": round(random.uniform(50, 1000), 2),
+                    "acquisition_price": (
+                        round(random.uniform(50, 1000), 2)
+                        if transaction_type == "BUY"
+                        else None
+                    ),
+                    "market_value": round(random.uniform(100, 10000), 2),
+                    "gain_loss": round(random.uniform(-500, 500), 2),
+                    "gain_loss_pct": round(random.uniform(-50, 50), 2),
+                }
+                history.append(history_entry)
+
+            # Sort history by date (newest first)
+            history.sort(key=lambda x: x["date"], reverse=True)
+
+            # Calculate position totals
+            total_quantity = sum(
+                h["quantity"] if h["type"] == "BUY" else -h["quantity"] for h in history
+            )
+
+            # Only include positions based on type filter
+            if position_type == "open" and total_quantity <= 0:
+                continue
+            if position_type == "closed" and total_quantity > 0:
+                continue
+
+            position = {
+                "name": symbol,
+                "quantity": max(0, total_quantity),
+                "market_value": round(random.uniform(1000, 50000), 2),
+                "gain_loss": round(random.uniform(-1000, 1000), 2),
+                "gain_loss_pct": round(random.uniform(-25, 25), 2),
+                "history": history,
+            }
+            positions.append(position)
+
+        # Return as array directly (matching frontend expectation)
+        serializer = PositionSerializer(positions, many=True)
+        return Response(serializer.data)
+
+    @extend_schema(
+        parameters=[TransactionHistoryQueryParams],
+        responses={200: PositionSerializer(many=True)},
+        summary="Get transaction history",
+        description=(
+            "Get transaction history for the currently authenticated user. "
+            "Can filter by position type (open/closed/both) and ticker symbol."
+        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)

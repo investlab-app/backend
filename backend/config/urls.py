@@ -1,3 +1,5 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
 from django.urls import include, path
 from drf_spectacular.views import (
@@ -42,9 +44,14 @@ urlpatterns = [
         name="redoc",
     ),
     # Modules
-    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
-    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
+    path(f"{PREFIX}/markets/", include("modules.markets.urls")),
+    path(f"{PREFIX}/news/", include("modules.news.urls")),
+    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
     path(f"{PREFIX}/test/", include("modules.core.urls")),
 ]
+
+# Consider other media server on production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

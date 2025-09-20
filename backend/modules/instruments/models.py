@@ -4,6 +4,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
+from modules.core.utils import UploadTo
 from modules.instruments.constants import LocaleChoices, MarketChoices
 
 
@@ -216,13 +217,27 @@ class Instrument(BaseModel):
     )
 
     # Polygon Branding fields
-    icon_url = models.URLField(
-        verbose_name=_("Icon URL"),
+    icon_polygon_url = models.URLField(
+        verbose_name=_("Icon Polygon URL"),
         blank=True,
         null=True,
     )
-    logo_url = models.URLField(
-        verbose_name=_("Logo URL"),
+    logo_polygon_url = models.URLField(
+        verbose_name=_("Logo Polygon URL"),
+        blank=True,
+        null=True,
+    )
+
+    # Stored images
+    icon = models.ImageField(
+        upload_to=UploadTo("instruments/icons/"),
+        verbose_name=_("Icon"),
+        blank=True,
+        null=True,
+    )
+    logo = models.ImageField(
+        upload_to=UploadTo("instruments/logos/"),
+        verbose_name=_("Logo"),
         blank=True,
         null=True,
     )
