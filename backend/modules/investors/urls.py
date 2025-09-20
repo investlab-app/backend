@@ -3,7 +3,6 @@ from django.urls import path
 from modules.investors.views import (
     AccountValueOverTimeView,
     AssetAllocationView,
-    AssetListView,
     CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,

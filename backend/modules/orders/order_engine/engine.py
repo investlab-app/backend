@@ -67,7 +67,7 @@ class TradeEngine:
             result[asset.investor_id][asset.ticker] = asset.volume
         return result
 
-    def _assign_investor(self, transactions: list[EngineTransaction], investor_id: str):
+    def _assign_investor(self, transactions: list[EngineTransaction], investor_id: int):
         for t in transactions:
             t.investor_id = investor_id
 

@@ -87,9 +87,11 @@ async def test_trade_engine_data_fetcher(uuids):
 @patch("modules.orders.services.sell")
 @patch("modules.orders.services.buy")
 async def test_trade_engine_output_handler(buy, sell, uuids):
+    ticker = create_fake_instrument(ticker="AAPL")
+
     def setup():
+        ticker.save()
         inv = fake_investor(investor_id=42, save=True)
-        ticker = create_fake_instrument(ticker="AAPL", save=True)
 
         fake_market_order(
             investor=inv, ticker=ticker, order_id=uuids[0], volume=Decimal(5), save=True
@@ -130,10 +132,10 @@ async def test_trade_engine_output_handler(buy, sell, uuids):
 
     investor = await database_sync_to_async(Investor.objects.get)(id=42)
     buy.assert_called_with(
-        investor=investor, ticker="AAPL", volume=Decimal(5), action_price=20
+        investor=investor, ticker=ticker, volume=Decimal(5), action_price=20
     )
     sell.assert_called_with(
-        investor=investor, ticker="AAPL", volume=Decimal(15), action_price=20
+        investor=investor, ticker=ticker, volume=Decimal(15), action_price=20
     )
 
 

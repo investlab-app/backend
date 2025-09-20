@@ -13,7 +13,7 @@ class EngineOrder(BaseModel):
 class MarketEngineOrder(EngineOrder):
     volume: Decimal
     is_buy: bool
-    volume_processed: Decimal = 0
+    volume_processed: Decimal = Decimal(0)
 
 
 class EngineOrderUpdate(BaseModel):

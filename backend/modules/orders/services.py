@@ -6,6 +6,7 @@ from channels.db import database_sync_to_async
 from channels.layers import get_channel_layer
 from django.db import transaction
 
+from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.orders.models import Order
 from modules.orders.order_engine.converters import (
@@ -54,13 +55,15 @@ class TradeEngineDataFetcher:
 
     def _prefetch_data_sync(self):
         with transaction.atomic():
-            assets = list(Asset.objects.all())
-            orders = list(Order.objects.prefetch_related("detail"))
-            investors = list(Investor.objects.all())
+            assets: list[Asset] = list(Asset.objects.all())  # ty: ignore
+            orders: list[Order] = list(  # ty: ignore[invalid-assignment]
+                Order.objects.prefetch_related("detail")
+            )
+            investors: list[Investor] = list(Investor.objects.all())  # ty: ignore
 
             engine_orders = [order_to_engine_order(o) for o in orders]
             engine_assets = [asset_to_engine_asset(a) for a in assets]
-            balances = {i.id: i.balance for i in investors}
+            balances = {i.pk: i.balance for i in investors}
 
             return engine_orders, engine_assets, balances
 
@@ -115,24 +118,32 @@ class TradeEngineOutputHandler:
                 raise ValueError("Object not supported")
 
     def _handle_transactions(
-        self, transactions: list[EngineTransaction], prices: dict[str, float]
+        self, transactions: list[EngineTransaction], prices: dict[str, Decimal]
     ):
         investor_ids = [t.investor_id for t in transactions]
-        investors = Investor.objects.filter(id__in=investor_ids)
-        investors = {i.id: i for i in investors}
+        investors = Investor.objects.filter(
+            id__in=investor_ids
+        )  # ty: ignore[invalid-assignment]
+        investors = {i.pk: i for i in investors}
+
+        ticker_names = [t.ticker for t in transactions]
+        ticker_list: list[Instrument] = (  # ty: ignore[invalid-assignment]
+            Instrument.objects.filter(ticker__in=ticker_names)
+        )
+        tickers = {i.ticker: i for i in ticker_list}
 
         for t in transactions:
             if t.is_buy:
                 buy(
                     investor=investors[t.investor_id],
-                    ticker=t.ticker,
+                    ticker=tickers[t.ticker],
                     volume=t.volume,
                     action_price=prices[t.ticker],
                 )
             else:
                 sell(
                     investor=investors[t.investor_id],
-                    ticker=t.ticker,
+                    ticker=tickers[t.ticker],
                     volume=t.volume,
                     action_price=prices[t.ticker],
                 )
