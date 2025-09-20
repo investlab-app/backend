@@ -160,6 +160,8 @@ class PositionSerializer(serializers.Serializer):
     gain_loss = serializers.FloatField(help_text="Total gain or loss")
     gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")
+
+
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset

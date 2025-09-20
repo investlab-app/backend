@@ -587,6 +587,8 @@ class TransactionHistoryView(generics.RetrieveAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
+
+
 class AssetListView(generics.ListAPIView):
     serializer_class = AssetSerializer
 
