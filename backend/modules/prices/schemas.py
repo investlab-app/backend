@@ -1,38 +1,42 @@
+from decimal import Decimal
+
 from polygon.rest.models.snapshot import TickerSnapshot
 from pydantic import BaseModel
 
+from modules.core.utils import to_quantized_decimal
+
 
 class DailySummary(BaseModel):
-    open: float
-    high: float
-    low: float
-    close: float
-    volume: float
-    volume_weighted_average_price: float
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
+    volume_weighted_average_price: Decimal
 
 
 class DailyPriceSummary(BaseModel):
     ticker: str
-    current_price: float
+    current_price: Decimal
     daily_summary: DailySummary
-    todays_change: float
-    todays_change_percent: float
+    todays_change: Decimal
+    todays_change_percent: Decimal
     last_updated: int
 
     @classmethod
     def from_snapshot(cls, snapshot: TickerSnapshot) -> "DailyPriceSummary":
         return cls(
             ticker=snapshot.ticker,
-            current_price=snapshot.min.close,
+            current_price=to_quantized_decimal(snapshot.min.close),
             daily_summary=DailySummary(
-                open=snapshot.min.open,
-                high=snapshot.min.high,
-                low=snapshot.min.low,
-                close=snapshot.min.close,
-                volume=snapshot.day.volume,
-                volume_weighted_average_price=snapshot.day.vwap,
+                open=to_quantized_decimal(snapshot.min.open),
+                high=to_quantized_decimal(snapshot.min.high),
+                low=to_quantized_decimal(snapshot.min.low),
+                close=to_quantized_decimal(snapshot.min.close),
+                volume=to_quantized_decimal(snapshot.day.volume),
+                volume_weighted_average_price=to_quantized_decimal(snapshot.day.vwap),
             ),
-            todays_change=snapshot.todays_change,
-            todays_change_percent=snapshot.todays_change_percent,
+            todays_change=to_quantized_decimal(snapshot.todays_change),
+            todays_change_percent=to_quantized_decimal(snapshot.todays_change_percent),
             last_updated=snapshot.updated,
         )
