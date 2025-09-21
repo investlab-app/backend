@@ -6,7 +6,7 @@ import pytest
 from django.urls import reverse
 
 from modules.core.tests.conftest import api_client_auth  # noqa: F401
-from modules.prices.schemas import PriceBar, PriceDailySummary, PriceDaily
+from modules.prices.schemas import PriceBar, PriceDaily, PriceDailySummary
 
 pytestmark = pytest.mark.django_db
 
