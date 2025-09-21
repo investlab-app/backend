@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.instruments",
     "modules.investors",
+    "modules.markets",
     "modules.news",
     "modules.orders",
     "modules.prices",
@@ -362,20 +363,21 @@ CELERY_RESULT_BACKEND = "django-db"
 CELERY_RESULT_EXTENDED = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
 
-CELERY_BEAT_SCHEDULE = {
-    "modules.instruments.tasks.sync_instruments_base_info": {
-        "task": "modules.instruments.tasks.sync_instruments_base_info",
-        "schedule": crontab(hour=4, minute=0),  # Every day at 4:00 AM
-    },
-    "modules.instruments.tasks.sync_instruments_detail_info": {
-        "task": "modules.instruments.tasks.sync_instruments_detail_info",
-        "schedule": crontab(hour=5, minute=0),  # Every day at 5:00 AM
-    },
-    "modules.instruments.tasks.sync_instruments_images": {
-        "task": "modules.instruments.tasks.sync_instruments_images",
-        "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
-    },
-}
+if not DEBUG:
+    CELERY_BEAT_SCHEDULE = {
+        "modules.instruments.tasks.sync_instruments_base_info": {
+            "task": "modules.instruments.tasks.sync_instruments_base_info",
+            "schedule": crontab(hour=4, minute=0),  # Every day at 4:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_detail_info": {
+            "task": "modules.instruments.tasks.sync_instruments_detail_info",
+            "schedule": crontab(hour=5, minute=0),  # Every day at 5:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_images": {
+            "task": "modules.instruments.tasks.sync_instruments_images",
+            "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
+        },
+    }
 
 
 # Clerk settings
