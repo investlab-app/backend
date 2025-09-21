@@ -1,6 +1,9 @@
+from dataclasses import asdict
+
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
+from modules.prices.serializers import PriceDailySummarySerializer
 
 
 class InstrumentListSerializer(serializers.ModelSerializer):
@@ -67,4 +70,4 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
             raise serializers.ValidationError("Serializer context missing snapshot_map")
 
         ticker = obj.ticker.upper()
-        return snapshot_map.get(ticker).model_dump() if ticker in snapshot_map else None
+        return PriceDailySummarySerializer(snapshot_map.get(ticker)).data

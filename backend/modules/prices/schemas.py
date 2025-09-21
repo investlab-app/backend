@@ -1,12 +1,40 @@
+from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
-from polygon.rest.models.snapshot import TickerSnapshot
-from pydantic import BaseModel
-
+from polygon.rest.models.snapshot import Agg, TickerSnapshot
 from modules.core.utils import to_quantized_decimal
 
 
-class DailySummary(BaseModel):
+@dataclass
+class PriceBar:
+    timestamp: datetime
+    open: Decimal
+    high: Decimal
+    low: Decimal
+    close: Decimal
+    volume: Decimal
+    transactions: int | None = None
+    volume_weighted_average_price: Decimal | None = None
+
+    @classmethod
+    def from_agg(cls, agg: Agg) -> "PriceBar":
+        return cls(
+            timestamp=datetime.fromtimestamp(agg.timestamp / 1000),
+            open=to_quantized_decimal(agg.open),
+            high=to_quantized_decimal(agg.high),
+            low=to_quantized_decimal(agg.low),
+            close=to_quantized_decimal(agg.close),
+            volume=to_quantized_decimal(agg.volume),
+            transactions=agg.transactions,
+            volume_weighted_average_price=to_quantized_decimal(agg.vwap)
+            if agg.vwap is not None
+            else None,
+        )
+
+
+@dataclass
+class PriceDaily:
     open: Decimal
     high: Decimal
     low: Decimal
@@ -15,28 +43,29 @@ class DailySummary(BaseModel):
     volume_weighted_average_price: Decimal
 
 
-class DailyPriceSummary(BaseModel):
+@dataclass
+class PriceDailySummary:
     ticker: str
     current_price: Decimal
-    daily_summary: DailySummary
+    daily_summary: PriceDaily
     todays_change: Decimal
     todays_change_percent: Decimal
-    last_updated: int
+    last_updated: datetime
 
     @classmethod
-    def from_snapshot(cls, snapshot: TickerSnapshot) -> "DailyPriceSummary":
+    def from_snapshot(cls, snapshot: TickerSnapshot) -> "PriceDailySummary":
         return cls(
             ticker=snapshot.ticker,
             current_price=to_quantized_decimal(snapshot.min.close),
-            daily_summary=DailySummary(
-                open=to_quantized_decimal(snapshot.min.open),
-                high=to_quantized_decimal(snapshot.min.high),
-                low=to_quantized_decimal(snapshot.min.low),
-                close=to_quantized_decimal(snapshot.min.close),
+            daily_summary=PriceDaily(
+                open=to_quantized_decimal(snapshot.day.open),
+                high=to_quantized_decimal(snapshot.day.high),
+                low=to_quantized_decimal(snapshot.day.low),
+                close=to_quantized_decimal(snapshot.day.close),
                 volume=to_quantized_decimal(snapshot.day.volume),
                 volume_weighted_average_price=to_quantized_decimal(snapshot.day.vwap),
             ),
             todays_change=to_quantized_decimal(snapshot.todays_change),
             todays_change_percent=to_quantized_decimal(snapshot.todays_change_percent),
-            last_updated=snapshot.updated,
+            last_updated=datetime.fromtimestamp(snapshot.updated / 1e9),
         )
