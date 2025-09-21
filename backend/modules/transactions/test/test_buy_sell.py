@@ -60,7 +60,7 @@ class TransactionHelperData:
 
     def __eq__(self, value):
         if not isinstance(value, TransactionHelper):
-            return
+            return False
         return (
             self.buy_transaction == value.buy_transaction
             and self.sell_transaction == value.sell_transaction

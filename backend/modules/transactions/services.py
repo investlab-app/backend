@@ -36,12 +36,12 @@ def _add_volume_to_asset(investor, ticker, volume):
     asset, _ = Asset.objects.get_or_create(
         investor=investor, ticker=ticker, defaults={"volume": Decimal(0)}
     )
-    asset.volume += volume
+    asset.volume += volume  # ty: ignore[unresolved-attribute]
     return asset
 
 
 def _save_to_db(transaction, asset, investor):
-    with db.transaction.atomic():
+    with db.transaction.atomic():  # ty: ignore[unresolved-attribute]
         transaction.save()
         asset.save()
         investor.save()
@@ -69,7 +69,9 @@ def sell(investor, ticker, volume, action_price):
 
 def _check_for_enough_assets(investor, ticker, volume):
     try:
-        asset = Asset.objects.get(investor=investor, ticker=ticker)
+        asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
+            investor=investor, ticker=ticker
+        )
         if asset.volume < volume:
             raise RuntimeError("Not enough assets to sell")
         return asset
@@ -116,7 +118,7 @@ def _get_buy_transactions(investor, ticker):
 def _get_remaining_buy_volume(buy_transaction):
     sold_volume_sum = (
         TransactionHelper.objects.filter(buy_transaction=buy_transaction).aggregate(
-            sold_volume=db.models.Sum("volume")
+            sold_volume=db.models.Sum("volume")  # ty: ignore[unresolved-attribute]
         )["sold_volume"]
         or 0
     )
@@ -125,7 +127,7 @@ def _get_remaining_buy_volume(buy_transaction):
 
 
 def _sell_save(investor, sell_transaction, asset, helpers):
-    with db.transaction.atomic():
+    with db.transaction.atomic():  # ty: ignore[unresolved-attribute]
         investor.save()
         sell_transaction.save()
         for helper in helpers:
