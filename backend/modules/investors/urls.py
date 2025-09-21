@@ -3,7 +3,6 @@ from django.urls import path
 from modules.investors.views import (
     AccountValueOverTimeView,
     AssetAllocationView,
-    AssetListView,
     CurrentAccountValueView,
     CurrentInvestorView,
     InvestorDetailView,
@@ -23,12 +22,12 @@ urlpatterns = [
     path("me/", CurrentInvestorView.as_view(), name="current-investor"),
     path("me/stats/", InvestorStatsView.as_view(), name="investor-stats"),
     path(
-        "balance-history/",
+        "me/account-value/",
         AccountValueOverTimeView.as_view(),
         name="account-value-over-time",
     ),
     path(
-        "balance/",
+        "me/current-account-value/",
         CurrentAccountValueView.as_view(),
         name="current-account-value",
     ),
