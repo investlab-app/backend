@@ -24,7 +24,7 @@ def create_fake_instrument(
     locale = locale or random.choice(LocaleChoices.choices)[0]
     active = active if active is not None else True
 
-    instrument = Instrument(
+    return Instrument(
         ticker=ticker,
         name=name,
         market=market,
@@ -32,7 +32,6 @@ def create_fake_instrument(
         active=active,
         **kwargs,
     )
-    return instrument
 
 
 @pytest.fixture
