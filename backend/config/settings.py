@@ -50,7 +50,6 @@ INSTALLED_APPS = [
     "modules.investors",
     "modules.markets",
     "modules.news",
-    "modules.orders",
     "modules.prices",
     "modules.transactions",
 ]
