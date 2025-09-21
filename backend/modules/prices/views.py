@@ -22,7 +22,7 @@ class PricesBarsView(generics.GenericAPIView):
         params = PriceBarsQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
         repository = PolygonPricesRepository()
-        price_bars = repository.get_ohlc(**params.validated_data)
+        price_bars = repository.get_ohlc(**params.validated_data)  # type: ignore
         serializer = self.get_serializer(instance=price_bars, many=True)
         return Response(serializer.data)
 

@@ -12,7 +12,7 @@ pytestmark = pytest.mark.django_db
 
 
 @patch("modules.prices.views.PolygonPricesRepository.get_ohlc")
-def test_price_view(ohlc_mock, api_client_auth):
+def test_price_bar_view(ohlc_mock, api_client_auth):
     url = reverse("prices-bars")
 
     ohlc_mock.return_value = [
