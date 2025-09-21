@@ -4,6 +4,7 @@ from datetime import datetime
 from http.client import HTTPResponse
 from typing import Any
 
+from django.http.response import Http404
 from django.shortcuts import get_object_or_404
 from polygon import RESTClient as PolygonClient
 from polygon.exceptions import BadResponse
@@ -85,17 +86,28 @@ class PolygonPricesRepository:
             if not getattr(snapshot, field, None):
                 return None
 
-        return DailyPriceSummary(
-            current_price=snapshot.min.close,
-            daily_summary=DailySummary(
-                open=snapshot.min.open,
-                high=snapshot.min.high,
-                low=snapshot.min.low,
-                close=snapshot.min.close,
-                volume=snapshot.day.volume,
-                volume_weighted_average_price=snapshot.day.vwap,
-            ),
-            todays_change=snapshot.todays_change,
-            todays_change_percent=snapshot.todays_change_percent,
-            last_updated=snapshot.updated,
-        )
+        return DailyPriceSummary.from_snapshot(snapshot)
+
+    def get_prices(
+        self, tickers: list[str], include_otc: bool = False
+    ):
+        tickers = [t.upper() for t in tickers]
+        if len(tickers) > 50:
+            raise PayloadTooLarge("Maximum of 50 tickers allowed per request.")
+
+        if Instrument.objects.filter(ticker__in=tickers).count() != len(tickers):
+            raise Http404("One or more tickers not found in the database.")
+
+        try:
+            snapshots = self.polygon_client.get_snapshot_all(
+                POLYGON_ASSET_TYPE,
+                tickers=tickers,
+                include_otc=include_otc,
+            )
+        except BadResponse:
+            return None
+
+        if isinstance(snapshots, HTTPResponse):
+            return None
+
+        return list(map(DailyPriceSummary.from_snapshot, snapshots))
