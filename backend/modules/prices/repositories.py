@@ -1,5 +1,3 @@
-from collections.abc import Iterator
-from dataclasses import asdict
 from datetime import datetime
 from http.client import HTTPResponse
 
@@ -12,11 +10,10 @@ from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
-from modules.prices.schemas import PriceDailySummary, PriceBar
+from modules.prices.schemas import PriceBar, PriceDailySummary
 
 
 class PolygonPricesRepository:
-
     def __init__(self, client: PolygonClient = None):  # type: ignore
         self.polygon_client = client or polygon_client
 
@@ -28,7 +25,6 @@ class PolygonPricesRepository:
         interval: str,
         interval_multiplier: int,
     ) -> list[PriceBar] | None:
-
         get_object_or_404(Instrument, ticker=ticker.upper())
 
         try:
@@ -48,7 +44,7 @@ class PolygonPricesRepository:
         results = []
         for idx, agg in enumerate(aggs, start=1):
             if idx > 10_000:
-                raise PayloadTooLarge()
+                raise PayloadTooLarge
             results.append(PriceBar.from_agg(agg))
 
         return results
@@ -81,10 +77,7 @@ class PolygonPricesRepository:
 
         return PriceDailySummary.from_snapshot(snapshot)
 
-    def get_prices(
-        self, tickers: list[str]
-    ) -> list[PriceDailySummary] | None:
-
+    def get_prices(self, tickers: list[str]) -> list[PriceDailySummary] | None:
         tickers = [t.upper() for t in tickers]
         if len(tickers) > 200:
             raise PayloadTooLarge("Maximum of 200 tickers allowed per request.")
@@ -106,10 +99,7 @@ class PolygonPricesRepository:
 
         return list(map(PriceDailySummary.from_snapshot, snapshots))
 
-    def get_prices_map(
-        self, tickers: list[str]
-    ) -> dict[str, PriceDailySummary] | None:
-
+    def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
         prices = self.get_prices(tickers)
         if prices is None:
             return None

@@ -1,12 +1,10 @@
 from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
+from config.settings import ACCEPTABLE_DATETIME_FORMATS
 from modules.core.utils import get_local_datetime
 from modules.prices.constants import POLYGON_INTERVALS
 from modules.prices.schemas import PriceBar, PriceDailySummary
-
-
-ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]
 
 
 class PriceBarsQueryParams(serializers.Serializer):

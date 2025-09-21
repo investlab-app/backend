@@ -5,8 +5,10 @@ from rest_framework.response import Response
 
 from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.serializers import (
+    PriceBarSerializer,
+    PriceBarsQueryParams,
+    PriceDailySummarySerializer,
     PricesListQueryParams,
-    PriceBarsQueryParams, PriceBarSerializer, PriceDailySummarySerializer,
 )
 
 
@@ -14,8 +16,7 @@ class PricesBarsView(generics.GenericAPIView):
     serializer_class = PriceBarSerializer
 
     @extend_schema(
-        parameters=[PriceBarsQueryParams],
-        responses=PriceBarSerializer(many=True)
+        parameters=[PriceBarsQueryParams], responses=PriceBarSerializer(many=True)
     )
     def get(self, request: Request) -> Response:
         params = PriceBarsQueryParams(data=request.query_params)

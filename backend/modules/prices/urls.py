@@ -1,9 +1,9 @@
 from django.urls import path
 
 from modules.prices.views import (
+    PricesBarsView,
     PricesListView,
     PricesRetrieveView,
-    PricesBarsView,
 )
 
 urlpatterns = [

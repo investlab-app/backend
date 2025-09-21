@@ -3,6 +3,7 @@ from datetime import datetime
 from decimal import Decimal
 
 from polygon.rest.models.snapshot import Agg, TickerSnapshot
+
 from modules.core.utils import to_quantized_decimal
 
 
