@@ -8,7 +8,7 @@ from modules.core.defaults import PrecisionType
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction, TransactionHelper
-from modules.transactions.services import buy, sell
+from modules.transactions.services.buy_sell import buy, sell
 
 
 class TransactionData(BaseModel):
