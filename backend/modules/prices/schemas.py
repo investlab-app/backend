@@ -58,20 +58,22 @@ class PriceDailySummary:
 
     @classmethod
     def from_snapshot(cls, snapshot: TickerSnapshot) -> "PriceDailySummary":  # type: ignore
-        if not all([
-            snapshot.ticker,
-            snapshot.min and snapshot.min.close,  # type: ignore
-            snapshot.day
-            and snapshot.day.open  # type: ignore
-            and snapshot.day.high  # type: ignore
-            and snapshot.day.low  # type: ignore
-            and snapshot.day.close  # type: ignore
-            and snapshot.day.volume  # type: ignore
-            and snapshot.day.vwap,  # type: ignore
-            snapshot.todays_change is not None,
-            snapshot.todays_change_percent is not None,
-            snapshot.updated,
-        ]):
+        if not all(
+            [
+                snapshot.ticker,
+                snapshot.min and snapshot.min.close,  # type: ignore
+                snapshot.day
+                and snapshot.day.open  # type: ignore
+                and snapshot.day.high  # type: ignore
+                and snapshot.day.low  # type: ignore
+                and snapshot.day.close  # type: ignore
+                and snapshot.day.volume  # type: ignore
+                and snapshot.day.vwap,  # type: ignore
+                snapshot.todays_change is not None,
+                snapshot.todays_change_percent is not None,
+                snapshot.updated,
+            ]
+        ):
             raise ValueError("TickerSnapshot object is missing required fields")
 
         return cls(
