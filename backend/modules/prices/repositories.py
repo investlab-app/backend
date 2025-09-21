@@ -93,8 +93,8 @@ class PolygonPricesRepository:
     ) -> list[DailyPriceSummary] | None:
 
         tickers = [t.upper() for t in tickers]
-        if len(tickers) > 50:
-            raise PayloadTooLarge("Maximum of 50 tickers allowed per request.")
+        if len(tickers) > 200:
+            raise PayloadTooLarge("Maximum of 200 tickers allowed per request.")
 
         if Instrument.objects.filter(ticker__in=tickers).count() != len(tickers):
             raise Http404("One or more tickers not found in the database.")
@@ -112,3 +112,13 @@ class PolygonPricesRepository:
             return None
 
         return list(map(DailyPriceSummary.from_snapshot, snapshots))
+
+    def get_prices_map(
+        self, tickers: list[str]
+    ) -> dict[str, DailyPriceSummary] | None:
+
+        prices = self.get_prices(tickers)
+        if prices is None:
+            return None
+
+        return {price.ticker: price for price in prices}

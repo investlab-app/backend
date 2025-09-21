@@ -9,7 +9,7 @@ from modules.instruments.serializers import (
     InstrumentRetrieveSerializer,
     InstrumentWithPriceSerializer,
 )
-from modules.prices.services import PricesV2Service
+from modules.prices.repositories import PolygonPricesRepository
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -80,8 +80,9 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         items = page if page is not None else queryset
 
         tickers = [obj.ticker.upper() for obj in items]
+        repository = PolygonPricesRepository()
         try:
-            snapshot_map = PricesV2Service.get_full_market_snapshot(tickers=tickers)
+            snapshot_map = repository.get_prices_map(tickers=tickers) or {}
         except Exception:
             snapshot_map = {}
 
