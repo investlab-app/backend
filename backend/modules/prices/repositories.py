@@ -14,7 +14,7 @@ from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
-from modules.prices.schemas import DailyPriceSummary, DailySummary
+from modules.prices.schemas import DailyPriceSummary
 
 
 class PolygonPricesRepository:
@@ -89,8 +89,9 @@ class PolygonPricesRepository:
         return DailyPriceSummary.from_snapshot(snapshot)
 
     def get_prices(
-        self, tickers: list[str], include_otc: bool = False
-    ):
+        self, tickers: list[str]
+    ) -> list[DailyPriceSummary] | None:
+
         tickers = [t.upper() for t in tickers]
         if len(tickers) > 50:
             raise PayloadTooLarge("Maximum of 50 tickers allowed per request.")
@@ -100,9 +101,9 @@ class PolygonPricesRepository:
 
         try:
             snapshots = self.polygon_client.get_snapshot_all(
-                POLYGON_ASSET_TYPE,
+                market_type=POLYGON_ASSET_TYPE,
                 tickers=tickers,
-                include_otc=include_otc,
+                include_otc=False,
             )
         except BadResponse:
             return None
