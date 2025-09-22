@@ -8,7 +8,7 @@ dependencies = [
     "celery[redis]>=5.5.3",
     "channels-redis>=4.3.0",
     "channels>=4.2.2",
-    "clerk-backend-api>=2.2.0",
+    "clerk-backend-api>=3.3.1",
     "dependency-injector>=4.47.1",
     "django-celery-beat>=2.8.1",
     "django-celery-results>=2.6.0",
@@ -51,8 +51,6 @@ dev = [
     "uv>=0.7.13",
 ]
 
-[tool.uv.sources]
-clerk-backend-api = { git = "https://github.com/mikolajkapica/clerk-sdk-python.git" }
 
 [tool.pytest.ini_options]
 DJANGO_SETTINGS_MODULE = "config.settings"
