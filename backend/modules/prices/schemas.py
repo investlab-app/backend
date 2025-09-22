@@ -20,7 +20,10 @@ class PriceBar:
 
     @classmethod
     def from_agg(cls, agg: Agg) -> "PriceBar":
-        if not all([agg.timestamp, agg.open, agg.high, agg.low, agg.close, agg.volume]):
+        if any(
+            c is None
+            for c in [agg.timestamp, agg.open, agg.high, agg.low, agg.close, agg.volume]
+        ):
             raise ValueError("Agg object is missing required fields")
 
         return cls(
@@ -58,21 +61,20 @@ class PriceDailySummary:
 
     @classmethod
     def from_snapshot(cls, snapshot: TickerSnapshot) -> "PriceDailySummary":  # type: ignore
-        if not all(
-            [
-                snapshot.ticker,
-                snapshot.min and snapshot.min.close,  # type: ignore
-                snapshot.day
-                and snapshot.day.open  # type: ignore
-                and snapshot.day.high  # type: ignore
-                and snapshot.day.low  # type: ignore
-                and snapshot.day.close  # type: ignore
-                and snapshot.day.volume  # type: ignore
-                and snapshot.day.vwap,  # type: ignore
-                snapshot.todays_change is not None,
-                snapshot.todays_change_percent is not None,
-                snapshot.updated,
-            ]
+        if (
+            snapshot.ticker is None
+            or snapshot.min is None
+            or snapshot.min.close is None  # type: ignore
+            or snapshot.day is None
+            or snapshot.day.open is None  # type: ignore
+            or snapshot.day.high is None  # type: ignore
+            or snapshot.day.low is None  # type: ignore
+            or snapshot.day.close is None  # type: ignore
+            or snapshot.day.volume is None  # type: ignore
+            or snapshot.day.vwap is None  # type: ignore
+            or snapshot.todays_change is None
+            or snapshot.todays_change_percent is None
+            or snapshot.updated is None
         ):
             raise ValueError("TickerSnapshot object is missing required fields")
 
