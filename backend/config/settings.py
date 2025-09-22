@@ -401,4 +401,4 @@ ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
 
 
 # Other settings
-ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]
+ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]

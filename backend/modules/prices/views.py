@@ -14,8 +14,10 @@ from modules.prices.serializers import (
 
 class PricesBarsView(generics.GenericAPIView):
     serializer_class = PriceBarSerializer
+    pagination_class = None
 
     @extend_schema(
+        operation_id="prices_bars",
         parameters=[PriceBarsQueryParams], responses=PriceBarSerializer(many=True)
     )
     def get(self, request: Request) -> Response:
@@ -30,7 +32,7 @@ class PricesBarsView(generics.GenericAPIView):
 class PricesListView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
 
-    @extend_schema(parameters=[PricesListQueryParams])
+    @extend_schema(operation_id="prices_list", parameters=[PricesListQueryParams])
     def get(self, request: Request) -> Response:
         params = PricesListQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
@@ -48,6 +50,7 @@ class PricesListView(generics.GenericAPIView):
 class PricesRetrieveView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
 
+    @extend_schema(operation_id="prices_retrieve")
     def get(self, request: Request, ticker: str) -> Response:
         repository = PolygonPricesRepository()
         prices = repository.get_price(ticker=ticker)
