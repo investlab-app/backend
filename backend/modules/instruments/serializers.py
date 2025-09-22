@@ -1,3 +1,4 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
@@ -61,6 +62,7 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
     class Meta(InstrumentListSerializer.Meta):
         fields = InstrumentListSerializer.Meta.fields + ["price_info"]
 
+    @extend_schema_field(PriceDailySummarySerializer)
     def get_price_info(self, obj: Instrument):
         # Prefer a pre-fetched snapshot map in context to avoid N calls
         snapshot_map: dict | None = self.context.get("snapshot_map")
