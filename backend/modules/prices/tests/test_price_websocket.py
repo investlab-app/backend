@@ -126,7 +126,7 @@ async def test_does_not_send_empty_msgs(communicator, layer):
 
     await _send_ticker_data(layer, {"XYZ": "YYYY"})
 
-    assert communicator.receive_nothing()
+    assert await communicator.receive_nothing()
 
 
 @pytest.mark.asyncio
