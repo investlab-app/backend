@@ -1,7 +1,7 @@
 import pytest
 from django.urls import reverse
 
-from modules.core.tests.conftest import api_client, api_client_auth  # noqa: F401
+from modules.core.tests.conftest import api_client, api_client_auth
 
 pytestmark = pytest.mark.django_db
 

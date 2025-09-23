@@ -3,40 +3,53 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.serializers import (
-    InstrumentPriceResponseSerializer,
-    InstrumentV2PriceQueryParams,
-    PriceInfoResponseSerializer,
+    PriceBarSerializer,
+    PriceBarsQueryParams,
+    PriceDailySummarySerializer,
+    PricesListQueryParams,
 )
-from modules.prices.services import PricesV2Service
 
 
-class PricesV2View(generics.GenericAPIView):
-    serializer_class = InstrumentPriceResponseSerializer
+class PricesBarsView(generics.GenericAPIView):
+    serializer_class = PriceBarSerializer
 
-    @extend_schema(parameters=[InstrumentV2PriceQueryParams])
+    @extend_schema(
+        parameters=[PriceBarsQueryParams], responses=PriceBarSerializer(many=True)
+    )
     def get(self, request: Request) -> Response:
-        params = InstrumentV2PriceQueryParams(data=request.query_params)
+        params = PriceBarsQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
-        data = PricesV2Service.get_ohlc(**params.validated_data)
-        serializer = InstrumentPriceResponseSerializer(many=True, data=data)
-        serializer.is_valid(raise_exception=True)
-        json_data = serializer.validated_data
-        return Response(json_data)
-
-    def get_serializer(self, *args, **kwargs):
-        kwargs["many"] = True
-        return super().get_serializer(*args, **kwargs)
+        repository = PolygonPricesRepository()
+        price_bars = repository.get_ohlc(**params.validated_data)  # type: ignore[missing-argument]
+        serializer = self.get_serializer(instance=price_bars, many=True)
+        return Response(serializer.data)
 
 
-class PricesInfoView(generics.GenericAPIView):
-    serializer_class = PriceInfoResponseSerializer
+class PricesListView(generics.GenericAPIView):
+    serializer_class = PriceDailySummarySerializer
 
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        ticker = self.kwargs.get("ticker")
-        data = PricesV2Service.get_price_info(ticker)
-        sanitized_data = PriceInfoResponseSerializer.sanitize_output(data)
-        serializer = PriceInfoResponseSerializer(data=sanitized_data)
-        serializer.is_valid(raise_exception=True)
-        json_data = serializer.validated_data
-        return Response(json_data)
+    @extend_schema(parameters=[PricesListQueryParams])
+    def get(self, request: Request) -> Response:
+        params = PricesListQueryParams(data=request.query_params)
+        params.is_valid(raise_exception=True)
+
+        tickers_list = params.validated_data.get("tickers")
+        tickers_list = [ticker.upper() for ticker in tickers_list]
+
+        repository = PolygonPricesRepository()
+        prices = repository.get_prices(tickers=tickers_list)
+
+        serializer = self.get_serializer(instance=prices, many=True)
+        return Response(serializer.data)
+
+
+class PricesRetrieveView(generics.GenericAPIView):
+    serializer_class = PriceDailySummarySerializer
+
+    def get(self, request: Request, ticker: str) -> Response:
+        repository = PolygonPricesRepository()
+        prices = repository.get_price(ticker=ticker)
+        serializer = self.get_serializer(instance=prices)
+        return Response(serializer.data)

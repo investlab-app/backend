@@ -39,6 +39,7 @@ INSTALLED_APPS = [
     "django_celery_beat",
     "django_filters",
     # External modules
+    "django_extensions",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
@@ -202,6 +203,10 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": False,
+    },
 }
 
 # SIMPLE_JWT = {
@@ -393,3 +398,7 @@ POLYGON_ASSET_TYPE = "stocks"
 # Alpaca
 ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
 ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
+
+
+# Other settings
+ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]

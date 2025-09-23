@@ -7,7 +7,9 @@ from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     InstrumentListSerializer,
     InstrumentRetrieveSerializer,
+    InstrumentWithPriceSerializer,
 )
+from modules.prices.repositories import PolygonPricesRepository
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -61,4 +63,32 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
 
         instrument = get_object_or_404(self.get_queryset(), **criteria)
         serializer = self.get_serializer(instrument)
+        return Response(serializer.data)
+
+
+class InstrumentsWithPricesListView(generics.ListAPIView):
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentWithPriceSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["ticker"]
+    ordering_fields = ["ticker"]
+
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else queryset
+
+        tickers = [obj.ticker.upper() for obj in items]
+        repository = PolygonPricesRepository()
+        try:
+            snapshot_map = repository.get_prices_map(tickers=tickers) or {}
+        except Exception:
+            snapshot_map = {}
+
+        context = {**self.get_serializer_context(), "snapshot_map": snapshot_map}
+        serializer = self.get_serializer(items, many=True, context=context)
+
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
         return Response(serializer.data)

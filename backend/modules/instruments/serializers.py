@@ -1,6 +1,8 @@
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
+from modules.prices.serializers import PriceDailySummarySerializer
 
 
 class InstrumentListSerializer(serializers.ModelSerializer):
@@ -52,3 +54,20 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "icon",
             "logo",
         ]
+
+
+class InstrumentWithPriceSerializer(InstrumentListSerializer):
+    price_info = serializers.SerializerMethodField()
+
+    class Meta(InstrumentListSerializer.Meta):
+        fields = InstrumentListSerializer.Meta.fields + ["price_info"]
+
+    @extend_schema_field(PriceDailySummarySerializer)
+    def get_price_info(self, obj: Instrument):
+        # Prefer a pre-fetched snapshot map in context to avoid N calls
+        snapshot_map: dict | None = self.context.get("snapshot_map")
+        if not snapshot_map:
+            raise serializers.ValidationError("Serializer context missing snapshot_map")
+
+        ticker = obj.ticker.upper()
+        return PriceDailySummarySerializer(snapshot_map.get(ticker)).data

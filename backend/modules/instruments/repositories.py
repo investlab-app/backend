@@ -9,7 +9,7 @@ from config.settings import POLYGON_ASSET_TYPE, POLYGON_EXCHANGE
 
 
 class PolygonTickersRepository:
-    def __init__(self, client: PolygonClient = None):  # type: ignore
+    def __init__(self, client: PolygonClient | None = None):
         self.polygon_client = client or polygon_client
 
     def list_tickers(

@@ -11,8 +11,8 @@ from modules.instruments.models import Instrument
 class SyncInstrumentsImages:
     def __init__(
         self,
-        instruments: Iterable[Instrument] = None,  # type: ignore
-        polygon_api_key: str = POLYGON_SECRET_KEY,  # type: ignore
+        instruments: Iterable[Instrument] | None = None,
+        polygon_api_key: str = POLYGON_SECRET_KEY,
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.polygon_api_key = polygon_api_key

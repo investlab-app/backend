@@ -1,12 +1,13 @@
 from django.urls import path
 
-from modules.prices.views import PricesInfoView, PricesV2View
+from modules.prices.views import (
+    PricesBarsView,
+    PricesListView,
+    PricesRetrieveView,
+)
 
 urlpatterns = [
-    path(
-        "ohlc/",
-        PricesV2View.as_view(),
-        name="prices",
-    ),
-    path("<str:ticker>/", PricesInfoView.as_view(), name="prices-ticker"),
+    path("", PricesListView.as_view(), name="prices-list"),
+    path("bars/", PricesBarsView.as_view(), name="prices-bars"),
+    path("<str:ticker>/", PricesRetrieveView.as_view(), name="prices-detail"),
 ]
