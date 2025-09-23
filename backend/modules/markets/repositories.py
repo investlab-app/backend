@@ -6,7 +6,7 @@ from config.clients import polygon_client
 
 
 class PolygonMarketsRepository:
-    def __init__(self, client: PolygonClient = None):  # type: ignore
+    def __init__(self, client: PolygonClient | None = None):
         self.polygon_client = client or polygon_client
 
     def list_market_holidays(self) -> list[MarketHoliday] | None:

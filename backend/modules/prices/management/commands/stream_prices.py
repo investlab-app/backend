@@ -36,6 +36,6 @@ class Command(BaseCommand):
     def handle(self, *args, **options):
         logger.info("Starting broadcasting real stocks...")
         sb = PriceStream()
-        tickers = [i.ticker for i in Instrument.objects.all()]  # ty: ignore
+        tickers = [i.ticker for i in Instrument.objects.all()]
         logger.info("Broadcasting %s stocks", len(tickers))
         asyncio.run(sb.start(tickers))

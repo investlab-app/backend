@@ -47,8 +47,8 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
     def __init__(
         self,
-        instruments: Iterable[Instrument] = None,  # type: ignore
-        repository: PolygonTickersRepository = None,  # type: ignore
+        instruments: Iterable[Instrument] | None = None,
+        repository: PolygonTickersRepository | None = None,
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.repository = repository or PolygonTickersRepository()

@@ -20,21 +20,25 @@ class PriceBar:
 
     @classmethod
     def from_agg(cls, agg: Agg) -> "PriceBar":
-        if any(
-            c is None
-            for c in [agg.timestamp, agg.open, agg.high, agg.low, agg.close, agg.volume]
+        if (
+            agg.timestamp is None
+            or agg.open is None
+            or agg.high is None
+            or agg.low is None
+            or agg.close is None
+            or agg.volume is None
         ):
             raise ValueError("Agg object is missing required fields")
 
         return cls(
-            timestamp=datetime.fromtimestamp(agg.timestamp // 1000),  # type: ignore
-            open=to_quantized_decimal(agg.open),  # type: ignore
-            high=to_quantized_decimal(agg.high),  # type: ignore
-            low=to_quantized_decimal(agg.low),  # type: ignore
-            close=to_quantized_decimal(agg.close),  # type: ignore
-            volume=to_quantized_decimal(agg.volume),  # type: ignore
+            timestamp=datetime.fromtimestamp(agg.timestamp // 1000),
+            open=to_quantized_decimal(agg.open),
+            high=to_quantized_decimal(agg.high),
+            low=to_quantized_decimal(agg.low),
+            close=to_quantized_decimal(agg.close),
+            volume=to_quantized_decimal(agg.volume),
             transactions=agg.transactions,
-            volume_weighted_average_price=to_quantized_decimal(agg.vwap)  # type: ignore
+            volume_weighted_average_price=to_quantized_decimal(agg.vwap)
             if agg.vwap is not None
             else None,
         )
@@ -60,18 +64,18 @@ class PriceDailySummary:
     last_updated: datetime
 
     @classmethod
-    def from_snapshot(cls, snapshot: TickerSnapshot) -> "PriceDailySummary":  # type: ignore
+    def from_snapshot(cls, snapshot: TickerSnapshot) -> "PriceDailySummary":
         if (
             snapshot.ticker is None
             or snapshot.min is None
-            or snapshot.min.close is None  # type: ignore
+            or snapshot.min.close is None
             or snapshot.day is None
-            or snapshot.day.open is None  # type: ignore
-            or snapshot.day.high is None  # type: ignore
-            or snapshot.day.low is None  # type: ignore
-            or snapshot.day.close is None  # type: ignore
-            or snapshot.day.volume is None  # type: ignore
-            or snapshot.day.vwap is None  # type: ignore
+            or snapshot.day.open is None
+            or snapshot.day.high is None
+            or snapshot.day.low is None
+            or snapshot.day.close is None
+            or snapshot.day.volume is None
+            or snapshot.day.vwap is None
             or snapshot.todays_change is None
             or snapshot.todays_change_percent is None
             or snapshot.updated is None
@@ -80,16 +84,16 @@ class PriceDailySummary:
 
         return cls(
             ticker=snapshot.ticker,
-            current_price=to_quantized_decimal(snapshot.min.close),  # type: ignore
+            current_price=to_quantized_decimal(snapshot.min.close),
             daily_summary=PriceDaily(
-                open=to_quantized_decimal(snapshot.day.open),  # type: ignore
-                high=to_quantized_decimal(snapshot.day.high),  # type: ignore
-                low=to_quantized_decimal(snapshot.day.low),  # type: ignore
-                close=to_quantized_decimal(snapshot.day.close),  # type: ignore
-                volume=to_quantized_decimal(snapshot.day.volume),  # type: ignore
-                volume_weighted_average_price=to_quantized_decimal(snapshot.day.vwap),  # type: ignore
+                open=to_quantized_decimal(snapshot.day.open),
+                high=to_quantized_decimal(snapshot.day.high),
+                low=to_quantized_decimal(snapshot.day.low),
+                close=to_quantized_decimal(snapshot.day.close),
+                volume=to_quantized_decimal(snapshot.day.volume),
+                volume_weighted_average_price=to_quantized_decimal(snapshot.day.vwap),
             ),
-            todays_change=to_quantized_decimal(snapshot.todays_change),  # type: ignore
-            todays_change_percent=to_quantized_decimal(snapshot.todays_change_percent),  # type: ignore
-            last_updated=datetime.fromtimestamp(snapshot.updated // 1e9),  # type: ignore
+            todays_change=to_quantized_decimal(snapshot.todays_change),
+            todays_change_percent=to_quantized_decimal(snapshot.todays_change_percent),
+            last_updated=datetime.fromtimestamp(snapshot.updated // 1e9),
         )

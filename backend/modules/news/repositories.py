@@ -8,19 +8,19 @@ from config.clients import polygon_client
 
 
 class PolygonNewsRepository:
-    def __init__(self, client: PolygonClient = None):  # type: ignore
+    def __init__(self, client: PolygonClient | None = None):
         self.polygon_client = client or polygon_client
 
     def list_news(
         self,
-        ticker: str = None,  # type: ignore
-        published_utc: str = None,  # type: ignore
-        published_utc_lt: str = None,  # type: ignore
-        published_utc_lte: str = None,  # type: ignore
-        published_utc_gt: str = None,  # type: ignore
-        published_utc_gte: str = None,  # type: ignore
-        sort: str = None,  # type: ignore
-        order: str = None,  # type: ignore
+        ticker: str | None = None,
+        published_utc: str | None = None,
+        published_utc_lt: str | None = None,
+        published_utc_lte: str | None = None,
+        published_utc_gt: str | None = None,
+        published_utc_gte: str | None = None,
+        sort: str | None = None,
+        order: str | None = None,
         news_per_page: int = 30,
         **kwargs,
     ) -> Iterator[TickerNews] | None:
