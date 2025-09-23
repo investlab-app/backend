@@ -1,9 +1,9 @@
 # Create your models here.
 from django.db import models
 
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
-from modules.core.utils import get_local_datetime
 
 
 class Transaction(models.Model):
@@ -13,3 +13,6 @@ class Transaction(models.Model):
     volume = models.DecimalField(max_digits=30, decimal_places=15)
     transaction_price = models.DecimalField(max_digits=20, decimal_places=2)
     is_buy = models.BooleanField()
+
+    def __str__(self):
+        return f"Transaction {self.id}"

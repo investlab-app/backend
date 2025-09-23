@@ -1,10 +1,12 @@
 from decimal import Decimal
+
+from django.core.exceptions import ObjectDoesNotExist
+from django.db import transaction
+from pydantic import BaseModel
+
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction
-from django.db import transaction
-
-from pydantic import BaseModel
 
 
 class TransactionParams(BaseModel):
@@ -24,12 +26,16 @@ class ExecuteTransactionService:
             raise ValueError("Investor doesn't have enough balance")
 
         args.investor.balance -= transaction_price
-        
+
         try:
-            asset = Asset.objects.get(investor = args.investor, ticker = args.ticker)
+            asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
+                investor=args.investor, ticker=args.ticker
+            )
             asset.volume += args.volume
-        except:
-            asset = Asset(investor = args.investor, ticker = args.ticker, volume=args.volume)
+        except ObjectDoesNotExist:
+            asset = Asset(
+                investor=args.investor, ticker=args.ticker, volume=args.volume
+            )
 
         with transaction.atomic():
             args.investor.save()
@@ -38,21 +44,23 @@ class ExecuteTransactionService:
                 ticker=args.ticker,
                 volume=args.volume,
                 transaction_price=args.volume * args.action_price,
-                is_buy=True
+                is_buy=True,
             )
             asset.save()
 
-    def sell(self,args: TransactionParams):
+    def sell(self, args: TransactionParams):
         try:
-            asset = Asset.objects.get(investor=args.investor, ticker=args.ticker)
-        except Asset.DoesNotExist:
-            raise ValueError("Asset does not exist.")
+            asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
+                investor=args.investor, ticker=args.ticker
+            )
+        except ObjectDoesNotExist:
+            raise ValueError("Asset does not exist.") from None
 
         if asset.volume < args.volume:
             raise ValueError("Not enough assets to sell.")
 
         transaction_price = args.volume * args.action_price
-        
+
         args.investor.balance += transaction_price
         asset.volume -= args.volume
 
@@ -64,5 +72,5 @@ class ExecuteTransactionService:
                 ticker=args.ticker,
                 volume=args.volume,
                 transaction_price=transaction_price,
-                is_buy=False
+                is_buy=False,
             )

@@ -18,3 +18,6 @@ class Asset(models.Model):
     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
     ticker = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     volume = models.DecimalField(max_digits=30, decimal_places=15)
+
+    def __str__(self):
+        return f"Asset {self.id}"
