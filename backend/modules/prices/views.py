@@ -18,7 +18,8 @@ class PricesBarsView(generics.GenericAPIView):
 
     @extend_schema(
         operation_id="prices_bars",
-        parameters=[PriceBarsQueryParams], responses=PriceBarSerializer(many=True)
+        parameters=[PriceBarsQueryParams],
+        responses=PriceBarSerializer(many=True),
     )
     def get(self, request: Request) -> Response:
         params = PriceBarsQueryParams(data=request.query_params)
