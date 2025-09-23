@@ -2,6 +2,7 @@ from unittest.mock import MagicMock, patch
 
 import pytest
 from clerk_backend_api import SDKError
+from httpx import Response
 from rest_framework.test import APIRequestFactory
 
 from modules.authentication.clerk_auth import ClerkUser
@@ -96,8 +97,10 @@ def mock_clerk_invalid_password():
 
         mock_clerk_class.users.verify_password.side_effect = SDKError(
             message="API error occurred",
-            status_code=422,
-            body='{"errors":[{"message":"incorrect password"}]}',
+            raw_response=Response(
+                status_code=422,
+                content='{"errors":[{"message":"incorrect password"}]}',
+            ),
         )
 
         yield mock_clerk_class

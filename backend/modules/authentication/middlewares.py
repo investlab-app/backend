@@ -1,10 +1,7 @@
 from collections.abc import Mapping
 
 from asgiref.sync import sync_to_async
-from clerk_backend_api.jwks_helpers.authenticaterequest import (
-    AuthenticateRequestOptions,
-    Requestish,
-)
+from clerk_backend_api import AuthenticateRequestOptions, Requestish
 from django.contrib.auth.models import AnonymousUser
 
 from config.clerk import client as clerk_sdk
