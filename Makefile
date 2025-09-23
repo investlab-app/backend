@@ -31,5 +31,4 @@ test:
 	docker compose exec backend uv run pytest .
 
 schema-gen:
-    docker compose exec backend uv run manage.py spectacular --file schema.yml
-
+	docker compose exec backend uv run manage.py spectacular --file schema.yml
