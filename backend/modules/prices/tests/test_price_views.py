@@ -97,7 +97,6 @@ def test_price_list_view(get_prices_mock, api_client_auth):
 
     response = api_client_auth.get(url, data=query_params)
     response.data[0]["last_updated"] = response.data[0]["last_updated"].split("+")[0]
-    print(response.data)
     assert response.status_code == 200
     assert response.data == expected
 
@@ -139,7 +138,6 @@ def test_price_retrieve_view(get_price_mock, api_client_auth):
     }
 
     response = api_client_auth.get(url)
-    print(response.data)
     response.data["last_updated"] = response.data["last_updated"].split("+")[0]
     assert response.status_code == 200
     assert response.data == expected

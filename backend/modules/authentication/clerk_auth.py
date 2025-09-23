@@ -46,6 +46,7 @@ class ClerkAuthentication(BaseAuthentication):
     """
 
     def authenticate(self, request: Request) -> tuple[ClerkUser, str | None]:
+        print("Authenticating request with ClerkAuthentication")
         request_state = clerk_sdk.authenticate_request(
             request,
             AuthenticateRequestOptions(
@@ -53,14 +54,17 @@ class ClerkAuthentication(BaseAuthentication):
             ),
         )
 
+        print("Request state:", request_state)
         if not request_state.is_signed_in:
             raise AuthenticationFailed("User is not authenticated")
 
         payload = request_state.payload
 
+        print("Payload:", payload)
         if not payload:
             raise AuthenticationFailed("User payload not found")
 
         clerk_user = parse_clerk_user_from_payload(payload)
+        print("Clerk user:", clerk_user)
         token = request_state.token
         return clerk_user, token

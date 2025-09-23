@@ -142,7 +142,6 @@ class PolygonTestView(GenericAPIView):
             "AAPL",
             adjusted=True,
         )
-        print(resp)
         return Response(str(resp))
 
 
@@ -166,5 +165,4 @@ class AlpacaTestView(GenericAPIView):
         )
         request = StockLatestBarRequest(symbol_or_symbols="AAPL")
         response = client.get_stock_latest_bar(request_params=request)
-        print(response)
         return Response(str(response))
