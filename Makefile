@@ -29,3 +29,6 @@ bash:
 
 test:
 	docker compose exec backend uv run pytest .
+
+test-v:
+	docker compose exec backend uv run pytest . -vvv

@@ -43,9 +43,16 @@ class InvestorListQueryParams(serializers.Serializer):
 class InvestorStatsSerializer(serializers.Serializer):
     """Serializer for investor statistics data."""
 
+    # final_ticker_value - initial_ticker_value + sold_price - bought_price
     todays_return = serializers.FloatField(help_text="Today's return in currency")
+
+    # final_ticker_value + sold_price - bought_price
     total_return = serializers.FloatField(help_text="Total return in currency")
+
+    # bought_price
     invested = serializers.FloatField(help_text="Total amount invested")
+
+    # final_ticker_value + balance
     total_value = serializers.FloatField(help_text="Total account value")
 
 
@@ -65,8 +72,13 @@ class AccountValueOverTimeSerializer(serializers.Serializer):
 
 
 class CurrentAccountValueSerializer(serializers.Serializer):
+    # final_ticker_value + balance
     total_account_value = serializers.FloatField()
+
+    # final_ticker_value + balance - money_received
     gain = serializers.FloatField()
+
+    # (final_ticker_value + balance - money_received) / money_received
     gain_percent = serializers.FloatField()
 
 
@@ -87,7 +99,11 @@ class OwnedShareItemSerializer(serializers.Serializer):
     symbol = serializers.CharField(max_length=10)
     volume = serializers.FloatField()
     value = serializers.FloatField()
+
+    # sold_price + final_ticker_value - bought_price
     profit = serializers.FloatField()
+
+    # bought_price / (sold_price + final_ticker_value)
     profit_percentage = serializers.FloatField()
 
 

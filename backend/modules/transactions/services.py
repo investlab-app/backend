@@ -1,4 +1,8 @@
+from datetime import datetime
+
+from django.db.models import Count, Sum
 from decimal import Decimal
+from typing import Optional
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
@@ -74,3 +78,141 @@ class ExecuteTransactionService:
                 transaction_price=transaction_price,
                 is_buy=False,
             )
+
+
+class TransactionStats(BaseModel):
+    ticker: str
+
+    total_buy_volume: Decimal
+    total_buy_price: Decimal
+    total_sell_volume: Decimal
+    total_sell_price: Decimal
+
+    initial_ticker_volume: Decimal
+    initial_ticker_price: Decimal
+    final_ticker_volume: Decimal
+    final_ticker_price: Decimal
+
+    buy_transactions: int
+    sell_transactions: int
+
+    gain: Decimal
+    gain_percentage: Optional[Decimal]
+
+    # def gain(self):
+    #     initial_value = self.initial_ticker_price * self.initial_ticker_volume
+    #     final_value = self.final_ticker_price * self.final_ticker_volume
+
+    #     gain = final_value - initial_value - self.total_buy_price + self.total_sell_price
+
+    # initial = initial_ticker_price * initial_ticker_volume
+    # final = final_ticker_price * final_ticker_volume
+
+    # gain =
+
+
+class TransactionStatsPricesService:
+    def get_prices(
+        tickers: list[Instrument], date_at: datetime
+    ) -> dict[Instrument, Decimal]:
+        pass
+
+
+class TransactionStatsService:
+    def __init__(self, prices_service=None):
+        self.prices_service = prices_service or TransactionStatsPricesService()
+
+    def get_stats(
+        self,
+        investor: Investor,
+        tickers: list[Instrument] = None,
+        start_date: datetime = None,
+        end_date: datetime = None,
+    ) -> list[TransactionStats]:
+        if tickers is None:
+            return []
+
+        stats = []
+
+        initial_prices = {}
+        if start_date:
+            initial_prices = self.prices_service.get_prices(tickers, start_date)
+
+        final_prices = {}
+        if end_date:
+            final_prices = self.prices_service.get_prices(tickers, end_date)
+
+        for t in tickers:
+            transactions = Transaction.objects.filter(investor=investor, ticker=t)
+
+            initial_ticker_volume = Decimal(0)
+
+            if start_date:
+                transactions_before_start = Transaction.objects.filter(
+                    investor=investor, ticker=t, transaction_time__lt=start_date
+                )
+                initial_buy_volume = transactions_before_start.filter(
+                    is_buy=True
+                ).aggregate(total_volume=Sum("volume"))["total_volume"] or Decimal(0)
+                initial_sell_volume = transactions_before_start.filter(
+                    is_buy=False
+                ).aggregate(total_volume=Sum("volume"))["total_volume"] or Decimal(0)
+                initial_ticker_volume = initial_buy_volume - initial_sell_volume
+
+                transactions = transactions.filter(transaction_time__gte=start_date)
+            if end_date:
+                transactions = transactions.filter(transaction_time__lte=end_date)
+
+            buy_stats = transactions.filter(is_buy=True).aggregate(
+                total_volume=Sum("volume"),
+                total_price=Sum("transaction_price"),
+                count=Count("id"),
+            )
+            sell_stats = transactions.filter(is_buy=False).aggregate(
+                total_volume=Sum("volume"),
+                total_price=Sum("transaction_price"),
+                count=Count("id"),
+            )
+
+            final_ticker_volume = (
+                initial_ticker_volume
+                + (buy_stats["total_volume"] or 0)
+                - (sell_stats["total_volume"] or 0)
+            )
+
+            initial_price = initial_prices.get(t, 0)
+            initial_value = initial_price * initial_ticker_volume
+            final_price = final_prices.get(t, 0)
+            final_value = final_price * final_ticker_volume
+            total_buy_price = buy_stats["total_price"] or 0
+            total_sell_price = sell_stats["total_price"] or 0
+
+            gain = (
+                final_value
+                + total_sell_price
+                - total_buy_price
+                - initial_value
+            )
+            gain_percentage = None
+            if initial_value != 0:
+                gain_percentage = gain / initial_value
+
+            stats.append(
+                TransactionStats(
+                    ticker=t.ticker,
+                    total_buy_volume=buy_stats["total_volume"] or 0,
+                    total_buy_price=buy_stats["total_price"] or 0,
+                    buy_transactions=buy_stats["count"] or 0,
+                    total_sell_volume=sell_stats["total_volume"] or 0,
+                    total_sell_price=sell_stats["total_price"] or 0,
+                    sell_transactions=sell_stats["count"] or 0,
+                    initial_ticker_price=initial_prices.get(t, 0),
+                    initial_ticker_volume=initial_ticker_volume,
+                    final_ticker_price=final_prices.get(t, 0),
+                    final_ticker_volume=final_ticker_volume,
+                    gain=gain,
+                    gain_percentage=gain_percentage,
+                )
+            )
+
+        return stats
