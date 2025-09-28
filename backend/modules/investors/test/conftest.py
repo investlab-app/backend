@@ -1,4 +1,4 @@
-import random
+import uuid
 from decimal import Decimal
 
 from faker import Faker
@@ -10,7 +10,7 @@ fake = Faker()
 
 def fake_investor(investor_id=None, clerk_id=None, balance=Decimal(0), *, save=False):
     if investor_id is None:
-        investor_id = random.randint(0, 2147483647)
+        investor_id = uuid.uuid4()
     if clerk_id is None:
         clerk_id = fake.pystr()
 

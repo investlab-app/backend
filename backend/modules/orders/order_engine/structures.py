@@ -7,7 +7,7 @@ from pydantic import BaseModel
 class EngineOrder(BaseModel):
     id: uuid.UUID
     ticker: str
-    investor_id: int
+    investor_id: str
 
 
 class MarketEngineOrder(EngineOrder):
@@ -25,7 +25,7 @@ class MarketEngineOrderUpdate(EngineOrderUpdate):
 
 
 class EngineAsset(BaseModel):
-    investor_id: int
+    investor_id: str
     volume: Decimal
     ticker: str
 
@@ -34,14 +34,14 @@ class EngineTransaction(BaseModel):
     ticker: str
     volume: Decimal
     is_buy: bool
-    investor_id: int | None = None
+    investor_id: str | None = None
 
 
 class TradeEngineInput(BaseModel):
     orders: list[EngineOrder]
     assets: list[EngineAsset]
     prices: dict[str, Decimal]
-    balances: dict[int, Decimal]
+    balances: dict[str, Decimal]
 
 
 class TradeEngineOutput(BaseModel):

@@ -63,7 +63,7 @@ class TradeEngineDataFetcher:
 
             engine_orders = [order_to_engine_order(o) for o in orders]
             engine_assets = [asset_to_engine_asset(a) for a in assets]
-            balances = {i.pk: i.balance for i in investors}
+            balances = {str(i.id): i.balance for i in investors}
 
             return engine_orders, engine_assets, balances
 
@@ -122,7 +122,7 @@ class TradeEngineOutputHandler:
     ):
         investor_ids = [t.investor_id for t in transactions]
         investors = Investor.objects.filter(id__in=investor_ids)  # ty: ignore[invalid-assignment]
-        investors = {i.pk: i for i in investors}
+        investors = {str(i.pk): i for i in investors}
 
         ticker_names = [t.ticker for t in transactions]
         ticker_list = Instrument.objects.filter(ticker__in=ticker_names)
