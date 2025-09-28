@@ -121,9 +121,7 @@ class TradeEngineOutputHandler:
         self, transactions: list[EngineTransaction], prices: dict[str, Decimal]
     ):
         investor_ids = [t.investor_id for t in transactions]
-        investors = Investor.objects.filter(
-            id__in=investor_ids
-        )  # ty: ignore[invalid-assignment]
+        investors = Investor.objects.filter(id__in=investor_ids)  # ty: ignore[invalid-assignment]
         investors = {i.pk: i for i in investors}
 
         ticker_names = [t.ticker for t in transactions]
