@@ -1,3 +1,4 @@
+from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
 
@@ -21,15 +22,17 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
 
-        detail = MarketOrder.objects.create(
-            volume=validated_data["volume"],
-            volume_processed=0,
-            is_buy=validated_data["is_buy"],
-        )
+        with transaction.atomic():
+            detail = MarketOrder.objects.create(
+                volume=validated_data["volume"],
+                volume_processed=0,
+                is_buy=validated_data["is_buy"],
+            )
 
-        order = Order.objects.create(
-            ticker=instrument, investor=validated_data["investor"], detail=detail
-        )
+            order = Order.objects.create(
+                ticker=instrument, investor=validated_data["investor"], detail=detail
+            )
+
         return order
 
     def to_representation(self, instance):
