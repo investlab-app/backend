@@ -1,6 +1,7 @@
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
+from modules.core.models import BaseModel
 from modules.instruments.models import Instrument
 
 
@@ -23,7 +24,7 @@ class Asset(models.Model):
         return f"Asset {self.id}"
 
 
-# class AccountValueHistory(models.Model):
-#     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
-#     date = models.DateTimeField()
-#     value = models.DecimalField()
+class AccountValueSnapshot(BaseModel):
+    investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+    value = models.DecimalField(max_digits=30, decimal_places=2)

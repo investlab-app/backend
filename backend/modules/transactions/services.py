@@ -1,16 +1,14 @@
 from datetime import datetime
-
-from django.db.models import Count, Sum
 from decimal import Decimal
-from typing import Optional
 
 from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
+from django.db.models import Count, Sum
 from pydantic import BaseModel
 
-from modules.prices.repositories import PolygonPricesRepository
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
+from modules.prices.repositories import PolygonPricesRepository
 from modules.transactions.models import Transaction
 
 
@@ -100,7 +98,6 @@ class TransactionStats(BaseModel):
     gain: Decimal
 
 
-
 class TransactionStatsService:
     def __init__(self, prices_service=None):
         self.prices_service = prices_service or PolygonPricesRepository()
@@ -108,9 +105,9 @@ class TransactionStatsService:
     def get_stats(
         self,
         investor: Investor,
-        tickers: list[Instrument] = None,
-        start_date: datetime = None,
-        end_date: datetime = None,
+        tickers: list[Instrument] | None = None,
+        start_date: datetime | None = None,
+        end_date: datetime | None = None,
     ) -> list[TransactionStats]:
         if tickers is None:
             return []
@@ -119,11 +116,11 @@ class TransactionStatsService:
 
         initial_prices = {}
         if start_date:
-            initial_prices = self.prices_service.get_prices_average_hl(tickers, start_date)
+            initial_prices = self.prices_service.get_prices_at(tickers, start_date)
 
         final_prices = {}
         if end_date:
-            final_prices = self.prices_service.get_prices_average_hl(tickers, end_date)
+            final_prices = self.prices_service.get_prices_at(tickers, end_date)
 
         for t in tickers:
             transactions = Transaction.objects.filter(investor=investor, ticker=t)
@@ -175,11 +172,11 @@ class TransactionStatsService:
             stats.append(
                 TransactionStats(
                     ticker=t.ticker,
-                    total_buy_volume=buy_stats["total_volume"] or 0,
-                    total_buy_price=buy_stats["total_price"] or 0,
+                    total_buy_volume=buy_stats["total_volume"] or Decimal(0),
+                    total_buy_price=buy_stats["total_price"] or Decimal(0),
                     buy_transactions=buy_stats["count"] or 0,
-                    total_sell_volume=sell_stats["total_volume"] or 0,
-                    total_sell_price=sell_stats["total_price"] or 0,
+                    total_sell_volume=sell_stats["total_volume"] or Decimal(0),
+                    total_sell_price=sell_stats["total_price"] or Decimal(0),
                     sell_transactions=sell_stats["count"] or 0,
                     initial_ticker_price=initial_prices.get(t, 0),
                     initial_ticker_volume=initial_ticker_volume,

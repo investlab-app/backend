@@ -1,7 +1,9 @@
 from datetime import datetime
 from decimal import Decimal
-from modules.instruments.models import Instrument
+from typing import Optional
+
 from modules.authentication.tests.conftest import user
+from modules.instruments.models import Instrument
 
 
 class PriceRepositoryMock:
@@ -10,8 +12,10 @@ class PriceRepositoryMock:
     def __init__(self):
         self._prices: dict[tuple[Instrument, datetime], Decimal] = {}
 
-    def get_prices_average_hl(
-        self, tickers: list[Instrument], date_at: datetime
+    def get_prices_at(
+        self,
+        tickers: list[Instrument],
+        date_at: datetime | None = None,
     ) -> dict[Instrument, Decimal]:
         result = {}
         for ticker in tickers:
@@ -26,5 +30,5 @@ class PriceRepositoryMock:
                 result[ticker] = Decimal(0)
         return result
 
-    def set_price(self, ticker: Instrument, date_at: datetime, price: Decimal):
+    def set_price(self, ticker: Instrument, price: Decimal, date_at=None):
         self._prices[(ticker, date_at)] = Decimal(price)

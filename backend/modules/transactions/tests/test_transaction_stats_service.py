@@ -1,14 +1,18 @@
-from decimal import Decimal
-import pytest
 from datetime import datetime
+from decimal import Decimal
+
 import faker
-from modules.prices.tests.conftest import PriceRepositoryMock
-from modules.instruments.models import Instrument
-from modules.transactions.services import TransactionStatsService, TransactionStats
-from modules.investors.tests.test_investor_stats import investor_factory
-from modules.instruments.tests.conftest import instruments_factory
-from modules.transactions.models import Transaction
+import pytest
+
 from modules.core.tests.conftest import year
+from modules.instruments.models import Instrument
+from modules.instruments.tests.conftest import instruments_factory
+from modules.investors.models import AccountValueSnapshot, Investor
+from modules.investors.services import InvestorStatsService, InvestorValueHistoryService
+from modules.investors.tests.test_investor_service import investor_factory
+from modules.prices.tests.conftest import PriceRepositoryMock
+from modules.transactions.models import Transaction
+from modules.transactions.services import TransactionStats, TransactionStatsService
 from modules.transactions.tests.conftest import transaction_factory
 
 fake = faker.Faker()
@@ -68,17 +72,17 @@ class TestTransactionStats:
         assert stats == [
             TransactionStats(
                 ticker=self.ticker.ticker,
-                total_buy_volume=0,
-                total_buy_price=0,
-                total_sell_volume=0,
-                total_sell_price=0,
-                initial_ticker_price=0,
-                initial_ticker_volume=0,
-                final_ticker_price=0,
-                final_ticker_volume=0,
+                total_buy_volume=Decimal(0),
+                total_buy_price=Decimal(0),
+                total_sell_volume=Decimal(0),
+                total_sell_price=Decimal(0),
+                initial_ticker_price=Decimal(0),
+                initial_ticker_volume=Decimal(0),
+                final_ticker_price=Decimal(0),
+                final_ticker_volume=Decimal(0),
                 buy_transactions=0,
                 sell_transactions=0,
-                gain=0,
+                gain=Decimal(0),
             )
         ]
 
@@ -165,7 +169,7 @@ class TestTransactionStats:
     ):
         dt = year(2015)
         self.price_mock.raise_exception_on_miss = True
-        self.price_mock.set_price(self.ticker, dt, 10)
+        self.price_mock.set_price(self.ticker, 10, dt)
 
         stats: TransactionStats = self.run_get_stats(start_date=dt)
 
@@ -174,7 +178,7 @@ class TestTransactionStats:
     def test_final_ticker_price__end_date_specified__contains_valid_price(self, year):
         dt = year(2025)
         self.price_mock.raise_exception_on_miss = True
-        self.price_mock.set_price(self.ticker, dt, 10)
+        self.price_mock.set_price(self.ticker, 10, dt)
 
         stats: TransactionStats = self.run_get_stats(end_date=dt)
 
@@ -183,10 +187,10 @@ class TestTransactionStats:
     def test_gain(self, buy_transaction, sell_transaction, year):
         self.price_mock.raise_exception_on_miss = True
         buy_transaction(volume=10, price=5, date=year(2005))
-        self.price_mock.set_price(self.ticker, year(2010), 10)
+        self.price_mock.set_price(self.ticker, 10, year(2010))
         buy_transaction(volume=5, price=5, date=year(2015))
         sell_transaction(volume=2, price=15, date=year(2015))
-        self.price_mock.set_price(self.ticker, year(2020), 20)
+        self.price_mock.set_price(self.ticker, 20, year(2020))
 
         initial_value = 10 * 10
         buys = 5
@@ -199,3 +203,42 @@ class TestTransactionStats:
         )
 
         assert stats.gain == gain
+
+
+class TestInvestorValueHistoryService:
+    @pytest.fixture(autouse=True)
+    def setup(self, mocker):
+        self.stats_service_mock = mocker.Mock(spec=InvestorStatsService)
+        self.service = InvestorValueHistoryService(
+            stats_service=self.stats_service_mock
+        )
+
+    def test_save_all_investors__no_investors__creates_no_snapshots(self):
+        assert Investor.objects.count() == 0
+
+        self.service.save_all_investors()
+
+        assert AccountValueSnapshot.objects.count() == 0
+
+    def test_save_all_investors__multiple_investors__creates_snapshots_for_all(
+        self, investor_factory
+    ):
+        investor1 = investor_factory()
+        investor2 = investor_factory()
+
+        def side_effect(investor):
+            if investor == investor1:
+                return Decimal(350)
+            if investor == investor2:
+                return Decimal(200)
+            return Decimal(0)
+
+        self.stats_service_mock.get_total_value.side_effect = side_effect
+
+        self.service.save_all_investors()
+
+        assert AccountValueSnapshot.objects.count() == 2
+        snapshot1 = AccountValueSnapshot.objects.get(investor=investor1)
+        snapshot2 = AccountValueSnapshot.objects.get(investor=investor2)
+        assert snapshot1.value == Decimal(350)
+        assert snapshot2.value == Decimal(200)

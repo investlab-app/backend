@@ -100,8 +100,10 @@ class PolygonPricesRepository:
 
         return list(map(PriceDailySummary.from_snapshot, snapshots))
 
-    def get_prices_average_hl(self, tickers: list[Instrument]) -> dict[str, Decimal]:
-        raise NotImplementedError()
+    def get_prices_at(
+        self, tickers: list[Instrument], date: datetime
+    ) -> dict[Instrument, Decimal]:
+        raise NotImplementedError
 
     def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
         prices = self.get_prices(tickers)

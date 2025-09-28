@@ -1,5 +1,6 @@
-import pytest
 from datetime import datetime
+
+import pytest
 
 from modules.authentication.tests.conftest import user
 

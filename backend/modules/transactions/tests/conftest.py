@@ -35,7 +35,7 @@ def create_fake_transaction(
 @pytest.fixture
 def transaction_factory():
     def create_transaction(**kwargs):
-        t = create_fake_transaction(**kwargs)
+        t = create_fake_transaction(**kwargs)  # ty: ignore[missing-argument]
         t.save()
         return t
 
