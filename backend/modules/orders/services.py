@@ -106,11 +106,11 @@ class TradeEngineOutputHandler:
 
     def _handle_updated_orders(self, orders: list[EngineOrderUpdate]):
         ids = [o.id for o in orders]
-        orders = {o.id: o for o in orders}
+        orders_dict = {o.id: o for o in orders}
         real_orders = Order.objects.filter(id__in=ids).prefetch_related("detail")
 
         for o in real_orders:
-            corresponding_engine_order = orders[o.id]
+            corresponding_engine_order = orders_dict[o.id]
             if isinstance(corresponding_engine_order, MarketEngineOrderUpdate):
                 o.detail.volume_processed = corresponding_engine_order.volume_processed
                 o.detail.save()
@@ -125,9 +125,7 @@ class TradeEngineOutputHandler:
         investors = {i.pk: i for i in investors}
 
         ticker_names = [t.ticker for t in transactions]
-        ticker_list: list[Instrument] = (  # ty: ignore[invalid-assignment]
-            Instrument.objects.filter(ticker__in=ticker_names)
-        )
+        ticker_list = Instrument.objects.filter(ticker__in=ticker_names)
         tickers = {i.ticker: i for i in ticker_list}
 
         for t in transactions:
