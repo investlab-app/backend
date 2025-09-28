@@ -8,6 +8,7 @@ from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 from pydantic import BaseModel
 
+from modules.prices.repositories import PolygonPricesRepository
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction
@@ -97,30 +98,12 @@ class TransactionStats(BaseModel):
     sell_transactions: int
 
     gain: Decimal
-    gain_percentage: Optional[Decimal]
 
-    # def gain(self):
-    #     initial_value = self.initial_ticker_price * self.initial_ticker_volume
-    #     final_value = self.final_ticker_price * self.final_ticker_volume
-
-    #     gain = final_value - initial_value - self.total_buy_price + self.total_sell_price
-
-    # initial = initial_ticker_price * initial_ticker_volume
-    # final = final_ticker_price * final_ticker_volume
-
-    # gain =
-
-
-class TransactionStatsPricesService:
-    def get_prices(
-        tickers: list[Instrument], date_at: datetime
-    ) -> dict[Instrument, Decimal]:
-        pass
 
 
 class TransactionStatsService:
     def __init__(self, prices_service=None):
-        self.prices_service = prices_service or TransactionStatsPricesService()
+        self.prices_service = prices_service or PolygonPricesRepository()
 
     def get_stats(
         self,
@@ -136,11 +119,11 @@ class TransactionStatsService:
 
         initial_prices = {}
         if start_date:
-            initial_prices = self.prices_service.get_prices(tickers, start_date)
+            initial_prices = self.prices_service.get_prices_average_hl(tickers, start_date)
 
         final_prices = {}
         if end_date:
-            final_prices = self.prices_service.get_prices(tickers, end_date)
+            final_prices = self.prices_service.get_prices_average_hl(tickers, end_date)
 
         for t in tickers:
             transactions = Transaction.objects.filter(investor=investor, ticker=t)
@@ -187,15 +170,7 @@ class TransactionStatsService:
             total_buy_price = buy_stats["total_price"] or 0
             total_sell_price = sell_stats["total_price"] or 0
 
-            gain = (
-                final_value
-                + total_sell_price
-                - total_buy_price
-                - initial_value
-            )
-            gain_percentage = None
-            if initial_value != 0:
-                gain_percentage = gain / initial_value
+            gain = final_value + total_sell_price - total_buy_price - initial_value
 
             stats.append(
                 TransactionStats(
@@ -211,7 +186,6 @@ class TransactionStatsService:
                     final_ticker_price=final_prices.get(t, 0),
                     final_ticker_volume=final_ticker_volume,
                     gain=gain,
-                    gain_percentage=gain_percentage,
                 )
             )
 

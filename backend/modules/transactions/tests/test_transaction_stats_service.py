@@ -2,99 +2,58 @@ from decimal import Decimal
 import pytest
 from datetime import datetime
 import faker
+from modules.prices.tests.conftest import PriceRepositoryMock
 from modules.instruments.models import Instrument
 from modules.transactions.services import TransactionStatsService, TransactionStats
 from modules.investors.tests.test_investor_stats import investor_factory
 from modules.instruments.tests.conftest import instruments_factory
 from modules.transactions.models import Transaction
+from modules.core.tests.conftest import year
+from modules.transactions.tests.conftest import transaction_factory
 
 fake = faker.Faker()
 pytestmark = pytest.mark.django_db
 
 
-class TransactionStatsPricesServiceMock:
-    raise_exception_on_miss = False
-
-    def __init__(self):
-        self._prices: dict[tuple[Instrument, datetime], Decimal] = {}
-
-    def get_prices(
-        self, tickers: list[Instrument], date_at: datetime
-    ) -> dict[Instrument, Decimal]:
-        result = {}
-        print(self._prices)
-        for ticker in tickers:
-            key = (ticker, date_at)
-            if key in self._prices:
-                result[ticker] = self._prices[key]
-            elif self.raise_exception_on_miss:
-                raise ValueError(
-                    f"Price for {ticker.ticker} at {date_at} not set in mock"
-                )
-            else:
-                result[ticker] = Decimal(0)
-        return result
-
-    def set_price(self, ticker: Instrument, date_at: datetime, price: Decimal):
-        self._prices[(ticker, date_at)] = Decimal(price)
-
-
 class TestTransactionStats:
     @pytest.fixture(autouse=True)
     def setup(self, investor_factory, instruments_factory):
-        self.price_mock = TransactionStatsPricesServiceMock()
+        self.price_mock = PriceRepositoryMock()
         self.investor = investor_factory()
         self.ticker = instruments_factory()
         self.service = TransactionStatsService(prices_service=self.price_mock)
 
     @pytest.fixture
-    def transaction(self):
-        def create_transaction(volume, price, is_buy, date=None):
-            t = Transaction(
+    def buy_transaction(self, transaction_factory):
+        def create_buy_transaction(**kwargs):
+            return transaction_factory(
                 investor=self.investor,
                 ticker=self.ticker,
-                volume=volume,
-                transaction_price=price,
-                is_buy=is_buy,
+                is_buy=True,
+                **kwargs,
             )
-            if date:
-                t.transaction_time = date
-            t.save()
-            return t
-
-        return create_transaction
-
-    @pytest.fixture
-    def buy_transaction(self, transaction):
-        def create_buy_transaction(**kwargs):
-            return transaction(is_buy=True, **kwargs)
 
         return create_buy_transaction
 
     @pytest.fixture
-    def sell_transaction(self, transaction):
+    def sell_transaction(self, transaction_factory):
         def create_buy_transaction(**kwargs):
-            return transaction(is_buy=False, **kwargs)
+            return transaction_factory(
+                investor=self.investor,
+                ticker=self.ticker,
+                is_buy=False,
+                **kwargs,
+            )
 
         return create_buy_transaction
 
-    def run_service(self, start_date=None, end_date=None) -> TransactionStats:
+    def run_get_stats(self, start_date=None, end_date=None) -> TransactionStats:
         return self.service.get_stats(
             investor=self.investor,
             tickers=[self.ticker],
             start_date=start_date,
             end_date=end_date,
         )[0]
-
-    @pytest.fixture
-    def year(self):
-        def date_year(year):
-            return datetime(year=year, month=1, day=1)
-        return date_year
-        
-
-    def date_year(self, year):
-        return datetime(year=year, month=1, day=1)
 
     def test_stats__no_transactions_no_tickers__returns_empty_list(self):
         stats = self.service.get_stats(self.investor)
@@ -120,7 +79,6 @@ class TestTransactionStats:
                 buy_transactions=0,
                 sell_transactions=0,
                 gain=0,
-                gain_percentage=None,
             )
         ]
 
@@ -138,7 +96,7 @@ class TestTransactionStats:
         buy_transaction(volume=5, price=20)
         buy_transaction(volume=15, price=5)
 
-        stats: TransactionStats = self.run_service()
+        stats: TransactionStats = self.run_get_stats()
 
         assert stats.total_buy_volume == 20
         assert stats.total_buy_price == 25
@@ -148,7 +106,7 @@ class TestTransactionStats:
         sell_transaction(volume=5, price=20)
         sell_transaction(volume=15, price=5)
 
-        stats: TransactionStats = self.run_service()
+        stats: TransactionStats = self.run_get_stats()
 
         assert stats.total_sell_volume == 20
         assert stats.total_sell_price == 25
@@ -164,7 +122,7 @@ class TestTransactionStats:
         sell_transaction(volume=5, price=1, date=year(2020))
         buy_transaction(volume=5, price=1, date=year(2020))
 
-        stats: TransactionStats = self.run_service(
+        stats: TransactionStats = self.run_get_stats(
             start_date=year(2005),
             end_date=year(2015),
         )
@@ -173,78 +131,71 @@ class TestTransactionStats:
         assert stats.buy_transactions == 1
 
     def test_initial_ticker_volume__n_assets_owned_before__equals_n(
-        self, buy_transaction, sell_transaction
+        self, buy_transaction, sell_transaction, year
     ):
-        buy_transaction(volume=5, price=0, date=self.date_year(2000))
-        sell_transaction(volume=2, price=0, date=self.date_year(2000))
-        buy_transaction(volume=3, price=0, date=self.date_year(2000))
-        buy_transaction(volume=3, price=0, date=self.date_year(2020))
+        buy_transaction(volume=5, date=year(2000))
+        sell_transaction(volume=2, date=year(2000))
+        buy_transaction(volume=3, date=year(2000))
+        buy_transaction(volume=3, date=year(2020))
 
-        stats: TransactionStats = self.run_service(
-            start_date=self.date_year(2010),
+        stats: TransactionStats = self.run_get_stats(
+            start_date=year(2010),
         )
 
         assert stats.initial_ticker_volume == 5 - 2 + 3
 
     def test_final_ticker_volume__n_assets_owned_after_end_date__equals_n(
-        self, buy_transaction, sell_transaction
+        self, buy_transaction, sell_transaction, year
     ):
-        buy_transaction(volume=15, price=0, date=self.date_year(2000))
-        buy_transaction(volume=5, price=0, date=self.date_year(2010))
-        sell_transaction(volume=2, price=0, date=self.date_year(2010))
-        buy_transaction(volume=3, price=0, date=self.date_year(2010))
-        buy_transaction(volume=3, price=0, date=self.date_year(2020))
+        buy_transaction(volume=15, price=0, date=year(2000))
+        buy_transaction(volume=5, price=0, date=year(2010))
+        sell_transaction(volume=2, price=0, date=year(2010))
+        buy_transaction(volume=3, price=0, date=year(2010))
+        buy_transaction(volume=3, price=0, date=year(2020))
 
-        stats: TransactionStats = self.run_service(
-            start_date=self.date_year(2005),
-            end_date=self.date_year(2015),
+        stats: TransactionStats = self.run_get_stats(
+            start_date=year(2005),
+            end_date=year(2015),
         )
 
         assert stats.final_ticker_volume == 15 + 5 - 2 + 3
 
-    def test_initial_ticker_price__start_date_specified__contains_valid_price(self):
-        dt = self.date_year(2015)
+    def test_initial_ticker_price__start_date_specified__contains_valid_price(
+        self, year
+    ):
+        dt = year(2015)
         self.price_mock.raise_exception_on_miss = True
         self.price_mock.set_price(self.ticker, dt, 10)
 
-        stats: TransactionStats = self.run_service(start_date=dt)
+        stats: TransactionStats = self.run_get_stats(start_date=dt)
 
         assert stats.initial_ticker_price == 10
 
-    def test_final_ticker_price__end_date_specified__contains_valid_price(self):
-        dt = self.date_year(2025)
+    def test_final_ticker_price__end_date_specified__contains_valid_price(self, year):
+        dt = year(2025)
         self.price_mock.raise_exception_on_miss = True
         self.price_mock.set_price(self.ticker, dt, 10)
 
-        stats: TransactionStats = self.run_service(end_date=dt)
+        stats: TransactionStats = self.run_get_stats(end_date=dt)
 
         assert stats.final_ticker_price == 10
 
-    def test_gain(self, buy_transaction, sell_transaction):
+    def test_gain(self, buy_transaction, sell_transaction, year):
         self.price_mock.raise_exception_on_miss = True
-        buy_transaction(volume=10, price=5, date=self.date_year(2005))
-        self.price_mock.set_price(
-            self.ticker, self.date_year(2010), 10
-        )  # initial_value = 100
-        buy_transaction(
-            volume=5, price=5, date=self.date_year(2015)
-        )  # lost on buys = 25
-        sell_transaction(
-            volume=2, price=15, date=self.date_year(2015)
-        )  # gained on sells = 30
-        self.price_mock.set_price(
-            self.ticker, self.date_year(2020), 20
-        )  # final_value = 13 * 20 = 260
+        buy_transaction(volume=10, price=5, date=year(2005))
+        self.price_mock.set_price(self.ticker, year(2010), 10)
+        buy_transaction(volume=5, price=5, date=year(2015))
+        sell_transaction(volume=2, price=15, date=year(2015))
+        self.price_mock.set_price(self.ticker, year(2020), 20)
 
         initial_value = 10 * 10
         buys = 5
         sells = 15
         final_value = (10 + 5 - 2) * 20
         gain = final_value - buys + sells - initial_value
-        stats: TransactionStats = self.run_service(
-            start_date=self.date_year(2010),
-            end_date=self.date_year(2020),
+        stats: TransactionStats = self.run_get_stats(
+            start_date=year(2010),
+            end_date=year(2020),
         )
 
         assert stats.gain == gain
-        assert stats.gain_percentage == Decimal(gain) / Decimal(initial_value)

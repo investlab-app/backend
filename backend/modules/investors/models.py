@@ -21,3 +21,9 @@ class Asset(models.Model):
 
     def __str__(self):
         return f"Asset {self.id}"
+
+
+# class AccountValueHistory(models.Model):
+#     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
+#     date = models.DateTimeField()
+#     value = models.DecimalField()

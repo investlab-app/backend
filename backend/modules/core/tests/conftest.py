@@ -1,4 +1,5 @@
 import pytest
+from datetime import datetime
 
 from modules.authentication.tests.conftest import user
 
@@ -45,3 +46,11 @@ def websocket_communicator_auth(user):
         return communicator
 
     return _create_communicator
+
+
+@pytest.fixture
+def year():
+    def date_year(year):
+        return datetime(year=year, month=1, day=1)
+
+    return date_year
