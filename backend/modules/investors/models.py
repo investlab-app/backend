@@ -14,17 +14,28 @@ class Investor(models.Model):
         return f"Investor: {self.clerk_id}"
 
 
-class Asset(models.Model):
-    pk = models.CompositePrimaryKey("investor", "ticker")
-    investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
-    ticker = models.ForeignKey(Instrument, on_delete=models.CASCADE)
-    volume = models.DecimalField(max_digits=30, decimal_places=15)
+class Asset(BaseModel):
+    investor = models.ForeignKey(
+        Investor, on_delete=models.CASCADE, verbose_name=_("Owning investor")
+    )
+    ticker = models.ForeignKey(
+        Instrument, on_delete=models.CASCADE, verbose_name=_("Instrument held")
+    )
+    volume = models.DecimalField(
+        max_digits=30, decimal_places=15, verbose_name=_("Quantity of instrument held")
+    )
 
     def __str__(self):
-        return f"Asset {self.id}"
+        return f"Asset: {self.volume} of {self.ticker} for {self.investor}"
 
 
 class AccountValueSnapshot(BaseModel):
-    investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
-    date = models.DateTimeField(auto_now_add=True)
-    value = models.DecimalField(max_digits=30, decimal_places=2)
+    investor = models.ForeignKey(
+        Investor, on_delete=models.CASCADE, verbose_name=_("Associated investor")
+    )
+    date = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Datetime of the snapshot")
+    )
+    value = models.DecimalField(
+        max_digits=30, decimal_places=2, verbose_name=_("Total account value")
+    )
