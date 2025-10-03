@@ -71,3 +71,9 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
 
         ticker = obj.ticker.upper()
         return PriceDailySummarySerializer(snapshot_map.get(ticker)).data
+
+
+class InstrumentNameSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Instrument
+        fields = ["ticker"]
