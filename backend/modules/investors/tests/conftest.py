@@ -1,3 +1,6 @@
+import uuid
+from decimal import Decimal
+
 import pytest
 from faker import Faker
 
@@ -10,33 +13,26 @@ from modules.investors.models import Asset, Investor
 fake = Faker()
 
 
-def create_fake_investor(clerk_id=None, balance=None, save=False):  # noqa: FBT002
-    clerk_id = clerk_id or fake.pystr()
-    if balance is None:
-        balance = fake.pydecimal(15, 2, positive=True, max_value=100)
+def create_fake_investor(
+    investor_id=None, clerk_id=None, balance=Decimal(0), *, save=False
+):
+    if investor_id is None:
+        investor_id = uuid.uuid4()
+    if clerk_id is None:
+        clerk_id = fake.pystr()
 
-    investor = Investor(
-        clerk_id=clerk_id,
-        balance=balance,
-    )
+    investor = Investor(id=investor_id, clerk_id=clerk_id, balance=balance)
     if save:
         investor.save()
     return investor
 
 
-@pytest.fixture
-def investor_factory():
-    def create_investor(**kwargs):
-        return create_fake_investor(**kwargs, save=True)
-
-    return create_investor
-
-
 def create_fake_asset(
     investor=None,
     ticker=None,
-    volume=None,
-    save=False,  # noqa: FBT002
+    volume=Decimal(0),
+    *,
+    save=False,
 ):
     if investor is None:
         investor = create_fake_investor(save=save)
@@ -51,6 +47,14 @@ def create_fake_asset(
     if save:
         asset.save()
     return asset
+
+
+@pytest.fixture
+def investor_factory():
+    def create_investor(**kwargs):
+        return create_fake_investor(**kwargs, save=True)
+
+    return create_investor
 
 
 @pytest.fixture
