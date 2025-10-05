@@ -26,6 +26,7 @@ from modules.orders.services import (
 )
 from modules.orders.tests.conftest import fake_market_order, uuids
 from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.transactions.services import TransactionParams
 
 TEST_INVESTOR_ID = "816e3548-a012-412d-879a-cc742b58e721"
 TEST_INVESTOR_ID_2 = "7f59dbfa-a79a-4d9f-9841-65d6598590f6"
@@ -93,8 +94,8 @@ async def test_trade_engine_data_fetcher(uuids):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
-@patch("modules.orders.services.sell")
-@patch("modules.orders.services.buy")
+@patch("modules.orders.services.ExecuteTransactionService.sell")
+@patch("modules.orders.services.ExecuteTransactionService.buy")
 async def test_trade_engine_output_handler(buy, sell, uuids):
     ticker = create_fake_instrument(ticker="AAPL")
 
@@ -147,10 +148,14 @@ async def test_trade_engine_output_handler(buy, sell, uuids):
 
     investor = await database_sync_to_async(Investor.objects.get)(id=TEST_INVESTOR_ID)
     buy.assert_called_with(
-        investor=investor, ticker=ticker, volume=Decimal(5), action_price=20
+        TransactionParams(
+            investor=investor, ticker=ticker, volume=Decimal(5), action_price=Decimal("20")
+        )
     )
     sell.assert_called_with(
-        investor=investor, ticker=ticker, volume=Decimal(15), action_price=20
+        TransactionParams(
+            investor=investor, ticker=ticker, volume=Decimal(15), action_price=Decimal("20")
+        )
     )
 
 

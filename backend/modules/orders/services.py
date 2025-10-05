@@ -22,7 +22,7 @@ from modules.orders.order_engine.structures import (
     TradeEngineOutput,
 )
 from modules.prices.constants import PRICES_CHANNEL_LAYER
-from modules.transactions.services import buy, sell
+from modules.transactions.services import ExecuteTransactionService, TransactionParams
 
 
 class RunOrderEngineService:
@@ -129,17 +129,13 @@ class TradeEngineOutputHandler:
         tickers = {i.ticker: i for i in ticker_list}
 
         for t in transactions:
+            transaction_params = TransactionParams(
+                investor=investors[t.investor_id],
+                ticker=tickers[t.ticker],
+                volume=t.volume,
+                action_price=prices[t.ticker],
+            )
             if t.is_buy:
-                buy(
-                    investor=investors[t.investor_id],
-                    ticker=tickers[t.ticker],
-                    volume=t.volume,
-                    action_price=prices[t.ticker],
-                )
+                ExecuteTransactionService.buy(transaction_params)
             else:
-                sell(
-                    investor=investors[t.investor_id],
-                    ticker=tickers[t.ticker],
-                    volume=t.volume,
-                    action_price=prices[t.ticker],
-                )
+                ExecuteTransactionService.sell(transaction_params)
