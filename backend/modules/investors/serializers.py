@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from modules.investors.models import Investor
+from modules.investors.models import Asset, Investor
 
 
 class InvestorSerializer(serializers.ModelSerializer):
@@ -236,3 +236,9 @@ class PositionSerializer(serializers.Serializer):
     gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
 
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")
+
+
+class AssetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Asset
+        fields = ["ticker", "volume"]
