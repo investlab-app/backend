@@ -50,11 +50,16 @@ class Asset(BaseModel):
 
 class AccountValueSnapshot(BaseModel):
     investor = models.ForeignKey(
-        Investor, on_delete=models.CASCADE, verbose_name=_("Associated investor")
+        Investor, on_delete=models.CASCADE, verbose_name=_("Associated Investor")
     )
-    date = models.DateTimeField(
-        auto_now_add=True, verbose_name=_("Datetime of the snapshot")
+    timestamp = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Datetime Of The Snapshot")
     )
     value = models.DecimalField(
-        max_digits=30, decimal_places=2, verbose_name=_("Total account value")
+        max_digits=30, decimal_places=2, verbose_name=_("Total Account Value")
     )
+
+    class Meta:
+        verbose_name = _("Account Value Snapshot")
+        verbose_name_plural = _("Account Value Snapshots")
+        ordering = ["-timestamp"]
