@@ -18,7 +18,7 @@ from modules.investors.views import (
 app_name = "investors"
 
 urlpatterns = [
-    path("", InvestorListView.as_view(), name="investor-list-create"),
+    path("", InvestorListView.as_view(), name="investor-list"),
     path("me/", CurrentInvestorView.as_view(), name="current-investor"),
     path("me/stats/", InvestorStatsView.as_view(), name="investor-stats"),
     path(

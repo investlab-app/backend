@@ -106,8 +106,8 @@ class TransactionStatsService:
         self,
         investor: Investor,
         tickers: list[Instrument] | None = None,
-        start_date: datetime | None = None,
-        end_date: datetime | None = None,
+        start_datetime: datetime | None = None,
+        end_datetime: datetime | None = None,
     ) -> list[TransactionStats]:
         if tickers is None:
             return []
@@ -115,21 +115,21 @@ class TransactionStatsService:
         stats = []
 
         initial_prices = {}
-        if start_date:
-            initial_prices = self.prices_service.get_prices_at(tickers, start_date)
+        if start_datetime:
+            initial_prices = self.prices_service.get_prices_at(tickers, start_datetime)
 
         final_prices = {}
-        if end_date:
-            final_prices = self.prices_service.get_prices_at(tickers, end_date)
+        if end_datetime:
+            final_prices = self.prices_service.get_prices_at(tickers, end_datetime)
 
         for t in tickers:
             transactions = Transaction.objects.filter(investor=investor, ticker=t)
 
             initial_ticker_volume = Decimal(0)
 
-            if start_date:
+            if start_datetime:
                 transactions_before_start = Transaction.objects.filter(
-                    investor=investor, ticker=t, transaction_time__lt=start_date
+                    investor=investor, ticker=t, transaction_time__lt=start_datetime
                 )
                 initial_buy_volume = transactions_before_start.filter(
                     is_buy=True
@@ -139,9 +139,9 @@ class TransactionStatsService:
                 ).aggregate(total_volume=Sum("volume"))["total_volume"] or Decimal(0)
                 initial_ticker_volume = initial_buy_volume - initial_sell_volume
 
-                transactions = transactions.filter(transaction_time__gte=start_date)
-            if end_date:
-                transactions = transactions.filter(transaction_time__lte=end_date)
+                transactions = transactions.filter(transaction_time__gte=start_datetime)
+            if end_datetime:
+                transactions = transactions.filter(transaction_time__lte=end_datetime)
 
             buy_stats = transactions.filter(is_buy=True).aggregate(
                 total_volume=Sum("volume"),

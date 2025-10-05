@@ -103,7 +103,18 @@ class PolygonPricesRepository:
     def get_prices_at(
         self, tickers: list[Instrument], date: datetime
     ) -> dict[Instrument, Decimal]:
-        raise NotImplementedError
+        prices = {}
+        for instrument in tickers:
+            ohlc = self.get_ohlc(
+                ticker=instrument.ticker,
+                start_date=date,
+                end_date=date,
+                interval="day",
+                interval_multiplier=1,
+            )
+            if ohlc and len(ohlc) > 0:
+                prices[instrument] = ohlc[0].close
+        return prices
 
     def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
         prices = self.get_prices(tickers)

@@ -55,8 +55,8 @@ class TestTransactionStats:
         return self.service.get_stats(
             investor=self.investor,
             tickers=[self.ticker],
-            start_date=start_date,
-            end_date=end_date,
+            start_datetime=start_date,
+            end_datetime=end_date,
         )[0]
 
     def test_stats__no_transactions_no_tickers__returns_empty_list(self):

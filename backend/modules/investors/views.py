@@ -1,12 +1,14 @@
 import logging
 import random
-from datetime import date, timedelta
+from datetime import date, timedelta, datetime
 
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.core.utils import get_local_date
 from modules.investors.models import Asset, Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
@@ -24,6 +26,9 @@ from modules.investors.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
+from modules.investors.services import InvestorStatsService
+from modules.transactions.models import Transaction
+from modules.transactions.services import TransactionStatsService
 
 logger = logging.getLogger(__name__)
 
@@ -119,15 +124,35 @@ class InvestorStatsView(generics.RetrieveAPIView):
     serializer_class = InvestorStatsSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # Generate random stats data
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        # Generate realistic-looking stats
-        invested = round(random.uniform(1000, 50000), 2)
-        total_return = round(random.uniform(-invested * 0.3, invested * 0.5), 2)
-        todays_return = round(random.uniform(-invested * 0.05, invested * 0.05), 2)
-        total_value = invested + total_return
+        today = get_local_date()
+        start_datetime = datetime.combine(today, datetime.min.time())
+        end_datetime = datetime.combine(today, datetime.max.time())
+        investor_tickers = list(
+            Transaction.objects.filter(investor=investor)
+            .values_list("ticker", flat=True)
+            .distinct()
+        )
+
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime
+        )
+        todays_return = sum(stat.gain for stat in stats_today)
+
+        stats_total = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+        )
+        total_return = sum(stat.gain for stat in stats_total)
+        invested = sum(stat.total_buy_price for stat in stats_total)
+
+        investor_stats_service = InvestorStatsService()
+        total_value = investor_stats_service.get_total_value(investor=investor)
 
         stats_data = {
             "todays_return": todays_return,
