@@ -127,6 +127,7 @@ class TradeEngineOutputHandler:
         ticker_names = [t.ticker for t in transactions]
         ticker_list = Instrument.objects.filter(ticker__in=ticker_names)
         tickers = {i.ticker: i for i in ticker_list}
+        transaction_service = ExecuteTransactionService()
 
         for t in transactions:
             transaction_params = TransactionParams(
@@ -136,6 +137,6 @@ class TradeEngineOutputHandler:
                 action_price=prices[t.ticker],
             )
             if t.is_buy:
-                ExecuteTransactionService.buy(transaction_params)
+                transaction_service.buy(transaction_params)
             else:
-                ExecuteTransactionService.sell(transaction_params)
+                transaction_service.sell(transaction_params)

@@ -23,57 +23,57 @@ class TransactionParams(BaseModel):
 
 
 class ExecuteTransactionService:
-    def buy(self, args: TransactionParams):
-        transaction_price = args.volume * args.action_price
-        if args.investor.balance < transaction_price:
+    def buy(self, params: TransactionParams):
+        transaction_price = params.volume * params.action_price
+        if params.investor.balance < transaction_price:
             raise ValueError("Investor doesn't have enough balance")
 
-        args.investor.balance -= transaction_price
+        params.investor.balance -= transaction_price
 
         try:
             asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
-                investor=args.investor, ticker=args.ticker
+                investor=params.investor, ticker=params.ticker
             )
-            asset.volume += args.volume
+            asset.volume += params.volume
         except ObjectDoesNotExist:
             asset = Asset(
-                investor=args.investor, ticker=args.ticker, volume=args.volume
+                investor=params.investor, ticker=params.ticker, volume=params.volume
             )
 
         with transaction.atomic():
-            args.investor.save()
+            params.investor.save()
             Transaction.objects.create(
-                investor=args.investor,
-                ticker=args.ticker,
-                volume=args.volume,
-                transaction_price=args.volume * args.action_price,
+                investor=params.investor,
+                ticker=params.ticker,
+                volume=params.volume,
+                transaction_price=params.volume * params.action_price,
                 is_buy=True,
             )
             asset.save()
 
-    def sell(self, args: TransactionParams):
+    def sell(self, params: TransactionParams):
         try:
             asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
-                investor=args.investor, ticker=args.ticker
+                investor=params.investor, ticker=params.ticker
             )
         except ObjectDoesNotExist:
             raise ValueError("Asset does not exist.") from None
 
-        if asset.volume < args.volume:
+        if asset.volume < params.volume:
             raise ValueError("Not enough assets to sell.")
 
-        transaction_price = args.volume * args.action_price
+        transaction_price = params.volume * params.action_price
 
-        args.investor.balance += transaction_price
-        asset.volume -= args.volume
+        params.investor.balance += transaction_price
+        asset.volume -= params.volume
 
         with transaction.atomic():
-            args.investor.save()
+            params.investor.save()
             asset.save()
             Transaction.objects.create(
-                investor=args.investor,
-                ticker=args.ticker,
-                volume=args.volume,
+                investor=params.investor,
+                ticker=params.ticker,
+                volume=params.volume,
                 transaction_price=transaction_price,
                 is_buy=False,
             )
