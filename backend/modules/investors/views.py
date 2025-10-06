@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import date, datetime, timedelta
+from datetime import date, timedelta
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -8,7 +8,7 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.core.utils import get_local_date, get_local_datetime
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.investors.serializers import (
