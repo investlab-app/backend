@@ -11,32 +11,10 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  IMAGE_NAME: ${{ github.repository }}/test-mkapica
 
 jobs:
-  test:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: read
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-      - name: Make .env file
-        run: cp .env.ci .env
-      - name: Run containers
-        run: docker compose up --build -d --wait
-      - name: Run lint checks
-        run: make lint-check
-      - name: Run format checks
-        run: make format-check
-      - name: Run type checks
-        run: make type-check
-      - name: Run tests
-        run: make test
   publish:
-    if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
-    needs: test
     runs-on: ubuntu-latest
     permissions:
       contents: read

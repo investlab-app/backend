@@ -1,6 +1,8 @@
 import asyncio
 import logging
+import os
 import random
+import socket
 import time
 
 from channels.layers import get_channel_layer
@@ -45,7 +47,14 @@ class PriceStreamMock:
 
 class Command(BaseCommand):
     def handle(self, *args, **options):
-        logger.info("Starting broadcasting fake stocks...")
+        logger.error("Starting broadcasting fake stocks...")
+        postgres_host = os.environ.get("POSTGRES_HOST", "postgresql-postgresql")
+        logger.error("POSTGRES_HOST: %s", postgres_host)
+        try:
+            ip = socket.gethostbyname(postgres_host)
+            logger.error("Resolved %s to %s", postgres_host, ip)
+        except socket.gaierror as e:
+            logger.error("Failed to resolve %s: %s", postgres_host, e)
         sb = PriceStreamMock()
         tickers = [i.ticker for i in Instrument.objects.all()]
         logger.info("Broadcasting %s stocks", len(tickers))
