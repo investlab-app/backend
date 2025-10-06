@@ -24,11 +24,11 @@ def create_fake_transaction(
         investor=investor,
         ticker=ticker,
         volume=volume,
-        transaction_price=price,
+        price=price,
         is_buy=is_buy,
     )
     if date:
-        t.transaction_time = date
+        t.timestamp = date
     return t
 
 

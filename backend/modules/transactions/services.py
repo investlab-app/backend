@@ -46,7 +46,7 @@ class ExecuteTransactionService:
                 investor=params.investor,
                 ticker=params.ticker,
                 volume=params.volume,
-                transaction_price=params.volume * params.action_price,
+                price=params.volume * params.action_price,
                 is_buy=True,
             )
             asset.save()
@@ -74,7 +74,7 @@ class ExecuteTransactionService:
                 investor=params.investor,
                 ticker=params.ticker,
                 volume=params.volume,
-                transaction_price=transaction_price,
+                price=transaction_price,
                 is_buy=False,
             )
 
@@ -129,7 +129,7 @@ class TransactionStatsService:
 
             if start_datetime:
                 transactions_before_start = Transaction.objects.filter(
-                    investor=investor, ticker=t, transaction_time__lt=start_datetime
+                    investor=investor, ticker=t, timestamp__lt=start_datetime
                 )
                 initial_buy_volume = transactions_before_start.filter(
                     is_buy=True
@@ -139,9 +139,9 @@ class TransactionStatsService:
                 ).aggregate(total_volume=Sum("volume"))["total_volume"] or Decimal(0)
                 initial_ticker_volume = initial_buy_volume - initial_sell_volume
 
-                transactions = transactions.filter(transaction_time__gte=start_datetime)
+                transactions = transactions.filter(timestamp__gte=start_datetime)
             if end_datetime:
-                transactions = transactions.filter(transaction_time__lte=end_datetime)
+                transactions = transactions.filter(timestamp__lte=end_datetime)
 
             buy_stats = transactions.filter(is_buy=True).aggregate(
                 total_volume=Sum("volume"),

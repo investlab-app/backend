@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from http.client import HTTPResponse
 
@@ -21,8 +21,8 @@ class PolygonPricesRepository:
     def get_ohlc(
         self,
         ticker: str,
-        start_date: datetime,
-        end_date: datetime,
+        start_date: datetime | int,
+        end_date: datetime | int,
         interval: str,
         interval_multiplier: int,
     ) -> list[PriceBar] | None:
@@ -101,19 +101,20 @@ class PolygonPricesRepository:
         return list(map(PriceDailySummary.from_snapshot, snapshots))
 
     def get_prices_at(
-        self, tickers: list[Instrument], date: datetime
+        self, tickers: list[Instrument], timestamp: datetime
     ) -> dict[Instrument, Decimal]:
+        # TODO: ta metoda nie dziala poprawnie
         prices = {}
         for instrument in tickers:
             ohlc = self.get_ohlc(
                 ticker=instrument.ticker,
-                start_date=date,
-                end_date=date,
-                interval="day",
+                start_date=timestamp,
+                end_date=timestamp + timedelta(minutes=10),
+                interval="minute",
                 interval_multiplier=1,
             )
             if ohlc and len(ohlc) > 0:
-                prices[instrument] = ohlc[0].close
+                prices[instrument] = ohlc[0].open
         return prices
 
     def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:

@@ -66,7 +66,7 @@ class TestCase:
         assert transaction.investor == self.investor
         assert transaction.ticker == self.ticker
         assert transaction.volume == self.volume
-        assert transaction.transaction_price == self.volume * self.action_price
+        assert transaction.price == self.volume * self.action_price
         assert transaction.is_buy is True
 
     def test_buy__not_enough_money__exception_gets_raised(self):
@@ -118,7 +118,7 @@ class TestCase:
         assert transaction.investor == self.investor
         assert transaction.ticker == self.ticker
         assert transaction.volume == self.volume
-        assert transaction.transaction_price == self.volume * self.action_price
+        assert transaction.price == self.volume * self.action_price
         assert transaction.is_buy is False
 
     def test_sell__success__asset_gets_updated(self):

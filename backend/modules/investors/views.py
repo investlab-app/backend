@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import date, timedelta, datetime
+from datetime import date, datetime, timedelta
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
@@ -8,7 +8,8 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.core.utils import get_local_date
+from modules.core.utils import get_local_date, get_local_datetime
+from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.investors.serializers import (
     AccountValueOverTimeSerializer,
@@ -126,13 +127,15 @@ class InvestorStatsView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        today = get_local_date()
-        start_datetime = datetime.combine(today, datetime.min.time())
-        end_datetime = datetime.combine(today, datetime.max.time())
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=-1)
         investor_tickers = list(
-            Transaction.objects.filter(investor=investor)
-            .values_list("ticker", flat=True)
-            .distinct()
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
         )
 
         stats_service = TransactionStatsService()
@@ -140,7 +143,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
             investor=investor,
             tickers=investor_tickers,
             start_datetime=start_datetime,
-            end_datetime=end_datetime
+            end_datetime=end_datetime,
         )
         todays_return = sum(stat.gain for stat in stats_today)
 
