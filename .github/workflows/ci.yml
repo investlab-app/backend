@@ -57,4 +57,4 @@ jobs:
       - name: Verify image architectures
         run: |
           echo "Checking available architectures for built image:"
-          docker buildx imagetools inspect ${{ steps.meta.outputs.tags }}
+          docker buildx imagetools inspect ghcr.io/investlab-app/backend/test-mkapica:test-mkapica
