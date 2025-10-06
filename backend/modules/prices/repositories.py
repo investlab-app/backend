@@ -103,7 +103,6 @@ class PolygonPricesRepository:
     def get_prices_at(
         self, tickers: list[Instrument], timestamp: datetime
     ) -> dict[Instrument, Decimal]:
-        # TODO: ta metoda nie dziala poprawnie
         prices = {}
         for instrument in tickers:
             ohlc = self.get_ohlc(

@@ -23,33 +23,34 @@ class InvestorStatsService:
 
     def get_total_value(self, investor: Investor) -> Decimal:
         assets = Asset.objects.filter(investor=investor)
-        tickers = [str(a.ticker) for a in assets]
+        tickers = [a.ticker.ticker.upper() for a in assets]
         prices = self.prices.get_prices_map(tickers)
 
         asset_value = 0
         for a in assets:
-            asset_value += prices[str(a.ticker)].current_price * a.volume
+            asset_value += prices[a.ticker.ticker.upper()].current_price * a.volume
 
         return investor.balance + asset_value
 
     def get_asset_allocation(self, investor: Investor) -> list[AssetAllocation]:
         assets = Asset.objects.filter(investor=investor)
-        tickers = [str(a.ticker) for a in assets]
+        tickers = [a.ticker.ticker.upper() for a in assets]
         prices = self.prices.get_prices_map(tickers)
         allocations = []
 
         total_value = 0
         for a in assets:
-            total_value += a.volume * prices[str(a.ticker)].current_price
+            total_value += a.volume * prices[a.ticker.ticker.upper()].current_price
 
         for a in assets:
-            value = a.volume * prices[str(a.ticker)].current_price
+            ticker = a.ticker.ticker.upper()
+            value = a.volume * prices[ticker].current_price
             allocations.append(
                 AssetAllocation(
                     asset=a,
                     percentage=value / total_value,
-                    price_per_action=prices[str(a.ticker)].current_price,
-                    total_value=a.volume * prices[str(a.ticker)].current_price,
+                    price_per_action=prices[ticker].current_price,
+                    total_value=a.volume * prices[ticker].current_price,
                 )
             )
 

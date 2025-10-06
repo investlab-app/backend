@@ -129,7 +129,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
 
         today = get_local_datetime()
         end_datetime = today - timedelta(minutes=30)
-        start_datetime = end_datetime - timedelta(days=-1)
+        start_datetime = end_datetime - timedelta(days=1)
         investor_tickers = list(
             Instrument.objects.filter(
                 id__in=Transaction.objects.filter(investor=investor)

@@ -145,12 +145,12 @@ class TransactionStatsService:
 
             buy_stats = transactions.filter(is_buy=True).aggregate(
                 total_volume=Sum("volume"),
-                total_price=Sum("transaction_price"),
+                total_price=Sum("price"),
                 count=Count("id"),
             )
             sell_stats = transactions.filter(is_buy=False).aggregate(
                 total_volume=Sum("volume"),
-                total_price=Sum("transaction_price"),
+                total_price=Sum("price"),
                 count=Count("id"),
             )
 
