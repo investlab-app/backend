@@ -357,6 +357,16 @@ UNFOLD = {
 REDIS_HOST = os.environ["REDIS_HOST"]
 REDIS_PORT = os.environ["REDIS_PORT"]
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
+
+# Decode base64 password if it's base64 encoded
+try:
+    import base64
+    # Try to decode the password, if it fails use as-is
+    REDIS_PASSWORD = base64.b64decode(REDIS_PASSWORD).decode('utf-8')
+except Exception:
+    # If decoding fails, use the password as-is
+    pass
+
 REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
 
 CHANNEL_LAYERS = {

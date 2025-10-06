@@ -4,6 +4,7 @@ import os
 import random
 import socket
 import time
+import base64
 
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
@@ -16,7 +17,35 @@ logger = logging.getLogger(__name__)
 
 class PriceStreamMock:
     async def start(self, tickers: list[str]):
+        # Add Redis connection diagnostics
+        redis_host = os.environ.get("REDIS_HOST", "redis-master")
+        redis_port = os.environ.get("REDIS_PORT", "6379")
+        redis_password = os.environ.get("REDIS_PASSWORD", "")
+        
+        # Decode base64 password if it's base64 encoded (same logic as settings.py)
+        try:
+            redis_password = base64.b64decode(redis_password).decode('utf-8')
+            logger.error(f"REDIS_PASSWORD (decoded from base64): {redis_password}")
+        except Exception as e:
+            logger.error(f"REDIS_PASSWORD (using as-is, not base64): {redis_password}")
+        
+        logger.error("Redis connection diagnostics:")
+        logger.error(f"REDIS_HOST: {redis_host}")
+        logger.error(f"REDIS_PORT: {redis_port}")
+        logger.error(f"REDIS_PASSWORD (final): {redis_password}")
+        
+        # Log the constructed Redis URL from settings
+        from django.conf import settings
+        logger.error(f"Redis URL from settings: {getattr(settings, 'REDIS_URL', 'Not found')}")
+        
+        # Log channel layer config
+        logger.error(f"Channel layer config: {getattr(settings, 'CHANNEL_LAYERS', 'Not found')}")
+        
         channel_layer = get_channel_layer()
+        logger.error(f"Channel layer type: {type(channel_layer)}")
+        logger.error(f"Channel layer config: {getattr(channel_layer, 'config', 'No config attr')}")
+        
+        logger.error("Attempting to connect to Redis and add to channel group...")
         await channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
