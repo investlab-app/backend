@@ -18,6 +18,8 @@ ALLOWED_HOSTS = str_to_list(os.environ["ALLOWED_HOSTS"])
 
 CORS_ALLOWED_ORIGINS = str_to_list(os.environ["CORS_ALLOWED_ORIGINS"])
 
+CSRF_TRUSTED_ORIGINS = str_to_list(os.environ.get("CSRF_TRUSTED_ORIGINS", ""))
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -361,8 +363,9 @@ REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD")
 # Decode base64 password if it's base64 encoded
 try:
     import base64
+
     # Try to decode the password, if it fails use as-is
-    REDIS_PASSWORD = base64.b64decode(REDIS_PASSWORD).decode('utf-8')
+    REDIS_PASSWORD = base64.b64decode(REDIS_PASSWORD).decode("utf-8")
 except Exception:
     # If decoding fails, use the password as-is
     pass
