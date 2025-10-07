@@ -14,7 +14,7 @@ class PriceBarsQueryParams(serializers.Serializer):
     )
     end_date = serializers.DateTimeField(
         input_formats=ACCEPTABLE_DATETIME_FORMATS,
-        default=get_local_datetime().strftime(ACCEPTABLE_DATETIME_FORMATS[0]),
+        default=get_local_datetime,
     )
     interval = serializers.ChoiceField(choices=POLYGON_INTERVALS)
     interval_multiplier = serializers.IntegerField(default=1, min_value=1)

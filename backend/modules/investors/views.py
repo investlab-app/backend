@@ -2,6 +2,8 @@ import logging
 import random
 from datetime import date, timedelta
 
+from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.functions.datetime import TruncDate
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
@@ -10,9 +12,9 @@ from rest_framework.response import Response
 
 from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
-from modules.investors.models import Asset, Investor
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
-    AccountValueOverTimeSerializer,
+    AccountValueSnapshotDailySerializer,
     AssetAllocationSerializer,
     AssetSerializer,
     CurrentAccountValueSerializer,
@@ -176,45 +178,39 @@ class InvestorStatsView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class AccountValueOverTimeView(generics.RetrieveAPIView):
+class AccountValueOverTimeView(generics.ListAPIView):
     """
     Get account value over time data for the current authenticated user.
     """
 
-    serializer_class = AccountValueOverTimeSerializer
+    serializer_class = AccountValueSnapshotDailySerializer
+    pagination_class = None
 
-    def retrieve(self, request, *args, **kwargs):
-        # Generate random account value data over time
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+    def get_queryset(self):
+        """
+        The earliest snapshot for each day is selected to represent that day's value.
+        """
+        investor_id = self.request.user.id
 
-        # Generate 120 data points (approximately 4 months of weekly data)
-        data_points = []
-        today = date.today()
-        base_value = random.uniform(100, 2000)
-
-        for i in range(120):
-            # Go back in time by weeks
-            data_date = today - timedelta(weeks=i)
-
-            # Add some realistic variation to the base value
-            variation = random.uniform(-0.1, 0.1)  # ±10% variation
-            value = base_value * (1 + variation)
-
-            data_points.append(
-                {"date": data_date.isoformat(), "value": round(value, 2)}
+        earliest_snapshots = (
+            AccountValueSnapshot.objects.filter(
+                investor__clerk_id=investor_id,
+                timestamp__date=OuterRef("day"),
             )
+            .order_by("timestamp")
+            .values("id")[:1]
+        )
 
-        # Reverse to get chronological order (oldest first)
-        data_points.reverse()
+        qs = (
+            AccountValueSnapshot.objects.annotate(day=TruncDate("timestamp"))
+            .filter(id__in=Subquery(earliest_snapshots))
+            .order_by("-timestamp")
+        )
 
-        response_data = {"data": data_points}
-
-        serializer = self.get_serializer(response_data)
-        return Response(serializer.data)
+        return qs
 
     @extend_schema(
-        responses={200: AccountValueOverTimeSerializer},
+        responses={200: AccountValueSnapshotDailySerializer},
         summary="Get account value over time",
         description=(
             "Get account value over time data for the currently authenticated user."

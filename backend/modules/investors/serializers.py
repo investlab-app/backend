@@ -1,6 +1,6 @@
 from rest_framework import serializers
-
-from modules.investors.models import Asset, Investor
+from drf_spectacular.utils import extend_schema_field
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 
 
 class InvestorSerializer(serializers.ModelSerializer):
@@ -56,22 +56,19 @@ class InvestorStatsSerializer(serializers.Serializer):
     total_value = serializers.FloatField(help_text="Total account value")
 
 
-class AccountValueDataSerializer(serializers.Serializer):
-    """Serializer for individual account value data point."""
+class AccountValueSnapshotDailySerializer(serializers.ModelSerializer):
+    """Serializer for AccountValueSnapshot model."""
 
-    # AccountValueHistory.date
-    date = serializers.DateField(help_text="Date of the value measurement")
-
-    # AccountValueHistory.value
+    date = serializers.SerializerMethodField(help_text="Date of the value measurement")
     value = serializers.FloatField(help_text="Account value on this date")
 
+    class Meta:
+        model = AccountValueSnapshot
+        fields = ["date", "value"]
 
-class AccountValueOverTimeSerializer(serializers.Serializer):
-    """Serializer for account value over time data."""
-
-    data = AccountValueDataSerializer(
-        many=True, help_text="List of account value data points"
-    )
+    @extend_schema_field(serializers.DateField())
+    def get_date(self, obj):
+        return obj.timestamp.date()
 
 
 class CurrentAccountValueSerializer(serializers.Serializer):

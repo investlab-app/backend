@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 
 
@@ -53,7 +54,7 @@ class AccountValueSnapshot(BaseModel):
         Investor, on_delete=models.CASCADE, verbose_name=_("Associated Investor")
     )
     timestamp = models.DateTimeField(
-        auto_now_add=True, verbose_name=_("Datetime Of The Snapshot")
+        default=get_local_datetime, verbose_name=_("Datetime Of The Snapshot")
     )
     value = models.DecimalField(
         max_digits=30, decimal_places=2, verbose_name=_("Total Account Value")
