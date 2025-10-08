@@ -228,13 +228,9 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     serializer_class = CurrentAccountValueSerializer
 
     def retrieve(self, request, *args, **kwargs):
-
-        investor = get_object_or_404(
-            Investor, clerk_id=self.request.user.id
-        )
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         first_transaction_timestamp = (
-            Transaction.objects
-            .filter(investor=investor)
+            Transaction.objects.filter(investor=investor)
             .order_by("timestamp")
             .first()
             .timestamp
@@ -290,59 +286,46 @@ class AssetAllocationView(generics.RetrieveAPIView):
     serializer_class = AssetAllocationSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        # Generate realistic-looking stats
-        invested = round(random.uniform(20000, 75000), 2)
-        total_return_this_year = round(
-            random.uniform(-invested * 0.1, invested * 0.15), 2
-        )
-        total_value = invested + total_return_this_year
-
-        # Generate allocations
-        allocations = []
-        remaining_percentage = 1.0
-
-        # Stocks
-        stocks_percentage = round(random.uniform(0.6, 0.8), 4)
-        remaining_percentage -= stocks_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Stocks",
-                "value": round(total_value * stocks_percentage, 2),
-                "percentage": round(stocks_percentage * 100, 2),
-            }
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
         )
 
-        # Bonds
-        bonds_percentage = round(random.uniform(0.1, remaining_percentage * 0.9), 4)
-        remaining_percentage -= bonds_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Bonds",
-                "value": round(total_value * bonds_percentage, 2),
-                "percentage": round(bonds_percentage * 100, 2),
-            }
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
         )
+        total_return_this_year = sum(stat.gain for stat in stats_today)
 
-        # Unallocated
-        unallocated_percentage = remaining_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Unallocated",
-                "value": round(total_value * unallocated_percentage, 2),
-                "percentage": round(unallocated_percentage * 100, 2),
-            }
-        )
-
-        # Recalculate total value from parts to avoid rounding errors
-        calculated_total_value = sum(item["value"] for item in allocations)
+        is_service = InvestorStatsService()
+        total_value = is_service.get_total_value(investor=investor)
+        asset_allocations = is_service.get_asset_allocation(investor=investor)
 
         response_data = {
-            "total_value": calculated_total_value,
-            "total_return_this_year": total_return_this_year,
-            "allocations": allocations,
+            "total_value": round(total_value, 2),
+            "total_return_this_year": round(total_return_this_year, 2),
+            "allocations": [
+                {
+                    "instrument_name": allocation.asset.ticker.name,
+                    "instrument_ticker": allocation.asset.ticker.ticker,
+                    "instrument_logo": allocation.asset.ticker.logo,
+                    "instrument_icon": allocation.asset.ticker.icon,
+                    "value": round(allocation.total_value, 2),
+                    "percentage": round(allocation.percentage, 2),
+                }
+                for allocation in asset_allocations
+            ],
         }
 
         serializer = self.get_serializer(response_data)

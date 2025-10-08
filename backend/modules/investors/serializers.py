@@ -84,7 +84,10 @@ class CurrentAccountValueSerializer(serializers.Serializer):
 
 
 class AssetAllocationItemSerializer(serializers.Serializer):
-    asset_class_display_name = serializers.CharField(max_length=100)
+    instrument_name = serializers.CharField(max_length=255)
+    instrument_ticker = serializers.CharField(max_length=20)
+    instrument_logo = serializers.URLField(allow_null=True)
+    instrument_icon = serializers.URLField(allow_null=True)
 
     # AssetAllocation.total_value
     value = serializers.FloatField()

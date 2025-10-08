@@ -64,7 +64,7 @@ class TestInvestorStats:
 
         allocation = self.service.get_asset_allocation(self.investor)[0]
 
-        assert allocation.percentage == 1
+        assert allocation.percentage == 100
         assert allocation.asset == asset
         assert allocation.price_per_action == 10
         assert allocation.total_value == 5 * 10
@@ -80,8 +80,8 @@ class TestInvestorStats:
         a_1 = list(filter(lambda x: x.asset == asset1, allocations))[0]
         a_2 = list(filter(lambda x: x.asset == asset2, allocations))[0]
 
-        assert a_1.percentage == (5 * 2) / (5 * 2 + 10 * 5)
-        assert a_2.percentage == (10 * 5) / (5 * 2 + 10 * 5)
+        assert round(a_1.percentage, 3) == round((5 * 2) / (5 * 2 + 10 * 5) * 100, 3)
+        assert round(a_2.percentage, 3) == round((10 * 5) / (5 * 2 + 10 * 5) * 100, 3)
 
     def test_asset_allocation__ignores_other_investors_assets(
         self, investor_factory, asset_factory
