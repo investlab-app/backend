@@ -228,25 +228,43 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     serializer_class = CurrentAccountValueSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        start_account_value = 1000
-        # Generate random account value for today, keeping it consistent with
-        # the AccountValueOverTimeView endpoint.
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
 
-        # This calculation mimics the first (most recent) value generated
-        # in the AccountValueOverTimeView.
-        base_value = random.uniform(100, 2000)
-        variation = random.uniform(-0.1, 0.1)  # First variation
-        value = base_value * (1 + variation)
+        investor = get_object_or_404(
+            Investor, clerk_id=self.request.user.id
+        )
+        first_transaction_timestamp = (
+            Transaction.objects
+            .filter(investor=investor)
+            .order_by("timestamp")
+            .first()
+            .timestamp
+        )
+        today = get_local_datetime()
+        current_timestamp = today - timedelta(minutes=30)
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
+        )
 
-        gain = value - start_account_value
-        gain_percent = 100 * gain / start_account_value
+        investor_stats_service = InvestorStatsService()
+        total_value = investor_stats_service.get_total_value(investor=investor)
+
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=first_transaction_timestamp,
+            end_datetime=current_timestamp,
+        )
+        total_gain = sum(stat.gain for stat in stats_today)
 
         response = {
-            "total_account_value": round(value, 2),
-            "gain": round(gain, 2),
-            "gain_percent": round(gain_percent, 2),
+            "total_account_value": round(total_value, 2),
+            "gain": round(total_gain, 2),
+            "gain_percent": 0,
         }
 
         serializer = self.get_serializer(response)
