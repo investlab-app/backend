@@ -106,7 +106,7 @@ class AssetAllocationSerializer(serializers.Serializer):
     allocations = AssetAllocationItemSerializer(many=True)
 
 
-class OwnedShareItemSerializer(serializers.Serializer):
+class OwnedShareSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=100)
     symbol = serializers.CharField(max_length=10)
 
@@ -121,10 +121,6 @@ class OwnedShareItemSerializer(serializers.Serializer):
 
     # IDK yet
     profit_percentage = serializers.FloatField()
-
-
-class OwnedSharesSerializer(serializers.Serializer):
-    owned_shares = OwnedShareItemSerializer(many=True)
 
 
 # Not yet implemented

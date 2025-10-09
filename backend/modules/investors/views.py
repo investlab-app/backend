@@ -23,7 +23,7 @@ from modules.investors.serializers import (
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
     MostTradedOverviewSerializer,
-    OwnedSharesSerializer,
+    OwnedShareSerializer,
     PositionSerializer,
     ProfileOverviewSerializer,
     TradingOverviewSerializer,
@@ -345,73 +345,41 @@ class OwnedSharesView(generics.RetrieveAPIView):
     Get owned shares data for the current authenticated user.
     """
 
-    serializer_class = OwnedSharesSerializer
+    serializer_class = OwnedShareSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
+        is_service = InvestorStatsService()
+        asset_allocations = is_service.get_asset_allocation(investor=investor)
 
-        owned_shares_data = [
+        data = [
             {
-                "name": "Apple Inc.",
-                "symbol": "AAPL",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(150, 250), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Tesla, Inc.",
-                "symbol": "TSLA",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(200, 300), 2),
-                "profit": round(random.uniform(-10, 10), 2),
-            },
-            {
-                "name": "Amazon.com, Inc.",
-                "symbol": "AMZN",
-                "volume": round(random.uniform(0.1, 2), 5),
-                "value": round(random.uniform(100, 200), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Microsoft Corp.",
-                "symbol": "MSFT",
-                "volume": round(random.uniform(1, 5), 5),
-                "value": round(random.uniform(300, 450), 2),
-                "profit": round(random.uniform(-2, 2), 2),
-            },
-            {
-                "name": "NVIDIA Corp.",
-                "symbol": "NVDA",
-                "volume": round(random.uniform(0.5, 3), 5),
-                "value": round(random.uniform(800, 1000), 2),
-                "profit": round(random.uniform(-15, 15), 2),
-            },
-            {
-                "name": "Alphabet Inc.",
-                "symbol": "GOOGL",
-                "volume": round(random.uniform(1, 2), 5),
-                "value": round(random.uniform(130, 180), 2),
-                "profit": round(random.uniform(5, 20), 2),
-            },
+                "name": asset_allocation.asset.ticker.name,
+                "symbol": asset_allocation.asset.ticker.ticker,
+                "logo": asset_allocation.asset.ticker.logo,
+                "icon": asset_allocation.asset.ticker.icon,
+                "volume": round(asset_allocation.asset.volume, 5),
+                "value": round(asset_allocation.total_value, 2),
+                "profit": 50.12,
+                "profit_percentage": 230.88,
+            }
+            for asset_allocation in asset_allocations
         ]
+        # data = [
+        #     {
+        #         **asset_allocation,
+        #         "profit_percentage": round(
+        #             (asset_allocation["profit"] / (asset_allocation["value"] - asset_allocation["profit"])) * 100, 2
+        #         ) if (asset_allocation["value"] - asset_allocation["profit"]) != 0 else 0
+        #     }
+        #     for asset_allocation in data
+        # ]
 
-        # for each share, recalculate profit_percentage from value and profit
-        for share in owned_shares_data:
-            purchase_price = share["value"] - share["profit"]
-            if purchase_price != 0:
-                share["profit_percentage"] = round(
-                    (share["profit"] / purchase_price) * 100, 2
-                )
-            else:
-                share["profit_percentage"] = 0
-
-        response_data = {"owned_shares": owned_shares_data}
-
-        serializer = self.get_serializer(response_data)
+        serializer = self.get_serializer(data, many=True)
         return Response(serializer.data)
 
     @extend_schema(
-        responses={200: OwnedSharesSerializer},
+        responses={200: OwnedShareSerializer},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
     )

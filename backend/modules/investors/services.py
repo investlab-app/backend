@@ -45,8 +45,6 @@ class InvestorStatsService:
         for a in assets:
             ticker = a.ticker.ticker.upper()
             value = a.volume * prices[ticker].current_price
-            print("value", value)
-            print("total_value", total_value)
             allocations.append(
                 AssetAllocation(
                     asset=a,
