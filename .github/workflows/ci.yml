@@ -11,7 +11,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/test-mkapica
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   publish:
@@ -40,9 +40,7 @@ jobs:
         uses: docker/metadata-action@v5
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            type=ref,event=branch
-            type=raw,value=latest
+          tags: test-mkapica
       - name: Build and push Docker image
         uses: docker/build-push-action@v6
         with:
