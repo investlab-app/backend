@@ -1,0 +1,1774 @@
+openapi: 3.0.3
+info:
+  title: Stocks API
+  version: 0.0.1
+  description: API for stock market data and trading operations
+paths:
+  /api/auth/sign-in/:
+    post:
+      operationId: auth_sign_in_create
+      description: Authenticates a user using their email and password through Clerk,
+        returning a sign-in token upon success.
+      summary: Sign in a user with email and password via Clerk
+      tags:
+      - auth
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ClerkLoginRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - {}
+      responses:
+        '200':
+          description: Sign-in successful, token returned.
+        '400':
+          description: Invalid credentials or user not found.
+        '401':
+          description: Password verification failed.
+        '500':
+          description: Clerk SDK error or other internal server error.
+  /api/instruments/:
+    get:
+      operationId: instruments_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - instruments
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInstrumentListList'
+          description: ''
+  /api/instruments/detail/:
+    get:
+      operationId: instruments_detail_retrieve
+      description: 'Retrieve an instrument by one of the following query parameters:
+        id, ticker, cik, composite_figi, or share_class_figi. Provide exactly one
+        of these fields.'
+      parameters:
+      - in: query
+        name: cik
+        schema:
+          type: string
+        description: Filter by cik.
+      - in: query
+        name: composite_figi
+        schema:
+          type: string
+        description: Filter by composite_figi.
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Filter by id.
+      - in: query
+        name: share_class_figi
+        schema:
+          type: string
+        description: Filter by share_class_figi.
+      - in: query
+        name: ticker
+        schema:
+          type: string
+        description: Filter by ticker.
+      tags:
+      - instruments
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InstrumentRetrieve'
+          description: ''
+  /api/instruments/with-prices/:
+    get:
+      operationId: instruments_with_prices_list
+      parameters:
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
+      tags:
+      - instruments
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInstrumentWithPriceList'
+          description: ''
+  /api/investors/:
+    get:
+      operationId: investors_list
+      description: Get a paginated list of investors with optional search filtering.
+      summary: List investors
+      parameters:
+      - in: query
+        name: page
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+        description: Page number for pagination.
+      - in: query
+        name: page_size
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 10
+        description: Number of items per page (max 100).
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedInvestorList'
+          description: ''
+  /api/investors/{clerk_id}/:
+    get:
+      operationId: investors_retrieve
+      description: Retrieve a specific investor by ID.
+      summary: Get investor
+      parameters:
+      - in: path
+        name: clerk_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+    put:
+      operationId: investors_update
+      description: Update an investor's information.
+      summary: Update investor
+      parameters:
+      - in: path
+        name: clerk_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/InvestorUpdateRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+    patch:
+      operationId: investors_partial_update
+      description: Partially update an investor's information.
+      summary: Partially update investor
+      parameters:
+      - in: path
+        name: clerk_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInvestorUpdateRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+  /api/investors/me/:
+    get:
+      operationId: investors_me_retrieve
+      description: Get the investor profile for the currently authenticated user.
+      summary: Get current investor
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+  /api/investors/me/account-value/:
+    get:
+      operationId: investors_me_account_value_retrieve
+      description: Get account value over time data for the currently authenticated
+        user.
+      summary: Get account value over time
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AccountValueOverTime'
+          description: ''
+  /api/investors/me/asset-allocation/:
+    get:
+      operationId: investors_me_asset_allocation_retrieve
+      description: Get asset allocation data for the currently authenticated user.
+      summary: Get asset allocation
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetAllocation'
+          description: ''
+  /api/investors/me/current-account-value/:
+    get:
+      operationId: investors_me_current_account_value_retrieve
+      description: Get the current account value as well as gain and percent gain
+        for the authenticated user.
+      summary: Get current account value
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAccountValue'
+          description: ''
+  /api/investors/me/owned-shares/:
+    get:
+      operationId: investors_me_owned_shares_retrieve
+      description: Get owned shares data for the currently authenticated user.
+      summary: Get owned shares
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OwnedShares'
+          description: ''
+  /api/investors/me/statistics/most-traded/:
+    get:
+      operationId: investors_me_statistics_most_traded_retrieve
+      description: Returns number of trades, number of buys/sells, avg gain/loss,
+        and total return from the most frequently traded instruments.
+      summary: Get overview about the most traded instruments
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MostTradedOverview'
+          description: ''
+  /api/investors/me/statistics/profile-overview/:
+    get:
+      operationId: investors_me_statistics_profile_overview_retrieve
+      description: Get the information about the level, exp points and points left
+        to next level for the current investor
+      summary: Get info about investor's level
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileOverview'
+          description: ''
+  /api/investors/me/statistics/trading-overview/:
+    get:
+      operationId: investors_me_statistics_trading_overview_retrieve
+      description: Returns total trades, number of buys/sells, average gain/loss,
+        and total return for the current investor.
+      summary: Get trading performance overview
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOverview'
+          description: ''
+  /api/investors/me/stats/:
+    get:
+      operationId: investors_me_stats_retrieve
+      description: Get investor statistics for the currently authenticated user.
+      summary: Get investor stats
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestorStats'
+          description: ''
+  /api/investors/me/transactions-history/:
+    get:
+      operationId: investors_me_transactions_history_list
+      description: Get transaction history for the currently authenticated user. Can
+        filter by position type (open/closed/both) and ticker symbol.
+      summary: Get transaction history
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 10
+        description: Filter by specific ticker symbol
+      - in: query
+        name: type
+        schema:
+          enum:
+          - open
+          - closed
+          - both
+          type: string
+          default: both
+          minLength: 1
+        description: |-
+          Type of positions to fetch: 'open', 'closed', or 'both'
+
+          * `open` - open
+          * `closed` - closed
+          * `both` - both
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+          description: ''
+  /api/markets/holidays/:
+    get:
+      operationId: markets_holidays_list
+      description: Retrieve a list of upcoming market holidays.
+      tags:
+      - markets
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarketHoliday'
+          description: ''
+  /api/markets/status/:
+    get:
+      operationId: markets_status_retrieve
+      description: Retrieve the current trading status of the markets and exchanges.
+      tags:
+      - markets
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MarketStatus'
+          description: ''
+  /api/news/:
+    get:
+      operationId: news_list
+      description: Retrieve a list of 30 news articles.
+      parameters:
+      - in: query
+        name: number_of_news
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+      - in: query
+        name: order
+        schema:
+          enum:
+          - asc
+          - desc
+          type: string
+          default: desc
+          minLength: 1
+        description: |-
+          * `asc` - asc
+          * `desc` - desc
+      - in: query
+        name: published_utc
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: published_utc_gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: published_utc_lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: sort
+        schema:
+          type: string
+          minLength: 1
+          default: published_utc
+      - in: query
+        name: ticker
+        schema:
+          type: string
+      tags:
+      - news
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/TickerNews'
+          description: ''
+  /api/prices/:
+    get:
+      operationId: prices_list
+      parameters:
+      - in: query
+        name: tickers
+        schema:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 50
+        description: List of ticker symbols to fetch prices for (max 50).
+        required: true
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceDailySummary'
+          description: ''
+  /api/prices/{ticker}/:
+    get:
+      operationId: prices_retrieve
+      parameters:
+      - in: path
+        name: ticker
+        schema:
+          type: string
+        required: true
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceDailySummary'
+          description: ''
+  /api/prices/bars/:
+    get:
+      operationId: prices_bars
+      parameters:
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date-time
+          default: '2025-09-23T00:00:00Z'
+      - in: query
+        name: interval
+        schema:
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+          - QUARTER
+          - YEAR
+          type: string
+          minLength: 1
+        description: |-
+          * `SECOND` - SECOND
+          * `MINUTE` - MINUTE
+          * `HOUR` - HOUR
+          * `DAY` - DAY
+          * `WEEK` - WEEK
+          * `MONTH` - MONTH
+          * `QUARTER` - QUARTER
+          * `YEAR` - YEAR
+        required: true
+      - in: query
+        name: interval_multiplier
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 6
+        required: true
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceBar'
+          description: ''
+  /api/status/:
+    get:
+      operationId: status_retrieve
+      description: Returns a simple status message indicating the application is running.
+      summary: Get application status
+      tags:
+      - status
+      security:
+      - ClerkAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatusResponse'
+          description: Application status
+  /api/test/admin_test/:
+    get:
+      operationId: test_admin_test_retrieve
+      description: Test endpoint to verify admin authentication is working.
+      summary: Test admin authentication
+      tags:
+      - test
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTestResponse'
+          description: Admin authentication test successful
+  /api/test/all_test/:
+    get:
+      operationId: test_all_test_retrieve
+      description: Test endpoint that doesn't require authentication.
+      summary: Test unauthenticated endpoint
+      tags:
+      - test
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleResponse'
+          description: Unauthenticated test successful
+  /api/test/alpaca_test/:
+    get:
+      operationId: test_alpaca_test_retrieve
+      description: test alpaca.
+      summary: Fetch last trade from Alpaca
+      tags:
+      - test
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleResponse'
+          description: Last trade result from Alpaca
+  /api/test/polygon_test/:
+    get:
+      operationId: test_polygon_test_retrieve
+      description: test polygon.
+      summary: Fetch last trade from Polygon.io
+      tags:
+      - test
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SimpleResponse'
+          description: Last trade result from Polygon
+  /api/test/users_test/:
+    get:
+      operationId: test_users_test_retrieve
+      description: Test endpoint to verify user authentication is working.
+      summary: Test user authentication
+      tags:
+      - test
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthTestResponse'
+          description: Authentication test successful
+components:
+  schemas:
+    AccountValueData:
+      type: object
+      description: Serializer for individual account value data point.
+      properties:
+        date:
+          type: string
+          format: date
+          description: Date of the value measurement
+        value:
+          type: number
+          format: double
+          description: Account value on this date
+      required:
+      - date
+      - value
+    AccountValueOverTime:
+      type: object
+      description: Serializer for account value over time data.
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountValueData'
+          description: List of account value data points
+      required:
+      - data
+    AssetAllocation:
+      type: object
+      properties:
+        total_value:
+          type: number
+          format: double
+        total_return_this_year:
+          type: number
+          format: double
+        allocations:
+          type: array
+          items:
+            $ref: '#/components/schemas/AssetAllocationItem'
+      required:
+      - allocations
+      - total_return_this_year
+      - total_value
+    AssetAllocationItem:
+      type: object
+      properties:
+        asset_class_display_name:
+          type: string
+          maxLength: 100
+        value:
+          type: number
+          format: double
+        percentage:
+          type: number
+          format: double
+      required:
+      - asset_class_display_name
+      - percentage
+      - value
+    AuthTestResponse:
+      type: object
+      description: Serializer for authentication test response
+      properties:
+        message:
+          type: string
+          description: Authentication success message
+        user_role:
+          type: string
+          description: Role of the authenticated user
+        user_id:
+          type: integer
+          description: ID of the authenticated user
+      required:
+      - message
+      - user_id
+      - user_role
+    ClerkLoginRequest:
+      type: object
+      properties:
+        email:
+          type: string
+          format: email
+          minLength: 1
+        password:
+          type: string
+          minLength: 1
+      required:
+      - email
+      - password
+    CurrentAccountValue:
+      type: object
+      properties:
+        total_account_value:
+          type: number
+          format: double
+        gain:
+          type: number
+          format: double
+        gain_percent:
+          type: number
+          format: double
+      required:
+      - gain
+      - gain_percent
+      - total_account_value
+    HistoryEntry:
+      type: object
+      properties:
+        date:
+          type: string
+          format: date-time
+          description: Date of the transaction
+        type:
+          type: string
+          description: 'Transaction type: BUY or SELL'
+          maxLength: 10
+        quantity:
+          type: integer
+          description: Number of shares traded
+        share_price:
+          type: number
+          format: double
+          description: Price per share at the time of transaction
+        acquisition_price:
+          type: number
+          format: double
+          nullable: true
+          description: Acquisition price (null for SELL transactions)
+        market_value:
+          type: number
+          format: double
+          description: Current market value
+        gain_loss:
+          type: number
+          format: double
+          description: Gain or loss amount
+        gain_loss_pct:
+          type: number
+          format: double
+          description: Gain or loss percentage
+      required:
+      - acquisition_price
+      - date
+      - gain_loss
+      - gain_loss_pct
+      - market_value
+      - quantity
+      - share_price
+      - type
+    Insight:
+      type: object
+      properties:
+        sentiment:
+          type: string
+          nullable: true
+        sentiment_reasoning:
+          type: string
+          nullable: true
+        ticker:
+          type: string
+          nullable: true
+    InstrumentList:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        type:
+          type: string
+          nullable: true
+          description: Security type, e.g. 'CS' (Common Stock), 'ETF', 'Crypto'.
+          maxLength: 50
+        active:
+          type: boolean
+          description: Indicates whether the ticker is actively traded.
+        name:
+          type: string
+          maxLength: 255
+        market:
+          $ref: '#/components/schemas/MarketEnum'
+        market_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,18}(?:\.\d{0,2})?$
+          nullable: true
+        currency_name:
+          type: string
+          maxLength: 50
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - active
+      - currency_name
+      - id
+      - market
+      - name
+      - ticker
+    InstrumentRetrieve:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        type:
+          type: string
+          nullable: true
+          description: Security type, e.g. 'CS' (Common Stock), 'ETF', 'Crypto'.
+          maxLength: 50
+        active:
+          type: boolean
+          description: Indicates whether the ticker is actively traded.
+        name:
+          type: string
+          maxLength: 255
+        cik:
+          type: string
+          nullable: true
+          description: Central Index Key assigned by the SEC.
+          maxLength: 20
+        market:
+          $ref: '#/components/schemas/MarketEnum'
+        market_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,18}(?:\.\d{0,2})?$
+          nullable: true
+        composite_figi:
+          type: string
+          nullable: true
+          description: Composite Financial Instrument Global Identifier.
+          maxLength: 20
+        currency_name:
+          type: string
+          maxLength: 50
+        locale:
+          allOf:
+          - $ref: '#/components/schemas/LocaleEnum'
+          description: |-
+            Locale where the ticker is traded, e.g. 'US'.
+
+            * `us` - United States
+            * `global` - Global
+        primary_exchange:
+          type: string
+          nullable: true
+          description: Code of the primary exchange where the ticker is traded.
+          maxLength: 50
+        share_class_figi:
+          type: string
+          nullable: true
+          maxLength: 20
+        description:
+          type: string
+          nullable: true
+        ticker_root:
+          type: string
+          nullable: true
+          description: Base symbol for related tickers.
+          maxLength: 50
+        ticker_suffix:
+          type: string
+          nullable: true
+          description: Suffix for ticker if applicable.
+          maxLength: 50
+        homepage_url:
+          type: string
+          format: uri
+          nullable: true
+          maxLength: 200
+        list_date:
+          type: string
+          format: date
+          nullable: true
+          description: Date when the ticker was first listed.
+        phone_number:
+          type: string
+          nullable: true
+          maxLength: 30
+        share_class_shares_outstanding:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+          title: Shares Outstanding (Share Class)
+          description: Number of shares outstanding for this share class.
+        sic_code:
+          type: string
+          nullable: true
+          description: Standard Industrial Classification code.
+          maxLength: 10
+        sic_description:
+          type: string
+          nullable: true
+          maxLength: 255
+        total_employees:
+          type: integer
+          maximum: 2147483647
+          minimum: -2147483648
+          nullable: true
+        weighted_shares_outstanding:
+          type: integer
+          maximum: 9223372036854775807
+          minimum: -9223372036854775808
+          format: int64
+          nullable: true
+        address:
+          type: object
+          properties:
+            address1:
+              type: string
+              nullable: true
+            address2:
+              type: string
+              nullable: true
+            city:
+              type: string
+              nullable: true
+            state:
+              type: string
+              nullable: true
+            postal_code:
+              type: string
+              nullable: true
+          required:
+          - address1
+          - address2
+          - city
+          - postal_code
+          - state
+          readOnly: true
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - active
+      - address
+      - currency_name
+      - id
+      - locale
+      - market
+      - name
+      - ticker
+    InstrumentWithPrice:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        type:
+          type: string
+          nullable: true
+          description: Security type, e.g. 'CS' (Common Stock), 'ETF', 'Crypto'.
+          maxLength: 50
+        active:
+          type: boolean
+          description: Indicates whether the ticker is actively traded.
+        name:
+          type: string
+          maxLength: 255
+        market:
+          $ref: '#/components/schemas/MarketEnum'
+        market_cap:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,18}(?:\.\d{0,2})?$
+          nullable: true
+        currency_name:
+          type: string
+          maxLength: 50
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+        price_info:
+          allOf:
+          - $ref: '#/components/schemas/PriceDailySummary'
+          readOnly: true
+      required:
+      - active
+      - currency_name
+      - id
+      - market
+      - name
+      - price_info
+      - ticker
+    Investor:
+      type: object
+      properties:
+        clerk_id:
+          type: string
+          readOnly: true
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+        watching_instruments_count:
+          type: integer
+          readOnly: true
+      required:
+      - clerk_id
+      - watching_instruments_count
+    InvestorStats:
+      type: object
+      description: Serializer for investor statistics data.
+      properties:
+        todays_return:
+          type: number
+          format: double
+          description: Today's return in currency
+        total_return:
+          type: number
+          format: double
+          description: Total return in currency
+        invested:
+          type: number
+          format: double
+          description: Total amount invested
+        total_value:
+          type: number
+          format: double
+          description: Total account value
+      required:
+      - invested
+      - todays_return
+      - total_return
+      - total_value
+    InvestorUpdateRequest:
+      type: object
+      properties:
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+    LocaleEnum:
+      enum:
+      - us
+      - global
+      type: string
+      description: |-
+        * `us` - United States
+        * `global` - Global
+    MarketCurrencies:
+      type: object
+      properties:
+        crypto:
+          type: string
+          nullable: true
+        fx:
+          type: string
+          nullable: true
+    MarketEnum:
+      enum:
+      - stocks
+      - crypto
+      - fx
+      - otc
+      - indices
+      type: string
+      description: |-
+        * `stocks` - Stocks
+        * `crypto` - Crypto
+        * `fx` - Foreign Exchange
+        * `otc` - Over-the-Counter
+        * `indices` - Indices
+    MarketExchanges:
+      type: object
+      properties:
+        nasdaq:
+          type: string
+          nullable: true
+        nyse:
+          type: string
+          nullable: true
+        otc:
+          type: string
+          nullable: true
+    MarketHoliday:
+      type: object
+      properties:
+        close:
+          type: string
+          nullable: true
+        date:
+          type: string
+          nullable: true
+        exchange:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+        open:
+          type: string
+          nullable: true
+        status:
+          type: string
+          nullable: true
+    MarketIndices:
+      type: object
+      properties:
+        s_and_p:
+          type: string
+          nullable: true
+        societe_generale:
+          type: string
+          nullable: true
+        cgi:
+          type: string
+          nullable: true
+        msci:
+          type: string
+          nullable: true
+        ftse_russell:
+          type: string
+          nullable: true
+        mstar:
+          type: string
+          nullable: true
+        mstarc:
+          type: string
+          nullable: true
+        cccy:
+          type: string
+          nullable: true
+        nasdaq:
+          type: string
+          nullable: true
+        dow_jones:
+          type: string
+          nullable: true
+    MarketStatus:
+      type: object
+      properties:
+        after_hours:
+          type: boolean
+          nullable: true
+        currencies:
+          allOf:
+          - $ref: '#/components/schemas/MarketCurrencies'
+          nullable: true
+        early_hours:
+          type: boolean
+          nullable: true
+        exchanges:
+          allOf:
+          - $ref: '#/components/schemas/MarketExchanges'
+          nullable: true
+        indicesGroups:
+          allOf:
+          - $ref: '#/components/schemas/MarketIndices'
+          nullable: true
+        market:
+          type: string
+          nullable: true
+        server_time:
+          type: string
+          nullable: true
+    MostTradedItem:
+      type: object
+      properties:
+        symbol:
+          type: string
+          maxLength: 10
+        no_trades:
+          type: integer
+        buys:
+          type: integer
+        sells:
+          type: integer
+        avg_gain:
+          type: number
+          format: double
+        avg_loss:
+          type: number
+          format: double
+        total_return:
+          type: number
+          format: double
+      required:
+      - avg_gain
+      - avg_loss
+      - buys
+      - no_trades
+      - sells
+      - symbol
+      - total_return
+    MostTradedOverview:
+      type: object
+      properties:
+        instruments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MostTradedItem'
+      required:
+      - instruments
+    OwnedShareItem:
+      type: object
+      properties:
+        name:
+          type: string
+          maxLength: 100
+        symbol:
+          type: string
+          maxLength: 10
+        volume:
+          type: number
+          format: double
+        value:
+          type: number
+          format: double
+        profit:
+          type: number
+          format: double
+        profit_percentage:
+          type: number
+          format: double
+      required:
+      - name
+      - profit
+      - profit_percentage
+      - symbol
+      - value
+      - volume
+    OwnedShares:
+      type: object
+      properties:
+        owned_shares:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnedShareItem'
+      required:
+      - owned_shares
+    PaginatedInstrumentListList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstrumentList'
+    PaginatedInstrumentWithPriceList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/InstrumentWithPrice'
+    PaginatedInvestorList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Investor'
+    PatchedInvestorUpdateRequest:
+      type: object
+      properties:
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+    Position:
+      type: object
+      properties:
+        name:
+          type: string
+          description: Ticker symbol
+          maxLength: 10
+        quantity:
+          type: integer
+          description: Total quantity of shares
+        market_value:
+          type: number
+          format: double
+          description: Current market value
+        gain_loss:
+          type: number
+          format: double
+          description: Total gain or loss
+        gain_loss_pct:
+          type: number
+          format: double
+          description: Total gain or loss percentage
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/HistoryEntry'
+          description: Transaction history
+      required:
+      - gain_loss
+      - gain_loss_pct
+      - history
+      - market_value
+      - name
+      - quantity
+    PriceBar:
+      type: object
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+        open:
+          type: string
+          format: decimal
+        high:
+          type: string
+          format: decimal
+        low:
+          type: string
+          format: decimal
+        close:
+          type: string
+          format: decimal
+        volume:
+          type: string
+          format: decimal
+        transactions:
+          type: integer
+          nullable: true
+        volume_weighted_average_price:
+          type: string
+          format: decimal
+          nullable: true
+      required:
+      - close
+      - high
+      - low
+      - open
+      - timestamp
+      - volume
+    PriceDaily:
+      type: object
+      properties:
+        open:
+          type: string
+          format: decimal
+        high:
+          type: string
+          format: decimal
+        low:
+          type: string
+          format: decimal
+        close:
+          type: string
+          format: decimal
+        volume:
+          type: string
+          format: decimal
+        volume_weighted_average_price:
+          type: string
+          format: decimal
+      required:
+      - close
+      - high
+      - low
+      - open
+      - volume
+      - volume_weighted_average_price
+    PriceDailySummary:
+      type: object
+      properties:
+        ticker:
+          type: string
+        current_price:
+          type: string
+          format: decimal
+        daily_summary:
+          $ref: '#/components/schemas/PriceDaily'
+        todays_change:
+          type: string
+          format: decimal
+        todays_change_percent:
+          type: string
+          format: decimal
+        last_updated:
+          type: string
+          format: date-time
+      required:
+      - current_price
+      - daily_summary
+      - last_updated
+      - ticker
+      - todays_change
+      - todays_change_percent
+    ProfileOverview:
+      type: object
+      properties:
+        level:
+          type: string
+          maxLength: 30
+        exp_points:
+          type: integer
+        left_to_next_level:
+          type: integer
+      required:
+      - exp_points
+      - left_to_next_level
+      - level
+    Publisher:
+      type: object
+      properties:
+        favicon_url:
+          type: string
+          nullable: true
+        homepage_url:
+          type: string
+          nullable: true
+        logo_url:
+          type: string
+          nullable: true
+        name:
+          type: string
+          nullable: true
+    SimpleResponse:
+      type: object
+      description: Serializer for simple OK response
+      properties:
+        OK:
+          type: string
+          default: OK
+          description: Simple confirmation response
+    StatusResponse:
+      type: object
+      description: Serializer for status endpoint response
+      properties:
+        message:
+          type: string
+          description: Status message indicating the application is running
+      required:
+      - message
+    TickerNews:
+      type: object
+      properties:
+        amp_url:
+          type: string
+          nullable: true
+        article_url:
+          type: string
+          nullable: true
+        author:
+          type: string
+          nullable: true
+        description:
+          type: string
+          nullable: true
+        id:
+          type: string
+          nullable: true
+        image_url:
+          type: string
+          nullable: true
+        insights:
+          type: array
+          items:
+            $ref: '#/components/schemas/Insight'
+          nullable: true
+        keywords:
+          type: array
+          items:
+            type: string
+          nullable: true
+        published_utc:
+          type: string
+          nullable: true
+        publisher:
+          allOf:
+          - $ref: '#/components/schemas/Publisher'
+          nullable: true
+        tickers:
+          type: array
+          items:
+            type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+    TradingOverview:
+      type: object
+      properties:
+        total_trades:
+          type: integer
+        buys:
+          type: integer
+        sells:
+          type: integer
+        avg_gain:
+          type: number
+          format: double
+        avg_loss:
+          type: number
+          format: double
+        total_return:
+          type: number
+          format: double
+      required:
+      - avg_gain
+      - avg_loss
+      - buys
+      - sells
+      - total_return
+      - total_trades
+  securitySchemes:
+    ClerkAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: 'Clerk JWT authentication. Use format: Bearer <token>'
