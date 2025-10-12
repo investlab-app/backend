@@ -38,11 +38,6 @@ urlpatterns = [
     ),
     path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
     path(
-        "me/statistics/most-traded/",
-        MostTradedOverviewView.as_view(),
-        name="most-traded",
-    ),
-    path(
         "me/statistics/profile-overview/",
         ProfileOverviewView.as_view(),
         name="profile-overview",
@@ -51,6 +46,11 @@ urlpatterns = [
         "me/statistics/trading-overview/",
         TradingOverviewView.as_view(),
         name="trading-overview",
+    ),
+    path(
+        "me/statistics/most-traded/",
+        MostTradedOverviewView.as_view(),
+        name="most-traded",
     ),
     path(
         "me/transactions-history/",

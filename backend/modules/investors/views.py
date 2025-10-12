@@ -2,6 +2,7 @@ import logging
 import random
 from datetime import date, timedelta
 
+from django.db.models.aggregates import Count
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.functions.datetime import TruncDate
 from django.shortcuts import get_object_or_404
@@ -22,7 +23,7 @@ from modules.investors.serializers import (
     InvestorSerializer,
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
-    MostTradedOverviewSerializer,
+    MostTradedItemSerializer,
     OwnedShareSerializer,
     PositionSerializer,
     ProfileOverviewSerializer,
@@ -478,34 +479,52 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     Get the statistics for the most traded instruments of the current investor.
     """
 
-    serializer_class = MostTradedOverviewSerializer
+    serializer_class = MostTradedItemSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        instruments = []
-        num_instruments = random.randint(4, 8)
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)  # tmp last year
+        instruments_by_transaction_count = (
+            Transaction.objects
+            .filter(investor=investor)
+            .values("ticker")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+        instrument_ids = [
+            str(i["ticker"]) for i in instruments_by_transaction_count
+        ]
+        instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        for i in range(num_instruments):
-            no_trades = random.randint(5, 20)
-            buys = random.randint(3, no_trades)
+        stats_service = TransactionStatsService()
+        stats = stats_service.get_stats(
+            investor=investor,
+            tickers=instruments,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
 
-            instrument = {
-                "symbol": f"SYM{i + 1}",
-                "no_trades": no_trades,
-                "buys": buys,
-                "sells": no_trades - buys,
-                "avg_gain": round(random.uniform(1, 10), 2),
-                "avg_loss": round(random.uniform(1, 10), 2),
-                "total_return": round(random.uniform(10, 200), 2),
+        data = [
+            {
+                "symbol": s.ticker,
+                "no_trades": s.buy_transactions + s.sell_transactions,
+                "buys": s.buy_transactions,
+                "sells": s.sell_transactions,
+                "avg_gain": 0,  # tmp mocked
+                "avg_loss": 0,  # tmp mocked
+                "total_return": s.gain,
             }
-            instruments.append(instrument)
+            for s in stats
+        ]
 
-        serializer = self.get_serializer({"instruments": instruments})
+        serializer = self.get_serializer(data, many=True)
         return Response(serializer.data)
 
     @extend_schema(
-        responses={200: MostTradedOverviewSerializer},
+        responses={200: MostTradedItemSerializer(many=True)},
         summary="Get overview about the most traded instruments",
         description=(
             "Returns number of trades, number of buys/sells, avg gain/loss, "

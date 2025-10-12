@@ -170,11 +170,6 @@ class MostTradedItemSerializer(serializers.Serializer):
     total_return = serializers.FloatField()
 
 
-# stats
-class MostTradedOverviewSerializer(serializers.Serializer):
-    instruments = MostTradedItemSerializer(many=True)
-
-
 class TransactionHistoryQueryParams(serializers.Serializer):
     type = serializers.ChoiceField(
         choices=["open", "closed", "both"],
