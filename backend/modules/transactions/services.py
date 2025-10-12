@@ -80,7 +80,7 @@ class ExecuteTransactionService:
 
 
 class TransactionStats(BaseModel):
-    ticker: str
+    ticker: str | None
 
     total_buy_volume: Decimal
     total_buy_price: Decimal

@@ -31,7 +31,7 @@ from modules.investors.serializers import (
 )
 from modules.investors.services import InvestorStatsService
 from modules.transactions.models import Transaction
-from modules.transactions.services import TransactionStatsService
+from modules.transactions.services import TransactionStatsService, TransactionStats
 
 logger = logging.getLogger(__name__)
 
@@ -260,7 +260,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         response = {
             "total_account_value": round(total_value, 2),
             "gain": round(total_gain, 2),
-            "gain_percent": 0,
+            "gain_percent": 0,  # tmp mocked
         }
 
         serializer = self.get_serializer(response)
@@ -360,8 +360,8 @@ class OwnedSharesView(generics.RetrieveAPIView):
                 "icon": asset_allocation.asset.ticker.icon,
                 "volume": round(asset_allocation.asset.volume, 5),
                 "value": round(asset_allocation.total_value, 2),
-                "profit": 50.12,
-                "profit_percentage": 230.88,
+                "profit": 50.12,  # tmp mocked
+                "profit_percentage": 230.88,  # tmp mocked
             }
             for asset_allocation in asset_allocations
         ]
@@ -425,17 +425,37 @@ class TradingOverviewView(generics.RetrieveAPIView):
     serializer_class = TradingOverviewSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        no_trades = random.randint(5, 20)
-        buys = random.randint(2, no_trades)
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)  # tmp last year
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
+        )
+
+        stats_service = TransactionStatsService()
+        stats = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
+
         response = {
-            "total_trades": no_trades,
-            "buys": buys,
-            "sells": no_trades - buys,
-            "avg_gain": round(random.uniform(1, 50), 2),
-            "avg_loss": round(random.uniform(1, 50), 2),
-            "total_return": round(random.uniform(500, 2000), 2),
+            "total_trades": sum(
+                s.buy_transactions + s.sell_transactions
+                for s in stats
+            ),
+            "buys": sum(s.buy_transactions for s in stats),
+            "sells": sum(s.sell_transactions for s in stats),
+            "avg_gain": 0,  # tmp mocked
+            "avg_loss": 0,  # tmp mocked
+            "total_return": round(sum(s.gain for s in stats), 2),
         }
 
         serializer = self.get_serializer(response)
