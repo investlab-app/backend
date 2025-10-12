@@ -32,7 +32,7 @@ from modules.investors.serializers import (
 )
 from modules.investors.services import InvestorStatsService
 from modules.transactions.models import Transaction
-from modules.transactions.services import TransactionStatsService, TransactionStats
+from modules.transactions.services import TransactionStatsService
 
 logger = logging.getLogger(__name__)
 
@@ -370,8 +370,15 @@ class OwnedSharesView(generics.RetrieveAPIView):
         #     {
         #         **asset_allocation,
         #         "profit_percentage": round(
-        #             (asset_allocation["profit"] / (asset_allocation["value"] - asset_allocation["profit"])) * 100, 2
-        #         ) if (asset_allocation["value"] - asset_allocation["profit"]) != 0 else 0
+        #             (
+        #                 asset_allocation["profit"]
+        #                 / (asset_allocation["value"] - asset_allocation["profit"])
+        #             )
+        #             * 100,
+        #             2,
+        #         )
+        #         if (asset_allocation["value"] - asset_allocation["profit"]) != 0
+        #         else 0,
         #     }
         #     for asset_allocation in data
         # ]
@@ -449,8 +456,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
 
         response = {
             "total_trades": sum(
-                s.buy_transactions + s.sell_transactions
-                for s in stats
+                s.buy_transactions + s.sell_transactions for s in stats
             ),
             "buys": sum(s.buy_transactions for s in stats),
             "sells": sum(s.sell_transactions for s in stats),
@@ -488,15 +494,12 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         end_datetime = today - timedelta(minutes=30)
         start_datetime = end_datetime - timedelta(days=365)  # tmp last year
         instruments_by_transaction_count = (
-            Transaction.objects
-            .filter(investor=investor)
+            Transaction.objects.filter(investor=investor)
             .values("ticker")
             .annotate(count=Count("id"))
             .order_by("-count")[:10]
         )
-        instrument_ids = [
-            str(i["ticker"]) for i in instruments_by_transaction_count
-        ]
+        instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
         instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
         stats_service = TransactionStatsService()
