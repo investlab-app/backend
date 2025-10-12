@@ -34,6 +34,14 @@ jobs:
         run: make type-check
       - name: Run tests
         run: make test
+      - name: Regenerate schema
+        run: make schema-gen
+      - name: Check schema changes
+        run: |
+          if ! git diff --exit-code backend/schema.yml; then
+            echo "Schema has changed; please commit updated schema."
+            exit 1
+          fi
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     needs: test
