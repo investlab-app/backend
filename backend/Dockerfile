@@ -1,6 +1,6 @@
-FROM ghcr.io/astral-sh/uv:python3.13-bookworm
-
-RUN apt-get update \
+FROM docker.io/library/python:3.13-bookworm
+RUN pip install uv \
+  && apt-get update \
   && apt-get install -y --no-install-recommends netcat-traditional git \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean \
