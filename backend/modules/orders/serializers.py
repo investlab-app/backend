@@ -1,5 +1,6 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
@@ -39,6 +40,12 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
         return OrderSerializer(instance).data
 
 
+class MarketOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketOrder
+        fields = ["volume", "volume_processed", "is_buy"]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     ticker = InstrumentNameSerializer()
     detail = serializers.SerializerMethodField()
@@ -47,12 +54,7 @@ class OrderSerializer(serializers.ModelSerializer):
         model = Order
         fields = ["id", "ticker", "detail"]
 
+    @extend_schema_field(MarketOrderSerializer)
     def get_detail(self, obj):
         mapping = {MarketOrder: MarketOrderSerializer}
         return mapping[obj.detail_type.model_class()](obj.detail).data
-
-
-class MarketOrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MarketOrder
-        fields = ["volume", "volume_processed", "is_buy"]
