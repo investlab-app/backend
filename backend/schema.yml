@@ -563,6 +563,72 @@ paths:
                 items:
                   $ref: '#/components/schemas/TickerNews'
           description: ''
+  /api/orders/:
+    get:
+      operationId: orders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+  /api/orders/cancel/{id}:
+    delete:
+      operationId: orders_cancel_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/orders/market/:
+    post:
+      operationId: orders_market_create
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMarketOrderRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMarketOrder'
+          description: ''
   /api/prices/:
     get:
       operationId: prices_list
@@ -873,6 +939,39 @@ components:
       required:
       - email
       - password
+    CreateMarketOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        investor:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - id
+      - investor
+    CreateMarketOrderRequest:
+      type: object
+      properties:
+        ticker:
+          type: string
+          writeOnly: true
+          minLength: 1
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          writeOnly: true
+        is_buy:
+          type: boolean
+          writeOnly: true
+      required:
+      - is_buy
+      - ticker
+      - volume
     CurrentAccountValue:
       type: object
       properties:
@@ -991,6 +1090,15 @@ components:
       - id
       - market
       - name
+      - ticker
+    InstrumentName:
+      type: object
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+      required:
       - ticker
     InstrumentRetrieve:
       type: object
@@ -1211,6 +1319,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
         watching_instruments_count:
           type: integer
           readOnly: true
@@ -1250,6 +1359,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
     LocaleEnum:
       enum:
       - us
@@ -1347,6 +1457,22 @@ components:
         dow_jones:
           type: string
           nullable: true
+    MarketOrder:
+      type: object
+      properties:
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        volume_processed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        is_buy:
+          type: boolean
+      required:
+      - is_buy
+      - volume
     MarketStatus:
       type: object
       properties:
@@ -1412,6 +1538,23 @@ components:
             $ref: '#/components/schemas/MostTradedItem'
       required:
       - instruments
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          $ref: '#/components/schemas/InstrumentName'
+        detail:
+          allOf:
+          - $ref: '#/components/schemas/MarketOrder'
+          readOnly: true
+      required:
+      - detail
+      - id
+      - ticker
     OwnedShareItem:
       type: object
       properties:
@@ -1518,6 +1661,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Investor'
+    PaginatedOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
     PatchedInvestorUpdateRequest:
       type: object
       properties:
@@ -1526,6 +1692,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
     Position:
       type: object
       properties:
