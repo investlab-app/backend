@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import date, timedelta
+from datetime import date, datetime, timedelta, timezone
 
 from django.db.models.aggregates import Count
 from django.db.models.expressions import OuterRef, Subquery
@@ -543,6 +543,8 @@ class TransactionHistoryView(generics.RetrieveAPIView):
     Get transaction history for the current authenticated user.
     """
 
+    pagination_class = None
+
     def retrieve(self, request, *args, **kwargs):
         position_type = request.query_params.get("type", "both")
         ticker = request.query_params.get("ticker", None)
@@ -565,10 +567,12 @@ class TransactionHistoryView(generics.RetrieveAPIView):
 
             for _ in range(transaction_count):
                 transaction_type = random.choice(["BUY", "SELL"])
-                transaction_date = date.today() - timedelta(days=random.randint(1, 365))
+
+                days_ago = random.randint(1, 1000)
+                past_dt = datetime.now(timezone.utc) - timedelta(days=days_ago)
 
                 history_entry = {
-                    "date": transaction_date.isoformat(),
+                    "date": past_dt.isoformat(),
                     "type": transaction_type,
                     "quantity": random.randint(1, 10),
                     "share_price": round(random.uniform(50, 1000), 2),

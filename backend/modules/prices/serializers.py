@@ -2,7 +2,6 @@ from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from config.settings import ACCEPTABLE_DATETIME_FORMATS
-from modules.core.utils import get_local_datetime
 from modules.prices.constants import POLYGON_INTERVALS
 from modules.prices.schemas import PriceBar, PriceDailySummary
 
@@ -13,8 +12,7 @@ class PriceBarsQueryParams(serializers.Serializer):
         required=True, input_formats=ACCEPTABLE_DATETIME_FORMATS
     )
     end_date = serializers.DateTimeField(
-        input_formats=ACCEPTABLE_DATETIME_FORMATS,
-        default=get_local_datetime,
+        input_formats=ACCEPTABLE_DATETIME_FORMATS, default="2025-09-23T00:00:00Z"
     )
     interval = serializers.ChoiceField(choices=POLYGON_INTERVALS)
     interval_multiplier = serializers.IntegerField(default=1, min_value=1)
