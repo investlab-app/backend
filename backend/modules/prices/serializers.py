@@ -43,3 +43,43 @@ class PriceBarSerializer(DataclassSerializer):
 class PriceDailySummarySerializer(DataclassSerializer):
     class Meta:
         dataclass = PriceDailySummary
+
+
+class PriceAlertSerializer(serializers.ModelSerializer):
+    notification_config = NotificationSerializer()
+    instrument_name = serializers.CharField(source="instrument.name", read_only=True)
+    instrument_ticker = serializers.CharField(
+        source="instrument.ticker", read_only=True
+    )
+
+    class Meta:
+        model = PriceAlert
+        fields = [
+            "instrument_name",
+            "instrument_ticker",
+            "threshold_type",
+            "threshold_value",
+            "notification_config",
+        ]
+
+
+class PriceAlertCreateSerializer(serializers.ModelSerializer):
+    instrument_ticker = serializers.CharField(write_only=True)
+    notification_config = NotificationCreateSerializer()
+
+    class Meta:
+        model = PriceAlert
+        fields = [
+            "instrument_ticker",
+            "threshold_type",
+            "threshold_value",
+            "notification_config"
+        ]
+
+    def validate_instrument_ticker(self, value):
+        pass
+
+    def create(self, validated_data):
+        # You have to deal with nested serialization here
+        # https://www.django-rest-framework.org/api-guide/serializers/#dealing-with-nested-objects
+        pass

@@ -53,3 +53,27 @@ class PricesRetrieveView(generics.GenericAPIView):
         prices = repository.get_price(ticker=ticker)
         serializer = self.get_serializer(instance=prices)
         return Response(serializer.data)
+
+
+
+class PriceAlertListCreateView(generics.ListCreateAPIView):
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(
+            investor__clerk_id=clerk_id, is_active=True
+        ).select_related("instrument")
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PriceAlertCreateSerializer
+        return PriceAlertSerializer
+
+
+class PriceAlertDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(investor__clerk_id=clerk_id)
