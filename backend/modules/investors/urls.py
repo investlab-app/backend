@@ -10,7 +10,6 @@ from modules.investors.views import (
     InvestorStatsView,
     MostTradedOverviewView,
     OwnedSharesView,
-    ProfileOverviewView,
     TradingOverviewView,
     TransactionHistoryView,
 )
@@ -37,11 +36,6 @@ urlpatterns = [
         name="asset-allocation",
     ),
     path("me/owned-shares/", OwnedSharesView.as_view(), name="owned-shares"),
-    path(
-        "me/statistics/profile-overview/",
-        ProfileOverviewView.as_view(),
-        name="profile-overview",
-    ),
     path(
         "me/statistics/trading-overview/",
         TradingOverviewView.as_view(),

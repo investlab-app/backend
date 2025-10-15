@@ -123,13 +123,6 @@ class OwnedShareSerializer(serializers.Serializer):
     profit_percentage = serializers.FloatField()
 
 
-# Not yet implemented
-class ProfileOverviewSerializer(serializers.Serializer):
-    level = serializers.CharField(max_length=30)
-    exp_points = serializers.IntegerField()
-    left_to_next_level = serializers.IntegerField()
-
-
 # stats
 class TradingOverviewSerializer(serializers.Serializer):
     # TransactionStats.buy_transactions + TransactionStats.sell_transactions

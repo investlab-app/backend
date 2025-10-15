@@ -1,6 +1,6 @@
 import logging
 import random
-from datetime import date, datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone
 
 from django.db.models.aggregates import Count
 from django.db.models.expressions import OuterRef, Subquery
@@ -26,7 +26,6 @@ from modules.investors.serializers import (
     MostTradedItemSerializer,
     OwnedShareSerializer,
     PositionSerializer,
-    ProfileOverviewSerializer,
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
@@ -390,36 +389,6 @@ class OwnedSharesView(generics.RetrieveAPIView):
         responses={200: OwnedShareSerializer},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
-
-
-class ProfileOverviewView(generics.RetrieveAPIView):
-    """
-    Get the info about the investor's level.
-    """
-
-    serializer_class = ProfileOverviewSerializer
-
-    def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
-        response = {
-            "level": "Newbie",
-            "exp_points": random.randint(500, 1000),
-            "left_to_next_level": random.randint(100, 300),
-        }
-
-        serializer = self.get_serializer(response)
-        return Response(serializer.data)
-
-    @extend_schema(
-        responses={200: ProfileOverviewSerializer},
-        summary="Get info about investor's level",
-        description=(
-            "Get the information about the level, exp points"
-            " and points left to next level for the current investor"
-        ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
