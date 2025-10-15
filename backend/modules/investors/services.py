@@ -1,3 +1,4 @@
+from collections.abc import Iterable
 from decimal import Decimal
 
 from django.db import transaction
@@ -58,14 +59,13 @@ class InvestorStatsService:
 
 
 class InvestorValueHistoryService:
-    def __init__(self, stats_service=None):
+    def __init__(self, stats_service=None, investors: Iterable | None = None):
         self.stats_service = stats_service or InvestorStatsService()
+        self.investors = investors or Investor.objects.all()
 
-    def save_all_investors(self):
-        investors = Investor.objects.all()
-
+    def save_for_all_investors(self):
         snapshots = []
-        for i in investors:
+        for i in self.investors:
             value = self.stats_service.get_total_value(i)
             snapshots.append(AccountValueSnapshot(investor=i, value=value))
 

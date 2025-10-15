@@ -389,6 +389,10 @@ if not DEBUG:
             "task": "modules.instruments.tasks.sync_instruments_images",
             "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
         },
+        "modules.investors.tasks.save_accounts_value_snapshot": {
+            "task": "modules.investors.tasks.save_accounts_value_snapshot",
+            "schedule": crontab(hour=1, minute=0),  # Every Wednesday at 1:00 AM
+        },
     }
 
 

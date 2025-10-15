@@ -22,7 +22,7 @@ class TestInvestorValueHistoryService:
     def test_save_all_investors__no_investors__creates_no_snapshots(self):
         assert Investor.objects.count() == 0
 
-        self.service.save_all_investors()
+        self.service.save_for_all_investors()
 
         assert AccountValueSnapshot.objects.count() == 0
 
@@ -41,7 +41,7 @@ class TestInvestorValueHistoryService:
 
         self.stats_service_mock.get_total_value.side_effect = side_effect
 
-        self.service.save_all_investors()
+        self.service.save_for_all_investors()
 
         assert AccountValueSnapshot.objects.count() == 2
         snapshot1 = AccountValueSnapshot.objects.get(investor=investor1)

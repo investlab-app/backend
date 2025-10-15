@@ -1,7 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
 from rest_framework import serializers
-from drf_spectacular.utils import extend_schema_field, PolymorphicProxySerializer
 
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import InstrumentNameSerializer
@@ -56,11 +56,11 @@ class OrderSerializer(serializers.ModelSerializer):
 
     @extend_schema_field(
         PolymorphicProxySerializer(
-            component_name='OrderDetail',
+            component_name="OrderDetail",
             serializers={
-                'market': MarketOrderSerializer,
+                "market": MarketOrderSerializer,
             },
-            resource_type_field_name='detail_type',  # field to determine serializer
+            resource_type_field_name="detail_type",  # field to determine serializer
         )
     )
     def get_detail(self, obj):
