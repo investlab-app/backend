@@ -210,7 +210,7 @@ class AccountValueOverTimeView(generics.ListAPIView):
         return qs
 
     @extend_schema(
-        responses={200: AccountValueSnapshotDailySerializer},
+        responses={200: AccountValueSnapshotDailySerializer(many=True)},
         summary="Get account value over time",
         description=(
             "Get account value over time data for the currently authenticated user."

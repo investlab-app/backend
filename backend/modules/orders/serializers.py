@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.shortcuts import get_object_or_404
 from rest_framework import serializers
+from drf_spectacular.utils import extend_schema_field, PolymorphicProxySerializer
 
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import InstrumentNameSerializer
@@ -39,20 +40,29 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
         return OrderSerializer(instance).data
 
 
+class MarketOrderSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = MarketOrder
+        fields = ["volume", "volume_processed", "is_buy"]
+
+
 class OrderSerializer(serializers.ModelSerializer):
     ticker = InstrumentNameSerializer()
     detail = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
-        fields = ["id", "ticker", "detail"]
+        fields = ["id", "ticker", "detail_type", "detail"]
 
+    @extend_schema_field(
+        PolymorphicProxySerializer(
+            component_name='OrderDetail',
+            serializers={
+                'market': MarketOrderSerializer,
+            },
+            resource_type_field_name='detail_type',  # field to determine serializer
+        )
+    )
     def get_detail(self, obj):
         mapping = {MarketOrder: MarketOrderSerializer}
         return mapping[obj.detail_type.model_class()](obj.detail).data
-
-
-class MarketOrderSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = MarketOrder
-        fields = ["volume", "volume_processed", "is_buy"]

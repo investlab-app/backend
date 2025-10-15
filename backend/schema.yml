@@ -283,7 +283,7 @@ paths:
           description: ''
   /api/investors/me/account-value/:
     get:
-      operationId: investors_me_account_value_retrieve
+      operationId: investors_me_account_value_list
       description: Get account value over time data for the currently authenticated
         user.
       summary: Get account value over time
@@ -297,7 +297,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountValueOverTime'
+                type: array
+                items:
+                  $ref: '#/components/schemas/AccountValueSnapshotDaily'
           description: ''
   /api/investors/me/asset-allocation/:
     get:
@@ -349,14 +351,27 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OwnedShares'
+                $ref: '#/components/schemas/OwnedShare'
           description: ''
   /api/investors/me/statistics/most-traded/:
     get:
-      operationId: investors_me_statistics_most_traded_retrieve
+      operationId: investors_me_statistics_most_traded_list
       description: Returns number of trades, number of buys/sells, avg gain/loss,
         and total return from the most frequently traded instruments.
       summary: Get overview about the most traded instruments
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
       - investors
       security:
@@ -367,25 +382,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/MostTradedOverview'
-          description: ''
-  /api/investors/me/statistics/profile-overview/:
-    get:
-      operationId: investors_me_statistics_profile_overview_retrieve
-      description: Get the information about the level, exp points and points left
-        to next level for the current investor
-      summary: Get info about investor's level
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProfileOverview'
+                $ref: '#/components/schemas/PaginatedMostTradedItemList'
           description: ''
   /api/investors/me/statistics/trading-overview/:
     get:
@@ -562,6 +559,72 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TickerNews'
+          description: ''
+  /api/orders/:
+    get:
+      operationId: orders_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedOrderList'
+          description: ''
+  /api/orders/cancel/{id}:
+    delete:
+      operationId: orders_cancel_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/orders/market/:
+    post:
+      operationId: orders_market_create
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateMarketOrderRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateMarketOrder'
           description: ''
   /api/prices/:
     get:
@@ -784,13 +847,14 @@ paths:
           description: Authentication test successful
 components:
   schemas:
-    AccountValueData:
+    AccountValueSnapshotDaily:
       type: object
-      description: Serializer for individual account value data point.
+      description: Serializer for AccountValueSnapshot model.
       properties:
         date:
           type: string
           format: date
+          readOnly: true
           description: Date of the value measurement
         value:
           type: number
@@ -799,17 +863,6 @@ components:
       required:
       - date
       - value
-    AccountValueOverTime:
-      type: object
-      description: Serializer for account value over time data.
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AccountValueData'
-          description: List of account value data points
-      required:
-      - data
     AssetAllocation:
       type: object
       properties:
@@ -830,9 +883,20 @@ components:
     AssetAllocationItem:
       type: object
       properties:
-        asset_class_display_name:
+        instrument_name:
           type: string
-          maxLength: 100
+          maxLength: 255
+        instrument_ticker:
+          type: string
+          maxLength: 20
+        instrument_logo:
+          type: string
+          format: uri
+          nullable: true
+        instrument_icon:
+          type: string
+          format: uri
+          nullable: true
         value:
           type: number
           format: double
@@ -840,7 +904,10 @@ components:
           type: number
           format: double
       required:
-      - asset_class_display_name
+      - instrument_icon
+      - instrument_logo
+      - instrument_name
+      - instrument_ticker
       - percentage
       - value
     AuthTestResponse:
@@ -873,6 +940,39 @@ components:
       required:
       - email
       - password
+    CreateMarketOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        investor:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - id
+      - investor
+    CreateMarketOrderRequest:
+      type: object
+      properties:
+        ticker:
+          type: string
+          writeOnly: true
+          minLength: 1
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          writeOnly: true
+        is_buy:
+          type: boolean
+          writeOnly: true
+      required:
+      - is_buy
+      - ticker
+      - volume
     CurrentAccountValue:
       type: object
       properties:
@@ -991,6 +1091,15 @@ components:
       - id
       - market
       - name
+      - ticker
+    InstrumentName:
+      type: object
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+      required:
       - ticker
     InstrumentRetrieve:
       type: object
@@ -1211,6 +1320,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
         watching_instruments_count:
           type: integer
           readOnly: true
@@ -1250,6 +1360,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
     LocaleEnum:
       enum:
       - us
@@ -1347,6 +1458,22 @@ components:
         dow_jones:
           type: string
           nullable: true
+    MarketOrder:
+      type: object
+      properties:
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        volume_processed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        is_buy:
+          type: boolean
+      required:
+      - is_buy
+      - volume
     MarketStatus:
       type: object
       properties:
@@ -1403,16 +1530,34 @@ components:
       - sells
       - symbol
       - total_return
-    MostTradedOverview:
+    Order:
       type: object
       properties:
-        instruments:
-          type: array
-          items:
-            $ref: '#/components/schemas/MostTradedItem'
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          $ref: '#/components/schemas/InstrumentName'
+        detail_type:
+          type: integer
+        detail:
+          allOf:
+          - $ref: '#/components/schemas/OrderDetail'
+          readOnly: true
       required:
-      - instruments
-    OwnedShareItem:
+      - detail
+      - detail_type
+      - id
+      - ticker
+    OrderDetail:
+      oneOf:
+      - $ref: '#/components/schemas/MarketOrder'
+      discriminator:
+        propertyName: detail_type
+        mapping:
+          market: '#/components/schemas/MarketOrder'
+    OwnedShare:
       type: object
       properties:
         name:
@@ -1440,15 +1585,6 @@ components:
       - symbol
       - value
       - volume
-    OwnedShares:
-      type: object
-      properties:
-        owned_shares:
-          type: array
-          items:
-            $ref: '#/components/schemas/OwnedShareItem'
-      required:
-      - owned_shares
     PaginatedInstrumentListList:
       type: object
       required:
@@ -1518,6 +1654,52 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Investor'
+    PaginatedMostTradedItemList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/MostTradedItem'
+    PaginatedOrderList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'
     PatchedInvestorUpdateRequest:
       type: object
       properties:
@@ -1526,6 +1708,7 @@ components:
           items:
             type: string
             format: uuid
+            title: Watching Instruments
     Position:
       type: object
       properties:
@@ -1649,20 +1832,6 @@ components:
       - ticker
       - todays_change
       - todays_change_percent
-    ProfileOverview:
-      type: object
-      properties:
-        level:
-          type: string
-          maxLength: 30
-        exp_points:
-          type: integer
-        left_to_next_level:
-          type: integer
-      required:
-      - exp_points
-      - left_to_next_level
-      - level
     Publisher:
       type: object
       properties:
