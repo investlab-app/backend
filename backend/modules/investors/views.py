@@ -1,6 +1,5 @@
 import logging
-import random
-from datetime import datetime, timedelta, timezone
+from datetime import timedelta
 
 from django.db.models.aggregates import Count
 from django.db.models.expressions import OuterRef, Subquery
@@ -34,6 +33,16 @@ from modules.transactions.models import Transaction
 from modules.transactions.services import TransactionStatsService
 
 logger = logging.getLogger(__name__)
+
+
+def get_investor_tickers(investor: Investor):
+    return list(
+        Instrument.objects.filter(
+            id__in=Transaction.objects.filter(investor=investor)
+            .values_list("ticker_id", flat=True)
+            .distinct()
+        )
+    )
 
 
 class InvestorListView(generics.ListAPIView):
@@ -132,13 +141,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
         today = get_local_datetime()
         end_datetime = today - timedelta(minutes=30)
         start_datetime = end_datetime - timedelta(days=1)
-        investor_tickers = list(
-            Instrument.objects.filter(
-                id__in=Transaction.objects.filter(investor=investor)
-                .values_list("ticker_id", flat=True)
-                .distinct()
-            )
-        )
+        investor_tickers = get_investor_tickers(investor)
 
         stats_service = TransactionStatsService()
         stats_today = stats_service.get_stats(
@@ -237,13 +240,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         )
         today = get_local_datetime()
         current_timestamp = today - timedelta(minutes=30)
-        investor_tickers = list(
-            Instrument.objects.filter(
-                id__in=Transaction.objects.filter(investor=investor)
-                .values_list("ticker_id", flat=True)
-                .distinct()
-            )
-        )
+        investor_tickers = get_investor_tickers(investor)
 
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
@@ -291,13 +288,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
         today = get_local_datetime()
         end_datetime = today - timedelta(minutes=30)
         start_datetime = end_datetime - timedelta(days=365)
-        investor_tickers = list(
-            Instrument.objects.filter(
-                id__in=Transaction.objects.filter(investor=investor)
-                .values_list("ticker_id", flat=True)
-                .distinct()
-            )
-        )
+        investor_tickers = get_investor_tickers(investor)
 
         stats_service = TransactionStatsService()
         stats_today = stats_service.get_stats(
@@ -407,13 +398,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
         today = get_local_datetime()
         end_datetime = today - timedelta(minutes=30)
         start_datetime = end_datetime - timedelta(days=365)  # tmp last year
-        investor_tickers = list(
-            Instrument.objects.filter(
-                id__in=Transaction.objects.filter(investor=investor)
-                .values_list("ticker_id", flat=True)
-                .distinct()
-            )
-        )
+        investor_tickers = get_investor_tickers(investor)
 
         stats_service = TransactionStatsService()
         stats = stats_service.get_stats(
@@ -515,72 +500,106 @@ class TransactionHistoryView(generics.RetrieveAPIView):
     pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
-        position_type = request.query_params.get("type", "both")
-        ticker = request.query_params.get("ticker", None)
+        parameters = TransactionHistoryQueryParams(data=request.query_params)
+        parameters.is_valid(raise_exception=True)
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
+        position_type = parameters.validated_data.get("type", "both")
+        tickers = parameters.validated_data.get("tickers", [])
+        if not tickers:
+            tickers = get_investor_tickers(investor)
 
-        # Use user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        transactions = Transaction.objects.filter(investor=investor).select_related(
+            "ticker"
+        )
+        asset_allocations = InvestorStatsService().get_asset_allocation(investor)
+        asset_allocations_map = {
+            aa.asset.ticker.ticker.upper(): aa for aa in asset_allocations
+        }
 
-        # Mock stock symbols
-        symbols = ["AAPL", "GOOGL", "MSFT", "AMZN", "TSLA", "NFLX", "META"]
+        first_transaction_timestamp = (
+            Transaction.objects.filter(investor=investor)
+            .order_by("timestamp")
+            .first()
+            .timestamp
+        )
+        today = get_local_datetime()
+        current_timestamp = today - timedelta(minutes=30)
 
-        # Filter by ticker if provided
-        if ticker:
-            symbols = [ticker] if ticker in symbols else []
+        stats_service = TransactionStatsService()
+        stats = stats_service.get_stats(
+            investor=investor,
+            tickers=tickers,
+            start_datetime=first_transaction_timestamp,
+            end_datetime=current_timestamp,
+        )
+        stats_map = {s.ticker: s for s in stats}
 
         positions = []
-        for symbol in symbols:
-            # Generate random transaction history for this symbol
-            transaction_count = random.randint(1, 6)
-            history = []
+        for ticker in tickers:
+            ticker_symbol = ticker.ticker.upper()
 
-            for _ in range(transaction_count):
-                transaction_type = random.choice(["BUY", "SELL"])
+            if position_type == "open" and ticker_symbol not in asset_allocations_map:
+                continue
 
-                days_ago = random.randint(1, 1000)
-                past_dt = datetime.now(timezone.utc) - timedelta(days=days_ago)
+            if position_type == "closed" and ticker_symbol in asset_allocations_map:
+                continue
 
-                history_entry = {
-                    "date": past_dt.isoformat(),
-                    "type": transaction_type,
-                    "quantity": random.randint(1, 10),
-                    "share_price": round(random.uniform(50, 1000), 2),
-                    "acquisition_price": (
-                        round(random.uniform(50, 1000), 2)
-                        if transaction_type == "BUY"
-                        else None
-                    ),
-                    "market_value": round(random.uniform(100, 10000), 2),
-                    "gain_loss": round(random.uniform(-500, 500), 2),
-                    "gain_loss_pct": round(random.uniform(-50, 50), 2),
-                }
-                history.append(history_entry)
+            ticker_transactions = transactions.filter(ticker__ticker=ticker_symbol)  # noqa: F841
 
-            # Sort history by date (newest first)
-            history.sort(key=lambda x: x["date"], reverse=True)
+            # history = []
+            #
+            # for _ in range(transaction_count):
+            #     transaction_type = random.choice(["BUY", "SELL"])
+            #
+            #     days_ago = random.randint(1, 1000)
+            #     past_dt = datetime.now(timezone.utc) - timedelta(days=days_ago)
+            #
+            #     history_entry = {
+            #         "date": past_dt.isoformat(),
+            #         "type": transaction_type,
+            #         "quantity": random.randint(1, 10),
+            #         "share_price": round(random.uniform(50, 1000), 2),
+            #         "acquisition_price": (
+            #             round(random.uniform(50, 1000), 2)
+            #             if transaction_type == "BUY"
+            #             else None
+            #         ),
+            #         "market_value": round(random.uniform(100, 10000), 2),
+            #         "gain_loss": round(random.uniform(-500, 500), 2),
+            #         "gain_loss_pct": round(random.uniform(-50, 50), 2),
+            #     }
+            #     history.append(history_entry)
+            #
+            # # Sort history by date (newest first)
+            # history.sort(key=lambda x: x["date"], reverse=True)
 
             # Calculate position totals
-            total_quantity = sum(
-                h["quantity"] if h["type"] == "BUY" else -h["quantity"] for h in history
-            )
+            # total_quantity = sum(
+            #     h["quantity"] if h["type"] == "BUY"
+            #     else -h["quantity"] for h in history
+            # )
+            #
+            # # Only include positions based on type filter
+            # if position_type == "open" and total_quantity <= 0:
+            #     continue
+            # if position_type == "closed" and total_quantity > 0:
+            #     continue
 
-            # Only include positions based on type filter
-            if position_type == "open" and total_quantity <= 0:
-                continue
-            if position_type == "closed" and total_quantity > 0:
-                continue
+            quantity, market_value = 0, 0
+            if ticker_symbol in asset_allocations_map:
+                quantity = asset_allocations_map[ticker_symbol].asset.volume
+                market_value = asset_allocations_map[ticker_symbol].total_value
 
             position = {
-                "name": symbol,
-                "quantity": max(0, total_quantity),
-                "market_value": round(random.uniform(1000, 50000), 2),
-                "gain_loss": round(random.uniform(-1000, 1000), 2),
-                "gain_loss_pct": round(random.uniform(-25, 25), 2),
-                "history": history,
+                "name": ticker_symbol,
+                "quantity": quantity,
+                "market_value": round(market_value, 2),
+                "gain_loss": round(stats_map[ticker_symbol].gain, 2),
+                "gain_loss_pct": 21.37,
+                # "history": history,
             }
             positions.append(position)
 
-        # Return as array directly (matching frontend expectation)
         serializer = PositionSerializer(positions, many=True)
         return Response(serializer.data)
 

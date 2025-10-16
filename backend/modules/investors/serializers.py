@@ -170,8 +170,12 @@ class TransactionHistoryQueryParams(serializers.Serializer):
         default="both",
         help_text="Type of positions to fetch: 'open', 'closed', or 'both'",
     )
-    ticker = serializers.CharField(
-        required=False, max_length=10, help_text="Filter by specific ticker symbol"
+    tickers = serializers.ListField(
+        child=serializers.CharField(),
+        required=False,
+        allow_empty=True,
+        max_length=50,
+        help_text="List of ticker symbols to fetch prices for (max 50).",
     )
 
 
@@ -220,7 +224,7 @@ class PositionSerializer(serializers.Serializer):
     # IDK yet
     gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
 
-    history = HistoryEntrySerializer(many=True, help_text="Transaction history")
+    # history = HistoryEntrySerializer(many=True, help_text="Transaction history")
 
 
 class AssetSerializer(serializers.ModelSerializer):
