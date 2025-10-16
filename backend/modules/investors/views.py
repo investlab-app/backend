@@ -544,46 +544,23 @@ class TransactionHistoryView(generics.RetrieveAPIView):
             if position_type == "closed" and ticker_symbol in asset_allocations_map:
                 continue
 
-            ticker_transactions = transactions.filter(ticker__ticker=ticker_symbol)  # noqa: F841
+            ticker_transactions = transactions.filter(
+                ticker__ticker=ticker_symbol
+            ).order_by("-timestamp")
 
-            # history = []
-            #
-            # for _ in range(transaction_count):
-            #     transaction_type = random.choice(["BUY", "SELL"])
-            #
-            #     days_ago = random.randint(1, 1000)
-            #     past_dt = datetime.now(timezone.utc) - timedelta(days=days_ago)
-            #
-            #     history_entry = {
-            #         "date": past_dt.isoformat(),
-            #         "type": transaction_type,
-            #         "quantity": random.randint(1, 10),
-            #         "share_price": round(random.uniform(50, 1000), 2),
-            #         "acquisition_price": (
-            #             round(random.uniform(50, 1000), 2)
-            #             if transaction_type == "BUY"
-            #             else None
-            #         ),
-            #         "market_value": round(random.uniform(100, 10000), 2),
-            #         "gain_loss": round(random.uniform(-500, 500), 2),
-            #         "gain_loss_pct": round(random.uniform(-50, 50), 2),
-            #     }
-            #     history.append(history_entry)
-            #
-            # # Sort history by date (newest first)
-            # history.sort(key=lambda x: x["date"], reverse=True)
-
-            # Calculate position totals
-            # total_quantity = sum(
-            #     h["quantity"] if h["type"] == "BUY"
-            #     else -h["quantity"] for h in history
-            # )
-            #
-            # # Only include positions based on type filter
-            # if position_type == "open" and total_quantity <= 0:
-            #     continue
-            # if position_type == "closed" and total_quantity > 0:
-            #     continue
+            history = []
+            for transaction in ticker_transactions:
+                history_entry = {
+                    "timestamp": transaction.timestamp,
+                    "is_buy": transaction.is_buy,
+                    "quantity": transaction.volume,
+                    "share_price": transaction.price / transaction.volume,
+                    "acquisition_price": transaction.price if transaction.is_buy else 0,
+                    "market_value": 2122.37,  # tmp mocked
+                    "gain_loss": 21.37,  # tmp mocked
+                    "gain_loss_pct": 21.37,  # tmp mocked
+                }
+                history.append(history_entry)
 
             quantity, market_value = 0, 0
             if ticker_symbol in asset_allocations_map:
@@ -595,8 +572,8 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain_loss": round(stats_map[ticker_symbol].gain, 2),
-                "gain_loss_pct": 21.37,
-                # "history": history,
+                "gain_loss_pct": 21.37,  # tmp mocked
+                "history": history,
             }
             positions.append(position)
 

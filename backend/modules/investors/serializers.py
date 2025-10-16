@@ -181,11 +181,11 @@ class TransactionHistoryQueryParams(serializers.Serializer):
 
 class HistoryEntrySerializer(serializers.Serializer):
     # Transaction.transaction_time
-    date = serializers.DateTimeField(help_text="Date of the transaction")
+    timestamp = serializers.DateTimeField(help_text="Date of the transaction")
 
     # Transaction.is_buy
-    type = serializers.CharField(
-        max_length=10, help_text="Transaction type: BUY or SELL"
+    is_buy = serializers.BooleanField(
+        help_text="True if the transaction was a buy False if it was a sell"
     )
 
     # Transaction.volume
@@ -224,7 +224,7 @@ class PositionSerializer(serializers.Serializer):
     # IDK yet
     gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
 
-    # history = HistoryEntrySerializer(many=True, help_text="Transaction history")
+    history = HistoryEntrySerializer(many=True, help_text="Transaction history")
 
 
 class AssetSerializer(serializers.ModelSerializer):

@@ -427,12 +427,14 @@ paths:
       summary: Get transaction history
       parameters:
       - in: query
-        name: ticker
+        name: tickers
         schema:
-          type: string
-          minLength: 1
-          maxLength: 10
-        description: Filter by specific ticker symbol
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 50
+        description: List of ticker symbols to fetch prices for (max 50).
       - in: query
         name: type
         schema:
@@ -992,14 +994,13 @@ components:
     HistoryEntry:
       type: object
       properties:
-        date:
+        timestamp:
           type: string
           format: date-time
           description: Date of the transaction
-        type:
-          type: string
-          description: 'Transaction type: BUY or SELL'
-          maxLength: 10
+        is_buy:
+          type: boolean
+          description: True if the transaction was a buy False if it was a sell
         quantity:
           type: integer
           description: Number of shares traded
@@ -1026,13 +1027,13 @@ components:
           description: Gain or loss percentage
       required:
       - acquisition_price
-      - date
       - gain_loss
       - gain_loss_pct
+      - is_buy
       - market_value
       - quantity
       - share_price
-      - type
+      - timestamp
     Insight:
       type: object
       properties:
