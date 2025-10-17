@@ -45,6 +45,12 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorSerializer
+    queryset = Investor.objects.all()
+
+    def get_object(self):
+        """Retrieve the current authenticated user's investor profile."""
+        investor, _ = Investor.objects.get_or_create(clerk_id=self.request.user.id)
+        return investor
 
     @extend_schema(
         responses={200: InvestorSerializer},

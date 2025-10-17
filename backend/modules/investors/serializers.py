@@ -6,14 +6,23 @@ from modules.investors.models import Asset, Investor
 class InvestorSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
-        fields = ["id", "clerk_id"]
+        fields = [
+            "id",
+            "clerk_id",
+            "watching_instruments",
+        ]
         read_only_fields = ["id", "clerk_id"]
 
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
-        fields = ["id", "clerk_id", "language"]
+        fields = [
+            "id",
+            "clerk_id",
+            "language",
+            "watching_instruments",
+        ]
         read_only_fields = ["id", "clerk_id"]
 
 
