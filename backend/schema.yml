@@ -1453,6 +1453,12 @@ components:
         clerk_id:
           type: string
           readOnly: true
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Watching Instruments
       required:
       - clerk_id
       - id
@@ -1494,6 +1500,12 @@ components:
           type: string
           description: User's preferred language (e.g., 'en', 'pl')
           maxLength: 10
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Watching Instruments
       required:
       - clerk_id
       - id
@@ -1505,6 +1517,12 @@ components:
           minLength: 1
           description: User's preferred language (e.g., 'en', 'pl')
           maxLength: 10
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Watching Instruments
     LanguageEnum:
       enum:
       - en
@@ -1938,6 +1956,12 @@ components:
           minLength: 1
           description: User's preferred language (e.g., 'en', 'pl')
           maxLength: 10
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Watching Instruments
     PatchedPriceAlertRequest:
       type: object
       properties:
