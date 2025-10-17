@@ -28,7 +28,7 @@ async def layer():
 def _get_websocket_communicator(user, tickers=""):
     scope = {"user": user, "url_route": {"kwargs": {"names": tickers}}}
 
-    communicator = WebsocketCommunicator(Websocket.as_asgi(), f"/ws/prices/{tickers}")
+    communicator = WebsocketCommunicator(Websocket.as_asgi(), f"/ws/{tickers}")
     communicator.scope.update(scope)
     return communicator
 

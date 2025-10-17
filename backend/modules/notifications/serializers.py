@@ -1,8 +1,6 @@
 from rest_framework import serializers
 
-from modules.instruments.models import Instrument
-from modules.investors.models import Investor
-from modules.notifications.models import PriceAlert, PushSubscription
+from modules.notifications.models import NotificationConfig
 
 
 class NotificationConfigSerializer(serializers.ModelSerializer):
@@ -25,7 +23,7 @@ class PushNotificationSerializer(serializers.Serializer):
     auth = serializers.CharField(max_length=255, write_only=True)
 
 
-class NotificationCreateSerializer(serializers.ModelSerializer):
+class NotificationConfigCreateSerializer(serializers.ModelSerializer):
     is_email = serializers.BooleanField()
     is_push = serializers.BooleanField()
     is_websocket = serializers.BooleanField()
@@ -35,3 +33,6 @@ class NotificationCreateSerializer(serializers.ModelSerializer):
         model = NotificationConfig
         fields = ["is_email", "is_push", "is_websocket", "push_subscription"]
 
+
+class VapidPublicKeySerializer(serializers.Serializer):
+    public_key = serializers.CharField()

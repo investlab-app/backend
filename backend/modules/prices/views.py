@@ -3,8 +3,12 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.investors.models import Investor
+from modules.prices.models import PriceAlert
 from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.serializers import (
+    PriceAlertCreateSerializer,
+    PriceAlertSerializer,
     PriceBarSerializer,
     PriceBarsQueryParams,
     PriceDailySummarySerializer,
@@ -59,10 +63,7 @@ class PricesRetrieveView(generics.GenericAPIView):
         return Response(serializer.data)
 
 
-
 class PriceAlertListCreateView(generics.ListCreateAPIView):
-    serializer_class = PriceAlertSerializer
-
     def get_queryset(self):
         clerk_id = self.request.user.id
         return PriceAlert.objects.filter(
@@ -73,6 +74,11 @@ class PriceAlertListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return PriceAlertCreateSerializer
         return PriceAlertSerializer
+
+    def perform_create(self, serializer):
+        clerk_id = self.request.user.id
+        investor = Investor.objects.get(clerk_id=clerk_id)
+        serializer.save(investor=investor)
 
 
 class PriceAlertDetailView(generics.RetrieveUpdateDestroyAPIView):

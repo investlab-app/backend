@@ -5,7 +5,11 @@ from modules.core.models import BaseModel
 from modules.instruments.models import Instrument
 from modules.notifications.models import NotificationConfig
 
+
 class PriceAlert(BaseModel):
+    investor = models.ForeignKey(
+        "investors.Investor", on_delete=models.CASCADE, verbose_name=_("Investor")
+    )
     instrument = models.ForeignKey(
         Instrument, on_delete=models.CASCADE, verbose_name=_("Instrument")
     )
@@ -26,7 +30,6 @@ class PriceAlert(BaseModel):
 
     class Meta:
         unique_together = (
-            "investor",
             "instrument",
             "threshold_type",
             "threshold_value",

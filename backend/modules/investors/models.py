@@ -13,7 +13,6 @@ class Investor(BaseModel):
         verbose_name=_("Language"),
         help_text=_("User's preferred language (e.g., 'en', 'pl')"),
     )
-
     watching_instruments = models.ManyToManyField(
         Instrument, blank=True, verbose_name=_("Watching Instruments")
     )
