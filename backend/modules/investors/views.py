@@ -2,14 +2,20 @@ import logging
 import random
 from datetime import date, datetime, timedelta, timezone
 
+from django.db.models.aggregates import Count
+from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.functions.datetime import TruncDate
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.investors.models import Asset, Investor
+from modules.core.utils import get_local_datetime
+from modules.instruments.models import Instrument
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
-    AccountValueOverTimeSerializer,
+    AccountValueSnapshotDailySerializer,
     AssetAllocationSerializer,
     AssetSerializer,
     CurrentAccountValueSerializer,
@@ -17,13 +23,16 @@ from modules.investors.serializers import (
     InvestorStatsSerializer,
     InvestorUpdateSerializer,
     LanguageUpdateSerializer,
-    MostTradedOverviewSerializer,
-    OwnedSharesSerializer,
+    MostTradedItemSerializer,
+    OwnedShareSerializer,
     PositionSerializer,
     ProfileOverviewSerializer,
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
+from modules.investors.services import InvestorStatsService
+from modules.transactions.models import Transaction
+from modules.transactions.services import TransactionStatsService
 
 logger = logging.getLogger(__name__)
 
@@ -69,15 +78,37 @@ class InvestorStatsView(generics.RetrieveAPIView):
     serializer_class = InvestorStatsSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # Generate random stats data
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        # Generate realistic-looking stats
-        invested = round(random.uniform(1000, 50000), 2)
-        total_return = round(random.uniform(-invested * 0.3, invested * 0.5), 2)
-        todays_return = round(random.uniform(-invested * 0.05, invested * 0.05), 2)
-        total_value = invested + total_return
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=1)
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
+        )
+
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
+        todays_return = sum(stat.gain for stat in stats_today)
+
+        stats_total = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+        )
+        total_return = sum(stat.gain for stat in stats_total)
+        invested = sum(stat.total_buy_price for stat in stats_total)
+
+        investor_stats_service = InvestorStatsService()
+        total_value = investor_stats_service.get_total_value(investor=investor)
 
         stats_data = {
             "todays_return": todays_return,
@@ -98,45 +129,39 @@ class InvestorStatsView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class AccountValueOverTimeView(generics.RetrieveAPIView):
+class AccountValueOverTimeView(generics.ListAPIView):
     """
     Get account value over time data for the current authenticated user.
     """
 
-    serializer_class = AccountValueOverTimeSerializer
+    serializer_class = AccountValueSnapshotDailySerializer
+    pagination_class = None
 
-    def retrieve(self, request, *args, **kwargs):
-        # Generate random account value data over time
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+    def get_queryset(self):
+        """
+        The earliest snapshot for each day is selected to represent that day's value.
+        """
+        investor_id = self.request.user.id
 
-        # Generate 120 data points (approximately 4 months of weekly data)
-        data_points = []
-        today = date.today()
-        base_value = random.uniform(100, 2000)
-
-        for i in range(120):
-            # Go back in time by weeks
-            data_date = today - timedelta(weeks=i)
-
-            # Add some realistic variation to the base value
-            variation = random.uniform(-0.1, 0.1)  # ±10% variation
-            value = base_value * (1 + variation)
-
-            data_points.append(
-                {"date": data_date.isoformat(), "value": round(value, 2)}
+        earliest_snapshots = (
+            AccountValueSnapshot.objects.filter(
+                investor__clerk_id=investor_id,
+                timestamp__date=OuterRef("day"),
             )
+            .order_by("timestamp")
+            .values("id")[:1]
+        )
 
-        # Reverse to get chronological order (oldest first)
-        data_points.reverse()
+        qs = (
+            AccountValueSnapshot.objects.annotate(day=TruncDate("timestamp"))
+            .filter(id__in=Subquery(earliest_snapshots))
+            .order_by("-timestamp")
+        )
 
-        response_data = {"data": data_points}
-
-        serializer = self.get_serializer(response_data)
-        return Response(serializer.data)
+        return qs
 
     @extend_schema(
-        responses={200: AccountValueOverTimeSerializer},
+        responses={200: AccountValueSnapshotDailySerializer},
         summary="Get account value over time",
         description=(
             "Get account value over time data for the currently authenticated user."
@@ -154,25 +179,39 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
     serializer_class = CurrentAccountValueSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        start_account_value = 1000
-        # Generate random account value for today, keeping it consistent with
-        # the AccountValueOverTimeView endpoint.
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
+        first_transaction_timestamp = (
+            Transaction.objects.filter(investor=investor)
+            .order_by("timestamp")
+            .first()
+            .timestamp
+        )
+        today = get_local_datetime()
+        current_timestamp = today - timedelta(minutes=30)
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
+        )
 
-        # This calculation mimics the first (most recent) value generated
-        # in the AccountValueOverTimeView.
-        base_value = random.uniform(100, 2000)
-        variation = random.uniform(-0.1, 0.1)  # First variation
-        value = base_value * (1 + variation)
+        investor_stats_service = InvestorStatsService()
+        total_value = investor_stats_service.get_total_value(investor=investor)
 
-        gain = value - start_account_value
-        gain_percent = 100 * gain / start_account_value
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=first_transaction_timestamp,
+            end_datetime=current_timestamp,
+        )
+        total_gain = sum(stat.gain for stat in stats_today)
 
         response = {
-            "total_account_value": round(value, 2),
-            "gain": round(gain, 2),
-            "gain_percent": round(gain_percent, 2),
+            "total_account_value": round(total_value, 2),
+            "gain": round(total_gain, 2),
+            "gain_percent": 0,  # tmp mocked
         }
 
         serializer = self.get_serializer(response)
@@ -198,59 +237,46 @@ class AssetAllocationView(generics.RetrieveAPIView):
     serializer_class = AssetAllocationSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        # Generate realistic-looking stats
-        invested = round(random.uniform(20000, 75000), 2)
-        total_return_this_year = round(
-            random.uniform(-invested * 0.1, invested * 0.15), 2
-        )
-        total_value = invested + total_return_this_year
-
-        # Generate allocations
-        allocations = []
-        remaining_percentage = 1.0
-
-        # Stocks
-        stocks_percentage = round(random.uniform(0.6, 0.8), 4)
-        remaining_percentage -= stocks_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Stocks",
-                "value": round(total_value * stocks_percentage, 2),
-                "percentage": round(stocks_percentage * 100, 2),
-            }
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
         )
 
-        # Bonds
-        bonds_percentage = round(random.uniform(0.1, remaining_percentage * 0.9), 4)
-        remaining_percentage -= bonds_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Bonds",
-                "value": round(total_value * bonds_percentage, 2),
-                "percentage": round(bonds_percentage * 100, 2),
-            }
+        stats_service = TransactionStatsService()
+        stats_today = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
         )
+        total_return_this_year = sum(stat.gain for stat in stats_today)
 
-        # Unallocated
-        unallocated_percentage = remaining_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Unallocated",
-                "value": round(total_value * unallocated_percentage, 2),
-                "percentage": round(unallocated_percentage * 100, 2),
-            }
-        )
-
-        # Recalculate total value from parts to avoid rounding errors
-        calculated_total_value = sum(item["value"] for item in allocations)
+        is_service = InvestorStatsService()
+        total_value = is_service.get_total_value(investor=investor)
+        asset_allocations = is_service.get_asset_allocation(investor=investor)
 
         response_data = {
-            "total_value": calculated_total_value,
-            "total_return_this_year": total_return_this_year,
-            "allocations": allocations,
+            "total_value": round(total_value, 2),
+            "total_return_this_year": round(total_return_this_year, 2),
+            "allocations": [
+                {
+                    "instrument_name": allocation.asset.ticker.name,
+                    "instrument_ticker": allocation.asset.ticker.ticker,
+                    "instrument_logo": allocation.asset.ticker.logo,
+                    "instrument_icon": allocation.asset.ticker.icon,
+                    "value": round(allocation.total_value, 2),
+                    "percentage": round(allocation.percentage, 2),
+                }
+                for allocation in asset_allocations
+            ],
         }
 
         serializer = self.get_serializer(response_data)
@@ -290,73 +316,48 @@ class OwnedSharesView(generics.RetrieveAPIView):
     Get owned shares data for the current authenticated user.
     """
 
-    serializer_class = OwnedSharesSerializer
+    serializer_class = OwnedShareSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
+        is_service = InvestorStatsService()
+        asset_allocations = is_service.get_asset_allocation(investor=investor)
 
-        owned_shares_data = [
+        data = [
             {
-                "name": "Apple Inc.",
-                "symbol": "AAPL",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(150, 250), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Tesla, Inc.",
-                "symbol": "TSLA",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(200, 300), 2),
-                "profit": round(random.uniform(-10, 10), 2),
-            },
-            {
-                "name": "Amazon.com, Inc.",
-                "symbol": "AMZN",
-                "volume": round(random.uniform(0.1, 2), 5),
-                "value": round(random.uniform(100, 200), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Microsoft Corp.",
-                "symbol": "MSFT",
-                "volume": round(random.uniform(1, 5), 5),
-                "value": round(random.uniform(300, 450), 2),
-                "profit": round(random.uniform(-2, 2), 2),
-            },
-            {
-                "name": "NVIDIA Corp.",
-                "symbol": "NVDA",
-                "volume": round(random.uniform(0.5, 3), 5),
-                "value": round(random.uniform(800, 1000), 2),
-                "profit": round(random.uniform(-15, 15), 2),
-            },
-            {
-                "name": "Alphabet Inc.",
-                "symbol": "GOOGL",
-                "volume": round(random.uniform(1, 2), 5),
-                "value": round(random.uniform(130, 180), 2),
-                "profit": round(random.uniform(5, 20), 2),
-            },
+                "name": asset_allocation.asset.ticker.name,
+                "symbol": asset_allocation.asset.ticker.ticker,
+                "logo": asset_allocation.asset.ticker.logo,
+                "icon": asset_allocation.asset.ticker.icon,
+                "volume": round(asset_allocation.asset.volume, 5),
+                "value": round(asset_allocation.total_value, 2),
+                "profit": 50.12,  # tmp mocked
+                "profit_percentage": 230.88,  # tmp mocked
+            }
+            for asset_allocation in asset_allocations
         ]
+        # data = [
+        #     {
+        #         **asset_allocation,
+        #         "profit_percentage": round(
+        #             (
+        #                 asset_allocation["profit"]
+        #                 / (asset_allocation["value"] - asset_allocation["profit"])
+        #             )
+        #             * 100,
+        #             2,
+        #         )
+        #         if (asset_allocation["value"] - asset_allocation["profit"]) != 0
+        #         else 0,
+        #     }
+        #     for asset_allocation in data
+        # ]
 
-        # for each share, recalculate profit_percentage from value and profit
-        for share in owned_shares_data:
-            purchase_price = share["value"] - share["profit"]
-            if purchase_price != 0:
-                share["profit_percentage"] = round(
-                    (share["profit"] / purchase_price) * 100, 2
-                )
-            else:
-                share["profit_percentage"] = 0
-
-        response_data = {"owned_shares": owned_shares_data}
-
-        serializer = self.get_serializer(response_data)
+        serializer = self.get_serializer(data, many=True)
         return Response(serializer.data)
 
     @extend_schema(
-        responses={200: OwnedSharesSerializer},
+        responses={200: OwnedShareSerializer},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
     )
@@ -402,17 +403,36 @@ class TradingOverviewView(generics.RetrieveAPIView):
     serializer_class = TradingOverviewSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        no_trades = random.randint(5, 20)
-        buys = random.randint(2, no_trades)
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)  # tmp last year
+        investor_tickers = list(
+            Instrument.objects.filter(
+                id__in=Transaction.objects.filter(investor=investor)
+                .values_list("ticker_id", flat=True)
+                .distinct()
+            )
+        )
+
+        stats_service = TransactionStatsService()
+        stats = stats_service.get_stats(
+            investor=investor,
+            tickers=investor_tickers,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
+
         response = {
-            "total_trades": no_trades,
-            "buys": buys,
-            "sells": no_trades - buys,
-            "avg_gain": round(random.uniform(1, 50), 2),
-            "avg_loss": round(random.uniform(1, 50), 2),
-            "total_return": round(random.uniform(500, 2000), 2),
+            "total_trades": sum(
+                s.buy_transactions + s.sell_transactions for s in stats
+            ),
+            "buys": sum(s.buy_transactions for s in stats),
+            "sells": sum(s.sell_transactions for s in stats),
+            "avg_gain": 0,  # tmp mocked
+            "avg_loss": 0,  # tmp mocked
+            "total_return": round(sum(s.gain for s in stats), 2),
         }
 
         serializer = self.get_serializer(response)
@@ -435,34 +455,49 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     Get the statistics for the most traded instruments of the current investor.
     """
 
-    serializer_class = MostTradedOverviewSerializer
+    serializer_class = MostTradedItemSerializer
 
     def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        instruments = []
-        num_instruments = random.randint(4, 8)
+        today = get_local_datetime()
+        end_datetime = today - timedelta(minutes=30)
+        start_datetime = end_datetime - timedelta(days=365)  # tmp last year
+        instruments_by_transaction_count = (
+            Transaction.objects.filter(investor=investor)
+            .values("ticker")
+            .annotate(count=Count("id"))
+            .order_by("-count")[:10]
+        )
+        instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
+        instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        for i in range(num_instruments):
-            no_trades = random.randint(5, 20)
-            buys = random.randint(3, no_trades)
+        stats_service = TransactionStatsService()
+        stats = stats_service.get_stats(
+            investor=investor,
+            tickers=instruments,
+            start_datetime=start_datetime,
+            end_datetime=end_datetime,
+        )
 
-            instrument = {
-                "symbol": f"SYM{i + 1}",
-                "no_trades": no_trades,
-                "buys": buys,
-                "sells": no_trades - buys,
-                "avg_gain": round(random.uniform(1, 10), 2),
-                "avg_loss": round(random.uniform(1, 10), 2),
-                "total_return": round(random.uniform(10, 200), 2),
+        data = [
+            {
+                "symbol": s.ticker,
+                "no_trades": s.buy_transactions + s.sell_transactions,
+                "buys": s.buy_transactions,
+                "sells": s.sell_transactions,
+                "avg_gain": 0,  # tmp mocked
+                "avg_loss": 0,  # tmp mocked
+                "total_return": s.gain,
             }
-            instruments.append(instrument)
+            for s in stats
+        ]
 
-        serializer = self.get_serializer({"instruments": instruments})
+        serializer = self.get_serializer(data, many=True)
         return Response(serializer.data)
 
     @extend_schema(
-        responses={200: MostTradedOverviewSerializer},
+        responses={200: MostTradedItemSerializer(many=True)},
         summary="Get overview about the most traded instruments",
         description=(
             "Returns number of trades, number of buys/sells, avg gain/loss, "

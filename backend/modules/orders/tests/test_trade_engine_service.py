@@ -10,7 +10,7 @@ from channels.layers import get_channel_layer
 
 from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.models import Investor
-from modules.investors.test.conftest import fake_asset, fake_investor
+from modules.investors.tests.conftest import create_fake_asset, create_fake_investor
 from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineTransaction,
@@ -26,6 +26,7 @@ from modules.orders.services import (
 )
 from modules.orders.tests.conftest import fake_market_order, uuids
 from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.transactions.services import TransactionParams
 
 TEST_INVESTOR_ID = "816e3548-a012-412d-879a-cc742b58e721"
 TEST_INVESTOR_ID_2 = "7f59dbfa-a79a-4d9f-9841-65d6598590f6"
@@ -35,18 +36,22 @@ TEST_INVESTOR_ID_2 = "7f59dbfa-a79a-4d9f-9841-65d6598590f6"
 @pytest.mark.asyncio
 async def test_trade_engine_data_fetcher(uuids):
     def setup():
-        inv_1 = fake_investor(
+        inv_1 = create_fake_investor(
             investor_id=TEST_INVESTOR_ID, balance=Decimal(40), save=True
         )
-        inv_2 = fake_investor(
+        inv_2 = create_fake_investor(
             investor_id=TEST_INVESTOR_ID_2, balance=Decimal(70), save=True
         )
 
         instrument_1 = create_fake_instrument(ticker="AAPL", save=True)
         instrument_2 = create_fake_instrument(ticker="OHT", save=True)
 
-        fake_asset(investor=inv_1, ticker=instrument_1, volume=Decimal(10), save=True)
-        fake_asset(investor=inv_1, ticker=instrument_2, volume=Decimal(40), save=True)
+        create_fake_asset(
+            investor=inv_1, ticker=instrument_1, volume=Decimal(10), save=True
+        )
+        create_fake_asset(
+            investor=inv_1, ticker=instrument_2, volume=Decimal(40), save=True
+        )
 
         fake_market_order(
             inv_1, instrument_1, order_id=uuids[0], is_buy=True, volume=3, save=True
@@ -93,14 +98,14 @@ async def test_trade_engine_data_fetcher(uuids):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
-@patch("modules.orders.services.sell")
-@patch("modules.orders.services.buy")
+@patch("modules.orders.services.ExecuteTransactionService.sell")
+@patch("modules.orders.services.ExecuteTransactionService.buy")
 async def test_trade_engine_output_handler(buy, sell, uuids):
     ticker = create_fake_instrument(ticker="AAPL")
 
     def setup():
         ticker.save()
-        inv = fake_investor(investor_id=TEST_INVESTOR_ID, save=True)
+        inv = create_fake_investor(investor_id=TEST_INVESTOR_ID, save=True)
 
         fake_market_order(
             investor=inv, ticker=ticker, order_id=uuids[0], volume=Decimal(5), save=True
@@ -147,10 +152,20 @@ async def test_trade_engine_output_handler(buy, sell, uuids):
 
     investor = await database_sync_to_async(Investor.objects.get)(id=TEST_INVESTOR_ID)
     buy.assert_called_with(
-        investor=investor, ticker=ticker, volume=Decimal(5), action_price=20
+        TransactionParams(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(5),
+            action_price=Decimal(20),
+        )
     )
     sell.assert_called_with(
-        investor=investor, ticker=ticker, volume=Decimal(15), action_price=20
+        TransactionParams(
+            investor=investor,
+            ticker=ticker,
+            volume=Decimal(15),
+            action_price=Decimal(20),
+        )
     )
 
 
