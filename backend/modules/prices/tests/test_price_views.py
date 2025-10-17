@@ -29,8 +29,8 @@ def test_price_bar_view(ohlc_mock, api_client_auth):
     ]
     query_params = {
         "ticker": "AAPL",
-        "start_date": "2025-01-01_00:00:00",
-        "end_date": "2025-01-02_00:00:00",
+        "start_date": "2025-01-01T00:00:00Z",
+        "end_date": "2025-01-02T00:00:00Z",
         "interval": "DAY",
         "interval_multiplier": 2,
     }
