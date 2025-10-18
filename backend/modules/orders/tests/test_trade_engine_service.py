@@ -83,8 +83,8 @@ async def test_trade_engine_data_fetcher(uuids):
         ],
         prices={},
         balances={
-            TEST_INVESTOR_ID: Decimal("40.00"),
-            TEST_INVESTOR_ID_2: Decimal("70.00"),
+            TEST_INVESTOR_ID: Decimal(40),
+            TEST_INVESTOR_ID_2: Decimal(70),
         },
     )
 

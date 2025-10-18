@@ -108,7 +108,7 @@ async def test_multi_subscription(communicator, layer):
 
 
 @pytest.mark.asyncio
-@pytest.mark.django_db
+@pytest.mark.django_db(transaction=True)
 async def test_resubscription(communicator, layer):
     await communicator.send_to(
         text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
