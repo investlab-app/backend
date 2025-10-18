@@ -4,7 +4,7 @@ from django.urls import reverse
 from modules.authentication.tests.conftest import ClerkUser, user
 from modules.core.tests.conftest import api_client, api_client_auth  # noqa: F401
 from modules.instruments.tests.conftest import instruments_factory
-from modules.investors.test.conftest import fake_investor
+from modules.investors.tests.conftest import create_fake_investor
 from modules.orders.models import Order
 from modules.orders.tests.conftest import fake_market_order
 
@@ -15,7 +15,7 @@ class TestCreateMarketOrderView:
     @pytest.fixture(autouse=True)
     def setup(self, instruments_factory, user):
         self.instrument = instruments_factory()
-        self.investor = fake_investor(clerk_id=user.id, save=True)
+        self.investor = create_fake_investor(clerk_id=user.id, save=True)
         self.user = user
         self.url = reverse("create-market-order")
 
@@ -35,7 +35,7 @@ class TestCreateMarketOrderView:
 class TestListOrderView:
     @pytest.fixture(autouse=True)
     def setup(self, user):
-        self.investor = fake_investor(clerk_id=user.id, save=True)
+        self.investor = create_fake_investor(clerk_id=user.id, save=True)
         self.user = user
         self.orders = [
             fake_market_order(investor=self.investor, save=True) for _ in range(5)
@@ -51,7 +51,7 @@ class TestListOrderView:
 
     def test_other_user_orders_not_listed(self, api_client):
         other_user = ClerkUser(clerk_id="hehexd", role="Any")
-        other_investor = fake_investor(clerk_id=other_user.id, save=True)
+        other_investor = create_fake_investor(clerk_id=other_user.id, save=True)
         self.orders = [fake_market_order(investor=other_investor) for _ in range(3)]
 
         api_client.force_authenticate(user=self.user)
@@ -64,7 +64,7 @@ class TestListOrderView:
 class TestDestroyOrderView:
     @pytest.fixture(autouse=True)
     def setup(self, user):
-        self.investor = fake_investor(clerk_id=user.id, save=True)
+        self.investor = create_fake_investor(clerk_id=user.id, save=True)
         self.user = user
         self.order = fake_market_order(investor=self.investor, save=True)
         self.url = reverse("destroy-order", kwargs={"id": self.order.id})
@@ -78,7 +78,7 @@ class TestDestroyOrderView:
 
     def test_cannot_delete_other_user_order(self, api_client):
         other_user = ClerkUser(clerk_id="hehexd", role="Any")
-        other_investor = fake_investor(clerk_id=other_user.id, save=True)
+        other_investor = create_fake_investor(clerk_id=other_user.id, save=True)
         other_order = fake_market_order(investor=other_investor, save=True)
         url = reverse("destroy-order", kwargs={"id": other_order.id})
 
