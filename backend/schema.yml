@@ -2010,6 +2010,10 @@ components:
     PriceAlert:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         instrument_name:
           type: string
           readOnly: true
@@ -2025,6 +2029,7 @@ components:
         notification_config:
           $ref: '#/components/schemas/NotificationConfig'
       required:
+      - id
       - instrument_name
       - instrument_ticker
       - notification_config
@@ -2033,6 +2038,10 @@ components:
     PriceAlertCreate:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         threshold_type:
           $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
@@ -2042,6 +2051,7 @@ components:
         notification_config:
           $ref: '#/components/schemas/NotificationConfigCreate'
       required:
+      - id
       - notification_config
       - threshold_type
       - threshold_value

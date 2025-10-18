@@ -60,6 +60,7 @@ class PriceAlertSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceAlert
         fields = [
+            "id",
             "instrument_name",
             "instrument_ticker",
             "threshold_type",
@@ -75,6 +76,7 @@ class PriceAlertCreateSerializer(serializers.ModelSerializer):
     class Meta:
         model = PriceAlert
         fields = [
+            "id",
             "instrument_ticker",
             "threshold_type",
             "threshold_value",

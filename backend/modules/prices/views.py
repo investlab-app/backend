@@ -67,7 +67,8 @@ class PriceAlertListCreateView(generics.ListCreateAPIView):
     def get_queryset(self):
         clerk_id = self.request.user.id
         return PriceAlert.objects.filter(
-            investor__clerk_id=clerk_id, is_active=True
+            investor__clerk_id=clerk_id,
+            notification_config__is_active=True,
         ).select_related("instrument")
 
     def get_serializer_class(self):
