@@ -78,6 +78,7 @@ class TestTransactionStats:
                 buy_transactions=0,
                 sell_transactions=0,
                 gain=Decimal(0),
+                gain_percentage=None,
             )
         ]
 

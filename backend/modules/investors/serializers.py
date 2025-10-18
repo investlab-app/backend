@@ -134,10 +134,6 @@ class TradingOverviewSerializer(serializers.Serializer):
     # TransactionStats.sell_transactions
     sells = serializers.IntegerField()
 
-    # What are these?
-    avg_gain = serializers.FloatField()
-    avg_loss = serializers.FloatField()
-
     # TransactionStats.gain
     total_return = serializers.FloatField()
 
@@ -155,12 +151,11 @@ class MostTradedItemSerializer(serializers.Serializer):
     # TransactionStats.sell_transactions
     sells = serializers.IntegerField()
 
-    # What are these?
-    avg_gain = serializers.FloatField()
-    avg_loss = serializers.FloatField()
-
     # TransactionStats.gain
     total_return = serializers.FloatField()
+
+    # TransactionStats.percentage_gain
+    percentage_return = serializers.FloatField()
 
 
 class TransactionHistoryQueryParams(serializers.Serializer):
@@ -200,13 +195,6 @@ class HistoryEntrySerializer(serializers.Serializer):
     acquisition_price = serializers.FloatField(
         allow_null=True, help_text="Acquisition price (null for SELL transactions)"
     )
-
-    # Prices.???
-    market_value = serializers.FloatField(help_text="Current market value")
-
-    # Impossible to calculate
-    gain_loss = serializers.FloatField(help_text="Gain or loss amount")
-    gain_loss_pct = serializers.FloatField(help_text="Gain or loss percentage")
 
 
 class PositionSerializer(serializers.Serializer):
