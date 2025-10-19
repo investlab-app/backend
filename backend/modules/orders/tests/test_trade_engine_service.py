@@ -10,7 +10,7 @@ from channels.layers import get_channel_layer
 
 from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.models import Investor
-from modules.investors.test.conftest import fake_asset, fake_investor
+from modules.investors.tests.conftest import create_fake_investor, fake_asset
 from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineTransaction,
@@ -35,10 +35,10 @@ TEST_INVESTOR_ID_2 = "7f59dbfa-a79a-4d9f-9841-65d6598590f6"
 @pytest.mark.asyncio
 async def test_trade_engine_data_fetcher(uuids):
     def setup():
-        inv_1 = fake_investor(
+        inv_1 = create_fake_investor(
             investor_id=TEST_INVESTOR_ID, balance=Decimal(40), save=True
         )
-        inv_2 = fake_investor(
+        inv_2 = create_fake_investor(
             investor_id=TEST_INVESTOR_ID_2, balance=Decimal(70), save=True
         )
 
@@ -100,7 +100,7 @@ async def test_trade_engine_output_handler(buy, sell, uuids):
 
     def setup():
         ticker.save()
-        inv = fake_investor(investor_id=TEST_INVESTOR_ID, save=True)
+        inv = create_fake_investor(investor_id=TEST_INVESTOR_ID, save=True)
 
         fake_market_order(
             investor=inv, ticker=ticker, order_id=uuids[0], volume=Decimal(5), save=True

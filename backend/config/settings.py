@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     "modules.investors",
     "modules.markets",
     "modules.news",
+    "modules.notifications",
     "modules.orders",
     "modules.prices",
     "modules.transactions",
@@ -406,6 +407,18 @@ POLYGON_ASSET_TYPE = "stocks"
 ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
 ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
 
-
-# Other settings
+# Datetime formats
 ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+
+# Email
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+FROM_EMAIL = os.environ["FROM_EMAIL"]
+EMAIL_BACKEND = os.environ["EMAIL_BACKEND"]
+EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH")
+
+# Web Push
+VAPID_PRIVATE_KEY = os.environ["VAPID_PRIVATE_KEY"]
+VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
+VAPID_CLAIMS = {
+    "sub": f"mailto:{ADMIN_EMAIL}",
+}

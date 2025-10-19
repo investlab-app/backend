@@ -4,45 +4,36 @@ from modules.investors.models import Asset, Investor
 
 
 class InvestorSerializer(serializers.ModelSerializer):
-    watching_instruments_count = serializers.IntegerField(
-        source="watching_instruments.count", read_only=True
-    )
-
     class Meta:
         model = Investor
         fields = [
+            "id",
             "clerk_id",
             "watching_instruments",
-            "watching_instruments_count",
         ]
-        read_only_fields = ["clerk_id"]
+        read_only_fields = ["id", "clerk_id"]
 
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
-        fields = ["watching_instruments"]
+        fields = [
+            "id",
+            "clerk_id",
+            "language",
+            "watching_instruments",
+        ]
+        read_only_fields = ["id", "clerk_id"]
 
 
-class InvestorListQueryParams(serializers.Serializer):
-    page = serializers.IntegerField(
-        required=False,
-        default=1,
-        min_value=1,
-        help_text="Page number for pagination.",
-    )
-    page_size = serializers.IntegerField(
-        required=False,
-        default=10,
-        min_value=1,
-        max_value=100,
-        help_text="Number of items per page (max 100).",
+class LanguageUpdateSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(
+        choices=[("en", "English"), ("pl", "Polski")],
+        help_text="Language code (e.g., 'en', 'pl')",
     )
 
 
 class InvestorStatsSerializer(serializers.Serializer):
-    """Serializer for investor statistics data."""
-
     todays_return = serializers.FloatField(help_text="Today's return in currency")
     total_return = serializers.FloatField(help_text="Total return in currency")
     invested = serializers.FloatField(help_text="Total amount invested")
@@ -50,15 +41,11 @@ class InvestorStatsSerializer(serializers.Serializer):
 
 
 class AccountValueDataSerializer(serializers.Serializer):
-    """Serializer for individual account value data point."""
-
     date = serializers.DateField(help_text="Date of the value measurement")
     value = serializers.FloatField(help_text="Account value on this date")
 
 
 class AccountValueOverTimeSerializer(serializers.Serializer):
-    """Serializer for account value over time data."""
-
     data = AccountValueDataSerializer(
         many=True, help_text="List of account value data points"
     )
