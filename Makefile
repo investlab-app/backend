@@ -28,7 +28,7 @@ bash:
 	docker compose exec backend bash	
 
 test:
-	docker compose exec backend uv run pytest .
+	docker compose exec backend uv run pytest . -vv
 
 schema-gen:
 	docker compose exec backend uv run manage.py spectacular --file schema.yml

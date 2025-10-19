@@ -2,7 +2,14 @@ from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
 from config.settings import ACCEPTABLE_DATETIME_FORMATS
+from modules.instruments.models import Instrument
+from modules.notifications.models import NotificationConfig, PushSubscription
+from modules.notifications.serializers import (
+    NotificationConfigCreateSerializer,
+    NotificationConfigSerializer,
+)
 from modules.prices.constants import POLYGON_INTERVALS
+from modules.prices.models import PriceAlert
 from modules.prices.schemas import PriceBar, PriceDailySummary
 
 
@@ -41,3 +48,67 @@ class PriceBarSerializer(DataclassSerializer):
 class PriceDailySummarySerializer(DataclassSerializer):
     class Meta:
         dataclass = PriceDailySummary
+
+
+class PriceAlertSerializer(serializers.ModelSerializer):
+    notification_config = NotificationConfigSerializer()
+    instrument_name = serializers.CharField(source="instrument.name", read_only=True)
+    instrument_ticker = serializers.CharField(
+        source="instrument.ticker", read_only=True
+    )
+
+    class Meta:
+        model = PriceAlert
+        fields = [
+            "id",
+            "instrument_name",
+            "instrument_ticker",
+            "threshold_type",
+            "threshold_value",
+            "notification_config",
+        ]
+
+
+class PriceAlertCreateSerializer(serializers.ModelSerializer):
+    instrument_ticker = serializers.CharField(write_only=True)
+    notification_config = NotificationConfigCreateSerializer()
+
+    class Meta:
+        model = PriceAlert
+        fields = [
+            "id",
+            "instrument_ticker",
+            "threshold_type",
+            "threshold_value",
+            "notification_config",
+        ]
+
+    def validate_instrument_ticker(self, value):
+        try:
+            instrument = Instrument.objects.get(ticker=value.upper())
+        except Instrument.DoesNotExist as e:
+            raise serializers.ValidationError(
+                "Instrument with this ticker does not exist."
+            ) from e
+        return instrument
+
+    def create(self, validated_data):
+        investor = validated_data.pop("investor")
+        instrument = validated_data.pop("instrument_ticker")
+        notification_data = validated_data.pop("notification_config")
+
+        push_subscription = notification_data.pop("push_subscription", None)
+        if push_subscription:
+            PushSubscription.objects.get_or_create(
+                **push_subscription, defaults={"investor": investor}
+            )
+
+        notification_config = NotificationConfig.objects.create(**notification_data)
+
+        price_alert = PriceAlert.objects.create(
+            investor=investor,
+            instrument=instrument,
+            notification_config=notification_config,
+            **validated_data,
+        )
+        return price_alert

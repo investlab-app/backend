@@ -1,11 +1,3 @@
-instruments:
-  available:
-    [
-      MMM, AOS, ABT, ABBV, ACN, ADBE, AMD, AES, AFL, A, APD, ABNB, AKAM, ALB, ARE, 
-      ALGN, ALLE, LNT, ALL, GOOGL, GOOG, MO, AMZN, AMCR, AEE, AEP, AXP, AIG, AMT, 
-      AWK, AMP, AME, AMGN, APH, ADI, ANSS, AON, APA, APO, AAPL, AMAT, APTV, ACGL,
-      ADM, ANET, AJG, AIZ, T, ATO, ADSK, ADP, 
-    ]
 logging:
   level: "WARNING"
   format: "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
