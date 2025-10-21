@@ -150,23 +150,23 @@ class InvestorStatsView(generics.RetrieveAPIView):
             start_datetime=start_datetime,
             end_datetime=end_datetime,
         )
-        todays_return = sum(stat.gain for stat in stats_today)
+        todays_gain = sum(stat.gain for stat in stats_today)
 
         stats_total = stats_service.get_stats(
             investor=investor,
             tickers=investor_tickers,
         )
-        total_return = sum(stat.gain for stat in stats_total)
+        total_gain = sum(stat.gain for stat in stats_total)
         invested = sum(stat.total_buy_price for stat in stats_total)
 
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
 
         stats_data = {
-            "todays_return": todays_return,
-            "total_return": total_return,
-            "invested": invested,
-            "total_value": total_value,
+            "todays_gain": round(todays_gain, 2),
+            "total_gain": round(total_gain, 2),
+            "invested": round(invested, 2),
+            "total_value": round(total_value, 2),
         }
 
         serializer = self.get_serializer(stats_data)
@@ -247,7 +247,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         response = {
             "total_account_value": round(total_value, 2),
             "gain": round(total_gain, 2),
-            "gain_percent": 0,  # tmp mocked
+            "gain_percentage": 0,  # tmp mocked
         }
 
         serializer = self.get_serializer(response)
@@ -281,7 +281,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
             investor=investor,
             tickers=investor_tickers,
         )
-        total_return_this_year = sum(stat.gain for stat in stats_last_year)
+        total_gain_this_year = sum(stat.gain for stat in stats_last_year)
 
         is_service = InvestorStatsService()
         total_value = is_service.get_total_value(investor=investor)
@@ -289,7 +289,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
 
         response_data = {
             "total_value": round(total_value, 2),
-            "total_return_this_year": round(total_return_this_year, 2),
+            "total_gain_this_year": round(total_gain_this_year, 2),
             "allocations": [
                 {
                     "instrument_name": allocation.asset.ticker.name,
@@ -342,8 +342,10 @@ class OwnedSharesView(generics.RetrieveAPIView):
                 "icon": asset_allocation.asset.ticker.icon,
                 "volume": round(asset_allocation.asset.volume, 5),
                 "value": round(asset_allocation.total_value, 2),
-                "profit": stats_map[str(asset_allocation.asset.ticker.ticker)].gain,
-                "profit_percentage": stats_map[str(asset_allocation.asset.ticker.ticker)].gain_percentage,
+                "gain": stats_map[str(asset_allocation.asset.ticker.ticker)].gain,
+                "gain_percentage": stats_map[
+                    str(asset_allocation.asset.ticker.ticker)
+                ].gain_percentage,
             }
             for asset_allocation in asset_allocations
         ]
@@ -370,7 +372,6 @@ class TradingOverviewView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        today = get_local_datetime()
         investor_tickers = get_investor_tickers(investor)
 
         stats_service = TransactionStatsService()
@@ -385,7 +386,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
             ),
             "buys": sum(s.buy_transactions for s in stats),
             "sells": sum(s.sell_transactions for s in stats),
-            "total_return": round(sum(s.gain for s in stats), 2),
+            "total_gain": round(sum(s.gain for s in stats), 2),
         }
 
         serializer = self.get_serializer(response)
@@ -434,8 +435,8 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
                 "no_trades": s.buy_transactions + s.sell_transactions,
                 "buys": s.buy_transactions,
                 "sells": s.sell_transactions,
-                "total_return": s.gain,
-                "percentage_return": s.gain_percentage,
+                "gain": s.gain,
+                "gain_percentage": s.gain_percentage,
             }
             for s in stats
         ]
@@ -520,8 +521,10 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 "name": ticker_symbol,
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
-                "gain_loss": round(stats_map[ticker_symbol].gain, 2),
-                "gain_loss_pct": round(stats_map[ticker_symbol].gain, 2),  # tmp mocked
+                "gain": round(stats_map[ticker_symbol].gain, 2),
+                "gain_percentage": round(
+                    stats_map[ticker_symbol].gain, 2
+                ),  # tmp mocked
                 "history": history,
             }
             positions.append(position)

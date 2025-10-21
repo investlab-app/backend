@@ -96,7 +96,11 @@ class TransactionStats(BaseModel):
     sell_transactions: int
 
     gain: Decimal
-    gain_percentage: Decimal | None  # zmien na srednia cena zakupu przez srednia cene sprzedazy uwzgledjachac tak jakbym to co mialem wczesniej kupil na poczatku przedzialu i sprzedal pozostale na koncu przedzialu
+    gain_percentage: Decimal | None  # zmien na srednia cena zakupu przez
+    # srednia cene sprzedazy uwzgledjachac
+    # tak jakbym to co mialem wczesniej kupil
+    # na poczatku przedzialu i sprzedal pozostale
+    # na koncu przedzialu
 
 
 class TransactionStatsService:
@@ -184,7 +188,9 @@ class TransactionStatsService:
                     final_ticker_price=final_prices.get(t, 0),
                     final_ticker_volume=final_ticker_volume,
                     gain=gain,
-                    gain_percentage=gain / initial_value if initial_value != 0 else None
+                    gain_percentage=gain / initial_value
+                    if initial_value != 0
+                    else None,
                 )
             )
 

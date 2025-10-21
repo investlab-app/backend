@@ -45,10 +45,10 @@ class InvestorStatsSerializer(serializers.Serializer):
     """Serializer for investor statistics data."""
 
     # TransactionStats.gain
-    todays_return = serializers.FloatField(help_text="Today's return in currency")
+    todays_gain = serializers.FloatField(help_text="Today's gain in currency")
 
     # TransactionStats.gain
-    total_return = serializers.FloatField(help_text="Total return in currency")
+    total_gain = serializers.FloatField(help_text="Total gain in currency")
 
     # TransactionStats.total_buy_price
     invested = serializers.FloatField(help_text="Total amount invested")
@@ -79,8 +79,8 @@ class CurrentAccountValueSerializer(serializers.Serializer):
     # TransactionStats.gain
     gain = serializers.FloatField()
 
-    # IDK yet
-    gain_percent = serializers.FloatField()
+    # TransactionStats.gain_percentage
+    gain_percentage = serializers.FloatField(allow_null=True)
 
 
 class AssetAllocationItemSerializer(serializers.Serializer):
@@ -101,7 +101,7 @@ class AssetAllocationSerializer(serializers.Serializer):
     total_value = serializers.FloatField()
 
     # TransactionStats.gain
-    total_return_this_year = serializers.FloatField()
+    total_gain_this_year = serializers.FloatField()
 
     allocations = AssetAllocationItemSerializer(many=True)
 
@@ -117,10 +117,10 @@ class OwnedShareSerializer(serializers.Serializer):
     value = serializers.FloatField()
 
     # TransactionStats.gain
-    profit = serializers.FloatField()
+    gain = serializers.FloatField()
 
-    # IDK yet
-    profit_percentage = serializers.FloatField()
+    # TransactionStats.gain_percentage
+    gain_percentage = serializers.FloatField(allow_null=True)
 
 
 # stats
@@ -135,7 +135,7 @@ class TradingOverviewSerializer(serializers.Serializer):
     sells = serializers.IntegerField()
 
     # TransactionStats.gain
-    total_return = serializers.FloatField()
+    total_gain = serializers.FloatField()
 
 
 # stats
@@ -152,10 +152,10 @@ class MostTradedItemSerializer(serializers.Serializer):
     sells = serializers.IntegerField()
 
     # TransactionStats.gain
-    total_return = serializers.FloatField()
+    gain = serializers.FloatField()
 
-    # TransactionStats.percentage_gain
-    percentage_return = serializers.FloatField()
+    # TransactionStats.gain_percentage
+    gain_percentage = serializers.FloatField()
 
 
 class TransactionHistoryQueryParams(serializers.Serializer):
@@ -207,10 +207,10 @@ class PositionSerializer(serializers.Serializer):
     market_value = serializers.FloatField(help_text="Current market value")
 
     # TransactionStats.gain
-    gain_loss = serializers.FloatField(help_text="Total gain or loss")
+    gain = serializers.FloatField(help_text="Total gain or loss")
 
-    # IDK yet
-    gain_loss_pct = serializers.FloatField(help_text="Total gain or loss percentage")
+    # TransactionStats.gain_percentage
+    gain_percentage = serializers.FloatField(help_text="Total gain or loss percentage")
 
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")
 
