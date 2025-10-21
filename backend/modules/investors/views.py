@@ -321,6 +321,7 @@ class OwnedSharesView(generics.RetrieveAPIView):
     """
 
     serializer_class = OwnedShareSerializer
+    pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
@@ -354,7 +355,7 @@ class OwnedSharesView(generics.RetrieveAPIView):
         return Response(serializer.data)
 
     @extend_schema(
-        responses={200: OwnedShareSerializer},
+        responses={200: OwnedShareSerializer(many=True)},
         summary="Get owned shares",
         description="Get owned shares data for the currently authenticated user.",
     )
@@ -410,6 +411,7 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     """
 
     serializer_class = MostTradedItemSerializer
+    pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
@@ -461,6 +463,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
     Get transaction history for the current authenticated user.
     """
 
+    serializer_class = PositionSerializer
     pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
@@ -529,7 +532,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
             }
             positions.append(position)
 
-        serializer = PositionSerializer(positions, many=True)
+        serializer = self.get_serializer(positions, many=True)
         return Response(serializer.data)
 
     @extend_schema(

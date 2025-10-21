@@ -338,7 +338,7 @@ paths:
           description: ''
   /api/investors/me/owned-shares/:
     get:
-      operationId: investors_me_owned_shares_retrieve
+      operationId: investors_me_owned_shares_list
       description: Get owned shares data for the currently authenticated user.
       summary: Get owned shares
       tags:
@@ -351,7 +351,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/OwnedShare'
+                type: array
+                items:
+                  $ref: '#/components/schemas/OwnedShare'
           description: ''
   /api/investors/me/statistics/most-traded/:
     get:
@@ -359,19 +361,6 @@ paths:
       description: Returns number of trades, number of buys/sells, avg gain/loss,
         and total return from the most frequently traded instruments.
       summary: Get overview about the most traded instruments
-      parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
       tags:
       - investors
       security:
@@ -382,7 +371,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedMostTradedItemList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/MostTradedItem'
           description: ''
   /api/investors/me/statistics/trading-overview/:
     get:
@@ -1638,29 +1629,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Investor'
-    PaginatedMostTradedItemList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/MostTradedItem'
     PaginatedOrderList:
       type: object
       required:
