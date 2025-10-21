@@ -1,5 +1,6 @@
 import logging
 from datetime import timedelta
+from decimal import Decimal
 
 from django.db.models.aggregates import Count
 from django.db.models.expressions import OuterRef, Subquery
@@ -243,11 +244,21 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
             tickers=investor_tickers,
         )
         total_gain = sum(stat.gain for stat in stats_today)
+        total_initial_value = sum(
+            s.initial_ticker_volume * s.initial_ticker_price for s in stats_today
+        )
+        gain_percentage = (
+            total_gain / total_initial_value * 100 if total_initial_value > 0 else None
+        )
+        if gain_percentage is not None and gain_percentage > 999.99:
+            gain_percentage = Decimal("999.99")
 
         response = {
             "total_account_value": round(total_value, 2),
             "gain": round(total_gain, 2),
-            "gain_percentage": 0,  # tmp mocked
+            "gain_percentage": round(gain_percentage, 2)
+            if gain_percentage is not None
+            else None,
         }
 
         serializer = self.get_serializer(response)
@@ -343,10 +354,18 @@ class OwnedSharesView(generics.RetrieveAPIView):
                 "icon": asset_allocation.asset.ticker.icon,
                 "volume": round(asset_allocation.asset.volume, 5),
                 "value": round(asset_allocation.total_value, 2),
-                "gain": stats_map[str(asset_allocation.asset.ticker.ticker)].gain,
-                "gain_percentage": stats_map[
-                    str(asset_allocation.asset.ticker.ticker)
-                ].gain_percentage,
+                "gain": round(
+                    stats_map[str(asset_allocation.asset.ticker.ticker)].gain, 2
+                ),
+                "gain_percentage": round(
+                    stats_map[
+                        str(asset_allocation.asset.ticker.ticker)
+                    ].gain_percentage,
+                    2,
+                )
+                if stats_map[str(asset_allocation.asset.ticker.ticker)].gain_percentage
+                is not None
+                else None,
             }
             for asset_allocation in asset_allocations
         ]
@@ -437,8 +456,10 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
                 "no_trades": s.buy_transactions + s.sell_transactions,
                 "buys": s.buy_transactions,
                 "sells": s.sell_transactions,
-                "gain": s.gain,
-                "gain_percentage": s.gain_percentage,
+                "gain": round(s.gain, 2),
+                "gain_percentage": round(s.gain_percentage, 2)
+                if s.gain_percentage is not None
+                else None,
             }
             for s in stats
         ]
@@ -525,9 +546,9 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain": round(stats_map[ticker_symbol].gain, 2),
-                "gain_percentage": round(
-                    stats_map[ticker_symbol].gain, 2
-                ),  # tmp mocked
+                "gain_percentage": round(stats_map[ticker_symbol].gain_percentage, 2)
+                if stats_map[ticker_symbol].gain_percentage is not None
+                else None,
                 "history": history,
             }
             positions.append(position)

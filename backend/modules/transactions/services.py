@@ -96,11 +96,7 @@ class TransactionStats(BaseModel):
     sell_transactions: int
 
     gain: Decimal
-    gain_percentage: Decimal | None  # zmien na srednia cena zakupu przez
-    # srednia cene sprzedazy uwzgledjachac
-    # tak jakbym to co mialem wczesniej kupil
-    # na poczatku przedzialu i sprzedal pozostale
-    # na koncu przedzialu
+    gain_percentage: Decimal | None
 
 
 class TransactionStatsService:
@@ -173,6 +169,11 @@ class TransactionStatsService:
             total_sell_price = sell_stats["total_price"] or 0
 
             gain = final_value + total_sell_price - total_buy_price - initial_value
+            gain_percentage = (
+                (gain / initial_value) * 100 if initial_value != 0 else None
+            )
+            if gain_percentage is not None and gain_percentage > 999.99:
+                gain_percentage = Decimal("999.99")
 
             stats.append(
                 TransactionStats(
@@ -188,9 +189,7 @@ class TransactionStatsService:
                     final_ticker_price=final_prices.get(t, 0),
                     final_ticker_volume=final_ticker_volume,
                     gain=gain,
-                    gain_percentage=gain / initial_value
-                    if initial_value != 0
-                    else None,
+                    gain_percentage=gain_percentage,
                 )
             )
 
