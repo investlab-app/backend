@@ -871,7 +871,7 @@ components:
         total_value:
           type: number
           format: double
-        total_return_this_year:
+        total_gain_this_year:
           type: number
           format: double
         allocations:
@@ -880,7 +880,7 @@ components:
             $ref: '#/components/schemas/AssetAllocationItem'
       required:
       - allocations
-      - total_return_this_year
+      - total_gain_this_year
       - total_value
     AssetAllocationItem:
       type: object
@@ -984,12 +984,13 @@ components:
         gain:
           type: number
           format: double
-        gain_percent:
+        gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
       - gain
-      - gain_percent
+      - gain_percentage
       - total_account_value
     HistoryEntry:
       type: object
@@ -1013,24 +1014,9 @@ components:
           format: double
           nullable: true
           description: Acquisition price (null for SELL transactions)
-        market_value:
-          type: number
-          format: double
-          description: Current market value
-        gain_loss:
-          type: number
-          format: double
-          description: Gain or loss amount
-        gain_loss_pct:
-          type: number
-          format: double
-          description: Gain or loss percentage
       required:
       - acquisition_price
-      - gain_loss
-      - gain_loss_pct
       - is_buy
-      - market_value
       - quantity
       - share_price
       - timestamp
@@ -1332,14 +1318,14 @@ components:
       type: object
       description: Serializer for investor statistics data.
       properties:
-        todays_return:
+        todays_gain:
           type: number
           format: double
-          description: Today's return in currency
-        total_return:
+          description: Today's gain in currency
+        total_gain:
           type: number
           format: double
-          description: Total return in currency
+          description: Total gain in currency
         invested:
           type: number
           format: double
@@ -1350,8 +1336,8 @@ components:
           description: Total account value
       required:
       - invested
-      - todays_return
-      - total_return
+      - todays_gain
+      - total_gain
       - total_value
     InvestorUpdateRequest:
       type: object
@@ -1514,23 +1500,19 @@ components:
           type: integer
         sells:
           type: integer
-        avg_gain:
+        gain:
           type: number
           format: double
-        avg_loss:
-          type: number
-          format: double
-        total_return:
+        gain_percentage:
           type: number
           format: double
       required:
-      - avg_gain
-      - avg_loss
       - buys
+      - gain
+      - gain_percentage
       - no_trades
       - sells
       - symbol
-      - total_return
     Order:
       type: object
       properties:
@@ -1573,16 +1555,17 @@ components:
         value:
           type: number
           format: double
-        profit:
+        gain:
           type: number
           format: double
-        profit_percentage:
+        gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
+      - gain
+      - gain_percentage
       - name
-      - profit
-      - profit_percentage
       - symbol
       - value
       - volume
@@ -1724,11 +1707,11 @@ components:
           type: number
           format: double
           description: Current market value
-        gain_loss:
+        gain:
           type: number
           format: double
           description: Total gain or loss
-        gain_loss_pct:
+        gain_percentage:
           type: number
           format: double
           description: Total gain or loss percentage
@@ -1738,8 +1721,8 @@ components:
             $ref: '#/components/schemas/HistoryEntry'
           description: Transaction history
       required:
-      - gain_loss
-      - gain_loss_pct
+      - gain
+      - gain_percentage
       - history
       - market_value
       - name
@@ -1920,21 +1903,13 @@ components:
           type: integer
         sells:
           type: integer
-        avg_gain:
-          type: number
-          format: double
-        avg_loss:
-          type: number
-          format: double
-        total_return:
+        total_gain:
           type: number
           format: double
       required:
-      - avg_gain
-      - avg_loss
       - buys
       - sells
-      - total_return
+      - total_gain
       - total_trades
   securitySchemes:
     ClerkAuth:
