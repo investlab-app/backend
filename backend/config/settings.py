@@ -428,6 +428,6 @@ VAPID_CLAIMS = {
     "sub": f"mailto:{ADMIN_EMAIL}",
 }
 
-# Groq
-GROQ_API_KEY = os.environ["GROQ_API_KEY"]
-GROQ_MODEL = os.environ["GROQ_MODEL"]
+# OpenAI
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_MODEL = os.environ["OPENAI_MODEL"]

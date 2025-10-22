@@ -6,11 +6,11 @@ logger = logging.getLogger(__name__)
 
 
 class TranslationService:
-    """Service for translating text using OpenAI client with Groq API."""
+    """Service for translating text using OpenAI client."""
 
     def translate_to_polish(self, text: str, max_retries: int = 3) -> str | None:
         """
-        Translate English text to Polish using Groq API.
+        Translate English text to Polish.
 
         Args:
             text: English text to translate
