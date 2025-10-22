@@ -351,7 +351,8 @@ class TransactionHistoryView(generics.RetrieveAPIView):
         parameters.is_valid(raise_exception=True)
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         position_type = parameters.validated_data.get("type", "both")
-        tickers = parameters.validated_data.get("tickers", [])
+        tickers_names = parameters.validated_data.get("tickers", [])
+        tickers = Instrument.objects.filter(name__in=tickers_names)
         if not tickers:
             tickers = get_investor_tickers(investor)
 

@@ -262,6 +262,27 @@ paths:
                 items:
                   $ref: '#/components/schemas/AccountValueSnapshotDaily'
           description: ''
+  /api/investors/me/language/:
+    post:
+      operationId: investors_me_language_create
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LanguageUpdateRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageUpdate'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
@@ -1484,6 +1505,40 @@ components:
             type: string
             format: uuid
             title: Watching Instruments
+    LanguageEnum:
+      enum:
+      - en
+      - pl
+      type: string
+      description: |-
+        * `en` - English
+        * `pl` - Polski
+    LanguageUpdate:
+      type: object
+      properties:
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language code (e.g., 'en', 'pl')
+
+            * `en` - English
+            * `pl` - Polski
+      required:
+      - language
+    LanguageUpdateRequest:
+      type: object
+      properties:
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language code (e.g., 'en', 'pl')
+
+            * `en` - English
+            * `pl` - Polski
+      required:
+      - language
     LocaleEnum:
       enum:
       - us
