@@ -2,20 +2,10 @@ from collections.abc import Iterable
 from decimal import Decimal
 
 from django.db import transaction
-from pydantic import BaseModel
 
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.schemas import AssetAllocation
 from modules.prices.repositories import PolygonPricesRepository
-
-
-class AssetAllocation(BaseModel):
-    asset: Asset
-    percentage: float
-    price_per_action: Decimal
-    total_value: Decimal
-
-    class Config:
-        arbitrary_types_allowed = True
 
 
 class InvestorStatsService:

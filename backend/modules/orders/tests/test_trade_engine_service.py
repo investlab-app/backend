@@ -26,7 +26,7 @@ from modules.orders.services import (
 )
 from modules.orders.tests.conftest import fake_market_order, uuids
 from modules.prices.constants import PRICES_CHANNEL_LAYER
-from modules.transactions.services import TransactionParams
+from modules.transactions.schemas import TransactionParams
 
 TEST_INVESTOR_ID = "816e3548-a012-412d-879a-cc742b58e721"
 TEST_INVESTOR_ID_2 = "7f59dbfa-a79a-4d9f-9841-65d6598590f6"

@@ -5,7 +5,8 @@ import pytest
 from modules.instruments.tests.conftest import instruments_factory
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction
-from modules.transactions.services import ExecuteTransactionService, TransactionParams
+from modules.transactions.schemas import TransactionParams
+from modules.transactions.services import ExecuteTransactionService
 
 pytestmark = pytest.mark.django_db
 

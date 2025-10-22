@@ -22,7 +22,8 @@ from modules.orders.order_engine.structures import (
     TradeEngineOutput,
 )
 from modules.prices.constants import PRICES_CHANNEL_LAYER
-from modules.transactions.services import ExecuteTransactionService, TransactionParams
+from modules.transactions.schemas import TransactionParams
+from modules.transactions.services import ExecuteTransactionService
 
 
 class RunOrderEngineService:
