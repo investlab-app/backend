@@ -34,22 +34,6 @@ class LanguageUpdateSerializer(serializers.Serializer):
     )
 
 
-class InvestorStatsSerializer(serializers.Serializer):
-    """Serializer for investor statistics data."""
-
-    # TransactionStats.gain
-    todays_gain = serializers.FloatField(help_text="Today's gain in currency")
-
-    # TransactionStats.gain
-    total_gain = serializers.FloatField(help_text="Total gain in currency")
-
-    # TransactionStats.total_buy_price
-    invested = serializers.FloatField(help_text="Total amount invested")
-
-    # InvestorStatsService.get_total_value
-    total_value = serializers.FloatField(help_text="Total account value")
-
-
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset

@@ -244,7 +244,7 @@ paths:
           description: ''
   /api/investors/me/account-value/:
     get:
-      operationId: investors_me_account_value_retrieve
+      operationId: investors_me_account_value_list
       description: Get account value over time data for the currently authenticated
         user.
       summary: Get account value over time
@@ -258,195 +258,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/AccountValueOverTime'
-          description: ''
-  /api/investors/me/asset-allocation/:
-    get:
-      operationId: investors_me_asset_allocation_retrieve
-      description: Get asset allocation data for the currently authenticated user.
-      summary: Get asset allocation
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/AssetAllocation'
-          description: ''
-  /api/investors/me/current-account-value/:
-    get:
-      operationId: investors_me_current_account_value_retrieve
-      description: Get the current account value as well as gain and percent gain
-        for the authenticated user.
-      summary: Get current account value
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/CurrentAccountValue'
-          description: ''
-  /api/investors/me/language/:
-    post:
-      operationId: investors_me_language_create
-      tags:
-      - investors
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LanguageUpdateRequest'
-        required: true
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LanguageUpdate'
-          description: ''
-  /api/investors/me/owned-shares/:
-    get:
-      operationId: investors_me_owned_shares_retrieve
-      description: Get owned shares data for the currently authenticated user.
-      summary: Get owned shares
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/OwnedShares'
-          description: ''
-  /api/investors/me/statistics/most-traded/:
-    get:
-      operationId: investors_me_statistics_most_traded_retrieve
-      description: Returns number of trades, number of buys/sells, avg gain/loss,
-        and total return from the most frequently traded instruments.
-      summary: Get overview about the most traded instruments
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/MostTradedOverview'
-          description: ''
-  /api/investors/me/statistics/profile-overview/:
-    get:
-      operationId: investors_me_statistics_profile_overview_retrieve
-      description: Get the information about the level, exp points and points left
-        to next level for the current investor
-      summary: Get info about investor's level
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ProfileOverview'
-          description: ''
-  /api/investors/me/statistics/trading-overview/:
-    get:
-      operationId: investors_me_statistics_trading_overview_retrieve
-      description: Returns total trades, number of buys/sells, average gain/loss,
-        and total return for the current investor.
-      summary: Get trading performance overview
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/TradingOverview'
-          description: ''
-  /api/investors/me/stats/:
-    get:
-      operationId: investors_me_stats_retrieve
-      description: Get investor statistics for the currently authenticated user.
-      summary: Get investor stats
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvestorStats'
-          description: ''
-  /api/investors/me/transactions-history/:
-    get:
-      operationId: investors_me_transactions_history_list
-      description: Get transaction history for the currently authenticated user. Can
-        filter by position type (open/closed/both) and ticker symbol.
-      summary: Get transaction history
-      parameters:
-      - in: query
-        name: ticker
-        schema:
-          type: string
-          minLength: 1
-          maxLength: 10
-        description: Filter by specific ticker symbol
-      - in: query
-        name: type
-        schema:
-          enum:
-          - open
-          - closed
-          - both
-          type: string
-          default: both
-          minLength: 1
-        description: |-
-          Type of positions to fetch: 'open', 'closed', or 'both'
-
-          * `open` - open
-          * `closed` - closed
-          * `both` - both
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
                 type: array
                 items:
-                  $ref: '#/components/schemas/Position'
+                  $ref: '#/components/schemas/AccountValueSnapshotDaily'
           description: ''
   /api/markets/holidays/:
     get:
@@ -880,6 +694,161 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/statistics/asset-allocation/:
+    get:
+      operationId: statistics_asset_allocation_retrieve
+      description: Get asset allocation data for the currently authenticated user.
+      summary: Get asset allocation
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AssetAllocation'
+          description: ''
+  /api/statistics/current-account-value/:
+    get:
+      operationId: statistics_current_account_value_retrieve
+      description: Get the current account value as well as gain and percent gain
+        for the authenticated user.
+      summary: Get current account value
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentAccountValue'
+          description: ''
+  /api/statistics/owned-shares/:
+    get:
+      operationId: statistics_owned_shares_list
+      description: Get owned shares data for the currently authenticated user.
+      summary: Get owned shares
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OwnedShare'
+          description: ''
+  /api/statistics/statistics/most-traded/:
+    get:
+      operationId: statistics_statistics_most_traded_list
+      description: Returns number of trades, number of buys/sells, avg gain/loss,
+        and total return from the most frequently traded instruments.
+      summary: Get overview about the most traded instruments
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MostTradedItem'
+          description: ''
+  /api/statistics/statistics/trading-overview/:
+    get:
+      operationId: statistics_statistics_trading_overview_retrieve
+      description: Returns total trades, number of buys/sells, average gain/loss,
+        and total return for the current investor.
+      summary: Get trading performance overview
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TradingOverview'
+          description: ''
+  /api/statistics/stats/:
+    get:
+      operationId: statistics_stats_retrieve
+      description: Get investor statistics for the currently authenticated user.
+      summary: Get investor stats
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InvestorStats'
+          description: ''
+  /api/statistics/transactions-history/:
+    get:
+      operationId: statistics_transactions_history_list
+      description: Get transaction history for the currently authenticated user. Can
+        filter by position type (open/closed/both) and ticker symbol.
+      summary: Get transaction history
+      parameters:
+      - in: query
+        name: tickers
+        schema:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 50
+        description: List of ticker symbols to fetch prices for (max 50).
+      - in: query
+        name: type
+        schema:
+          enum:
+          - open
+          - closed
+          - both
+          type: string
+          default: both
+          minLength: 1
+        description: |-
+          Type of positions to fetch: 'open', 'closed', or 'both'
+
+          * `open` - open
+          * `closed` - closed
+          * `both` - both
+      tags:
+      - statistics
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Position'
+          description: ''
   /api/status/:
     get:
       operationId: status_retrieve
@@ -987,12 +956,14 @@ paths:
           description: Authentication test successful
 components:
   schemas:
-    AccountValueData:
+    AccountValueSnapshotDaily:
       type: object
+      description: Serializer for AccountValueSnapshot model.
       properties:
         date:
           type: string
           format: date
+          readOnly: true
           description: Date of the value measurement
         value:
           type: number
@@ -1001,23 +972,13 @@ components:
       required:
       - date
       - value
-    AccountValueOverTime:
-      type: object
-      properties:
-        data:
-          type: array
-          items:
-            $ref: '#/components/schemas/AccountValueData'
-          description: List of account value data points
-      required:
-      - data
     AssetAllocation:
       type: object
       properties:
         total_value:
           type: number
           format: double
-        total_return_this_year:
+        total_gain_this_year:
           type: number
           format: double
         allocations:
@@ -1026,14 +987,25 @@ components:
             $ref: '#/components/schemas/AssetAllocationItem'
       required:
       - allocations
-      - total_return_this_year
+      - total_gain_this_year
       - total_value
     AssetAllocationItem:
       type: object
       properties:
-        asset_class_display_name:
+        instrument_name:
           type: string
-          maxLength: 100
+          maxLength: 255
+        instrument_ticker:
+          type: string
+          maxLength: 20
+        instrument_logo:
+          type: string
+          format: uri
+          nullable: true
+        instrument_icon:
+          type: string
+          format: uri
+          nullable: true
         value:
           type: number
           format: double
@@ -1041,7 +1013,10 @@ components:
           type: number
           format: double
       required:
-      - asset_class_display_name
+      - instrument_icon
+      - instrument_logo
+      - instrument_name
+      - instrument_ticker
       - percentage
       - value
     AuthTestResponse:
@@ -1116,24 +1091,24 @@ components:
         gain:
           type: number
           format: double
-        gain_percent:
+        gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
       - gain
-      - gain_percent
+      - gain_percentage
       - total_account_value
     HistoryEntry:
       type: object
       properties:
-        date:
+        timestamp:
           type: string
           format: date-time
           description: Date of the transaction
-        type:
-          type: string
-          description: 'Transaction type: BUY or SELL'
-          maxLength: 10
+        is_buy:
+          type: boolean
+          description: True if the transaction was a buy False if it was a sell
         quantity:
           type: integer
           description: Number of shares traded
@@ -1146,27 +1121,12 @@ components:
           format: double
           nullable: true
           description: Acquisition price (null for SELL transactions)
-        market_value:
-          type: number
-          format: double
-          description: Current market value
-        gain_loss:
-          type: number
-          format: double
-          description: Gain or loss amount
-        gain_loss_pct:
-          type: number
-          format: double
-          description: Gain or loss percentage
       required:
       - acquisition_price
-      - date
-      - gain_loss
-      - gain_loss_pct
-      - market_value
+      - is_buy
       - quantity
       - share_price
-      - type
+      - timestamp
     Insight:
       type: object
       properties:
@@ -1464,15 +1424,16 @@ components:
       - id
     InvestorStats:
       type: object
+      description: Serializer for investor statistics data.
       properties:
-        todays_return:
+        todays_gain:
           type: number
           format: double
-          description: Today's return in currency
-        total_return:
+          description: Today's gain in currency
+        total_gain:
           type: number
           format: double
-          description: Total return in currency
+          description: Total gain in currency
         invested:
           type: number
           format: double
@@ -1483,8 +1444,8 @@ components:
           description: Total account value
       required:
       - invested
-      - todays_return
-      - total_return
+      - todays_gain
+      - total_gain
       - total_value
     InvestorUpdate:
       type: object
@@ -1523,40 +1484,6 @@ components:
             type: string
             format: uuid
             title: Watching Instruments
-    LanguageEnum:
-      enum:
-      - en
-      - pl
-      type: string
-      description: |-
-        * `en` - English
-        * `pl` - Polski
-    LanguageUpdate:
-      type: object
-      properties:
-        language:
-          allOf:
-          - $ref: '#/components/schemas/LanguageEnum'
-          description: |-
-            Language code (e.g., 'en', 'pl')
-
-            * `en` - English
-            * `pl` - Polski
-      required:
-      - language
-    LanguageUpdateRequest:
-      type: object
-      properties:
-        language:
-          allOf:
-          - $ref: '#/components/schemas/LanguageEnum'
-          description: |-
-            Language code (e.g., 'en', 'pl')
-
-            * `en` - English
-            * `pl` - Polski
-      required:
-      - language
     LocaleEnum:
       enum:
       - us
@@ -1709,32 +1636,19 @@ components:
           type: integer
         sells:
           type: integer
-        avg_gain:
+        gain:
           type: number
           format: double
-        avg_loss:
-          type: number
-          format: double
-        total_return:
+        gain_percentage:
           type: number
           format: double
       required:
-      - avg_gain
-      - avg_loss
       - buys
+      - gain
+      - gain_percentage
       - no_trades
       - sells
       - symbol
-      - total_return
-    MostTradedOverview:
-      type: object
-      properties:
-        instruments:
-          type: array
-          items:
-            $ref: '#/components/schemas/MostTradedItem'
-      required:
-      - instruments
     NotificationConfig:
       type: object
       properties:
@@ -1811,15 +1725,25 @@ components:
           readOnly: true
         ticker:
           $ref: '#/components/schemas/InstrumentName'
+        detail_type:
+          type: integer
         detail:
           allOf:
-          - $ref: '#/components/schemas/MarketOrder'
+          - $ref: '#/components/schemas/OrderDetail'
           readOnly: true
       required:
       - detail
+      - detail_type
       - id
       - ticker
-    OwnedShareItem:
+    OrderDetail:
+      oneOf:
+      - $ref: '#/components/schemas/MarketOrder'
+      discriminator:
+        propertyName: detail_type
+        mapping:
+          market: '#/components/schemas/MarketOrder'
+    OwnedShare:
       type: object
       properties:
         name:
@@ -1834,28 +1758,20 @@ components:
         value:
           type: number
           format: double
-        profit:
+        gain:
           type: number
           format: double
-        profit_percentage:
+        gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
+      - gain
+      - gain_percentage
       - name
-      - profit
-      - profit_percentage
       - symbol
       - value
       - volume
-    OwnedShares:
-      type: object
-      properties:
-        owned_shares:
-          type: array
-          items:
-            $ref: '#/components/schemas/OwnedShareItem'
-      required:
-      - owned_shares
     PaginatedInstrumentListList:
       type: object
       required:
@@ -1987,11 +1903,11 @@ components:
           type: number
           format: double
           description: Current market value
-        gain_loss:
+        gain:
           type: number
           format: double
           description: Total gain or loss
-        gain_loss_pct:
+        gain_percentage:
           type: number
           format: double
           description: Total gain or loss percentage
@@ -2001,8 +1917,8 @@ components:
             $ref: '#/components/schemas/HistoryEntry'
           description: Transaction history
       required:
-      - gain_loss
-      - gain_loss_pct
+      - gain
+      - gain_percentage
       - history
       - market_value
       - name
@@ -2179,20 +2095,6 @@ components:
       - ticker
       - todays_change
       - todays_change_percent
-    ProfileOverview:
-      type: object
-      properties:
-        level:
-          type: string
-          maxLength: 30
-        exp_points:
-          type: integer
-        left_to_next_level:
-          type: integer
-      required:
-      - exp_points
-      - left_to_next_level
-      - level
     Publisher:
       type: object
       properties:
@@ -2310,21 +2212,13 @@ components:
           type: integer
         sells:
           type: integer
-        avg_gain:
-          type: number
-          format: double
-        avg_loss:
-          type: number
-          format: double
-        total_return:
+        total_gain:
           type: number
           format: double
       required:
-      - avg_gain
-      - avg_loss
       - buys
       - sells
-      - total_return
+      - total_gain
       - total_trades
     VapidPublicKey:
       type: object

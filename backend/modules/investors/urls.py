@@ -4,13 +4,11 @@ from modules.investors.views import (
     AccountValueOverTimeView,
     CurrentInvestorView,
     InvestorDetailView,
-    InvestorListView,
 )
 
 app_name = "investors"
 
 urlpatterns = [
-    path("", InvestorListView.as_view(), name="investor-list"),
     path("me/", CurrentInvestorView.as_view(), name="current-investor"),
     path(
         "me/account-value/",

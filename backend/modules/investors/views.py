@@ -11,41 +11,16 @@ from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
-    InvestorListQueryParams,
     InvestorSerializer,
     InvestorUpdateSerializer,
+    LanguageUpdateSerializer,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class InvestorListView(generics.ListAPIView):
-    """
-    List all investors.
-    """
-
-    queryset = Investor.objects.prefetch_related("watching_instruments")
-    serializer_class = InvestorSerializer
-
-    def get_serializer_class(self):
-        return InvestorSerializer
-
-    @extend_schema(
-        parameters=[InvestorListQueryParams],
-        responses={200: InvestorSerializer(many=True)},
-        summary="List investors",
-        description="Get a paginated list of investors with optional search filtering.",
-    )
-    def get(self, request: Request) -> Response:
-        return super().get(request)
-
-
 class InvestorDetailView(generics.RetrieveUpdateAPIView):
-    """
-    Retrieve or update an investor.
-    """
-
-    queryset = Investor.objects.prefetch_related("watching_instruments")
+    queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
     lookup_field = "clerk_id"
 
@@ -54,32 +29,6 @@ class InvestorDetailView(generics.RetrieveUpdateAPIView):
             return InvestorUpdateSerializer
         return InvestorSerializer
 
-    @extend_schema(
-        responses={200: InvestorSerializer},
-        summary="Get investor",
-        description="Retrieve a specific investor by ID.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
-
-    @extend_schema(
-        request=InvestorUpdateSerializer,
-        responses={200: InvestorSerializer},
-        summary="Update investor",
-        description="Update an investor's information.",
-    )
-    def put(self, request: Request, *args, **kwargs) -> Response:
-        return super().put(request, *args, **kwargs)
-
-    @extend_schema(
-        request=InvestorUpdateSerializer,
-        responses={200: InvestorSerializer},
-        summary="Partially update investor",
-        description="Partially update an investor's information.",
-    )
-    def patch(self, request: Request, *args, **kwargs) -> Response:
-        return super().patch(request, *args, **kwargs)
-
 
 class CurrentInvestorView(generics.RetrieveAPIView):
     """
@@ -87,11 +36,12 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     """
 
     serializer_class = InvestorSerializer
+    queryset = Investor.objects.all()
 
     def get_object(self):
-        return Investor.objects.prefetch_related("watching_instruments").get(
-            clerk_id=self.request.user.id
-        )
+        """Retrieve the current authenticated user's investor profile."""
+        investor, _ = Investor.objects.get_or_create(clerk_id=self.request.user.id)
+        return investor
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -150,3 +100,23 @@ class AccountValueOverTimeView(generics.ListAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
+
+
+class LanguageUpdateView(generics.CreateAPIView):
+    serializer_class = LanguageUpdateSerializer
+
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        language = serializer.validated_data["language"]
+
+        user_clerk_id = request.user.id
+
+        investor, _ = Investor.objects.update_or_create(
+            clerk_id=user_clerk_id, defaults={"language": language}
+        )
+
+        response_serializer = self.get_serializer({"language": investor.language})
+        return Response(response_serializer.data, status=200)
