@@ -41,6 +41,7 @@ services:
       - app_network
     profiles:
       - default
+      - ci
 
   celery:
     <<: *backend-common
