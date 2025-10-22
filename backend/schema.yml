@@ -1625,6 +1625,9 @@ components:
     MarketOrder:
       type: object
       properties:
+        detail_type:
+          type: string
+          readOnly: true
         volume:
           type: string
           format: decimal
@@ -1636,6 +1639,7 @@ components:
         is_buy:
           type: boolean
       required:
+      - detail_type
       - is_buy
       - volume
     MarketStatus:
