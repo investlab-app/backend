@@ -112,6 +112,11 @@ class Instrument(BaseModel):
         blank=True,
         null=True,
     )
+    description_pl = models.TextField(
+        verbose_name=_("Polish Description"),
+        blank=True,
+        null=True,
+    )
     ticker_root = models.CharField(
         verbose_name=_("Ticker Root"),
         help_text=_("Base symbol for related tickers."),

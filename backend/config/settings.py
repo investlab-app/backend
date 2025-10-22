@@ -427,3 +427,7 @@ VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
 VAPID_CLAIMS = {
     "sub": f"mailto:{ADMIN_EMAIL}",
 }
+
+# Groq
+GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+GROQ_MODEL = os.environ["GROQ_MODEL"]

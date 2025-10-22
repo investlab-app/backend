@@ -1,8 +1,12 @@
+import logging
 from collections.abc import Iterable
 
 from modules.core.mixins import UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
+from modules.instruments.services.translation_service import TranslationService
+
+logger = logging.getLogger(__name__)
 
 
 class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
@@ -16,6 +20,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         "base_currency_symbol": "base_currency_symbol",
         "base_currency_name": "base_currency_name",
         "description": "description",
+        "description_pl": "description_pl",
         "ticker_root": "ticker_root",
         "ticker_suffix": "ticker_suffix",
         "homepage_url": "homepage_url",
@@ -49,24 +54,55 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self,
         instruments: Iterable[Instrument] | None = None,
         repository: PolygonTickersRepository | None = None,
+        translation_service: TranslationService | None = None,
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.repository = repository or PolygonTickersRepository()
+        self.translation_service = translation_service or TranslationService()
 
     def sync_instruments_details(self) -> dict[str, int]:
         """Synchronize instruments details based on Polygon TickerDetails."""
         to_update = []
-        no_changes, errors = 0, 0
+        no_changes, errors, translation_errors = 0, 0, 0
 
-        for instrument in self.instruments:
+        for instrument in self.instruments[:10]:
             ticker_details = self.repository.get_ticker_details(instrument.ticker)
             if not ticker_details:
                 errors += 1
                 continue
 
+            old_description = instrument.description
+            old_description_pl = instrument.description_pl
+            new_description = ticker_details.get("description")
+            is_description_updated = old_description != new_description
+
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
+
+            if not old_description_pl and is_description_updated and new_description:
+                try:
+                    polish_translation = self.translation_service.translate_to_polish(
+                        ticker_details["description"]
+                    )
+
+                    if polish_translation:
+                        updated_instrument.description_pl = polish_translation
+                        updated = True
+                        logger.info(
+                            "Successfully translated description for %s",
+                            instrument.ticker,
+                        )
+                    else:
+                        logger.warning(
+                            "Failed to translate description for %s", instrument.ticker
+                        )
+                        translation_errors += 1
+
+                except Exception as e:
+                    logger.error("Translation error for %s: %s", instrument.ticker, e)
+                    translation_errors += 1
+
             if updated:
                 to_update.append(updated_instrument)
             else:
@@ -82,4 +118,5 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
             "updated": len(to_update),
             "no_changes": no_changes,
             "errors": errors,
+            "translation_errors": translation_errors,
         }

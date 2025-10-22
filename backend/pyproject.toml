@@ -23,6 +23,7 @@ dependencies = [
     "drf-spectacular>=0.28.0",
     "faker>=37.6.0",
     "jwcrypto>=1.5.6",
+    "openai>=1.0.0",
     "pandas>=2.3.0",
     "pillow>=11.3.0",
     "polygon-api-client>=1.15.3",
