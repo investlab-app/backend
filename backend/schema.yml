@@ -1426,7 +1426,13 @@ components:
             type: string
             format: uuid
             title: Watching Instruments
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+          readOnly: true
       required:
+      - balance
       - clerk_id
       - id
     InvestorStats:
@@ -1955,6 +1961,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
           description: Total gain or loss percentage
         history:
           type: array

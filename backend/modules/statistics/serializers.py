@@ -145,6 +145,8 @@ class HistoryEntrySerializer(serializers.Serializer):
 class PositionSerializer(serializers.Serializer):
     name = serializers.CharField(max_length=10, help_text="Ticker symbol")
 
+    logo = serializers.URLField(allow_null=True)
+
     # AssetAllocation.asset.volume
     quantity = serializers.IntegerField(help_text="Total quantity of shares")
 
@@ -155,6 +157,8 @@ class PositionSerializer(serializers.Serializer):
     gain = serializers.FloatField(help_text="Total gain or loss")
 
     # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField(help_text="Total gain or loss percentage")
+    gain_percentage = serializers.FloatField(
+        help_text="Total gain or loss percentage", allow_null=True
+    )
 
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")

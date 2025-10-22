@@ -164,8 +164,12 @@ class AssetAllocationView(generics.RetrieveAPIView):
                 {
                     "instrument_name": allocation.asset.ticker.name,
                     "instrument_ticker": allocation.asset.ticker.ticker,
-                    "instrument_logo": allocation.asset.ticker.logo,
-                    "instrument_icon": allocation.asset.ticker.icon,
+                    "instrument_logo": (
+                        logo if (logo := allocation.asset.ticker.logo) else None
+                    ),
+                    "instrument_icon": (
+                        icon if (icon := allocation.asset.ticker.icon) else None
+                    ),
                     "value": round(allocation.total_value, 2),
                     "percentage": round(allocation.percentage, 2),
                 }
@@ -403,6 +407,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
 
             position = {
                 "name": ticker_symbol,
+                "logo": ticker.logo,
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain": round(stats_map[ticker_symbol].gain, 2),

@@ -11,8 +11,9 @@ class InvestorSerializer(serializers.ModelSerializer):
             "id",
             "clerk_id",
             "watching_instruments",
+            "balance",
         ]
-        read_only_fields = ["id", "clerk_id"]
+        read_only_fields = ["id", "clerk_id", "balance"]
 
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
