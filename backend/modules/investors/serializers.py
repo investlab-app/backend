@@ -5,39 +5,32 @@ from modules.investors.models import AccountValueSnapshot, Asset, Investor
 
 
 class InvestorSerializer(serializers.ModelSerializer):
-    watching_instruments_count = serializers.IntegerField(
-        source="watching_instruments.count", read_only=True
-    )
-
     class Meta:
         model = Investor
         fields = [
+            "id",
             "clerk_id",
             "watching_instruments",
-            "watching_instruments_count",
         ]
-        read_only_fields = ["clerk_id"]
+        read_only_fields = ["id", "clerk_id"]
 
 
 class InvestorUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Investor
-        fields = ["watching_instruments"]
+        fields = [
+            "id",
+            "clerk_id",
+            "language",
+            "watching_instruments",
+        ]
+        read_only_fields = ["id", "clerk_id"]
 
 
-class InvestorListQueryParams(serializers.Serializer):
-    page = serializers.IntegerField(
-        required=False,
-        default=1,
-        min_value=1,
-        help_text="Page number for pagination.",
-    )
-    page_size = serializers.IntegerField(
-        required=False,
-        default=10,
-        min_value=1,
-        max_value=100,
-        help_text="Number of items per page (max 100).",
+class LanguageUpdateSerializer(serializers.Serializer):
+    language = serializers.ChoiceField(
+        choices=[("en", "English"), ("pl", "Polski")],
+        help_text="Language code (e.g., 'en', 'pl')",
     )
 
 

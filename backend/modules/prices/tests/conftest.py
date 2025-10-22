@@ -1,8 +1,18 @@
 from datetime import datetime
 from decimal import Decimal
 
-from modules.authentication.tests.conftest import user
+import pytest
+
+from modules.authentication.tests.conftest import user  # noqa: F401
 from modules.instruments.models import Instrument
+from modules.instruments.tests.conftest import (
+    create_fake_instrument,
+    instruments_factory,
+)
+from modules.investors.tests.conftest import (
+    create_fake_investor,
+    investor_factory,
+)
 from modules.prices.schemas import PriceDaily, PriceDailySummary
 
 

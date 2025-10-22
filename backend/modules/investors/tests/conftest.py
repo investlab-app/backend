@@ -51,6 +51,8 @@ def create_fake_asset(
 
 @pytest.fixture
 def investor_factory():
+    """Factory fixture for creating investors in tests."""
+
     def create_investor(**kwargs):
         return create_fake_investor(**kwargs, save=True)
 

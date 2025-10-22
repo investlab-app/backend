@@ -5,8 +5,8 @@ import pytest
 from channels.layers import get_channel_layer
 from channels.testing import WebsocketCommunicator
 
+from modules.notifications.consumers import Websocket
 from modules.prices.constants import PRICES_CHANNEL_LAYER
-from modules.prices.consumers import PriceStreamConsumer
 
 
 @pytest.fixture
@@ -28,9 +28,7 @@ async def layer():
 def _get_websocket_communicator(user, tickers=""):
     scope = {"user": user, "url_route": {"kwargs": {"names": tickers}}}
 
-    communicator = WebsocketCommunicator(
-        PriceStreamConsumer.as_asgi(), f"/ws/prices/{tickers}"
-    )
+    communicator = WebsocketCommunicator(Websocket.as_asgi(), f"/ws/{tickers}")
     communicator.scope.update(scope)
     return communicator
 
@@ -47,6 +45,7 @@ async def _get_communicator_output(communicator):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_successful_connection():
     user = MagicMock(is_authenticated=True)
     communicator = _get_websocket_communicator(user)
@@ -56,6 +55,7 @@ async def test_successful_connection():
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_failed_connection():
     user = MagicMock(is_authenticated=False)
     communicator = _get_websocket_communicator(user)
@@ -66,6 +66,7 @@ async def test_failed_connection():
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_no_subscriptions(communicator, layer):
     await _send_ticker_data(layer, {"AAPL": "XXXX", "XYZ": "YYYY", "ABC": "ZZZZ"})
 
@@ -73,6 +74,7 @@ async def test_no_subscriptions(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_empty_subscription(communicator, layer):
     await communicator.send_to(text_data=json.dumps({"set_subscription": []}))
 
@@ -82,6 +84,7 @@ async def test_empty_subscription(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_single_subscription(communicator, layer):
     await communicator.send_to(text_data=json.dumps({"set_subscription": ["AAPL"]}))
 
@@ -92,6 +95,7 @@ async def test_single_subscription(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_multi_subscription(communicator, layer):
     await communicator.send_to(
         text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
@@ -104,6 +108,7 @@ async def test_multi_subscription(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
 async def test_resubscription(communicator, layer):
     await communicator.send_to(
         text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
@@ -119,6 +124,7 @@ async def test_resubscription(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_does_not_send_empty_msgs(communicator, layer):
     await communicator.send_to(
         text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
@@ -130,6 +136,7 @@ async def test_does_not_send_empty_msgs(communicator, layer):
 
 
 @pytest.mark.asyncio
+@pytest.mark.django_db
 async def test_tickers_in_query_params(layer):
     communicator = _get_websocket_communicator(
         MagicMock(is_authenticated=True), "AAPL,ABC"
@@ -140,3 +147,4 @@ async def test_tickers_in_query_params(layer):
 
     output = await _get_communicator_output(communicator)
     assert output == {"prices": ["XXXX", "ZZZZ"]}
+    await communicator.disconnect()

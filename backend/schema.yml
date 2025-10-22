@@ -154,44 +154,9 @@ paths:
               schema:
                 $ref: '#/components/schemas/PaginatedInstrumentWithPriceList'
           description: ''
-  /api/investors/:
-    get:
-      operationId: investors_list
-      description: Get a paginated list of investors with optional search filtering.
-      summary: List investors
-      parameters:
-      - in: query
-        name: page
-        schema:
-          type: integer
-          minimum: 1
-          default: 1
-        description: Page number for pagination.
-      - in: query
-        name: page_size
-        schema:
-          type: integer
-          maximum: 100
-          minimum: 1
-          default: 10
-        description: Number of items per page (max 100).
-      tags:
-      - investors
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/PaginatedInvestorList'
-          description: ''
   /api/investors/{clerk_id}/:
     get:
       operationId: investors_retrieve
-      description: Retrieve a specific investor by ID.
-      summary: Get investor
       parameters:
       - in: path
         name: clerk_id
@@ -212,8 +177,6 @@ paths:
           description: ''
     put:
       operationId: investors_update
-      description: Update an investor's information.
-      summary: Update investor
       parameters:
       - in: path
         name: clerk_id
@@ -235,12 +198,10 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Investor'
+                $ref: '#/components/schemas/InvestorUpdate'
           description: ''
     patch:
       operationId: investors_partial_update
-      description: Partially update an investor's information.
-      summary: Partially update investor
       parameters:
       - in: path
         name: clerk_id
@@ -262,7 +223,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Investor'
+                $ref: '#/components/schemas/InvestorUpdate'
           description: ''
   /api/investors/me/:
     get:
@@ -283,7 +244,7 @@ paths:
           description: ''
   /api/investors/me/account-value/:
     get:
-      operationId: investors_me_account_value_list
+      operationId: investors_me_account_value_retrieve
       description: Get account value over time data for the currently authenticated
         user.
       summary: Get account value over time
@@ -297,9 +258,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AccountValueSnapshotDaily'
+                $ref: '#/components/schemas/AccountValueOverTime'
           description: ''
   /api/investors/me/asset-allocation/:
     get:
@@ -336,9 +295,30 @@ paths:
               schema:
                 $ref: '#/components/schemas/CurrentAccountValue'
           description: ''
+  /api/investors/me/language/:
+    post:
+      operationId: investors_me_language_create
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LanguageUpdateRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LanguageUpdate'
+          description: ''
   /api/investors/me/owned-shares/:
     get:
-      operationId: investors_me_owned_shares_list
+      operationId: investors_me_owned_shares_retrieve
       description: Get owned shares data for the currently authenticated user.
       summary: Get owned shares
       tags:
@@ -351,13 +331,11 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/OwnedShare'
+                $ref: '#/components/schemas/OwnedShares'
           description: ''
   /api/investors/me/statistics/most-traded/:
     get:
-      operationId: investors_me_statistics_most_traded_list
+      operationId: investors_me_statistics_most_traded_retrieve
       description: Returns number of trades, number of buys/sells, avg gain/loss,
         and total return from the most frequently traded instruments.
       summary: Get overview about the most traded instruments
@@ -371,9 +349,25 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/MostTradedItem'
+                $ref: '#/components/schemas/MostTradedOverview'
+          description: ''
+  /api/investors/me/statistics/profile-overview/:
+    get:
+      operationId: investors_me_statistics_profile_overview_retrieve
+      description: Get the information about the level, exp points and points left
+        to next level for the current investor
+      summary: Get info about investor's level
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ProfileOverview'
           description: ''
   /api/investors/me/statistics/trading-overview/:
     get:
@@ -418,14 +412,12 @@ paths:
       summary: Get transaction history
       parameters:
       - in: query
-        name: tickers
+        name: ticker
         schema:
-          type: array
-          items:
-            type: string
-            minLength: 1
-          maxItems: 50
-        description: List of ticker symbols to fetch prices for (max 50).
+          type: string
+          minLength: 1
+          maxLength: 10
+        description: Filter by specific ticker symbol
       - in: query
         name: type
         schema:
@@ -552,6 +544,21 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/TickerNews'
+          description: ''
+  /api/notifications/vapid-public-key/:
+    get:
+      operationId: notifications_vapid_public_key_retrieve
+      tags:
+      - notifications
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VapidPublicKey'
           description: ''
   /api/orders/:
     get:
@@ -733,6 +740,146 @@ paths:
                 items:
                   $ref: '#/components/schemas/PriceBar'
           description: ''
+  /api/prices/price-alert/:
+    get:
+      operationId: prices_price_alert_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPriceAlertList'
+          description: ''
+    post:
+      operationId: prices_price_alert_create
+      tags:
+      - prices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAlertCreateRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceAlertCreate'
+          description: ''
+  /api/prices/price-alert/{id}/:
+    get:
+      operationId: prices_price_alert_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
+    put:
+      operationId: prices_price_alert_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - prices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PriceAlertRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
+    patch:
+      operationId: prices_price_alert_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - prices
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPriceAlertRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
+    delete:
+      operationId: prices_price_alert_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - prices
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '204':
+          description: No response body
   /api/status/:
     get:
       operationId: status_retrieve
@@ -840,14 +987,12 @@ paths:
           description: Authentication test successful
 components:
   schemas:
-    AccountValueSnapshotDaily:
+    AccountValueData:
       type: object
-      description: Serializer for AccountValueSnapshot model.
       properties:
         date:
           type: string
           format: date
-          readOnly: true
           description: Date of the value measurement
         value:
           type: number
@@ -856,13 +1001,23 @@ components:
       required:
       - date
       - value
+    AccountValueOverTime:
+      type: object
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountValueData'
+          description: List of account value data points
+      required:
+      - data
     AssetAllocation:
       type: object
       properties:
         total_value:
           type: number
           format: double
-        total_gain_this_year:
+        total_return_this_year:
           type: number
           format: double
         allocations:
@@ -871,25 +1026,14 @@ components:
             $ref: '#/components/schemas/AssetAllocationItem'
       required:
       - allocations
-      - total_gain_this_year
+      - total_return_this_year
       - total_value
     AssetAllocationItem:
       type: object
       properties:
-        instrument_name:
+        asset_class_display_name:
           type: string
-          maxLength: 255
-        instrument_ticker:
-          type: string
-          maxLength: 20
-        instrument_logo:
-          type: string
-          format: uri
-          nullable: true
-        instrument_icon:
-          type: string
-          format: uri
-          nullable: true
+          maxLength: 100
         value:
           type: number
           format: double
@@ -897,10 +1041,7 @@ components:
           type: number
           format: double
       required:
-      - instrument_icon
-      - instrument_logo
-      - instrument_name
-      - instrument_ticker
+      - asset_class_display_name
       - percentage
       - value
     AuthTestResponse:
@@ -975,24 +1116,24 @@ components:
         gain:
           type: number
           format: double
-        gain_percentage:
+        gain_percent:
           type: number
           format: double
-          nullable: true
       required:
       - gain
-      - gain_percentage
+      - gain_percent
       - total_account_value
     HistoryEntry:
       type: object
       properties:
-        timestamp:
+        date:
           type: string
           format: date-time
           description: Date of the transaction
-        is_buy:
-          type: boolean
-          description: True if the transaction was a buy False if it was a sell
+        type:
+          type: string
+          description: 'Transaction type: BUY or SELL'
+          maxLength: 10
         quantity:
           type: integer
           description: Number of shares traded
@@ -1005,12 +1146,27 @@ components:
           format: double
           nullable: true
           description: Acquisition price (null for SELL transactions)
+        market_value:
+          type: number
+          format: double
+          description: Current market value
+        gain_loss:
+          type: number
+          format: double
+          description: Gain or loss amount
+        gain_loss_pct:
+          type: number
+          format: double
+          description: Gain or loss percentage
       required:
       - acquisition_price
-      - is_buy
+      - date
+      - gain_loss
+      - gain_loss_pct
+      - market_value
       - quantity
       - share_price
-      - timestamp
+      - type
     Insight:
       type: object
       properties:
@@ -1290,6 +1446,10 @@ components:
     Investor:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
         clerk_id:
           type: string
           readOnly: true
@@ -1299,24 +1459,20 @@ components:
             type: string
             format: uuid
             title: Watching Instruments
-        watching_instruments_count:
-          type: integer
-          readOnly: true
       required:
       - clerk_id
-      - watching_instruments_count
+      - id
     InvestorStats:
       type: object
-      description: Serializer for investor statistics data.
       properties:
-        todays_gain:
+        todays_return:
           type: number
           format: double
-          description: Today's gain in currency
-        total_gain:
+          description: Today's return in currency
+        total_return:
           type: number
           format: double
-          description: Total gain in currency
+          description: Total return in currency
         invested:
           type: number
           format: double
@@ -1327,18 +1483,80 @@ components:
           description: Total account value
       required:
       - invested
-      - todays_gain
-      - total_gain
+      - todays_return
+      - total_return
       - total_value
-    InvestorUpdateRequest:
+    InvestorUpdate:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        clerk_id:
+          type: string
+          readOnly: true
+        language:
+          type: string
+          description: User's preferred language (e.g., 'en', 'pl')
+          maxLength: 10
         watching_instruments:
           type: array
           items:
             type: string
             format: uuid
             title: Watching Instruments
+      required:
+      - clerk_id
+      - id
+    InvestorUpdateRequest:
+      type: object
+      properties:
+        language:
+          type: string
+          minLength: 1
+          description: User's preferred language (e.g., 'en', 'pl')
+          maxLength: 10
+        watching_instruments:
+          type: array
+          items:
+            type: string
+            format: uuid
+            title: Watching Instruments
+    LanguageEnum:
+      enum:
+      - en
+      - pl
+      type: string
+      description: |-
+        * `en` - English
+        * `pl` - Polski
+    LanguageUpdate:
+      type: object
+      properties:
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language code (e.g., 'en', 'pl')
+
+            * `en` - English
+            * `pl` - Polski
+      required:
+      - language
+    LanguageUpdateRequest:
+      type: object
+      properties:
+        language:
+          allOf:
+          - $ref: '#/components/schemas/LanguageEnum'
+          description: |-
+            Language code (e.g., 'en', 'pl')
+
+            * `en` - English
+            * `pl` - Polski
+      required:
+      - language
     LocaleEnum:
       enum:
       - us
@@ -1491,19 +1709,99 @@ components:
           type: integer
         sells:
           type: integer
-        gain:
+        avg_gain:
           type: number
           format: double
-        gain_percentage:
+        avg_loss:
+          type: number
+          format: double
+        total_return:
           type: number
           format: double
       required:
+      - avg_gain
+      - avg_loss
       - buys
-      - gain
-      - gain_percentage
       - no_trades
       - sells
       - symbol
+      - total_return
+    MostTradedOverview:
+      type: object
+      properties:
+        instruments:
+          type: array
+          items:
+            $ref: '#/components/schemas/MostTradedItem'
+      required:
+      - instruments
+    NotificationConfig:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        is_email:
+          type: boolean
+          title: Send Email
+        is_push:
+          type: boolean
+          title: Send Push
+        is_websocket:
+          type: boolean
+          title: Send WebSocket
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+    NotificationConfigCreate:
+      type: object
+      properties:
+        is_email:
+          type: boolean
+        is_push:
+          type: boolean
+        is_websocket:
+          type: boolean
+      required:
+      - is_email
+      - is_push
+      - is_websocket
+    NotificationConfigCreateRequest:
+      type: object
+      properties:
+        is_email:
+          type: boolean
+        is_push:
+          type: boolean
+        is_websocket:
+          type: boolean
+        push_subscription:
+          $ref: '#/components/schemas/PushNotificationRequest'
+      required:
+      - is_email
+      - is_push
+      - is_websocket
+    NotificationConfigRequest:
+      type: object
+      properties:
+        is_email:
+          type: boolean
+          title: Send Email
+        is_push:
+          type: boolean
+          title: Send Push
+        is_websocket:
+          type: boolean
+          title: Send WebSocket
+        is_active:
+          type: boolean
     Order:
       type: object
       properties:
@@ -1513,25 +1811,15 @@ components:
           readOnly: true
         ticker:
           $ref: '#/components/schemas/InstrumentName'
-        detail_type:
-          type: integer
         detail:
           allOf:
-          - $ref: '#/components/schemas/OrderDetail'
+          - $ref: '#/components/schemas/MarketOrder'
           readOnly: true
       required:
       - detail
-      - detail_type
       - id
       - ticker
-    OrderDetail:
-      oneOf:
-      - $ref: '#/components/schemas/MarketOrder'
-      discriminator:
-        propertyName: detail_type
-        mapping:
-          market: '#/components/schemas/MarketOrder'
-    OwnedShare:
+    OwnedShareItem:
       type: object
       properties:
         name:
@@ -1546,20 +1834,28 @@ components:
         value:
           type: number
           format: double
-        gain:
+        profit:
           type: number
           format: double
-        gain_percentage:
+        profit_percentage:
           type: number
           format: double
-          nullable: true
       required:
-      - gain
-      - gain_percentage
       - name
+      - profit
+      - profit_percentage
       - symbol
       - value
       - volume
+    OwnedShares:
+      type: object
+      properties:
+        owned_shares:
+          type: array
+          items:
+            $ref: '#/components/schemas/OwnedShareItem'
+      required:
+      - owned_shares
     PaginatedInstrumentListList:
       type: object
       required:
@@ -1606,29 +1902,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InstrumentWithPrice'
-    PaginatedInvestorList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Investor'
     PaginatedOrderList:
       type: object
       required:
@@ -1652,15 +1925,54 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Order'
+    PaginatedPriceAlertList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceAlert'
     PatchedInvestorUpdateRequest:
       type: object
       properties:
+        language:
+          type: string
+          minLength: 1
+          description: User's preferred language (e.g., 'en', 'pl')
+          maxLength: 10
         watching_instruments:
           type: array
           items:
             type: string
             format: uuid
             title: Watching Instruments
+    PatchedPriceAlertRequest:
+      type: object
+      properties:
+        threshold_type:
+          $ref: '#/components/schemas/ThresholdTypeEnum'
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        notification_config:
+          $ref: '#/components/schemas/NotificationConfigRequest'
     Position:
       type: object
       properties:
@@ -1675,11 +1987,11 @@ components:
           type: number
           format: double
           description: Current market value
-        gain:
+        gain_loss:
           type: number
           format: double
           description: Total gain or loss
-        gain_percentage:
+        gain_loss_pct:
           type: number
           format: double
           description: Total gain or loss percentage
@@ -1689,12 +2001,95 @@ components:
             $ref: '#/components/schemas/HistoryEntry'
           description: Transaction history
       required:
-      - gain
-      - gain_percentage
+      - gain_loss
+      - gain_loss_pct
       - history
       - market_value
       - name
       - quantity
+    PriceAlert:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        instrument_name:
+          type: string
+          readOnly: true
+        instrument_ticker:
+          type: string
+          readOnly: true
+        threshold_type:
+          $ref: '#/components/schemas/ThresholdTypeEnum'
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        notification_config:
+          $ref: '#/components/schemas/NotificationConfig'
+      required:
+      - id
+      - instrument_name
+      - instrument_ticker
+      - notification_config
+      - threshold_type
+      - threshold_value
+    PriceAlertCreate:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        threshold_type:
+          $ref: '#/components/schemas/ThresholdTypeEnum'
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        notification_config:
+          $ref: '#/components/schemas/NotificationConfigCreate'
+      required:
+      - id
+      - notification_config
+      - threshold_type
+      - threshold_value
+    PriceAlertCreateRequest:
+      type: object
+      properties:
+        instrument_ticker:
+          type: string
+          writeOnly: true
+          minLength: 1
+        threshold_type:
+          $ref: '#/components/schemas/ThresholdTypeEnum'
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        notification_config:
+          $ref: '#/components/schemas/NotificationConfigCreateRequest'
+      required:
+      - instrument_ticker
+      - notification_config
+      - threshold_type
+      - threshold_value
+    PriceAlertRequest:
+      type: object
+      properties:
+        threshold_type:
+          $ref: '#/components/schemas/ThresholdTypeEnum'
+        threshold_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
+        notification_config:
+          $ref: '#/components/schemas/NotificationConfigRequest'
+      required:
+      - notification_config
+      - threshold_type
+      - threshold_value
     PriceBar:
       type: object
       properties:
@@ -1784,6 +2179,20 @@ components:
       - ticker
       - todays_change
       - todays_change_percent
+    ProfileOverview:
+      type: object
+      properties:
+        level:
+          type: string
+          maxLength: 30
+        exp_points:
+          type: integer
+        left_to_next_level:
+          type: integer
+      required:
+      - exp_points
+      - left_to_next_level
+      - level
     Publisher:
       type: object
       properties:
@@ -1799,6 +2208,28 @@ components:
         name:
           type: string
           nullable: true
+    PushNotificationRequest:
+      type: object
+      properties:
+        endpoint:
+          type: string
+          format: uri
+          writeOnly: true
+          minLength: 1
+        p256dh:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 255
+        auth:
+          type: string
+          writeOnly: true
+          minLength: 1
+          maxLength: 255
+      required:
+      - auth
+      - endpoint
+      - p256dh
     SimpleResponse:
       type: object
       description: Serializer for simple OK response
@@ -1816,6 +2247,14 @@ components:
           description: Status message indicating the application is running
       required:
       - message
+    ThresholdTypeEnum:
+      enum:
+      - above
+      - below
+      type: string
+      description: |-
+        * `above` - Above
+        * `below` - Below
     TickerNews:
       type: object
       properties:
@@ -1871,14 +2310,29 @@ components:
           type: integer
         sells:
           type: integer
-        total_gain:
+        avg_gain:
+          type: number
+          format: double
+        avg_loss:
+          type: number
+          format: double
+        total_return:
           type: number
           format: double
       required:
+      - avg_gain
+      - avg_loss
       - buys
       - sells
-      - total_gain
+      - total_return
       - total_trades
+    VapidPublicKey:
+      type: object
+      properties:
+        public_key:
+          type: string
+      required:
+      - public_key
   securitySchemes:
     ClerkAuth:
       type: http

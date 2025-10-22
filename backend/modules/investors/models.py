@@ -8,6 +8,12 @@ from modules.instruments.models import Instrument
 
 class Investor(BaseModel):
     clerk_id = models.CharField(unique=True, max_length=255, verbose_name=_("Clerk ID"))
+    language = models.CharField(
+        max_length=10,
+        default="en",
+        verbose_name=_("Language"),
+        help_text=_("User's preferred language (e.g., 'en', 'pl')"),
+    )
     watching_instruments = models.ManyToManyField(
         Instrument, blank=True, verbose_name=_("Watching Instruments")
     )
@@ -20,7 +26,7 @@ class Investor(BaseModel):
         verbose_name_plural = _("Investors")
 
     def __str__(self):
-        return f"Investor: {self.clerk_id}"
+        return f"Investor {self.id} (Clerk ID: {self.clerk_id})"
 
 
 class Asset(BaseModel):
