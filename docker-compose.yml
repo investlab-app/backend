@@ -26,6 +26,9 @@ services:
       retries: 5
     networks:
       - app_network
+    profiles:
+      - default
+      - ci
 
   redis:
     image: redis:8.2
@@ -36,6 +39,8 @@ services:
       test: ["CMD", "redis-cli", "ping"]
     networks:
       - app_network
+    profiles:
+      - default
 
   celery:
     <<: *backend-common
@@ -50,6 +55,8 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    profiles:
+      - default
 
   celery-beat:
     <<: *backend-common
@@ -64,6 +71,8 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
+    profiles:
+      - default
 
   backend:
     <<: *backend-common
@@ -79,6 +88,9 @@ services:
       retries: 3
     ports:
       - "8000:8000"
+    profiles:
+      - default
+      - ci
 
   backend-price-stream:
     <<: *backend-common
@@ -95,6 +107,8 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+    profiles:
+      - default
 
   backend-price-notifier:
     <<: *backend-common
@@ -109,6 +123,24 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
+    profiles:
+      - default
+
+  backend-order-engine:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "run_order_engine"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - default
 
 volumes:
   postgres_data:
