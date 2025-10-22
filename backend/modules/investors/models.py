@@ -2,6 +2,7 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 
 
@@ -52,3 +53,20 @@ class Asset(BaseModel):
 
     def __str__(self):
         return f"{self.ticker} Asset. Volume: {self.volume}"
+
+
+class AccountValueSnapshot(BaseModel):
+    investor = models.ForeignKey(
+        Investor, on_delete=models.CASCADE, verbose_name=_("Associated Investor")
+    )
+    timestamp = models.DateTimeField(
+        default=get_local_datetime, verbose_name=_("Datetime Of The Snapshot")
+    )
+    value = models.DecimalField(
+        max_digits=30, decimal_places=2, verbose_name=_("Total Account Value")
+    )
+
+    class Meta:
+        verbose_name = _("Account Value Snapshot")
+        verbose_name_plural = _("Account Value Snapshots")
+        ordering = ["-timestamp"]

@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from modules.investors.models import Asset, Investor
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 
 
 @admin.register(Investor)
@@ -40,5 +40,22 @@ class AssetAdmin(ModelAdmin):
     )
     fieldsets = (
         (None, {"fields": ("id", "investor", "ticker", "volume")}),
+        (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(AccountValueSnapshot)
+class AccountValueSnapshotAdmin(ModelAdmin):
+    list_display = ["investor", "value", "timestamp"]
+    list_filter = ["investor"]
+    search_fields = ("investor__clerk_id",)
+    ordering = ("-timestamp",)
+    readonly_fields = (
+        "id",
+        "created_at",
+        "updated_at",
+    )
+    fieldsets = (
+        (None, {"fields": ("id", "investor", "value", "timestamp")}),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )
