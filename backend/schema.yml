@@ -1943,10 +1943,18 @@ components:
     Position:
       type: object
       properties:
-        name:
+        symbol:
           type: string
           description: Ticker symbol
           maxLength: 10
+        name:
+          type: string
+          description: Instrument name
+          maxLength: 255
+        logo:
+          type: string
+          format: uri
+          nullable: true
         quantity:
           type: integer
           description: Total quantity of shares
@@ -1972,9 +1980,11 @@ components:
       - gain
       - gain_percentage
       - history
+      - logo
       - market_value
       - name
       - quantity
+      - symbol
     PriceAlert:
       type: object
       properties:

@@ -143,7 +143,9 @@ class HistoryEntrySerializer(serializers.Serializer):
 
 
 class PositionSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=10, help_text="Ticker symbol")
+    symbol = serializers.CharField(max_length=10, help_text="Ticker symbol")
+
+    name = serializers.CharField(max_length=255, help_text="Instrument name")
 
     logo = serializers.URLField(allow_null=True)
 

@@ -406,8 +406,9 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 market_value = asset_allocations_map[ticker_symbol].total_value
 
             position = {
-                "name": ticker_symbol,
-                "logo": ticker.logo,
+                "symbol": ticker_symbol,
+                "name": ticker.name,
+                "logo": (logo if (logo := ticker.logo) else None),
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain": round(stats_map[ticker_symbol].gain, 2),
