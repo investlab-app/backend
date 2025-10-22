@@ -4,6 +4,10 @@ from decimal import Decimal
 import pytest
 from faker import Faker
 
+from modules.instruments.tests.conftest import (
+    create_fake_instrument,
+    instruments_factory,
+)
 from modules.investors.models import Asset, Investor
 
 fake = Faker()
@@ -23,7 +27,22 @@ def create_fake_investor(
     return investor
 
 
-def fake_asset(investor=None, ticker=None, volume=Decimal(0), *, save=False):
+def create_fake_asset(
+    investor=None,
+    ticker=None,
+    volume=Decimal(0),
+    *,
+    save=False,
+):
+    if investor is None:
+        investor = create_fake_investor(save=save)
+    if ticker is None:
+        ticker = create_fake_instrument()
+        if save:
+            ticker.save()
+    if volume is None:
+        volume = fake.pydecimal(positive=True, max_value=1e10)
+
     asset = Asset(investor=investor, ticker=ticker, volume=volume)
     if save:
         asset.save()
@@ -38,3 +57,11 @@ def investor_factory():
         return create_fake_investor(**kwargs, save=True)
 
     return create_investor
+
+
+@pytest.fixture
+def asset_factory():
+    def create_asset(**kwargs):
+        return create_fake_asset(**kwargs, save=True)
+
+    return create_asset
