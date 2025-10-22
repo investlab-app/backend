@@ -40,9 +40,9 @@ class RunOrderEngineService:
             prices = self.price_listener.get_prices()
             data.prices = prices
 
-            output = self.engine.run(prices)
+            output = self.engine.run(data)
 
-            await self.output_handler.handle(output)
+            await self.output_handler.handle(output, prices)
 
 
 class TradeEngineDataFetcher:
