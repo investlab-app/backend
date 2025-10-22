@@ -459,7 +459,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateMarketOrder'
+                $ref: '#/components/schemas/Order'
           description: ''
   /api/prices/:
     get:
@@ -1070,20 +1070,6 @@ components:
       required:
       - email
       - password
-    CreateMarketOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        investor:
-          type: string
-          format: uuid
-          readOnly: true
-      required:
-      - id
-      - investor
     CreateMarketOrderRequest:
       type: object
       properties:
