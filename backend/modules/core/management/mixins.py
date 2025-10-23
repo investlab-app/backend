@@ -1,4 +1,3 @@
-
 class CommandMessagesMixin:
     def print_success(self, message: str):
         self.stdout.write(self.style.SUCCESS(message))

@@ -5,7 +5,9 @@ from django.core.management.base import BaseCommand
 from modules.core.management.mixins import CommandMessagesMixin
 from modules.instruments.models import Instrument
 from modules.instruments.services.sync_base_info import SyncInstrumentsBaseInfoService
-from modules.instruments.services.sync_detail_info import SyncInstrumentsDetailInfoService
+from modules.instruments.services.sync_detail_info import (
+    SyncInstrumentsDetailInfoService,
+)
 from modules.instruments.services.sync_images import SyncInstrumentsImages
 
 logger = logging.getLogger(__name__)
