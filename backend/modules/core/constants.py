@@ -9,3 +9,6 @@ class PrecisionType(Enum):
     @property
     def precision(self) -> Decimal:
         return self.value
+
+
+type DecimalConvertible = Decimal | int | str
