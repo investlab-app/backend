@@ -45,7 +45,7 @@ class Command(CommandMessagesMixin, BaseCommand):
     def create_assets(
         self, investor: Investor, instrument: Instrument, volume: DecimalConvertible
     ) -> Asset:
-        asset = Asset.objects.filter(ticker=instrument, volume=volume).first()
+        asset = Asset.objects.filter(ticker=instrument, investor=investor).first()
         if asset:
             asset.volume = asset.volume + Decimal(volume)
             asset.save()
