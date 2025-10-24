@@ -54,6 +54,7 @@ INSTALLED_APPS = [
     "modules.orders",
     "modules.prices",
     "modules.transactions",
+    "modules.graph_lang",
 ]
 
 if DEBUG:
