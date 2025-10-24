@@ -25,5 +25,9 @@ class TimespanType(EdgeType):
     pass
 
 @dataclass
+class VoidType(EdgeType):
+    pass
+
+@dataclass
 class InstrumentType(EdgeType):
     pass

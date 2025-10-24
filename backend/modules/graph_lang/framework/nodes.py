@@ -19,22 +19,28 @@ class Node:
 class NodeOutput:
     node :Node
     name :str
+    value :Any
 
     def get(self):
-        result = self.node.execute()
-        return result[self.name]
+        self.node.execute()
+        return self.value
+
+    def set(self, value):
+        self.value = value
 
 
 class Connection:
+    node :Node
     output :NodeOutput
 
-    def get(self, time_at :datetime):
-        return self.output.get()
+    def __call__(self, time_at = None):
+        # Propagate time_at to next node
+        raise NotImplementedError()
 
 class NodeData:
     value :Any
 
-    def get(self, time_at :datetime):
+    def __call__(self, time_at = None):
         return self.value
 
 
@@ -46,9 +52,9 @@ class AndNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
-        a = self.inA.get(time_at)
-        b = self.inB.get(time_at)
+    def execute(self):
+        a = self.inA()
+        b = self.inB()
 
         return {
             'out': a and b
@@ -60,9 +66,9 @@ class OrNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
-        a = self.inA.get(time_at)
-        b = self.inB.get(time_at)
+    def execute(self):
+        a = self.inA()
+        b = self.inB()
 
         self.out.set(a or b)
 
@@ -71,10 +77,10 @@ class NotNode(Node):
     inVal = edges.BoolType(direction=edges.INPUT, source='in')
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
-        val = self.inVal.get(time_at)
+    def execute(self):
+        val = self.inVal()
 
-        self.out.set(val)
+        self.out.set(not val)
 
 class IsGreaterLesser(Node):
     inValue = edges.NumberType(direction=edges.INPUT)
@@ -83,10 +89,10 @@ class IsGreaterLesser(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
-        direction = self.direction.get(time_at)
-        value = self.inValue.get(time_at)
-        x = self.inX.get(time_at)
+    def execute(self):
+        direction = self.direction()
+        value = self.inValue()
+        x = self.inX()
 
         if direction == 'lesser':
             self.out.set(value < x)
@@ -98,7 +104,8 @@ class PriceOfNode(Node):
 
     out = edges.NumberType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
+    def execute(self):
+        # How to access time_at?
         raise NotImplementedError()
 
 class FlowIfNode(Node):
@@ -108,26 +115,40 @@ class FlowIfNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    def execute(self, time_at :datetime):
-        inIf = self.inIf.get(time_at)
-
-        if inIf:
-            self.inThen.get(time_at)
+    def execute(self):
+        if self.inIf():
+            self.inThen()
         else:
-            self.inElse.get(time_at)
+            self.inElse()
 
 class BuySellAmountNode(Node):
     action = edges.EnumType(direction=edges.INPUT, allowed_values=['buy', 'sell'])
     amount = edges.NumberType(direction=edges.INPUT)
     ticker = edges.InstrumentType(direction=edges.INPUT)
 
-    def execute(self, time_at :datetime):
+    def execute(self):
         raise NotImplementedError()
 
-class CheckEvery(Node):
+class CheckEveryNode(Node):
     timespan = edges.TimespanType(direction=edges.INPUT)
 
     in_ = edges.VoidType(direction=edges.INPUT, source='in')
 
-    def execute(self, time_at :datetime):
-        self.in_.get(time_at)
+    def execute(self):
+        self.in_()
+
+class ChangeOverTimeNode(Node):
+    timespan = edges.TimespanType(direction=edges.INPUT)
+    in_ = edges.NumberType(direction=edges.INPUT, source='in')
+
+    out = edges.NumberType(direction=edges.OUTPUT)
+
+    def execute(self):
+        timespan = self.timespan()
+        
+        in_now = self.in_()
+        in_before = self.in_(time_at = self.time_at - timespan)
+
+        self.out.set(in_now - in_before)
+
+
