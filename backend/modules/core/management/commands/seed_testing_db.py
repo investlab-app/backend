@@ -10,7 +10,7 @@ from django.utils import timezone
 from modules.core.constants import DecimalConvertible
 from modules.core.management.mixins import CommandMessagesMixin
 from modules.instruments.models import Instrument
-from modules.investors.models import Asset, Investor, AccountValueSnapshot
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.transactions.models import Transaction
 
 
