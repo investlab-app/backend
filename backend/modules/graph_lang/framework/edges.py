@@ -6,7 +6,7 @@ OUTPUT = 1
 @dataclass
 class EdgeType:
     direction :int
-    source :str | None
+    source :str | None = None
 
 @dataclass
 class NumberType(EdgeType):
@@ -14,7 +14,7 @@ class NumberType(EdgeType):
 
 @dataclass
 class EnumType(EdgeType):
-    allowed_values :list[str]
+    allowed_values :list[str] = None
 
 @dataclass
 class BoolType(EdgeType):
