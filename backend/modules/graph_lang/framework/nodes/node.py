@@ -1,6 +1,6 @@
-from dataclasses import dataclass
 from datetime import datetime
 from typing import Any
+
 from modules.graph_lang.framework import edges
 
 
@@ -29,7 +29,7 @@ class NodeInput:
     def __init__(self, node: "Node"):
         self.node = node
 
-    def __call__(self, execution_time = None):
+    def __call__(self, execution_time=None):
         if self.output is not None:
             self._propagate_execution_time(execution_time)
             return self.output.get()
@@ -38,7 +38,7 @@ class NodeInput:
 
     def _propagate_execution_time(self, execution_time):
         if execution_time is None:
-            execution_time = self.node._time_at
+            execution_time = self.node.get_execution_time()
         self.output.node.set_execution_time(execution_time)
 
     def set(self, value):
@@ -49,7 +49,7 @@ class NodeInput:
 
 
 class Node:
-    _time_at: datetime = None
+    _time_at: datetime | None = None
 
     def __init__(self):
         edge_names = self._get_edge_attrs()
@@ -73,8 +73,11 @@ class Node:
     def execute(self):
         pass
 
-    def set_execution_time(self, time_at :datetime):
+    def set_execution_time(self, time_at: datetime):
         self._time_at = time_at
+
+    def get_execution_time(self) -> datetime:
+        return self._time_at
 
 
 class NodeData:

@@ -2,12 +2,13 @@ from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.nodes.node import Node
 from modules.graph_lang.framework.prices import PriceProvider
 
+
 class PriceOfNode(Node):
     ticker = edges.InstrumentType(direction=edges.INPUT)
 
     out = edges.NumberType(direction=edges.OUTPUT)
 
-    price_provider :PriceProvider
+    price_provider: PriceProvider
 
     def __init__(self, price_provider):
         super().__init__()

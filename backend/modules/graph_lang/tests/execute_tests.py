@@ -1,24 +1,32 @@
+from decimal import Decimal
+
 import pytest
 from faker import Faker
+
+from modules.graph_lang.framework.actions import BuySellAction, GraphActionSet
 from modules.graph_lang.framework.nodes import (
-    IsGreaterLesserNode,
     AndNode,
-    NotNode,
-    OrNode,
-    FlowIfNode,
+    BuySellAmountNode,
     ChangeOverTimeNode,
     CheckEveryNode,
-    BuySellAmountNode,
-    PriceOfNode
-
+    FlowIfNode,
+    IsGreaterLesserNode,
+    NotNode,
+    OrNode,
+    PriceOfNode,
 )
-from modules.graph_lang.framework.actions import GraphActionSet, BuySellAction
-from modules.graph_lang.tests.conftest import VoidSensorNode, NumberBasedOnTimeNode, PriceProviderMock, PassNumberNode
+from modules.graph_lang.tests.conftest import (
+    NumberBasedOnTimeNode,
+    PassNumberNode,
+    PriceProviderMock,
+    VoidSensorNode,
+)
 
 fake = Faker()
 
+
 @pytest.mark.parametrize(
-    "inA, inB, expected",
+    "in_a, in_b, expected",
     [
         (False, False, False),
         (False, True, False),
@@ -26,16 +34,16 @@ fake = Faker()
         (True, True, True),
     ],
 )
-def test_and_node(inA, inB, expected):
+def test_and_node(in_a, in_b, expected):
     node = AndNode()
-    node.inA.set(inA)
-    node.inB.set(inB)
+    node.inA.set(in_a)
+    node.inB.set(in_b)
 
     assert node.out.get() == expected
 
 
 @pytest.mark.parametrize(
-    "inA, inB, expected",
+    "in_a, in_b, expected",
     [
         (False, False, False),
         (False, True, True),
@@ -43,24 +51,24 @@ def test_and_node(inA, inB, expected):
         (True, True, True),
     ],
 )
-def test_or_node(inA, inB, expected):
+def test_or_node(in_a, in_b, expected):
     node = OrNode()
-    node.inA.set(inA)
-    node.inB.set(inB)
+    node.inA.set(in_a)
+    node.inB.set(in_b)
 
     assert node.out.get() == expected
 
 
 @pytest.mark.parametrize(
-    "inVal, expected",
+    "in_val, expected",
     [
         (False, True),
         (True, False),
     ],
 )
-def test_not_node(inVal, expected):
+def test_not_node(in_val, expected):
     node = NotNode()
-    node.inVal.set(inVal)
+    node.inVal.set(in_val)
 
     assert node.out.get() == expected
 
@@ -114,9 +122,10 @@ def test_flow_if_node(if_value, then_executed, else_executed):
     node.inThen.connect(then_node.out)
     node.inElse.connect(else_node.out)
 
-    assert node.out.get() == None
+    assert node.out.get() is None
     assert then_node.executed == then_executed
     assert else_node.executed == else_executed
+
 
 def test_change_over_time_node():
     node = ChangeOverTimeNode()
@@ -131,6 +140,7 @@ def test_change_over_time_node():
     node.set_execution_time(dt_2)
 
     assert node.out.get() == 10 - 3
+
 
 def test_change_over_time__execution_time_not_given__raises_runtime_error():
     node = ChangeOverTimeNode()
@@ -153,35 +163,38 @@ def test_check_every_node():
 
     assert void_sensor_node.executed is True
 
+
 def test_buy_sell_amount_node():
     action_set = GraphActionSet()
-    triggerNode = CheckEveryNode()
+    trigger_node = CheckEveryNode()
     node = BuySellAmountNode(action_set)
-    node.action.set('buy')
+    node.action.set("buy")
     node.amount.set(25)
-    node.ticker.set('AAPL')
-    triggerNode.in_.connect(node.out)
+    node.ticker.set("AAPL")
+    trigger_node.in_.connect(node.out)
 
-    triggerNode.execute()
+    trigger_node.execute()
 
-    assert action_set.get_actions() == set([BuySellAction('buy', 25, 'AAPL')])
+    assert action_set.get_actions() == {BuySellAction("buy", Decimal(25), "AAPL")}
+
 
 def test_price_of_node():
     dt = fake.date_time()
     price_provider = PriceProviderMock()
-    price_provider.set('AAPL', dt, 10)
+    price_provider.set("AAPL", dt, Decimal(10))
 
     node = PriceOfNode(price_provider)
-    node.ticker.set('AAPL')
+    node.ticker.set("AAPL")
     node.set_execution_time(dt)
 
     assert node.out.get() == 10
+
 
 def test_price_of_node__execution_time_not_given__raises_runtime_error():
     price_provider = PriceProviderMock()
 
     node = PriceOfNode(price_provider)
-    node.ticker.set('AAPL')
+    node.ticker.set("AAPL")
 
     with pytest.raises(RuntimeError):
         node.out.get()

@@ -1,6 +1,7 @@
-
 from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.nodes.node import Node
+
+# ruff: noqa: N815
 
 
 class AndNode(Node):
@@ -14,6 +15,7 @@ class AndNode(Node):
         b = self.inB()
 
         self.out.set(a and b)
+
 
 class OrNode(Node):
     inA = edges.BoolType(direction=edges.INPUT)
@@ -29,7 +31,7 @@ class OrNode(Node):
 
 
 class NotNode(Node):
-    inVal = edges.BoolType(direction=edges.INPUT, source='in')
+    inVal = edges.BoolType(direction=edges.INPUT, source="in")
     out = edges.BoolType(direction=edges.OUTPUT)
 
     def execute(self):

@@ -2,9 +2,10 @@ from dataclasses import dataclass
 from decimal import Decimal
 from typing import Literal
 
+
 class GraphActionSet:
-    _actions :set = set()
-    
+    _actions: set = set()
+
     def add_action(self, action):
         self._actions.add(action)
 
@@ -14,6 +15,6 @@ class GraphActionSet:
 
 @dataclass(frozen=True)
 class BuySellAction:
-    action :Literal['buy', 'sell']
-    amount :Decimal
-    ticker :str
+    action: Literal["buy", "sell"]
+    amount: Decimal
+    ticker: str
