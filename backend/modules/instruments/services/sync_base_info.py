@@ -25,8 +25,19 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         **EDITABLE_FIELDS_MAPPING,
     }
 
-    def __init__(self, repository: PolygonTickersRepository | None = None):
+    def __init__(
+        self,
+        repository: PolygonTickersRepository | None = None,
+        tickers: list[str] | None = None,
+    ):
+        """
+        Initialize the service with an optional repository and list of tickers.
+        Args:
+            repository: Repository to fetch tickers.
+            tickers: Specific tickers to sync. If None, sync all tickers.
+        """
         self.repository = repository or PolygonTickersRepository()
+        self.tickers = tickers
 
     def sync_instruments(self) -> dict[str, int]:
         """Synchronize instruments based on Polygon Tickers."""
@@ -38,6 +49,9 @@ class SyncInstrumentsBaseInfoService(CreateWithMappingMixin, UpdateWithMappingMi
         no_changes = 0
 
         for ticker_data in tickers_data:
+            if self.tickers and ticker_data.ticker not in self.tickers:
+                continue
+
             if instrument := Instrument.objects.filter(
                 ticker=ticker_data.ticker
             ).first():

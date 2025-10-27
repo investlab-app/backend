@@ -2,7 +2,7 @@ from collections import defaultdict
 from decimal import Decimal
 from typing import Any
 
-from modules.core.defaults import PrecisionType
+from modules.core.constants import PrecisionType
 from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineOrder,
