@@ -1945,7 +1945,7 @@ components:
           type: string
           description: Instrument name
           maxLength: 255
-        logo:
+        icon:
           type: string
           format: uri
           nullable: true
@@ -1974,7 +1974,7 @@ components:
       - gain
       - gain_percentage
       - history
-      - logo
+      - icon
       - market_value
       - name
       - quantity

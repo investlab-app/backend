@@ -31,8 +31,8 @@ class CurrentAccountValueSerializer(serializers.Serializer):
 class AssetAllocationItemSerializer(serializers.Serializer):
     instrument_name = serializers.CharField(max_length=255)
     instrument_ticker = serializers.CharField(max_length=20)
-    instrument_logo = serializers.URLField(allow_null=True)
-    instrument_icon = serializers.URLField(allow_null=True)
+    instrument_logo = serializers.ImageField(allow_null=True)
+    instrument_icon = serializers.ImageField(allow_null=True)
 
     # AssetAllocation.total_value
     value = serializers.FloatField()
@@ -147,7 +147,7 @@ class PositionSerializer(serializers.Serializer):
 
     name = serializers.CharField(max_length=255, help_text="Instrument name")
 
-    logo = serializers.URLField(allow_null=True)
+    icon = serializers.ImageField(allow_null=True)
 
     # AssetAllocation.asset.volume
     quantity = serializers.IntegerField(help_text="Total quantity of shares")

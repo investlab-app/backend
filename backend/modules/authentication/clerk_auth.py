@@ -62,5 +62,6 @@ class ClerkAuthentication(BaseAuthentication):
             raise AuthenticationFailed("User payload not found")
 
         clerk_user = parse_clerk_user_from_payload(payload)
+        print(f"Clerk id: {clerk_user.id}, role: {clerk_user.role}")
         token = request_state.token
         return clerk_user, token
