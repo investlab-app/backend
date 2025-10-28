@@ -24,7 +24,8 @@ class NodeInput:
     node: "Node"
 
     output: NodeOutput | None = None
-    value: Any | None
+    validated_value: Any | None = None
+    raw_value :Any | None = None
 
     def __init__(self, node: "Node"):
         self.node = node
@@ -34,7 +35,7 @@ class NodeInput:
             self._propagate_execution_time(execution_time)
             return self.output.get()
         else:
-            return self.value
+            return self.validated_value
 
     def _propagate_execution_time(self, execution_time):
         if execution_time is None:
@@ -42,17 +43,29 @@ class NodeInput:
         self.output.node.set_execution_time(execution_time)
 
     def set(self, value):
-        self.value = value
+        self.validated_value = value
 
     def connect(self, output: NodeOutput):
         self.output = output
 
+    def get_raw_value(self):
+        return self.raw_value
+
+    def set_raw_value(self, value):
+        self.raw_value = value
+        
+
 
 class Node:
     _time_at: datetime | None = None
+    all_edges: list
+    id :str | None
+    TRIGGER = False
+
 
     def __init__(self):
         edge_names = self._get_edge_attrs()
+        self._copy_edges_to_list(edge_names)
         self._replace_edge_fields(edge_names)
 
     def _get_edge_attrs(self) -> list[str]:
@@ -61,6 +74,13 @@ class Node:
             for name in dir(self)
             if isinstance(getattr(self, name), edges.EdgeType)
         ]
+
+    def _copy_edges_to_list(self, edge_names):
+        self.all_edges = []
+        for name in edge_names:
+            edge = getattr(self, name)
+            edge.field_name = name
+            self.all_edges.append(edge)
 
     def _replace_edge_fields(self, edge_names):
         for f in edge_names:

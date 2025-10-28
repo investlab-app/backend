@@ -8,6 +8,16 @@ OUTPUT = 1
 class EdgeType:
     direction: int
     source: str | None = None
+    field_name :str | None = None
+    
+    @property
+    def source_name(self):
+        if self.source is not None:
+            return self.source
+        else:
+            return self.field_name
+
+
 
 
 @dataclass
