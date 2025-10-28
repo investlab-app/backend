@@ -1187,8 +1187,6 @@ components:
           format: uri
           nullable: true
       required:
-      - active
-      - currency_name
       - id
       - market
       - name
@@ -1350,9 +1348,7 @@ components:
           format: uri
           nullable: true
       required:
-      - active
       - address
-      - currency_name
       - id
       - locale
       - market
@@ -1403,8 +1399,6 @@ components:
           - $ref: '#/components/schemas/PriceDailySummary'
           readOnly: true
       required:
-      - active
-      - currency_name
       - id
       - market
       - name

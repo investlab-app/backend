@@ -4,7 +4,7 @@ from unittest.mock import Mock
 
 import pytest
 
-from modules.core.defaults import PrecisionType
+from modules.core.constants import PrecisionType
 from modules.orders.order_engine.engine import TradeEngine
 from modules.orders.order_engine.structures import (
     EngineAsset,
