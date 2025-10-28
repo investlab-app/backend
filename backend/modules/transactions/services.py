@@ -15,10 +15,12 @@ from modules.transactions.schemas import TransactionParams, TransactionStats
 class ExecuteTransactionService:
     def buy(self, params: TransactionParams):
         transaction_price = params.volume * params.action_price
-        if params.investor.balance < transaction_price:
-            raise ValueError("Investor doesn't have enough balance")
+        if params.investor.buffer_money < transaction_price:
+            raise ValueError(
+                "Insufficient buffer money to execute this buy transaction."
+            )
 
-        params.investor.balance -= transaction_price
+        params.investor.buffer_money -= transaction_price
 
         try:
             asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]

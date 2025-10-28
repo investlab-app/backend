@@ -20,6 +20,9 @@ class Investor(BaseModel):
     balance = models.DecimalField(
         max_digits=30, decimal_places=2, default="0", verbose_name=_("Balance")
     )
+    buffer_money = models.DecimalField(
+        max_digits=30, decimal_places=2, default="0", verbose_name=_("Buffer Money")
+    )
 
     class Meta:
         verbose_name = _("Investor")

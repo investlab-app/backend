@@ -20,6 +20,18 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
         fields = ("id", "ticker", "volume", "is_buy", "investor")
         read_only_fields = ("id", "investor")
 
+    def validate(self, data):
+        # Check if this is a buy order
+        if data.get("is_buy"):
+            investor = self.context["request"].user
+            # For now, basic check - view handles actual money allocation
+            # This validates that the investor has sufficient balance
+            if investor.balance <= 0:
+                raise serializers.ValidationError(
+                    "Insufficient balance to create a buy order."
+                )
+        return data
+
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
 
