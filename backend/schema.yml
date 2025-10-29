@@ -1687,6 +1687,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
       - buys
       - gain

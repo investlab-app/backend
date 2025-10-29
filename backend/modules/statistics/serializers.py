@@ -100,7 +100,7 @@ class MostTradedItemSerializer(serializers.Serializer):
     gain = serializers.FloatField()
 
     # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField()
+    gain_percentage = serializers.FloatField(allow_null=True)
 
 
 class TransactionHistoryQueryParams(serializers.Serializer):
