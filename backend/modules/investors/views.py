@@ -13,7 +13,6 @@ from modules.investors.serializers import (
     AssetSerializer,
     DepositMoneySerializer,
     InvestorSerializer,
-    InvestorUpdateSerializer,
     LanguageUpdateSerializer,
 )
 
@@ -23,21 +22,18 @@ logger = logging.getLogger(__name__)
 class InvestorDetailView(generics.RetrieveUpdateAPIView):
     queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
+    http_method_names = ["get", "patch"]
     lookup_field = "clerk_id"
 
-    def get_serializer_class(self):
-        if self.request.method in ["PUT", "PATCH"]:
-            return InvestorUpdateSerializer
-        return InvestorSerializer
 
-
-class CurrentInvestorView(generics.RetrieveAPIView):
+class CurrentInvestorView(generics.RetrieveUpdateAPIView):
     """
     Get the current authenticated user's investor profile.
     """
 
     serializer_class = InvestorSerializer
     queryset = Investor.objects.all()
+    http_method_names = ["get", "patch"]
 
     def get_object(self):
         """Retrieve the current authenticated user's investor profile."""
@@ -51,6 +47,15 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        request=InvestorSerializer,
+        responses={200: InvestorSerializer},
+        summary="Update current investor",
+        description="Update the investor profile for the currently authenticated user.",
+    )
+    def patch(self, request: Request, *args, **kwargs) -> Response:
+        return super().patch(request, *args, **kwargs)
 
 
 class AssetListView(generics.ListAPIView):
@@ -138,8 +143,6 @@ class DepositMoneyView(generics.GenericAPIView):
         investor.balance += amount
         investor.save()
 
-        logger.info(
-            f"Deposited {amount} to investor with clerk_id {user_clerk_id}"
-        )
+        logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
         return Response({"status": "success", "amount": str(amount)}, status=200)

@@ -175,31 +175,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Investor'
           description: ''
-    put:
-      operationId: investors_update
-      parameters:
-      - in: path
-        name: clerk_id
-        schema:
-          type: string
-        required: true
-      tags:
-      - investors
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InvestorUpdateRequest'
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvestorUpdate'
-          description: ''
     patch:
       operationId: investors_partial_update
       parameters:
@@ -214,7 +189,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedInvestorUpdateRequest'
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
       - ClerkAuth: []
       - ClerkAuth: []
@@ -223,7 +198,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvestorUpdate'
+                $ref: '#/components/schemas/Investor'
           description: ''
   /api/investors/deposit/:
     post:
@@ -253,6 +228,27 @@ paths:
       summary: Get current investor
       tags:
       - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+    patch:
+      operationId: investors_me_partial_update
+      description: Update the investor profile for the currently authenticated user.
+      summary: Update current investor
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
       - ClerkAuth: []
       - ClerkAuth: []
@@ -1451,18 +1447,20 @@ components:
           format: decimal
           pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
           readOnly: true
+        language:
+          type: string
+          description: User's preferred language (e.g., 'en', 'pl')
+          maxLength: 10
         watching_instruments:
           type: array
           items:
             type: string
             format: uuid
             title: Watching Instruments
-          readOnly: true
       required:
       - balance
       - clerk_id
       - id
-      - watching_instruments
     InvestorStats:
       type: object
       description: Serializer for investor statistics data.
@@ -1488,49 +1486,6 @@ components:
       - todays_gain
       - total_gain
       - total_value
-    InvestorUpdate:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        clerk_id:
-          type: string
-          readOnly: true
-        balance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
-          readOnly: true
-        language:
-          type: string
-          description: User's preferred language (e.g., 'en', 'pl')
-          maxLength: 10
-        watching_instruments:
-          type: array
-          items:
-            type: string
-            format: uuid
-            title: Watching Instruments
-      required:
-      - balance
-      - clerk_id
-      - id
-    InvestorUpdateRequest:
-      type: object
-      properties:
-        language:
-          type: string
-          minLength: 1
-          description: User's preferred language (e.g., 'en', 'pl')
-          maxLength: 10
-        watching_instruments:
-          type: array
-          items:
-            type: string
-            format: uuid
-            title: Watching Instruments
     LocaleEnum:
       enum:
       - us
@@ -1911,7 +1866,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PriceAlert'
-    PatchedInvestorUpdateRequest:
+    PatchedInvestorRequest:
       type: object
       properties:
         language:

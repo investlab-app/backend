@@ -13,18 +13,6 @@ class InvestorSerializer(serializers.ModelSerializer):
             "id",
             "clerk_id",
             "balance",
-            "watching_instruments",
-        ]
-        read_only_fields = fields
-
-
-class InvestorUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Investor
-        fields = [
-            "id",
-            "clerk_id",
-            "balance",
             "language",
             "watching_instruments",
         ]
