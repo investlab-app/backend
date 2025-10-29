@@ -11,6 +11,7 @@ from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
+    DepositMoneySerializer,
     InvestorSerializer,
     InvestorUpdateSerializer,
     LanguageUpdateSerializer,
@@ -120,3 +121,25 @@ class LanguageUpdateView(generics.CreateAPIView):
 
         response_serializer = self.get_serializer({"language": investor.language})
         return Response(response_serializer.data, status=200)
+
+
+class DepositMoneyView(generics.GenericAPIView):
+    serializer_class = DepositMoneySerializer
+
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        amount = serializer.validated_data["amount"]
+
+        user_clerk_id = request.user.id
+        investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
+        investor.balance += amount
+        investor.save()
+
+        logger.info(
+            f"Deposited {amount} to investor with clerk_id {user_clerk_id}"
+        )
+
+        return Response({"status": "success", "amount": str(amount)}, status=200)
