@@ -16,8 +16,8 @@ class InstrumentsListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentListSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["ticker"]
-    ordering_fields = ["ticker"]
+    search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
+    ordering_fields = ["ticker", "name", "market_cap"]
 
 
 class InstrumentsRetrieveView(generics.GenericAPIView):
@@ -70,8 +70,8 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentWithPriceSerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
-    search_fields = ["ticker"]
-    ordering_fields = ["ticker"]
+    search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
+    ordering_fields = ["ticker", "name", "market_cap"]
 
     def list(self, request, *args, **kwargs):
         queryset = self.filter_queryset(self.get_queryset())
