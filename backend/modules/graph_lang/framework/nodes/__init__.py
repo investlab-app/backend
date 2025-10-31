@@ -3,7 +3,7 @@ from modules.graph_lang.framework.nodes.data_transformation import ChangeOverTim
 from modules.graph_lang.framework.nodes.flow import FlowIfNode
 from modules.graph_lang.framework.nodes.fundamentals import PriceOfNode
 from modules.graph_lang.framework.nodes.logic import AndNode, NotNode, OrNode
-from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.nodes.node import Node, NodeFactory
 from modules.graph_lang.framework.nodes.predicates import IsGreaterLesserNode
 from modules.graph_lang.framework.nodes.triggers import CheckEveryNode
 
@@ -16,6 +16,7 @@ __all__ = [
     "NotNode",
     "OrNode",
     "Node",
+    "NodeFactory",
     "IsGreaterLesserNode",
     "CheckEveryNode",
 ]

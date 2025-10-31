@@ -25,7 +25,7 @@ class NodeInput:
 
     output: NodeOutput | None = None
     validated_value: Any | None = None
-    raw_value :Any | None = None
+    raw_value: Any | None = None
 
     def __init__(self, node: "Node"):
         self.node = node
@@ -53,15 +53,28 @@ class NodeInput:
 
     def set_raw_value(self, value):
         self.raw_value = value
-        
+
+class NodeMeta(type):
+    def __init__(cls, name, bases, dct):
+        cls._assign_names_to_edges()
+
+    def _assign_names_to_edges(cls):
+        edge_names = [
+            name 
+            for name in dir(cls)
+            if isinstance(getattr(cls, name), edges.EdgeType)
+        ]
+
+        for name in edge_names:
+            edge = getattr(cls, name)
+            edge.field_name = name
 
 
-class Node:
+class Node(metaclass=NodeMeta):
     _time_at: datetime | None = None
     all_edges: list
-    id :str | None
+    id: str | None
     TRIGGER = False
-
 
     def __init__(self):
         edge_names = self._get_edge_attrs()
@@ -90,6 +103,35 @@ class Node:
             else:
                 setattr(self, f, NodeOutput(self))
 
+    def get_input_by_source_name(self, source_name) -> NodeInput:
+        edge = type(self).get_edge_by_source_name(source_name)
+        return getattr(self, edge.field_name)
+
+    @classmethod
+    def get_incoming_edges(cls) -> list[edges.EdgeType]:
+        return [
+            getattr(cls, name)
+            for name in dir(cls)
+            if isinstance(getattr(cls, name), edges.EdgeType)
+            and getattr(cls, name).direction == edges.INPUT
+        ]
+
+    @classmethod
+    def get_all_edges(cls) -> list[edges.EdgeType]:
+        return [
+            getattr(cls, name)
+            for name in dir(cls)
+            if isinstance(getattr(cls, name), edges.EdgeType)
+        ]
+
+    @classmethod
+    def get_edge_by_source_name(cls, source_name) -> edges.EdgeType | None:
+        return next((
+            e 
+            for e in cls.get_all_edges() 
+            if e.source_name == source_name)
+        , None)
+
     def execute(self):
         pass
 
@@ -100,8 +142,9 @@ class Node:
         return self._time_at
 
 
-class NodeData:
-    value: Any
+class NodeFactory:
+    def from_type(self, type: type[Node]) -> Node:
+        pass
 
-    def __call__(self, time_at=None):
-        return self.value
+    def name_to_type(self, name: str) -> type[Node]:
+        pass

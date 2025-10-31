@@ -1,5 +1,5 @@
-from datetime import datetime
 from dataclasses import dataclass
+from datetime import datetime
 from decimal import Decimal
 
 from modules.graph_lang.framework import edges
@@ -45,56 +45,66 @@ class PriceProviderMock(Node):
     def set(self, ticker: str, time_at: datetime, price: Decimal):
         self._prices[(ticker, time_at)] = price
 
+
 @dataclass
 class MockEdgeType(edges.EdgeType):
-    validate :bool = False
-    match_edge :bool = False
+    validate: bool = False
+    match_edge: bool = False
 
     def validate_value(self, value) -> bool:
         return self.validate
 
-    def validate_connected_output(self, edge :edges.EdgeType) -> bool:
+    def validate_connected_output(self, edge: edges.EdgeType) -> bool:
         return self.match_edge
 
 
 class EmptyNode(Node):
     pass
 
+
 class BoolInputNode(Node):
     text = edges.BoolType(direction=edges.INPUT)
+
 
 class TwoBoolInputNode(Node):
     inA = edges.BoolType(direction=edges.INPUT)
     inB = edges.BoolType(direction=edges.INPUT)
 
+
 class NumberOutputNode(Node):
     number = edges.NumberType(direction=edges.OUTPUT)
+
 
 class NumberInputNode(Node):
     number = edges.NumberType(direction=edges.INPUT)
 
+
 class NumberInputChangeSourceNode(Node):
-    number = edges.NumberType(direction=edges.INPUT, source='inVal')
+    number = edges.NumberType(direction=edges.INPUT, source="inVal")
+
 
 class NumberInputOutputNode(Node):
     inVal = edges.NumberType(direction=edges.INPUT)
     outVal = edges.NumberType(direction=edges.OUTPUT)
 
+
 class TriggerNode(Node):
     TRIGGER = True
+
 
 class TypeMismatchNode(Node):
     match_val = MockEdgeType(direction=edges.INPUT, validate=True, match_edge=True)
     mismatch_val = MockEdgeType(direction=edges.INPUT, validate=True, match_edge=False)
 
+
 class EnumInputNode(Node):
-    value = edges.EnumType(direction=edges.INPUT, allowed_values=['valid1', 'valid2'])
+    value = edges.EnumType(direction=edges.INPUT, allowed_values=["valid1", "valid2"])
 
 
 class MockNodeFactory:
     nodes = {}
 
-    def create_from_type(self, name :str) -> Node:
-        if not name in self.nodes:
-            raise ValueError()
+    def create_from_type(self, name: str) -> Node:
+        if name not in self.nodes:
+            raise ValueError
         return self.nodes[name]
