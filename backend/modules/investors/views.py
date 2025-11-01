@@ -11,8 +11,8 @@ from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
+    DepositMoneySerializer,
     InvestorSerializer,
-    InvestorUpdateSerializer,
     LanguageUpdateSerializer,
 )
 
@@ -22,21 +22,18 @@ logger = logging.getLogger(__name__)
 class InvestorDetailView(generics.RetrieveUpdateAPIView):
     queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
+    http_method_names = ["get", "patch"]
     lookup_field = "clerk_id"
 
-    def get_serializer_class(self):
-        if self.request.method in ["PUT", "PATCH"]:
-            return InvestorUpdateSerializer
-        return InvestorSerializer
 
-
-class CurrentInvestorView(generics.RetrieveAPIView):
+class CurrentInvestorView(generics.RetrieveUpdateAPIView):
     """
     Get the current authenticated user's investor profile.
     """
 
     serializer_class = InvestorSerializer
     queryset = Investor.objects.all()
+    http_method_names = ["get", "patch"]
 
     def get_object(self):
         """Retrieve the current authenticated user's investor profile."""
@@ -50,6 +47,15 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
+
+    @extend_schema(
+        request=InvestorSerializer,
+        responses={200: InvestorSerializer},
+        summary="Update current investor",
+        description="Update the investor profile for the currently authenticated user.",
+    )
+    def patch(self, request: Request, *args, **kwargs) -> Response:
+        return super().patch(request, *args, **kwargs)
 
 
 class AssetListView(generics.ListAPIView):
@@ -120,3 +126,23 @@ class LanguageUpdateView(generics.CreateAPIView):
 
         response_serializer = self.get_serializer({"language": investor.language})
         return Response(response_serializer.data, status=200)
+
+
+class DepositMoneyView(generics.GenericAPIView):
+    serializer_class = DepositMoneySerializer
+
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
+
+        amount = serializer.validated_data["amount"]
+
+        user_clerk_id = request.user.id
+        investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
+        investor.balance += amount
+        investor.save()
+
+        logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
+
+        return Response({"status": "success", "amount": str(amount)}, status=200)
