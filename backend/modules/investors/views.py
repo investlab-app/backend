@@ -21,6 +21,7 @@ from modules.investors.serializers import (
     DepositMoneySerializer,
     InvestorSerializer,
     ToggleWatchedInstrumentSerializer,
+    WatchedTickerSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -71,6 +72,27 @@ class AssetListView(generics.ListAPIView):
     def get_queryset(self):
         investor = Investor.objects.get(clerk_id=self.request.user.id)
         return Asset.objects.filter(investor=investor)
+
+
+class WatchedTickersListView(generics.ListAPIView):
+    """
+    Get watched tickers for the current authenticated user.
+    """
+
+    serializer_class = WatchedTickerSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.watching_instruments.all()
+
+    @extend_schema(
+        responses={200: WatchedTickerSerializer(many=True)},
+        summary="Get watched tickers",
+        description="Get the list of watched tickers with icons for the currently authenticated user.",
+    )
+    def get(self, request: Request, *args, **kwargs) -> Response:
+        return super().get(request, *args, **kwargs)
 
 
 class AccountValueOverTimeView(generics.ListAPIView):

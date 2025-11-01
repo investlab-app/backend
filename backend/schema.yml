@@ -302,6 +302,26 @@ paths:
               schema:
                 $ref: '#/components/schemas/ToggleWatchedInstrument'
           description: ''
+  /api/investors/me/watched-tickers/:
+    get:
+      operationId: investors_me_watched_tickers_list
+      description: Get the list of watched tickers with icons for the currently authenticated
+        user.
+      summary: Get watched tickers
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WatchedTicker'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
@@ -2270,6 +2290,28 @@ components:
           type: string
       required:
       - public_key
+    WatchedTicker:
+      type: object
+      description: Serializer for watched tickers with icon and ticker information.
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - name
+      - ticker
   securitySchemes:
     ClerkAuth:
       type: http
