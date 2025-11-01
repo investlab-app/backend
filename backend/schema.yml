@@ -175,31 +175,6 @@ paths:
               schema:
                 $ref: '#/components/schemas/Investor'
           description: ''
-    put:
-      operationId: investors_update
-      parameters:
-      - in: path
-        name: clerk_id
-        schema:
-          type: string
-        required: true
-      tags:
-      - investors
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/InvestorUpdateRequest'
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '200':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/InvestorUpdate'
-          description: ''
     patch:
       operationId: investors_partial_update
       parameters:
@@ -214,7 +189,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/PatchedInvestorUpdateRequest'
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
       - ClerkAuth: []
       - ClerkAuth: []
@@ -223,7 +198,28 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/InvestorUpdate'
+                $ref: '#/components/schemas/Investor'
+          description: ''
+  /api/investors/deposit/:
+    post:
+      operationId: investors_deposit_create
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DepositMoneyRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DepositMoney'
           description: ''
   /api/investors/me/:
     get:
@@ -232,6 +228,27 @@ paths:
       summary: Get current investor
       tags:
       - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Investor'
+          description: ''
+    patch:
+      operationId: investors_me_partial_update
+      description: Update the investor profile for the currently authenticated user.
+      summary: Update current investor
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
       - ClerkAuth: []
       - ClerkAuth: []
@@ -261,27 +278,6 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/AccountValueSnapshotDaily'
-          description: ''
-  /api/investors/me/language/:
-    post:
-      operationId: investors_me_language_create
-      tags:
-      - investors
-      requestBody:
-        content:
-          application/json:
-            schema:
-              $ref: '#/components/schemas/LanguageUpdateRequest'
-        required: true
-      security:
-      - ClerkAuth: []
-      - ClerkAuth: []
-      responses:
-        '201':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/LanguageUpdate'
           description: ''
   /api/investors/me/watched-instruments/{instrument_id}/toggle/:
     post:
@@ -1129,6 +1125,24 @@ components:
       - gain
       - gain_percentage
       - total_account_value
+    DepositMoney:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
+    DepositMoneyRequest:
+      type: object
+      properties:
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
+      required:
+      - amount
     HistoryEntry:
       type: object
       properties:
@@ -1441,17 +1455,21 @@ components:
         clerk_id:
           type: string
           readOnly: true
+        balance:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+          readOnly: true
+        language:
+          type: string
+          description: User's preferred language (e.g., 'en', 'pl')
+          maxLength: 10
         watching_instruments:
           type: array
           items:
             type: string
             format: uuid
             title: Watching Instruments
-        balance:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
-          readOnly: true
       required:
       - balance
       - clerk_id
@@ -1481,77 +1499,6 @@ components:
       - todays_gain
       - total_gain
       - total_value
-    InvestorUpdate:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        clerk_id:
-          type: string
-          readOnly: true
-        language:
-          type: string
-          description: User's preferred language (e.g., 'en', 'pl')
-          maxLength: 10
-        watching_instruments:
-          type: array
-          items:
-            type: string
-            format: uuid
-            title: Watching Instruments
-      required:
-      - clerk_id
-      - id
-    InvestorUpdateRequest:
-      type: object
-      properties:
-        language:
-          type: string
-          minLength: 1
-          description: User's preferred language (e.g., 'en', 'pl')
-          maxLength: 10
-        watching_instruments:
-          type: array
-          items:
-            type: string
-            format: uuid
-            title: Watching Instruments
-    LanguageEnum:
-      enum:
-      - en
-      - pl
-      type: string
-      description: |-
-        * `en` - English
-        * `pl` - Polski
-    LanguageUpdate:
-      type: object
-      properties:
-        language:
-          allOf:
-          - $ref: '#/components/schemas/LanguageEnum'
-          description: |-
-            Language code (e.g., 'en', 'pl')
-
-            * `en` - English
-            * `pl` - Polski
-      required:
-      - language
-    LanguageUpdateRequest:
-      type: object
-      properties:
-        language:
-          allOf:
-          - $ref: '#/components/schemas/LanguageEnum'
-          description: |-
-            Language code (e.g., 'en', 'pl')
-
-            * `en` - English
-            * `pl` - Polski
-      required:
-      - language
     LocaleEnum:
       enum:
       - us
@@ -1937,7 +1884,7 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PriceAlert'
-    PatchedInvestorUpdateRequest:
+    PatchedInvestorRequest:
       type: object
       properties:
         language:
