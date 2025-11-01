@@ -35,6 +35,13 @@ class LanguageUpdateSerializer(serializers.Serializer):
     )
 
 
+class ToggleWatchedInstrumentSerializer(serializers.Serializer):
+    is_watched = serializers.BooleanField(
+        help_text="Whether the instrument is now being watched"
+    )
+    instrument_id = serializers.CharField(help_text="ID of the instrument")
+
+
 class AssetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Asset

@@ -283,6 +283,29 @@ paths:
               schema:
                 $ref: '#/components/schemas/LanguageUpdate'
           description: ''
+  /api/investors/me/watched-instruments/{instrument_id}/toggle/:
+    post:
+      operationId: investors_me_watched_instruments_toggle_create
+      description: Toggle the watched status of an instrument for the current user.
+      summary: Toggle watched instrument
+      parameters:
+      - in: path
+        name: instrument_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToggleWatchedInstrument'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
@@ -1398,8 +1421,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/PriceDailySummary'
           readOnly: true
+        is_watched:
+          type: boolean
+          readOnly: true
       required:
       - id
+      - is_watched
       - market
       - name
       - price_info
@@ -2260,6 +2287,18 @@ components:
         title:
           type: string
           nullable: true
+    ToggleWatchedInstrument:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
+        instrument_id:
+          type: string
+          description: ID of the instrument
+      required:
+      - instrument_id
+      - is_watched
     TradingOverview:
       type: object
       properties:

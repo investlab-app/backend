@@ -2,11 +2,18 @@ import logging
 
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.functions.datetime import TruncDate
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics
+from rest_framework import generics, status
+from rest_framework.decorators import (
+    api_view,
+    authentication_classes,
+)
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.authentication.clerk_auth import ClerkAuthentication
+from modules.instruments.models import Instrument
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
@@ -14,6 +21,7 @@ from modules.investors.serializers import (
     InvestorSerializer,
     InvestorUpdateSerializer,
     LanguageUpdateSerializer,
+    ToggleWatchedInstrumentSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -120,3 +128,37 @@ class LanguageUpdateView(generics.CreateAPIView):
 
         response_serializer = self.get_serializer({"language": investor.language})
         return Response(response_serializer.data, status=200)
+
+
+@extend_schema(
+    request=None,
+    responses={200: ToggleWatchedInstrumentSerializer},
+    summary="Toggle watched instrument",
+    description="Toggle the watched status of an instrument for the current user.",
+)
+@api_view(["POST"])
+@authentication_classes([ClerkAuthentication])
+def toggle_watched_instrument(request: Request, instrument_id: str) -> Response:
+    """
+    Toggle the watched status of an instrument for the current user.
+    """
+    try:
+        instrument = get_object_or_404(Instrument, id=instrument_id)
+        investor = Investor.objects.get(clerk_id=request.user.id)
+
+        if investor.watching_instruments.filter(id=instrument.id).exists():
+            investor.watching_instruments.remove(instrument)
+            is_watched = False
+        else:
+            investor.watching_instruments.add(instrument)
+            is_watched = True
+
+        serializer = ToggleWatchedInstrumentSerializer(
+            {"is_watched": is_watched, "instrument_id": str(instrument.id)}
+        )
+        return Response(serializer.data, status=status.HTTP_200_OK)
+    except Investor.DoesNotExist:
+        return Response(
+            {"error": "Investor profile not found"},
+            status=status.HTTP_404_NOT_FOUND,
+        )

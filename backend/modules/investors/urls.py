@@ -5,6 +5,7 @@ from modules.investors.views import (
     CurrentInvestorView,
     InvestorDetailView,
     LanguageUpdateView,
+    toggle_watched_instrument,
 )
 
 app_name = "investors"
@@ -20,6 +21,11 @@ urlpatterns = [
         "me/language/",
         LanguageUpdateView.as_view(),
         name="language-update",
+    ),
+    path(
+        "me/watched-instruments/<str:instrument_id>/toggle/",
+        toggle_watched_instrument,
+        name="toggle-watched-instrument",
     ),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
 ]
