@@ -1,6 +1,8 @@
 from datetime import datetime
 from typing import Any, Optional
 
+from modules.graph_lang.framework.actions import GraphActionSet
+from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
 
 
@@ -55,11 +57,14 @@ class NodeInput:
         self.raw_value = value
 
 
-class Node():
+# TODO: define TYPE_NAME for all nodes
+class Node:
     _time_at: datetime | None = None
     all_edges: list
     id: str | None
     TRIGGER = False
+    TYPE_NAME = None
+
 
     def __init__(self):
         self.initialize_input_outputs()
@@ -113,8 +118,23 @@ class Node():
 
 
 class NodeFactory:
-    def from_type(self, type: type[Node]) -> Node:
-        pass
+    def __init__(self, price_provider, action_set):
+        self._price_provider = price_provider
+        self._action_set = action_set
+        self._types = {
+            cls.TYPE_NAME.lower(): cls
+            for cls in Node.__subclasses__()
+            if cls.TYPE_NAME is not None
+        }
 
-    def name_to_type(self, name: str) -> Optional[type[Node]]:
-        pass
+    def name_to_type(self, name):
+        return self._types.get(name.lower())
+
+    def from_type(self, node_type):
+        if not issubclass(node_type, Node):
+            raise ValueError(f"{node_type} is not a subclass of Node")
+        return node_type(
+            price_provider=self._price_provider,
+            action_set=self._action_set
+        )
+

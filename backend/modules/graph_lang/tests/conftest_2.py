@@ -5,6 +5,7 @@ from modules.graph_lang.framework.parser import GraphData, NodeData, EdgeData
 
 
 class MockParser:
+
     def parse(self, json :dict) -> Optional[Any]:
         self.called_with = json
         return self.data

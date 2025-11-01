@@ -7,18 +7,11 @@ import json
 
 from modules.graph_lang.models import Graph
 from modules.investors.models import Investor
-from modules.graph_lang.framework.parser import Parser
-from modules.graph_lang.framework.validator import Validator
 from modules.graph_lang.serializers import GraphSerializer, GraphValidationError
 
 
 class ListCreateGraphView(generics.ListCreateAPIView):
     serializer_class = GraphSerializer
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.parser = Parser()
-        self.validator = Validator()
 
     def get_queryset(self):
         investor = Investor.objects.get(clerk_id=self.request.user.id)
@@ -30,11 +23,6 @@ class ListCreateGraphView(generics.ListCreateAPIView):
 
 class RetrieveUpdateDestroyGraphView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GraphSerializer
-
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.parser = Parser()
-        self.validator = Validator()
 
     def get_queryset(self):
         investor = Investor.objects.get(clerk_id=self.request.user.id)

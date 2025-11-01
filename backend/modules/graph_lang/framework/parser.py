@@ -21,8 +21,6 @@ class GraphData(BaseModel):
     nodes: list[NodeData] = []
     edges: list[EdgeData] = []
 
-# TODO implement
-# TODO implement node factory
 class Parser:
     def __init__(self, node_factory :NodeFactory = None):
         self._node_factory = node_factory or NodeFactory()
