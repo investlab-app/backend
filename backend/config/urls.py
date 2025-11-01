@@ -52,6 +52,7 @@ urlpatterns = [
     path(f"{PREFIX}/prices/", include("modules.prices.urls")),
     path(f"{PREFIX}/test/", include("modules.core.urls")),
     path(f"{PREFIX}/orders/", include("modules.orders.urls")),
+    path(f"{PREFIX}/graph_lang/", include("modules.graph_lang.urls")),
 ]
 
 # Consider other media server on production

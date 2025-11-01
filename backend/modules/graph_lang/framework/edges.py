@@ -1,5 +1,8 @@
 from dataclasses import dataclass, field
-from typing import Any
+from typing import Any, TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from modules.graph_lang.framework.nodes.node import NodeOutput, NodeInput
 
 INPUT = 0
 OUTPUT = 1
@@ -17,6 +20,19 @@ class EdgeType:
             return self.source
         else:
             return self.field_name
+
+
+    def __get__(self, instance, owner):
+        if instance is None:
+            return self
+
+        return instance.__dict__[self.field_name]
+
+    def __set__(self, instance, value):
+        instance.__dict__[self.field_name] = value
+
+    def __set_name__(self, owner, name):
+        self.field_name = name
 
     def parse(self, value) -> Any:
         raise NotImplementedError

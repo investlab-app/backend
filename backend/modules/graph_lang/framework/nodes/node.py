@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Any
+from typing import Any, Optional
 
 from modules.graph_lang.framework import edges
 
@@ -54,54 +54,24 @@ class NodeInput:
     def set_raw_value(self, value):
         self.raw_value = value
 
-class NodeMeta(type):
-    def __init__(cls, name, bases, dct):
-        cls._assign_names_to_edges()
 
-    def _assign_names_to_edges(cls):
-        edge_names = [
-            name 
-            for name in dir(cls)
-            if isinstance(getattr(cls, name), edges.EdgeType)
-        ]
-
-        for name in edge_names:
-            edge = getattr(cls, name)
-            edge.field_name = name
-
-
-class Node(metaclass=NodeMeta):
+class Node():
     _time_at: datetime | None = None
     all_edges: list
     id: str | None
     TRIGGER = False
 
     def __init__(self):
-        edge_names = self._get_edge_attrs()
-        self._copy_edges_to_list(edge_names)
-        self._replace_edge_fields(edge_names)
+        self.initialize_input_outputs()
 
-    def _get_edge_attrs(self) -> list[str]:
-        return [
-            name
-            for name in dir(self)
-            if isinstance(getattr(self, name), edges.EdgeType)
-        ]
-
-    def _copy_edges_to_list(self, edge_names):
-        self.all_edges = []
-        for name in edge_names:
-            edge = getattr(self, name)
-            edge.field_name = name
-            self.all_edges.append(edge)
-
-    def _replace_edge_fields(self, edge_names):
-        for f in edge_names:
-            edge: edges.EdgeType = getattr(self, f)
-            if edge.direction == edges.INPUT:
-                setattr(self, f, NodeInput(self))
-            else:
-                setattr(self, f, NodeOutput(self))
+    def initialize_input_outputs(self):
+        for name, field in self.__class__.__dict__.items():
+            if isinstance(field, edges.EdgeType):
+                if field.direction == edges.INPUT:
+                    value = NodeInput(self)
+                else:
+                    value = NodeOutput(self)
+                setattr(self, name, value)
 
     def get_input_by_source_name(self, source_name) -> NodeInput:
         edge = type(self).get_edge_by_source_name(source_name)
@@ -146,5 +116,5 @@ class NodeFactory:
     def from_type(self, type: type[Node]) -> Node:
         pass
 
-    def name_to_type(self, name: str) -> type[Node]:
+    def name_to_type(self, name: str) -> Optional[type[Node]]:
         pass
