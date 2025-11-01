@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
@@ -10,21 +12,11 @@ class InvestorSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "clerk_id",
-            "watching_instruments",
-        ]
-        read_only_fields = ["id", "clerk_id"]
-
-
-class InvestorUpdateSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Investor
-        fields = [
-            "id",
-            "clerk_id",
+            "balance",
             "language",
             "watching_instruments",
         ]
-        read_only_fields = ["id", "clerk_id"]
+        read_only_fields = ["id", "clerk_id", "balance"]
 
 
 class LanguageUpdateSerializer(serializers.Serializer):
@@ -53,3 +45,9 @@ class AccountValueSnapshotDailySerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.DateField())
     def get_date(self, obj):
         return obj.timestamp.date()
+
+
+class DepositMoneySerializer(serializers.Serializer):
+    amount = serializers.DecimalField(
+        max_digits=12, decimal_places=2, min_value=Decimal("0.01")
+    )
