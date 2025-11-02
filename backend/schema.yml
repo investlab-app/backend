@@ -575,7 +575,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Notification'
+                type: integer
           description: ''
   /api/notifications/vapid-public-key/:
     get:

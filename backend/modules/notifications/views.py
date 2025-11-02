@@ -1,5 +1,6 @@
 import logging
 
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics, viewsets, status
 from rest_framework.decorators import action
 from rest_framework.permissions import IsAuthenticated
@@ -71,6 +72,7 @@ class NotificationViewSet(viewsets.ModelViewSet):
             status=status.HTTP_200_OK,
         )
 
+    @extend_schema(responses={200: int})
     @action(
         detail=False,
         methods=["get"],
@@ -80,7 +82,4 @@ class NotificationViewSet(viewsets.ModelViewSet):
         """Get count of unseen notifications for the current user"""
         queryset = self.get_queryset()
         unseen_count = queryset.filter(is_seen=False).count()
-        return Response(
-            {"unseen_count": unseen_count},
-            status=status.HTTP_200_OK,
-        )
+        return Response(unseen_count, status=status.HTTP_200_OK)
