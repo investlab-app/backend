@@ -716,6 +716,15 @@ paths:
       operationId: statistics_asset_allocation_retrieve
       description: Get asset allocation data for the currently authenticated user.
       summary: Get asset allocation
+      parameters:
+      - in: query
+        name: instruments_number
+        schema:
+          type: integer
+          maximum: 30
+          minimum: 3
+          default: 5
+        description: Number of top instruments without `Other` position
       tags:
       - statistics
       security:
