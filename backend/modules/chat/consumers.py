@@ -150,7 +150,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         """Stream response chunks from the agent."""
         try:
             async with self.agent.run_stream(user_message) as result:
-                async for event in result:
+                async for event in result.stream():
                     # Extract text from the event
                     if hasattr(event, "content"):
                         # StructuredResponse or TextResponse
