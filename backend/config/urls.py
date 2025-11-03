@@ -9,13 +9,16 @@ from drf_spectacular.views import (
 )
 
 from modules.core.views import StatusView
-from modules.notifications.consumers import Websocket
+from modules.chat.consumers import ChatConsumer
+from modules.notifications.consumers import Websocket, NotificationsConsumer
 
 PREFIX = "api"
 
 websocket_urlpatterns = [
-    path("ws/", Websocket.as_asgi()),
-    path("ws/<str:names>/", Websocket.as_asgi()),
+    path("ws/chat/", ChatConsumer.as_asgi()),
+    path("ws/prices/", Websocket.as_asgi()),
+    path("ws/prices/<str:names>/", Websocket.as_asgi()),
+    path("ws/notifications/", NotificationsConsumer.as_asgi()),
 ]
 
 urlpatterns = [

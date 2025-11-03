@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local modules
     "modules.authentication",
+    "modules.chat",
     "modules.core",
     "modules.instruments",
     "modules.investors",

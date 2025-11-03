@@ -1,4 +1,5 @@
 import json
+import logging
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
@@ -7,8 +8,12 @@ from channels.layers import get_channel_layer
 from modules.investors.models import Investor
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 
+logger = logging.getLogger(__name__)
+
 
 class Websocket(AsyncWebsocketConsumer):
+    """WebSocket consumer for prices channel - handles price subscriptions."""
+
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.layer = None
@@ -82,3 +87,75 @@ class Websocket(AsyncWebsocketConsumer):
             await self.layer.group_discard(
                 f"investor_{self.investor.id}", self.channel_name
             )
+
+
+class NotificationsConsumer(AsyncWebsocketConsumer):
+    """WebSocket consumer for notifications channel - handles in-app notifications."""
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.layer = None
+        self.investor = None
+
+    async def connect(self):
+        """Handle WebSocket connection for notifications."""
+        if not self.scope["user"].is_authenticated:
+            await self.accept()
+            await self.close()
+            return
+
+        clerk_id = self.scope["user"].id
+
+        self.investor = await sync_to_async(
+            Investor.objects.filter(clerk_id=clerk_id).first
+        )()
+
+        if not self.investor:
+            await self.accept()
+            await self.close()
+            return
+
+        self.layer = get_channel_layer()
+
+        # Subscribe to investor-specific notification group
+        await self.layer.group_add(
+            f"investor_notifications_{self.investor.id}",
+            self.channel_name,
+        )
+
+        await self.accept()
+        logger.info(
+            f"Notifications WebSocket connected for investor {self.investor.id}"
+        )
+
+    async def notification_receive(self, event):
+        """
+        Receive notification message from channel layer and send to WebSocket.
+        """
+        notification = event["notification"]
+        await self.send(text_data=json.dumps({"notification": notification}))
+
+    async def receive(self, text_data=None, _=None):
+        """Handle incoming messages from client."""
+        if text_data is None:
+            return
+
+        if isinstance(text_data, (bytes, bytearray)):
+            text_data = text_data.decode("utf-8")
+
+        if text_data == "ping":
+            await self.send(text_data="pong")
+            return
+
+    async def disconnect(self, code):
+        """Handle WebSocket disconnection."""
+        if not self.layer or not self.investor:
+            return
+
+        await self.layer.group_discard(
+            f"investor_notifications_{self.investor.id}",
+            self.channel_name,
+        )
+        logger.info(
+            f"Notifications WebSocket disconnected for investor {self.investor.id}"
+        )

@@ -138,19 +138,23 @@ services:
     profiles:
       - default
 
-  backend-order-engine:
-    <<: *backend-common
-    command: ["uv", "run", "manage.py", "run_order_engine"]
-    depends_on:
-      postgres:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/bin/true"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
+  mcp-massive:
+    image: ghcr.io/astral-sh/uv:alpine
+    command:
+      [
+        "uvx",
+        "--from",
+        "git+https://github.com/massive-com/mcp_massive@v0.6.0",
+        "mcp_massive",
+      ]
+    env_file: .env
+    restart: unless-stopped
+    environment:
+      - MASSIVE_API_KEY=${MASSIVE_API_KEY}
+    networks:
+      - app_network
+    profiles:
+      - default
 
 volumes:
   postgres_data:
