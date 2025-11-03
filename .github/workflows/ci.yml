@@ -25,7 +25,7 @@ jobs:
       - name: Make .env file
         run: cp .env.ci .env
       - name: Run containers
-        run: docker compose up --build -d --wait
+        run: docker compose --profile ci up --build -d --wait
       - name: Run lint checks
         run: make lint-check
       - name: Run format checks
