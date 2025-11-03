@@ -51,7 +51,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
         # Initialize the financial agent
         try:
-            self.agent = create_financial_agent(self.investor_id)
+            self.agent = await create_financial_agent(self.investor_id)
         except ValueError as e:
             await self.accept()
             await self.send_json(
@@ -62,6 +62,15 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
             await self.close()
             return
+        except Exception as e:
+            await self.accept()
+            logger.warning(f"Failed to initialize MCP tools, using fallback: {e}")
+            await self.send_json(
+                {
+                    "type": "warning",
+                    "message": "Chat initialized with limited features",
+                }
+            )
 
         await self.accept()
         logger.info(f"Chat connection established for investor {self.investor_id}")
