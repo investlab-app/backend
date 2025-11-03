@@ -5,6 +5,8 @@ from modules.graph_lang.framework.nodes.node import Node
 
 
 class IsGreaterLesserNode(Node):
+    TYPE_NAME = 'isGreaterLesser'
+
     inValue = edges.NumberType(direction=edges.INPUT)
     inX = edges.NumberType(direction=edges.INPUT)
     direction = edges.EnumType(

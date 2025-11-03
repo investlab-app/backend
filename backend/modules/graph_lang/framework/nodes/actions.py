@@ -4,6 +4,8 @@ from modules.graph_lang.framework.nodes.node import Node
 
 
 class BuySellAmountNode(Node):
+    TYPE_NAME = 'buySellAmount'
+
     action = edges.EnumType(direction=edges.INPUT, allowed_values=["buy", "sell"])
     amount = edges.NumberType(direction=edges.INPUT)
     ticker = edges.InstrumentType(direction=edges.INPUT)

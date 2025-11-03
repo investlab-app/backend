@@ -111,22 +111,48 @@ class TestPriceSelectStrategy:
         "prices, time_at, expected",
         [
             # Closest is at base
-            ([
-                PricePoint(price=Decimal('100.0'), date_at=datetime(2020, 1, 1, 11, 50, 0)),
-                PricePoint(price=Decimal('110.0'), date_at=datetime(2020, 1, 1, 12, 0, 0)),
-                PricePoint(price=Decimal('120.0'), date_at=datetime(2020, 1, 1, 12, 10, 0)),
-            ], datetime(2020, 1, 1, 12, 0, 0), Decimal('110.0')),
+            (
+                [
+                    PricePoint(
+                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 50, 0)
+                    ),
+                    PricePoint(
+                        price=Decimal("110.0"), date_at=datetime(2020, 1, 1, 12, 0, 0)
+                    ),
+                    PricePoint(
+                        price=Decimal("120.0"), date_at=datetime(2020, 1, 1, 12, 10, 0)
+                    ),
+                ],
+                datetime(2020, 1, 1, 12, 0, 0),
+                Decimal("110.0"),
+            ),
             # Closest is +2 minutes
-            ([
-                PricePoint(price=Decimal('100.0'), date_at=datetime(2020, 1, 1, 11, 55, 0)),
-                PricePoint(price=Decimal('200.0'), date_at=datetime(2020, 1, 1, 12, 2, 0)),
-            ], datetime(2020, 1, 1, 12, 0, 0), Decimal('200.0')),
+            (
+                [
+                    PricePoint(
+                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 55, 0)
+                    ),
+                    PricePoint(
+                        price=Decimal("200.0"), date_at=datetime(2020, 1, 1, 12, 2, 0)
+                    ),
+                ],
+                datetime(2020, 1, 1, 12, 0, 0),
+                Decimal("200.0"),
+            ),
             # Equal distance, picks first
-            ([
-                PricePoint(price=Decimal('100.0'), date_at=datetime(2020, 1, 1, 11, 55, 0)),
-                PricePoint(price=Decimal('200.0'), date_at=datetime(2020, 1, 1, 12, 5, 0)),
-            ], datetime(2020, 1, 1, 12, 0, 0), Decimal('100.0')),
-        ]
+            (
+                [
+                    PricePoint(
+                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 55, 0)
+                    ),
+                    PricePoint(
+                        price=Decimal("200.0"), date_at=datetime(2020, 1, 1, 12, 5, 0)
+                    ),
+                ],
+                datetime(2020, 1, 1, 12, 0, 0),
+                Decimal("100.0"),
+            ),
+        ],
     )
     def test_select_parametrized(self, prices, time_at, expected):
         result = self.strategy.select(prices, time_at)

@@ -21,7 +21,6 @@ class EdgeType:
         else:
             return self.field_name
 
-
     def __get__(self, instance, owner):
         if instance is None:
             return self

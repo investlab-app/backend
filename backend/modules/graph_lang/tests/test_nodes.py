@@ -15,7 +15,7 @@ from modules.graph_lang.framework.nodes import (
     OrNode,
     PriceOfNode,
 )
-from modules.graph_lang.tests.conftest import (
+from modules.graph_lang.tests.conftest_nodes import (
     NumberBasedOnTimeNode,
     PassNumberNode,
     PriceProviderMock,
@@ -29,9 +29,9 @@ fake = Faker()
     "in_a, in_b, expected",
     [
         (False, False, False),
-        # (False, True, False),
-        # (True, False, False),
-        # (True, True, True),
+        (False, True, False),
+        (True, False, False),
+        (True, True, True),
     ],
 )
 def test_and_node(in_a, in_b, expected):

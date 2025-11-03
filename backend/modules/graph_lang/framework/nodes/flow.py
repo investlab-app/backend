@@ -5,6 +5,8 @@ from modules.graph_lang.framework.nodes.node import Node
 
 
 class FlowIfNode(Node):
+    TYPE_NAME = 'flowIF'
+
     inIf = edges.BoolType(direction=edges.INPUT)
     inThen = edges.VoidType(direction=edges.INPUT)
     inElse = edges.VoidType(direction=edges.INPUT)

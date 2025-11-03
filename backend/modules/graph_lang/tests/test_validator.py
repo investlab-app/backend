@@ -4,7 +4,7 @@ from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.nodes import Node
 from modules.graph_lang.framework.validator import *
 from modules.graph_lang.framework.validator import EdgeData, GraphData, NodeData
-from modules.graph_lang.tests.conftest import (
+from modules.graph_lang.tests.conftest_nodes import (
     EmptyNode,
     EnumInputNode,
     NumberInputChangeSourceNode,

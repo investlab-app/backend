@@ -21,6 +21,7 @@ class ListCreateGraphView(generics.ListCreateAPIView):
         investor = Investor.objects.get(clerk_id=self.request.user.id)
         serializer.save(investor=investor)
 
+
 class RetrieveUpdateDestroyGraphView(generics.RetrieveUpdateDestroyAPIView):
     serializer_class = GraphSerializer
 

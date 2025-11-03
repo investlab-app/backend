@@ -71,7 +71,9 @@ class Validator:
                 if not edge:
                     return
                 if not edge.validate_value(value):
-                    self.errors.append(InvalidNodeFieldValue(id=node.id, field=field, value=value))
+                    self.errors.append(
+                        InvalidNodeFieldValue(id=node.id, field=field, value=value)
+                    )
 
     def _validate_node_all_inputs_connected(self, graph: GraphData):
         nodes = graph.nodes
@@ -230,19 +232,23 @@ class Validator:
         if triggers != 1:
             self.errors.append(InvalidTriggerNodeCount())
 
+
 @dataclass
 class GraphValidationError:
     pass
+
 
 @dataclass
 class InvalidNodeType(GraphValidationError):
     id: str
     msg: str = field(default="Invalid node type", init=False)
 
+
 @dataclass
 class IdRepeated(GraphValidationError):
     id: str
     msg: str = field(default="Node id is not unique", init=False)
+
 
 @dataclass
 class EdgeWrongID(GraphValidationError):
@@ -250,11 +256,13 @@ class EdgeWrongID(GraphValidationError):
     end_id: str
     msg: str = field(default="Edge doesn't connect to existing node", init=False)
 
+
 @dataclass
 class InvalidNodeField(GraphValidationError):
     id: str
     field: str
     msg: str = field(default="Node doesn't have such field", init=False)
+
 
 @dataclass
 class InvalidNodeFieldValue(GraphValidationError):
@@ -263,11 +271,15 @@ class InvalidNodeFieldValue(GraphValidationError):
     value: str
     msg: str = field(default="Invalid value", init=False)
 
+
 @dataclass
 class NodeNotAllInputsConnected(GraphValidationError):
     id: str
     inputs: list[str]
-    msg: str = field(default="Node needs to have all of its inputs connected", init=False)
+    msg: str = field(
+        default="Node needs to have all of its inputs connected", init=False
+    )
+
 
 @dataclass
 class EdgeInvalidHandle(GraphValidationError):
@@ -276,11 +288,13 @@ class EdgeInvalidHandle(GraphValidationError):
     handle: str
     msg: str = field(default="Edge handle doesn't exist on the node", init=False)
 
+
 @dataclass
 class EdgeWrongDirection(GraphValidationError):
     from_id: str
     to_id: str
     msg: str = field(default="Edge must connect from input to output", init=False)
+
 
 @dataclass
 class EdgeTypeMismatchOnEnds(GraphValidationError):
@@ -288,20 +302,26 @@ class EdgeTypeMismatchOnEnds(GraphValidationError):
     to_id: str
     msg: str = field(default="Edge connects two incompatible end", init=False)
 
+
 @dataclass
 class ConnectionDuplicate(GraphValidationError):
     from_id: str
     to_id: str
     msg: str = field(default="There already exists such edge", init=False)
 
+
 @dataclass
 class CycleInGraph(GraphValidationError):
     msg: str = field(default="There is a cycle in this graph", init=False)
+
 
 @dataclass
 class DanglingNodeInGraph(GraphValidationError):
     msg: str = field(default="Not all nodes are connected to each other", init=False)
 
+
 @dataclass
 class InvalidTriggerNodeCount(GraphValidationError):
-    msg: str = field(default="There must be exactly one trigger node in the graph", init=False)
+    msg: str = field(
+        default="There must be exactly one trigger node in the graph", init=False
+    )

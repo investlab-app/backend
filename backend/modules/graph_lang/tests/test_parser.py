@@ -11,7 +11,7 @@ from modules.graph_lang.framework.parser import (
 )
 
 
-class MockType:
+class MockType(Node):
     pass
 
 
@@ -28,7 +28,8 @@ class MockFactory:
 
 # TODO write test for minimal passing data
 class TestParser:
-    def __init__(self):
+    @pytest.fixture(autouse=True)
+    def setup(self):
         self._mock_factory = MockFactory()
         self._parser = Parser(self._mock_factory)
 
@@ -45,7 +46,7 @@ class TestParser:
                 {
                     "id": "1",
                     "type": "UnknownNode",
-                    "settings": {"data": []},
+                    "settings": {"data": {}},
                 }
             ],
             "edges": [],
@@ -58,18 +59,46 @@ class TestParser:
     def test_parse__valid_node_type(self):
         self._mock_factory.register_type("ValidNode", MockType)
         json_data = {
-            "nodes": [{"id": "1", "type": "ValidNode", "settings": {"data": []}}],
+            "nodes": [
+                {
+                    "id": "1",
+                    "type": "ValidNode",
+                    "settings": {"data": {}},
+                },
+            ],
         }
 
         result = self._parser.parse(json_data)
 
         assert result == GraphData(nodes=[NodeData(id="1", type=MockType, fields={})])
 
+    def test_parse__replaces_unit_period_with_timespan(self):
+        self._mock_factory.register_type("ValidNode", MockType)
+        json_data = {
+            "nodes": [
+                {
+                    "id": "1",
+                    "type": "ValidNode",
+                    "settings": {"data": {
+                        "unit": "day",
+                        "period": 4
+                    }},
+                },
+            ],
+        }
+
+        result = self._parser.parse(json_data)
+
+        assert result == GraphData(nodes=[NodeData(id="1", type=MockType, fields={
+            "timespan": "4 day"
+
+        })])
+
     def test_parse__test_valid_data(self):
         self._mock_factory.register_type("ValidNode", MockType)
         json_data = {
             "nodes": [
-                {"id": "1", "type": "ValidNode", "settings": {"data": []}},
+                {"id": "1", "type": "ValidNode", "settings": {"data": {}}},
                 {
                     "id": "2",
                     "type": "ValidNode",
@@ -89,28 +118,29 @@ class TestParser:
             ],
             "edges": [
                 {
-                    'source': '14',
-                    'source_handle': '4chan',
-                    "target": '1',
-                    "target_handle": 'asdf'
+                    "source": "14",
+                    "sourceHandle": "4chan",
+                    "target": "1",
+                    "targetHandle": "asdf",
                 }
-            ]
+            ],
         }
 
         result = self._parser.parse(json_data)
 
         assert result == GraphData(
             nodes=[
-                NodeData(id='1', type=MockType, fields={}),
-                NodeData(id='2', type=MockType, fields={'field1': 'value'}),
-                NodeData(id='3', type=None, fields={
-                    "field1": "value1",
-                    "field2": "value2",
-                    "field3": "value3",
-                }),
+                NodeData(id="1", type=MockType, fields={}),
+                NodeData(id="2", type=MockType, fields={"field1": "value"}),
+                NodeData(
+                    id="3",
+                    type=None,
+                    fields={
+                        "field1": "value1",
+                        "field2": "value2",
+                        "field3": "value3",
+                    },
+                ),
             ],
-            edges=[
-                EdgeData('14', '4chan', '1', 'asdf')
-            ]
+            edges=[EdgeData(id_a="14", handle_a="4chan", id_b= "1", handle_b="asdf")],
         )
-        assert False

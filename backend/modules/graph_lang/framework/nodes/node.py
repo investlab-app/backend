@@ -1,10 +1,10 @@
 from datetime import datetime
 from typing import Any, Optional
+from dataclasses import dataclass
 
 from modules.graph_lang.framework.actions import GraphActionSet
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
-
 
 class NodeOutput:
     node: "Node"
@@ -65,7 +65,6 @@ class Node:
     TRIGGER = False
     TYPE_NAME = None
 
-
     def __init__(self):
         self.initialize_input_outputs()
 
@@ -101,11 +100,9 @@ class Node:
 
     @classmethod
     def get_edge_by_source_name(cls, source_name) -> edges.EdgeType | None:
-        return next((
-            e 
-            for e in cls.get_all_edges() 
-            if e.source_name == source_name)
-        , None)
+        return next(
+            (e for e in cls.get_all_edges() if e.source_name == source_name), None
+        )
 
     def execute(self):
         pass
@@ -115,6 +112,8 @@ class Node:
 
     def get_execution_time(self) -> datetime:
         return self._time_at
+
+
 
 
 class NodeFactory:
@@ -134,7 +133,5 @@ class NodeFactory:
         if not issubclass(node_type, Node):
             raise ValueError(f"{node_type} is not a subclass of Node")
         return node_type(
-            price_provider=self._price_provider,
-            action_set=self._action_set
+            price_provider=self._price_provider, action_set=self._action_set
         )
-

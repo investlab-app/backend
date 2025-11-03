@@ -3,6 +3,8 @@ from modules.graph_lang.framework.nodes.node import Node
 
 
 class ChangeOverTimeNode(Node):
+    TYPE_NAME = 'changeOverTime'
+
     timespan = edges.TimespanType(direction=edges.INPUT)
     in_ = edges.NumberType(direction=edges.INPUT, source="in")
 

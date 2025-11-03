@@ -4,6 +4,8 @@ from modules.graph_lang.framework.prices import PriceProvider
 
 
 class PriceOfNode(Node):
+    TYPE_NAME = 'priceOf'
+
     ticker = edges.InstrumentType(direction=edges.INPUT)
 
     out = edges.NumberType(direction=edges.OUTPUT)

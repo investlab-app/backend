@@ -6,49 +6,54 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 @dataclass
 class SchedulerGraph:
-    id :str
-    investor_id :str
-    trigger :Node
+    id: str
+    investor_id: str
+    trigger: Node
+
 
 class Scheduler:
-    graphs :list[SchedulerGraph]
-    last_run_time :dict[str, datetime]
-    max_sleep_timespan :timedelta
+    graphs: list[SchedulerGraph]
+    last_run_time: dict[str, datetime]
+    max_sleep_timespan: timedelta
 
-    def __init__(self, runner, provider, max_sleep_timespan = timedelta(minutes=1)):
+    def __init__(self, runner, provider, max_sleep_timespan=timedelta(minutes=1)):
         self.runner = runner
         self.provider = provider
         self.graphs = []
         self.max_sleep_timespan = max_sleep_timespan
         self.last_run_time = {}
 
-    def add_graph(self, id :str):
+    def add_graph(self, id: str):
         try:
-            graph :SchedulerGraph = self.provider.get_graph(id)
+            graph: SchedulerGraph = self.provider.get_graph(id)
             self.graphs.append(graph)
             self.last_run_time[id] = datetime.now()
         except Exception:
-            logging.error(f'Tried to add graph that does not exist to scheduler. Graph id: {id}')
+            logging.error(
+                f"Tried to add graph that does not exist to scheduler. Graph id: {id}"
+            )
 
-
-    def remove_graph(self, id :str):
+    def remove_graph(self, id: str):
         graph = next((g for g in self.graphs if g.id == id), None)
         if graph:
             self.graphs.remove(graph)
             self.last_run_time.pop(id)
         else:
-            logging.error(f'Tried to remove graph that does not exist from scheduler. Graph id: {id}')
+            logging.error(
+                f"Tried to remove graph that does not exist from scheduler. Graph id: {id}"
+            )
 
-    def update_graph(self, id :str):
+    def update_graph(self, id: str):
         self.remove_graph(id)
         self.add_graph(id)
 
-    def price_changed(self, prices :dict[str, Decimal]):
+    def price_changed(self, prices: dict[str, Decimal]):
         raise NotImplementedError()
 
-    def transaction_executed(self, investor_id :str, ticker :str, amount :Decimal):
+    def transaction_executed(self, investor_id: str, ticker: str, amount: Decimal):
         raise NotImplementedError()
 
     def step(self):
@@ -66,4 +71,3 @@ class Scheduler:
                 min_timespan = g.trigger.timespan()
 
         return datetime.now() + min_timespan
-
