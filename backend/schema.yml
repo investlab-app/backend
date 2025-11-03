@@ -279,6 +279,49 @@ paths:
                 items:
                   $ref: '#/components/schemas/AccountValueSnapshotDaily'
           description: ''
+  /api/investors/me/watched-instruments/{instrument_id}/toggle/:
+    post:
+      operationId: investors_me_watched_instruments_toggle_create
+      description: Toggle the watched status of an instrument for the current user.
+      summary: Toggle watched instrument
+      parameters:
+      - in: path
+        name: instrument_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ToggleWatchedInstrument'
+          description: ''
+  /api/investors/me/watched-tickers/:
+    get:
+      operationId: investors_me_watched_tickers_list
+      description: Get the list of watched tickers with icons for the currently authenticated
+        user.
+      summary: Get watched tickers
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WatchedTicker'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
@@ -376,6 +419,164 @@ paths:
                 items:
                   $ref: '#/components/schemas/TickerNews'
           description: ''
+  /api/notifications/:
+    get:
+      operationId: notifications_list
+      description: |-
+        API endpoint for retrieving and managing user notifications.
+
+        Actions:
+        - list: Get all notifications for current user
+        - retrieve: Get a specific notification
+        - partial_update: Mark a notification as seen/unseen
+        - mark_all_as_seen (POST /api/notifications/mark_all_as_seen/): Mark all as seen
+        - unseen_count (GET /api/notifications/unseen_count/): Get count of unseen
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - notifications
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedNotificationList'
+          description: ''
+    post:
+      operationId: notifications_create
+      description: |-
+        API endpoint for retrieving and managing user notifications.
+
+        Actions:
+        - list: Get all notifications for current user
+        - retrieve: Get a specific notification
+        - partial_update: Mark a notification as seen/unseen
+        - mark_all_as_seen (POST /api/notifications/mark_all_as_seen/): Mark all as seen
+        - unseen_count (GET /api/notifications/unseen_count/): Get count of unseen
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/NotificationRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+  /api/notifications/{id}/:
+    get:
+      operationId: notifications_retrieve
+      description: |-
+        API endpoint for retrieving and managing user notifications.
+
+        Actions:
+        - list: Get all notifications for current user
+        - retrieve: Get a specific notification
+        - partial_update: Mark a notification as seen/unseen
+        - mark_all_as_seen (POST /api/notifications/mark_all_as_seen/): Mark all as seen
+        - unseen_count (GET /api/notifications/unseen_count/): Get count of unseen
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Notification'
+          description: ''
+    patch:
+      operationId: notifications_partial_update
+      description: |-
+        API endpoint for retrieving and managing user notifications.
+
+        Actions:
+        - list: Get all notifications for current user
+        - retrieve: Get a specific notification
+        - partial_update: Mark a notification as seen/unseen
+        - mark_all_as_seen (POST /api/notifications/mark_all_as_seen/): Mark all as seen
+        - unseen_count (GET /api/notifications/unseen_count/): Get count of unseen
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - notifications
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedNotificationUpdateRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/NotificationUpdate'
+          description: ''
+  /api/notifications/mark_all_as_seen/:
+    post:
+      operationId: notifications_mark_all_as_seen_create
+      description: Mark all notifications as seen for the current user
+      tags:
+      - notifications
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          description: No response body
+  /api/notifications/unseen_count/:
+    get:
+      operationId: notifications_unseen_count_retrieve
+      description: Get count of unseen notifications for the current user
+      tags:
+      - notifications
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: integer
+          description: ''
   /api/notifications/vapid-public-key/:
     get:
       operationId: notifications_vapid_public_key_retrieve
@@ -455,7 +656,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateMarketOrder'
+                $ref: '#/components/schemas/Order'
           description: ''
   /api/prices/:
     get:
@@ -1066,20 +1267,6 @@ components:
       required:
       - email
       - password
-    CreateMarketOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        investor:
-          type: string
-          format: uuid
-          readOnly: true
-      required:
-      - id
-      - investor
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1426,8 +1613,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/PriceDailySummary'
           readOnly: true
+        is_watched:
+          type: boolean
+          readOnly: true
       required:
       - id
+      - is_watched
       - market
       - name
       - price_info
@@ -1586,6 +1777,9 @@ components:
     MarketOrder:
       type: object
       properties:
+        detail_type:
+          type: string
+          readOnly: true
         volume:
           type: string
           format: decimal
@@ -1597,6 +1791,7 @@ components:
         is_buy:
           type: boolean
       required:
+      - detail_type
       - is_buy
       - volume
     MarketStatus:
@@ -1644,6 +1839,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
       - buys
       - gain
@@ -1651,6 +1847,48 @@ components:
       - no_trades
       - sells
       - symbol
+    Notification:
+      type: object
+      description: Serializer for displaying notifications in the UI
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          title: Notification Type
+        type_display:
+          type: string
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        message:
+          type: string
+        is_seen:
+          type: boolean
+        related_object_id:
+          type: string
+          nullable: true
+          description: ID of the related object (e.g., price alert ID, order ID)
+          maxLength: 255
+        related_object_type:
+          type: string
+          nullable: true
+          description: Type of the related object (e.g., 'price_alert', 'order')
+          maxLength: 50
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message
+      - title
+      - type_display
     NotificationConfig:
       type: object
       properties:
@@ -1717,6 +1955,42 @@ components:
           type: boolean
           title: Send WebSocket
         is_active:
+          type: boolean
+    NotificationRequest:
+      type: object
+      description: Serializer for displaying notifications in the UI
+      properties:
+        type:
+          allOf:
+          - $ref: '#/components/schemas/TypeEnum'
+          title: Notification Type
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        message:
+          type: string
+          minLength: 1
+        is_seen:
+          type: boolean
+        related_object_id:
+          type: string
+          nullable: true
+          description: ID of the related object (e.g., price alert ID, order ID)
+          maxLength: 255
+        related_object_type:
+          type: string
+          nullable: true
+          description: Type of the related object (e.g., 'price_alert', 'order')
+          maxLength: 50
+      required:
+      - message
+      - title
+    NotificationUpdate:
+      type: object
+      description: Serializer for marking notifications as seen
+      properties:
+        is_seen:
           type: boolean
     Order:
       type: object
@@ -1820,6 +2094,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InstrumentWithPrice'
+    PaginatedNotificationList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Notification'
     PaginatedOrderList:
       type: object
       required:
@@ -1880,6 +2177,12 @@ components:
             type: string
             format: uuid
             title: Watching Instruments
+    PatchedNotificationUpdateRequest:
+      type: object
+      description: Serializer for marking notifications as seen
+      properties:
+        is_seen:
+          type: boolean
     PatchedPriceAlertRequest:
       type: object
       properties:
@@ -1894,10 +2197,18 @@ components:
     Position:
       type: object
       properties:
-        name:
+        symbol:
           type: string
           description: Ticker symbol
           maxLength: 10
+        name:
+          type: string
+          description: Instrument name
+          maxLength: 255
+        icon:
+          type: string
+          format: uri
+          nullable: true
         quantity:
           type: integer
           description: Total quantity of shares
@@ -1912,6 +2223,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
           description: Total gain or loss percentage
         history:
           type: array
@@ -1922,9 +2234,11 @@ components:
       - gain
       - gain_percentage
       - history
+      - icon
       - market_value
       - name
       - quantity
+      - symbol
     PriceAlert:
       type: object
       properties:
@@ -2205,6 +2519,18 @@ components:
         title:
           type: string
           nullable: true
+    ToggleWatchedInstrument:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
+        instrument_id:
+          type: string
+          description: ID of the instrument
+      required:
+      - instrument_id
+      - is_watched
     TradingOverview:
       type: object
       properties:
@@ -2222,6 +2548,18 @@ components:
       - sells
       - total_gain
       - total_trades
+    TypeEnum:
+      enum:
+      - price_alert
+      - order
+      - transaction
+      - system
+      type: string
+      description: |-
+        * `price_alert` - Price Alert
+        * `order` - Order
+        * `transaction` - Transaction
+        * `system` - System
     VapidPublicKey:
       type: object
       properties:
@@ -2229,6 +2567,28 @@ components:
           type: string
       required:
       - public_key
+    WatchedTicker:
+      type: object
+      description: Serializer for watched tickers with icon and ticker information.
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - name
+      - ticker
   securitySchemes:
     ClerkAuth:
       type: http

@@ -82,11 +82,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/bin/true"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
     ports:
       - "8000:8000"
     profiles:
@@ -142,6 +137,20 @@ services:
       retries: 3
     profiles:
       - default
+
+  backend-order-engine:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "run_order_engine"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
 
 volumes:
   postgres_data:

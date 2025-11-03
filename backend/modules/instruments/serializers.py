@@ -2,6 +2,7 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
+from modules.investors.models import Investor
 from modules.prices.serializers import PriceDailySummarySerializer
 
 
@@ -58,9 +59,10 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
 
 class InstrumentWithPriceSerializer(InstrumentListSerializer):
     price_info = serializers.SerializerMethodField()
+    is_watched = serializers.SerializerMethodField()
 
     class Meta(InstrumentListSerializer.Meta):
-        fields = InstrumentListSerializer.Meta.fields + ["price_info"]
+        fields = InstrumentListSerializer.Meta.fields + ["price_info", "is_watched"]
 
     @extend_schema_field(PriceDailySummarySerializer)
     def get_price_info(self, obj: Instrument):
@@ -71,6 +73,12 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
 
         ticker = obj.ticker.upper()
         return PriceDailySummarySerializer(snapshot_map.get(ticker)).data
+
+    def get_is_watched(self, obj: Instrument) -> bool:
+        investor: Investor | None = self.context.get("investor")
+        if not investor:
+            return False
+        return investor.watching_instruments.filter(id=obj.id).exists()
 
 
 class InstrumentNameSerializer(serializers.ModelSerializer):

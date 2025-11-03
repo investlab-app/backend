@@ -9,6 +9,7 @@ from modules.instruments.serializers import (
     InstrumentRetrieveSerializer,
     InstrumentWithPriceSerializer,
 )
+from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
 
 
@@ -86,7 +87,19 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         except Exception:
             snapshot_map = {}
 
-        context = {**self.get_serializer_context(), "snapshot_map": snapshot_map}
+        # Get investor if user is authenticated
+        investor = None
+        if request.user and hasattr(request.user, "id"):
+            try:
+                investor = Investor.objects.get(clerk_id=request.user.id)
+            except Investor.DoesNotExist:
+                pass
+
+        context = {
+            **self.get_serializer_context(),
+            "snapshot_map": snapshot_map,
+            "investor": investor,
+        }
         serializer = self.get_serializer(items, many=True, context=context)
 
         if page is not None:
