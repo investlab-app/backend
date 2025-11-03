@@ -2,11 +2,18 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 from modules.core.models import BaseModel
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 
 
 class Investor(BaseModel):
     clerk_id = models.CharField(unique=True, max_length=255, verbose_name=_("Clerk ID"))
+    language = models.CharField(
+        max_length=10,
+        default="en",
+        verbose_name=_("Language"),
+        help_text=_("User's preferred language (e.g., 'en', 'pl')"),
+    )
     watching_instruments = models.ManyToManyField(
         Instrument, blank=True, verbose_name=_("Watching Instruments")
     )
@@ -19,7 +26,7 @@ class Investor(BaseModel):
         verbose_name_plural = _("Investors")
 
     def __str__(self):
-        return f"Investor: {self.clerk_id}"
+        return f"Investor {self.id} (Clerk ID: {self.clerk_id})"
 
 
 class Asset(BaseModel):
@@ -46,3 +53,20 @@ class Asset(BaseModel):
 
     def __str__(self):
         return f"{self.ticker} Asset. Volume: {self.volume}"
+
+
+class AccountValueSnapshot(BaseModel):
+    investor = models.ForeignKey(
+        Investor, on_delete=models.CASCADE, verbose_name=_("Associated Investor")
+    )
+    timestamp = models.DateTimeField(
+        default=get_local_datetime, verbose_name=_("Datetime Of The Snapshot")
+    )
+    value = models.DecimalField(
+        max_digits=30, decimal_places=2, verbose_name=_("Total Account Value")
+    )
+
+    class Meta:
+        verbose_name = _("Account Value Snapshot")
+        verbose_name_plural = _("Account Value Snapshots")
+        ordering = ["-timestamp"]

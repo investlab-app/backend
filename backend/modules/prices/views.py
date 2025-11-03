@@ -3,8 +3,12 @@ from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.investors.models import Investor
+from modules.prices.models import PriceAlert
 from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.serializers import (
+    PriceAlertCreateSerializer,
+    PriceAlertSerializer,
     PriceBarSerializer,
     PriceBarsQueryParams,
     PriceDailySummarySerializer,
@@ -14,9 +18,12 @@ from modules.prices.serializers import (
 
 class PricesBarsView(generics.GenericAPIView):
     serializer_class = PriceBarSerializer
+    pagination_class = None
 
     @extend_schema(
-        parameters=[PriceBarsQueryParams], responses=PriceBarSerializer(many=True)
+        operation_id="prices_bars",
+        parameters=[PriceBarsQueryParams],
+        responses=PriceBarSerializer(many=True),
     )
     def get(self, request: Request) -> Response:
         params = PriceBarsQueryParams(data=request.query_params)
@@ -30,7 +37,7 @@ class PricesBarsView(generics.GenericAPIView):
 class PricesListView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
 
-    @extend_schema(parameters=[PricesListQueryParams])
+    @extend_schema(operation_id="prices_list", parameters=[PricesListQueryParams])
     def get(self, request: Request) -> Response:
         params = PricesListQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
@@ -48,8 +55,36 @@ class PricesListView(generics.GenericAPIView):
 class PricesRetrieveView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
 
+    @extend_schema(operation_id="prices_retrieve")
     def get(self, request: Request, ticker: str) -> Response:
         repository = PolygonPricesRepository()
         prices = repository.get_price(ticker=ticker)
         serializer = self.get_serializer(instance=prices)
         return Response(serializer.data)
+
+
+class PriceAlertListCreateView(generics.ListCreateAPIView):
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(
+            investor__clerk_id=clerk_id,
+            notification_config__is_active=True,
+        ).select_related("instrument")
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PriceAlertCreateSerializer
+        return PriceAlertSerializer
+
+    def perform_create(self, serializer):
+        clerk_id = self.request.user.id
+        investor = Investor.objects.get(clerk_id=clerk_id)
+        serializer.save(investor=investor)
+
+
+class PriceAlertDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(investor__clerk_id=clerk_id)

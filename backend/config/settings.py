@@ -18,6 +18,8 @@ ALLOWED_HOSTS = str_to_list(os.environ["ALLOWED_HOSTS"])
 
 CORS_ALLOWED_ORIGINS = str_to_list(os.environ["CORS_ALLOWED_ORIGINS"])
 
+CSRF_TRUSTED_ORIGINS = str_to_list(os.environ.get("CSRF_TRUSTED_ORIGINS", ""))
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -51,8 +53,10 @@ INSTALLED_APPS = [
     "modules.investors",
     "modules.markets",
     "modules.news",
+    "modules.notifications",
     "modules.orders",
     "modules.prices",
+    "modules.statistics",
     "modules.transactions",
     "modules.graph_lang",
 ]
@@ -354,17 +358,22 @@ UNFOLD = {
     # ],
 }
 
+REDIS_HOST = os.environ["REDIS_HOST"]
+REDIS_PORT = os.environ["REDIS_PORT"]
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("redis", 6379)],
+            "hosts": [REDIS_URL],
         },
     },
 }
 
 # Celery settings
-CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", "redis://redis:6379/0")
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", f"{REDIS_URL}/0")
 CELERY_RESULT_BACKEND = "django-db"
 CELERY_RESULT_EXTENDED = True
 CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
@@ -383,6 +392,10 @@ if not DEBUG:
             "task": "modules.instruments.tasks.sync_instruments_images",
             "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
         },
+        "modules.investors.tasks.save_accounts_value_snapshot": {
+            "task": "modules.investors.tasks.save_accounts_value_snapshot",
+            "schedule": crontab(hour=1, minute=0),  # Every Wednesday at 1:00 AM
+        },
     }
 
 
@@ -400,6 +413,18 @@ POLYGON_ASSET_TYPE = "stocks"
 ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
 ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
 
+# Datetime formats
+ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
 
-# Other settings
-ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S", "%Y-%m-%d_%H:%M:%S"]
+# Email
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+FROM_EMAIL = os.environ["FROM_EMAIL"]
+EMAIL_BACKEND = os.environ["EMAIL_BACKEND"]
+EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH")
+
+# Web Push
+VAPID_PRIVATE_KEY = os.environ["VAPID_PRIVATE_KEY"]
+VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
+VAPID_CLAIMS = {
+    "sub": f"mailto:{ADMIN_EMAIL}",
+}

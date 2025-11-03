@@ -1,3 +1,14 @@
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - ./backend:/backend:delegated
+    - /backend/.venv
+  networks:
+    - app_network
+
 services:
   postgres:
     image: postgres:17
@@ -6,9 +17,10 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - postgres_data:/var/lib/postgresql/data
+      - ./.postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -21,14 +33,12 @@ services:
     ports:
       - "6379:6379"
     healthcheck:
-       test: ["CMD", "redis-cli","ping"]
+      test: ["CMD", "redis-cli", "ping"]
     networks:
       - app_network
 
   celery:
-    build: ./backend
-    env_file: .env
-    restart: unless-stopped
+    <<: *backend-common
     command: ["uv", "run", "celery", "-A", "config", "worker", "-l", "info"]
     healthcheck:
       test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
@@ -40,19 +50,12 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    volumes:
-      - ./backend:/backend:delegated
-      - /backend/.venv
-    networks:
-      - app_network
 
   celery-beat:
-    build: ./backend
-    env_file: .env
-    restart: unless-stopped
+    <<: *backend-common
     command: ["uv", "run", "celery", "-A", "config", "beat", "-l", "info"]
     healthcheck:
-      test: [ "CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping" ]
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
       interval: 30s
       timeout: 10s
       retries: 5
@@ -61,16 +64,9 @@ services:
         condition: service_healthy
       backend:
         condition: service_healthy
-    volumes:
-      - ./backend:/backend:delegated
-      - /backend/.venv
-    networks:
-      - app_network
 
   backend:
-    build: ./backend
-    env_file: .env
-    restart: unless-stopped
+    <<: *backend-common
     depends_on:
       postgres:
         condition: service_healthy
@@ -83,16 +79,26 @@ services:
       retries: 3
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/backend:delegated
-      - /backend/.venv
-    networks:
-      - app_network
 
   backend-price-stream:
-    build: ./backend
-    env_file: .env
-    restart: unless-stopped
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "mock_stream_prices"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DJANGO_LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+
+  backend-price-notifier:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "notify_prices"]
     depends_on:
       postgres:
         condition: service_healthy
@@ -103,12 +109,6 @@ services:
       interval: 10s
       timeout: 10s
       retries: 3
-    volumes:
-      - ./backend:/backend:delegated
-      - /backend/.venv
-    networks:
-      - app_network
-    command: uv run manage.py mock_stream_prices
 
 volumes:
   postgres_data:

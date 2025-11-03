@@ -23,6 +23,7 @@ class Instrument(BaseModel):
     active = models.BooleanField(
         verbose_name=_("Active"),
         help_text=_("Indicates whether the ticker is actively traded."),
+        default=True,
     )
     cik = models.CharField(
         verbose_name=_("CIK"),
@@ -41,6 +42,7 @@ class Instrument(BaseModel):
     currency_name = models.CharField(
         verbose_name=_("Currency Name"),
         max_length=50,
+        default="usd",
     )
     currency_symbol = models.CharField(
         verbose_name=_("Currency Symbol"),
