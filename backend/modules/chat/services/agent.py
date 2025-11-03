@@ -2,7 +2,7 @@ from typing import Any
 
 from django.conf import settings
 from pydantic_ai import Agent
-from pydantic_ai.models.openai import OpenAIChatModel
+from pydantic_ai.models.groq import GroqModel
 
 from config.clients import groq_provider
 from modules.chat.services.database_tools import (
@@ -29,10 +29,7 @@ def create_financial_agent(investor_id: str) -> Agent:
         Configured Agent instance
     """
 
-    model = OpenAIChatModel(
-        "llama-3.1-8b-instant",
-        provider=groq_provider,
-    )
+    model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
 
     # Create agent with system prompt
     system_prompt = """You are a helpful financial assistant for InvestLab, a paper trading application.

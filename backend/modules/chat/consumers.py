@@ -3,7 +3,7 @@ import logging
 from typing import AsyncGenerator
 
 from asgiref.sync import sync_to_async
-from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from pydantic_ai import Agent
 
 from modules.chat.models import ChatMessage
@@ -13,7 +13,7 @@ from modules.investors.models import Investor
 logger = logging.getLogger(__name__)
 
 
-class ChatConsumer(AsyncWebsocketConsumer):
+class ChatConsumer(AsyncJsonWebsocketConsumer):
     """WebSocket consumer for real-time financial chat with streaming responses."""
 
     def __init__(self, *args, **kwargs):

@@ -14,5 +14,4 @@ openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
 
 groq_provider = GroqProvider(
     api_key=settings.OPENAI_API_KEY,
-    base_url="https://api.groq.com/openai/v1",
 )
