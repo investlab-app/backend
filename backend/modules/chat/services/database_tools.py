@@ -7,6 +7,7 @@ from pydantic_ai.tools import Tool
 from modules.investors.models import Asset, Investor
 from modules.prices.repositories import PolygonPricesRepository
 from modules.transactions.models import Transaction
+from modules.instruments.models import Instrument
 
 
 def create_portfolio_tool() -> Tool:
@@ -211,4 +212,94 @@ def create_performance_tool() -> Tool:
     return Tool(
         get_portfolio_performance,
         description="Get portfolio performance metrics for a specified period",
+    )
+
+
+def create_stock_data_tool() -> Tool:
+    """Get real-time and historical stock market data."""
+
+    async def get_realtime_stock_market_data(tickers: str | list[str]) -> dict:
+        """
+        Get real-time stock market data for one or more tickers.
+
+        Args:
+            tickers: A single ticker symbol (e.g., "AAPL") or list of tickers
+
+        Returns:
+            Dictionary with current stock prices and market data
+        """
+        try:
+            # Normalize input to list
+            if isinstance(tickers, str):
+                ticker_list = [tickers.upper()]
+            else:
+                ticker_list = [t.upper() for t in tickers]
+
+            # Verify tickers exist in database
+            valid_count = Instrument.objects.filter(ticker__in=ticker_list).count()
+            if valid_count != len(ticker_list):
+                invalid_tickers = [
+                    t
+                    for t in ticker_list
+                    if not Instrument.objects.filter(ticker=t).exists()
+                ]
+                return {
+                    "status": "error",
+                    "message": f"Invalid tickers: {', '.join(invalid_tickers)}",
+                }
+
+            # Get prices from Polygon
+            prices_repo = PolygonPricesRepository()
+            prices = prices_repo.get_prices_map(ticker_list)
+
+            if prices is None:
+                return {
+                    "status": "error",
+                    "message": "Failed to fetch market data from Polygon API",
+                }
+
+            # Format response
+            stock_data = []
+            for ticker in ticker_list:
+                price_data = prices.get(ticker)
+                if price_data:
+                    stock_data.append(
+                        {
+                            "ticker": price_data.ticker,
+                            "current_price": str(price_data.current_price),
+                            "day_open": str(price_data.day_open)
+                            if price_data.day_open
+                            else None,
+                            "day_high": str(price_data.day_high)
+                            if price_data.day_high
+                            else None,
+                            "day_low": str(price_data.day_low)
+                            if price_data.day_low
+                            else None,
+                            "day_change": str(price_data.day_change)
+                            if price_data.day_change
+                            else None,
+                            "day_change_percent": str(price_data.day_change_percent)
+                            if price_data.day_change_percent
+                            else None,
+                            "last_updated": price_data.last_updated.isoformat()
+                            if price_data.last_updated
+                            else None,
+                        }
+                    )
+
+            return {
+                "status": "success",
+                "data": stock_data,
+                "count": len(stock_data),
+            }
+        except Exception as e:
+            return {
+                "status": "error",
+                "message": f"Error fetching stock data: {str(e)}",
+            }
+
+    return Tool(
+        get_realtime_stock_market_data,
+        description="Get real-time stock market data including current price, day high/low, and percentage change for one or more stock tickers",
     )

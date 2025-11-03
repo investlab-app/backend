@@ -1,6 +1,5 @@
 from typing import Any
 
-from django.conf import settings
 from pydantic_ai import Agent
 from pydantic_ai.models.groq import GroqModel
 
@@ -8,6 +7,7 @@ from config.clients import groq_provider
 from modules.chat.services.database_tools import (
     create_performance_tool,
     create_portfolio_tool,
+    create_stock_data_tool,
     create_transactions_tool,
 )
 
@@ -32,10 +32,12 @@ def create_financial_agent(investor_id: str) -> Agent:
     model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
 
     # Create agent with system prompt
-    system_prompt = """You are a helpful financial assistant for InvestLab, a paper trading application.
+    system_prompt = """You are a financial assistant for InvestLab paper trading.
+
+This application simulates stock market trading.
 
 You have access to tools that provide:
-- Real-time and historical stock market data (prices, aggregates, market status)
+- Real-time stock market data (prices, day high/low, change %)
 - User portfolio positions and holdings
 - Trading history and transactions
 - Performance metrics and analytics
@@ -64,6 +66,7 @@ Guidelines:
             create_portfolio_tool(),
             create_transactions_tool(),
             create_performance_tool(),
+            create_stock_data_tool(),
         ],
     )
 
@@ -86,11 +89,6 @@ async def stream_agent_response(
     Yields:
         Response chunks from the agent
     """
-    # Prepare context with investor ID for tools
-    context = {
-        "investor_id": investor_id,
-    }
-
     # Stream the response
     async with agent.run_stream(
         user_message,

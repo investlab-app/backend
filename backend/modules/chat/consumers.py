@@ -114,7 +114,13 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # Stream agent response
         try:
             full_response = ""
+            chunk_count = 0
             async for chunk in self._stream_response(message):
+                chunk_count += 1
+                logger.debug(
+                    f"Streaming chunk #{chunk_count}: {repr(chunk[:100])}, "
+                    f"length={len(chunk)}, accumulated_length={len(full_response) + len(chunk)}"
+                )
                 await self.send_json(
                     {
                         "type": "chunk",
@@ -122,6 +128,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     }
                 )
                 full_response += chunk
+
+            logger.debug(
+                f"Streaming complete. Total chunks: {chunk_count}, "
+                f"Final response length: {len(full_response)}"
+            )
 
             # Save assistant response to database
             await sync_to_async(ChatMessage.objects.create)(
@@ -149,22 +160,16 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
     async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """Stream response chunks from the agent."""
         try:
+            chunk_count = 0
             async with self.agent.run_stream(user_message) as result:
-                async for event in result.stream():
-                    # Extract text from the event
-                    if hasattr(event, "content"):
-                        # StructuredResponse or TextResponse
-                        text = event.content
-                        if text:
-                            yield text
-                    elif hasattr(event, "text"):
-                        # Alternative attribute name
-                        text = event.text
-                        if text:
-                            yield text
-                    elif isinstance(event, str):
-                        # Direct string response
-                        yield event
+                async for text_delta in result.stream_text(delta=True):
+                    if text_delta:
+                        chunk_count += 1
+                        logger.debug(
+                            f"_stream_response yielding delta chunk #{chunk_count}: "
+                            f"{repr(text_delta[:100])}, length={len(text_delta)}"
+                        )
+                        yield text_delta
         except Exception as e:
             logger.exception(f"Error in agent stream: {e}")
             raise
