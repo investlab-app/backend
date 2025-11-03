@@ -14,23 +14,37 @@ from modules.chat.services.mcp_massive_client import MCPMassiveClient
 
 logger = logging.getLogger(__name__)
 
+# Global MCP client instance
+_mcp_client: MCPMassiveClient | None = None
+
+
+async def get_mcp_client() -> MCPMassiveClient:
+    """Get or initialize the global MCP client."""
+    global _mcp_client
+
+    if _mcp_client is None:
+        _mcp_client = MCPMassiveClient()
+        await _mcp_client.initialize()
+
+    return _mcp_client
+
 
 async def create_financial_agent(investor_id: str) -> Agent:
     """
     Create a Pydantic-AI agent for financial assistance with MCP integration.
 
     The agent has access to:
-    - Real-time stock data via Polygon API
+    - Real-time stock data via Massive API (MCP)
     - User portfolio and position data
     - Transaction history
     - Performance metrics
-    - Comprehensive market data via Massive API (MCP)
+    - Comprehensive market analysis tools
 
     Args:
         investor_id: The investor's UUID as string
 
     Returns:
-        Configured Agent instance
+        Configured Agent instance with MCP tools
     """
 
     model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
@@ -43,9 +57,9 @@ async def create_financial_agent(investor_id: str) -> Agent:
     ]
 
     # Initialize MCP Massive API tools
-    mcp_client = MCPMassiveClient(server_url="http://mcp-massive:8000")
+    mcp_tools = []
     try:
-        await mcp_client.initialize()
+        mcp_client = await get_mcp_client()
         mcp_tools = mcp_client.create_tools()
         logger.info(f"Loaded {len(mcp_tools)} MCP tools from Massive API")
     except Exception as e:
@@ -63,11 +77,11 @@ async def create_financial_agent(investor_id: str) -> Agent:
 This application simulates stock market trading.
 
 You have access to tools that provide:
-- Real-time stock market data (prices, day high/low, change %)
 - User portfolio positions and holdings
 - Trading history and transactions
 - Performance metrics and analytics
-- Stock search and company information via Massive API
+- Real-time stock quotes and market data via Massive API
+- Stock search and company information
 - Market indices and movers
 - Sector performance analysis
 - Technical analysis indicators
@@ -92,7 +106,8 @@ Guidelines:
 - Suggest checking market hours for real-time pricing accuracy
 - Use Massive API tools for comprehensive stock research and market analysis
 - Cross-reference multiple data sources for better insights
-- Provide context about market conditions and trends"""
+- Provide context about market conditions and trends
+- When using Massive API tools, they fetch data directly from the market"""
 
     # Create the agent
     agent = Agent(
