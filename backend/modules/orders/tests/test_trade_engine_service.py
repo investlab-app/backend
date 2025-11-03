@@ -98,8 +98,8 @@ async def test_trade_engine_data_fetcher(uuids):
 
 @pytest.mark.django_db(transaction=True)
 @pytest.mark.asyncio
-@patch("modules.orders.services.ExecuteTransactionService.sell")
-@patch("modules.orders.services.ExecuteTransactionService.buy")
+@patch("modules.orders.services.engine_services.ExecuteTransactionService.sell")
+@patch("modules.orders.services.engine_services.ExecuteTransactionService.buy")
 async def test_trade_engine_output_handler(buy, sell, uuids):
     ticker = create_fake_instrument(ticker="AAPL")
 

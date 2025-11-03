@@ -94,6 +94,9 @@ class PricesFetcher:
 
 
 class TradeEngineOutputHandler:
+    def __init__(self, order_service: MarketOrderService = None):
+        self.order_service = order_service or MarketOrderService()
+
     async def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
         await database_sync_to_async(self._handle_output_sync)(output, prices)
 
@@ -104,10 +107,8 @@ class TradeEngineOutputHandler:
             self._handle_transactions(output.transactions, prices)
 
     def _handle_completed_orders(self, orders: list[uuid.UUID]):
-        # TODO Krzyzan spojrz prosze jak najlepiej to zainicjalizowac
-        service = MarketOrderService()
         for order in Order.objects.filter(id__in=orders):
-            service.delete(order)
+            self.order_service.delete(order)
 
     def _handle_updated_orders(self, orders: list[EngineOrderUpdate]):
         ids = [o.id for o in orders]
