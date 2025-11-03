@@ -28,6 +28,7 @@ dependencies = [
     "pillow>=11.3.0",
     "polygon-api-client>=1.15.3",
     "psycopg>=3.2.9",
+    "pydantic-ai>=1.9.1",
     "pydantic>=2.11.6",
     "pywebpush>=2.0.3",
     "uvicorn-worker>=0.3.0",
