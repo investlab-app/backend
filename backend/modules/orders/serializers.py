@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
 from rest_framework import serializers
@@ -6,6 +5,7 @@ from rest_framework import serializers
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import InstrumentNameSerializer
 from modules.orders.models import MarketOrder, Order
+from modules.orders.services.order_services import MarketOrderService
 
 
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
@@ -22,17 +22,13 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
-
-        with transaction.atomic():
-            detail = MarketOrder.objects.create(
-                volume=validated_data["volume"],
-                volume_processed=0,
-                is_buy=validated_data["is_buy"],
-            )
-
-            order = Order.objects.create(
-                ticker=instrument, investor=validated_data["investor"], detail=detail
-            )
+        service = MarketOrderService()
+        order = service.create(
+            instrument=instrument,
+            investor=validated_data["investor"],
+            volume=validated_data["volume"],
+            is_buy=validated_data["is_buy"],
+        )
 
         return order
 

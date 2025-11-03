@@ -17,7 +17,7 @@ class InvestorAdmin(ModelAdmin):
         "updated_at",
     )
     fieldsets = (
-        (None, {"fields": ("id", "clerk_id", "balance")}),
+        (None, {"fields": ("id", "clerk_id", "balance", "blocked_funds")}),
         (_("Watching Instruments"), {"fields": ("watching_instruments",)}),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )

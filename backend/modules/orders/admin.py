@@ -39,6 +39,9 @@ class MarketOrderAdmin(ModelAdmin):
         "updated_at",
     )
     fieldsets = (
-        (None, {"fields": ("id", "volume", "volume_processed", "is_buy")}),
+        (
+            None,
+            {"fields": ("id", "volume", "volume_processed", "is_buy", "blocked_funds")},
+        ),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )

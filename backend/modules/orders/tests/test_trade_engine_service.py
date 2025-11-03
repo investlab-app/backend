@@ -19,7 +19,7 @@ from modules.orders.order_engine.structures import (
     TradeEngineInput,
     TradeEngineOutput,
 )
-from modules.orders.services import (
+from modules.orders.services.engine_services import (
     PricesFetcher,
     TradeEngineDataFetcher,
     TradeEngineOutputHandler,
