@@ -342,30 +342,43 @@ def create_stock_data_tool() -> Tool:
             for ticker in ticker_list:
                 price_data = prices.get(ticker)
                 if price_data:
-                    stock_data.append(
-                        {
-                            "ticker": price_data.ticker,
-                            "current_price": str(price_data.current_price),
-                            "day_open": str(price_data.day_open)
-                            if price_data.day_open
-                            else None,
-                            "day_high": str(price_data.day_high)
-                            if price_data.day_high
-                            else None,
-                            "day_low": str(price_data.day_low)
-                            if price_data.day_low
-                            else None,
-                            "day_change": str(price_data.day_change)
-                            if price_data.day_change
-                            else None,
-                            "day_change_percent": str(price_data.day_change_percent)
-                            if price_data.day_change_percent
-                            else None,
-                            "last_updated": price_data.last_updated.isoformat()
-                            if price_data.last_updated
-                            else None,
-                        }
-                    )
+                    try:
+                        # Safely access nested attributes with validation
+                        if (
+                            not hasattr(price_data, "daily_summary")
+                            or price_data.daily_summary is None
+                        ):
+                            logger.warning(
+                                f"Ticker {ticker} has missing daily_summary data"
+                            )
+                            continue
+
+                        stock_data.append(
+                            {
+                                "ticker": price_data.ticker,
+                                "current_price": str(price_data.current_price),
+                                "day_open": str(price_data.daily_summary.open),
+                                "day_high": str(price_data.daily_summary.high),
+                                "day_low": str(price_data.daily_summary.low),
+                                "day_close": str(price_data.daily_summary.close),
+                                "day_volume": str(price_data.daily_summary.volume),
+                                "day_change": str(price_data.todays_change),
+                                "day_change_percent": str(
+                                    price_data.todays_change_percent
+                                ),
+                                "last_updated": price_data.last_updated.isoformat(),
+                            }
+                        )
+                    except (AttributeError, ValueError) as e:
+                        logger.warning(
+                            f"Error formatting price data for {ticker}: {str(e)}"
+                        )
+                        continue
+                else:
+                    logger.warning(f"No price data available for ticker {ticker}")
+</parameter>
+</invoke>
+
 
             logger.info(f"Successfully fetched data for {len(stock_data)} tickers")
             return {
