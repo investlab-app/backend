@@ -1,6 +1,8 @@
+import logging
 from datetime import datetime, timedelta
 from decimal import Decimal
 
+from asgiref.sync import sync_to_async
 from django.db.models import Sum
 from pydantic_ai.tools import Tool
 
@@ -8,6 +10,8 @@ from modules.investors.models import Asset, Investor
 from modules.prices.repositories import PolygonPricesRepository
 from modules.transactions.models import Transaction
 from modules.instruments.models import Instrument
+
+logger = logging.getLogger(__name__)
 
 
 def create_portfolio_tool() -> Tool:
@@ -24,68 +28,90 @@ def create_portfolio_tool() -> Tool:
             Dictionary with portfolio summary and positions
         """
         try:
-            investor = Investor.objects.get(id=investor_id)
-            assets = Asset.objects.filter(investor=investor).select_related("ticker")
+            logger.info(f"Fetching portfolio for investor {investor_id}")
 
-            if not assets:
+            def fetch_portfolio_data():
+                investor = Investor.objects.get(id=investor_id)
+                assets = Asset.objects.filter(investor=investor).select_related(
+                    "ticker"
+                )
+
+                if not assets:
+                    return {
+                        "status": "success",
+                        "balance": str(investor.balance),
+                        "positions": [],
+                        "total_value": str(investor.balance),
+                    }
+
+                # Get current prices
+                tickers = [a.ticker.ticker.upper() for a in assets]
+                prices_repo = PolygonPricesRepository()
+                prices = prices_repo.get_prices_map(tickers)
+
+                if prices is None:
+                    return {
+                        "status": "error",
+                        "message": "Failed to fetch current prices",
+                    }
+
+                positions = []
+                total_holdings_value = Decimal("0")
+
+                for asset in assets:
+                    ticker_upper = asset.ticker.ticker.upper()
+                    current_price = prices[ticker_upper].current_price
+                    position_value = asset.volume * current_price
+                    total_holdings_value += position_value
+
+                    positions.append(
+                        {
+                            "ticker": asset.ticker.ticker,
+                            "quantity": str(asset.volume),
+                            "current_price": str(current_price),
+                            "position_value": str(position_value),
+                            "percentage_of_portfolio": None,  # Will calculate after
+                        }
+                    )
+
+                total_portfolio_value = investor.balance + total_holdings_value
+
+                # Calculate percentages
+                for position in positions:
+                    value = Decimal(position["position_value"])
+                    pct = (
+                        (value / total_portfolio_value * 100)
+                        if total_portfolio_value > 0
+                        else Decimal("0")
+                    )
+                    position["percentage_of_portfolio"] = str(pct)
+
                 return {
                     "status": "success",
                     "balance": str(investor.balance),
-                    "positions": [],
-                    "total_value": str(investor.balance),
+                    "cash_percentage": str(
+                        (investor.balance / total_portfolio_value * 100)
+                        if total_portfolio_value > 0
+                        else Decimal("0")
+                    ),
+                    "holdings_value": str(total_holdings_value),
+                    "total_value": str(total_portfolio_value),
+                    "positions": positions,
                 }
 
-            # Get current prices
-            tickers = [a.ticker.ticker.upper() for a in assets]
-            prices_repo = PolygonPricesRepository()
-            prices = prices_repo.get_prices_map(tickers)
-
-            positions = []
-            total_holdings_value = Decimal("0")
-
-            for asset in assets:
-                ticker_upper = asset.ticker.ticker.upper()
-                current_price = prices[ticker_upper].current_price
-                position_value = asset.volume * current_price
-                total_holdings_value += position_value
-
-                positions.append(
-                    {
-                        "ticker": asset.ticker.ticker,
-                        "quantity": str(asset.volume),
-                        "current_price": str(current_price),
-                        "position_value": str(position_value),
-                        "percentage_of_portfolio": None,  # Will calculate after
-                    }
+            result = await sync_to_async(fetch_portfolio_data)()
+            if result.get("status") == "success":
+                logger.info(
+                    f"Successfully fetched portfolio for investor {investor_id}"
                 )
-
-            total_portfolio_value = investor.balance + total_holdings_value
-
-            # Calculate percentages
-            for position in positions:
-                value = Decimal(position["position_value"])
-                pct = (
-                    (value / total_portfolio_value * 100)
-                    if total_portfolio_value > 0
-                    else Decimal("0")
-                )
-                position["percentage_of_portfolio"] = str(pct)
-
-            return {
-                "status": "success",
-                "balance": str(investor.balance),
-                "cash_percentage": str(
-                    (investor.balance / total_portfolio_value * 100)
-                    if total_portfolio_value > 0
-                    else Decimal("0")
-                ),
-                "holdings_value": str(total_holdings_value),
-                "total_value": str(total_portfolio_value),
-                "positions": positions,
-            }
+            return result
         except Investor.DoesNotExist:
+            logger.warning(f"Investor not found: {investor_id}")
             return {"status": "error", "message": "Investor not found"}
         except Exception as e:
+            logger.exception(
+                f"Error fetching portfolio for investor {investor_id}: {e}"
+            )
             return {"status": "error", "message": str(e)}
 
     return Tool(
@@ -109,34 +135,49 @@ def create_transactions_tool() -> Tool:
             Dictionary with transaction history
         """
         try:
-            investor = Investor.objects.get(id=investor_id)
-            transactions = (
-                Transaction.objects.filter(investor=investor)
-                .select_related("ticker")
-                .order_by("-timestamp")[:limit]
+            logger.info(
+                f"Fetching transactions for investor {investor_id}, limit={limit}"
             )
 
-            transaction_list = [
-                {
-                    "id": str(t.id),
-                    "ticker": t.ticker.ticker,
-                    "type": "BUY" if t.is_buy else "SELL",
-                    "quantity": str(t.volume),
-                    "price": str(t.price),
-                    "total_value": str(t.volume * t.price),
-                    "timestamp": t.timestamp.isoformat(),
-                }
-                for t in transactions
-            ]
+            def fetch_transaction_history():
+                investor = Investor.objects.get(id=investor_id)
+                transaction_queryset = (
+                    Transaction.objects.filter(investor=investor)
+                    .select_related("ticker")
+                    .order_by("-timestamp")[:limit]
+                )
 
-            return {
-                "status": "success",
-                "count": len(transaction_list),
-                "transactions": transaction_list,
-            }
+                transaction_list = [
+                    {
+                        "id": str(t.id),
+                        "ticker": t.ticker.ticker,
+                        "type": "BUY" if t.is_buy else "SELL",
+                        "quantity": str(t.volume),
+                        "price": str(t.price),
+                        "total_value": str(t.volume * t.price),
+                        "timestamp": t.timestamp.isoformat(),
+                    }
+                    for t in transaction_queryset
+                ]
+
+                return {
+                    "status": "success",
+                    "count": len(transaction_list),
+                    "transactions": transaction_list,
+                }
+
+            result = await sync_to_async(fetch_transaction_history)()
+            logger.info(
+                f"Successfully fetched {result['count']} transactions for investor {investor_id}"
+            )
+            return result
         except Investor.DoesNotExist:
+            logger.warning(f"Investor not found: {investor_id}")
             return {"status": "error", "message": "Investor not found"}
         except Exception as e:
+            logger.exception(
+                f"Error fetching transactions for investor {investor_id}: {e}"
+            )
             return {"status": "error", "message": str(e)}
 
     return Tool(
@@ -162,51 +203,74 @@ def create_performance_tool() -> Tool:
             Dictionary with performance metrics
         """
         try:
-            investor = Investor.objects.get(id=investor_id)
-
-            # Get transaction history for the period
-            start_date = datetime.now() - timedelta(days=period_days)
-            transactions = Transaction.objects.filter(
-                investor=investor,
-                timestamp__gte=start_date,
+            logger.info(
+                f"Fetching performance metrics for investor {investor_id}, period={period_days}d"
             )
 
-            # Calculate stats
-            total_buy_value = transactions.filter(is_buy=True).aggregate(
-                total=Sum("volume", output_field=Decimal())
-                * Sum("price", output_field=Decimal())
-            )["total"] or Decimal("0")
+            def fetch_performance_metrics():
+                investor = Investor.objects.get(id=investor_id)
 
-            total_sell_value = transactions.filter(is_buy=False).aggregate(
-                total=Sum("volume", output_field=Decimal())
-                * Sum("price", output_field=Decimal())
-            )["total"] or Decimal("0")
+                # Get transaction history for the period
+                start_date = datetime.now() - timedelta(days=period_days)
+                transaction_queryset = Transaction.objects.filter(
+                    investor=investor,
+                    timestamp__gte=start_date,
+                )
 
-            # Calculate realized gain/loss
-            realized_gain_loss = total_sell_value - total_buy_value
+                # Calculate stats - using F expressions to avoid N+1 issues
+                buy_transactions = transaction_queryset.filter(is_buy=True)
+                sell_transactions = transaction_queryset.filter(is_buy=False)
 
-            transaction_count = transactions.count()
-            buy_count = transactions.filter(is_buy=True).count()
-            sell_count = transactions.filter(is_buy=False).count()
-
-            return {
-                "status": "success",
-                "period_days": period_days,
-                "transaction_count": transaction_count,
-                "buy_count": buy_count,
-                "sell_count": sell_count,
-                "total_buy_value": str(total_buy_value),
-                "total_sell_value": str(total_sell_value),
-                "realized_gain_loss": str(realized_gain_loss),
-                "realized_return_percent": str(
-                    (realized_gain_loss / total_buy_value * 100)
-                    if total_buy_value > 0
+                # Properly calculate total values
+                buy_values = buy_transactions.values_list("volume", "price")
+                total_buy_value = (
+                    sum(vol * price for vol, price in buy_values)
+                    if buy_values
                     else Decimal("0")
-                ),
-            }
+                )
+
+                sell_values = sell_transactions.values_list("volume", "price")
+                total_sell_value = (
+                    sum(vol * price for vol, price in sell_values)
+                    if sell_values
+                    else Decimal("0")
+                )
+
+                # Calculate realized gain/loss
+                realized_gain_loss = total_sell_value - total_buy_value
+
+                transaction_count = transaction_queryset.count()
+                buy_count = buy_transactions.count()
+                sell_count = sell_transactions.count()
+
+                return {
+                    "status": "success",
+                    "period_days": period_days,
+                    "transaction_count": transaction_count,
+                    "buy_count": buy_count,
+                    "sell_count": sell_count,
+                    "total_buy_value": str(total_buy_value),
+                    "total_sell_value": str(total_sell_value),
+                    "realized_gain_loss": str(realized_gain_loss),
+                    "realized_return_percent": str(
+                        (realized_gain_loss / total_buy_value * 100)
+                        if total_buy_value > 0
+                        else Decimal("0")
+                    ),
+                }
+
+            result = await sync_to_async(fetch_performance_metrics)()
+            logger.info(
+                f"Successfully fetched performance metrics for investor {investor_id}"
+            )
+            return result
         except Investor.DoesNotExist:
+            logger.warning(f"Investor not found: {investor_id}")
             return {"status": "error", "message": "Investor not found"}
         except Exception as e:
+            logger.exception(
+                f"Error fetching performance metrics for investor {investor_id}: {e}"
+            )
             return {"status": "error", "message": str(e)}
 
     return Tool(
@@ -235,27 +299,42 @@ def create_stock_data_tool() -> Tool:
             else:
                 ticker_list = [t.upper() for t in tickers]
 
-            # Verify tickers exist in database
-            valid_count = Instrument.objects.filter(ticker__in=ticker_list).count()
-            if valid_count != len(ticker_list):
-                invalid_tickers = [
-                    t
-                    for t in ticker_list
-                    if not Instrument.objects.filter(ticker=t).exists()
-                ]
+            logger.info(f"Fetching stock data for tickers: {ticker_list}")
+
+            # Verify tickers exist in database (run in thread pool to avoid blocking)
+            def verify_ticker_validity():
+                valid_count = Instrument.objects.filter(ticker__in=ticker_list).count()
+                if valid_count != len(ticker_list):
+                    invalid_tickers = [
+                        t
+                        for t in ticker_list
+                        if not Instrument.objects.filter(ticker=t).exists()
+                    ]
+                    return invalid_tickers
+                return None
+
+            invalid_tickers = await sync_to_async(verify_ticker_validity)()
+            if invalid_tickers:
+                error_msg = f"Invalid tickers: {', '.join(invalid_tickers)}"
+                logger.warning(error_msg)
                 return {
                     "status": "error",
-                    "message": f"Invalid tickers: {', '.join(invalid_tickers)}",
+                    "message": error_msg,
                 }
 
-            # Get prices from Polygon
-            prices_repo = PolygonPricesRepository()
-            prices = prices_repo.get_prices_map(ticker_list)
+            # Get prices from Polygon (run in thread pool to avoid blocking)
+            def fetch_prices_from_polygon():
+                prices_repo = PolygonPricesRepository()
+                return prices_repo.get_prices_map(ticker_list)
+
+            prices = await sync_to_async(fetch_prices_from_polygon)()
 
             if prices is None:
+                error_msg = "Failed to fetch market data from Polygon API"
+                logger.error(error_msg)
                 return {
                     "status": "error",
-                    "message": "Failed to fetch market data from Polygon API",
+                    "message": error_msg,
                 }
 
             # Format response
@@ -288,12 +367,14 @@ def create_stock_data_tool() -> Tool:
                         }
                     )
 
+            logger.info(f"Successfully fetched data for {len(stock_data)} tickers")
             return {
                 "status": "success",
                 "data": stock_data,
                 "count": len(stock_data),
             }
         except Exception as e:
+            logger.exception(f"Error fetching stock data for tickers {tickers}: {e}")
             return {
                 "status": "error",
                 "message": f"Error fetching stock data: {str(e)}",
