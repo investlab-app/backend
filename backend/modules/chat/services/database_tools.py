@@ -17,7 +17,8 @@
 
 #     async def get_portfolio(investor_id: str) -> dict:
 #         """
-#         Get current portfolio positions including holdings, quantities, and current values.
+#         Get current portfolio positions including holdings, quantities, and
+#         current values.
 
 #         Args:
 #             investor_id: The investor's UUID as string

@@ -1,8 +1,8 @@
 import logging
 
 from pydantic_ai import Agent
+from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.groq import GroqModel
-from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
 from config.clients import groq_provider
 
@@ -13,7 +13,19 @@ model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
-    toolset = FastMCPToolset("http://localhost:8050/mcp")
+    try:
+        # Connect to MCP server using StdioTransport
+        massive_mcp = MCPServerStdio(
+            command="uvx",
+            args=[
+                "--from",
+                "git+https://github.com/massive-com/mcp_massive@v0.6.0",
+                "mcp_massive",
+            ],
+        )
+    except Exception as e:
+        logger.warning("Failed to initialize MCP tools, using fallback: %s", e)
+        massive_mcp = None
 
     system_prompt = """You are a financial assistant for InvestLab paper trading.
 
@@ -52,7 +64,12 @@ Guidelines:
 - Provide context about market conditions and trends
 - When using Massive API tools, they fetch data directly from the market"""
 
-    # Create the agent
-    agent = Agent(model=model, system_prompt=system_prompt, tools=[toolset])
+    # Create the agent with or without tools
+    if massive_mcp:
+        print("Creating agent with MCP tools...")
+        agent = Agent(model=model, system_prompt=system_prompt, tools=[massive_mcp])
+    else:
+        print("No MCP tools available, creating agent without tools...")
+        agent = Agent(model=model, system_prompt=system_prompt)
 
     return agent

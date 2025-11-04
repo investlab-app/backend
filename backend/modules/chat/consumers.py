@@ -51,28 +51,21 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # Initialize the financial agent
         try:
             self.agent = await create_financial_agent(self.investor_id)
-        except ValueError as e:
-            await self.accept()
-            await self.send_json(
-                {
-                    "type": "error",
-                    "message": f"Failed to initialize chat agent: {str(e)}",
-                }
-            )
-            await self.close()
-            return
         except Exception as e:
             await self.accept()
-            logger.warning(f"Failed to initialize MCP tools, using fallback: {e}")
+            logger.warning("Failed to initialize chat agent: %s", e)
             await self.send_json(
                 {
                     "type": "warning",
-                    "message": "Chat initialized with limited features",
+                    "message": (
+                        "Chat initialized with limited features. "
+                        "Some tools may not be available."
+                    ),
                 }
             )
 
         await self.accept()
-        logger.info(f"Chat connection established for investor {self.investor_id}")
+        logger.info("Chat connection established for investor %s", self.investor_id)
 
     async def receive(self, text_data=None, bytes_data=None):
         """Handle incoming WebSocket messages."""
@@ -126,8 +119,11 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             async for chunk in self._stream_response(message):
                 chunk_count += 1
                 logger.debug(
-                    f"Streaming chunk #{chunk_count}: {repr(chunk[:100])}, "
-                    f"length={len(chunk)}, accumulated_length={len(full_response) + len(chunk)}"
+                    "Streaming chunk #%s: %s, length=%s, accumulated_length=%s",
+                    chunk_count,
+                    repr(chunk[:100]),
+                    len(chunk),
+                    len(full_response) + len(chunk),
                 )
                 await self.send_json(
                     {
@@ -138,8 +134,9 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 full_response += chunk
 
             logger.debug(
-                f"Streaming complete. Total chunks: {chunk_count}, "
-                f"Final response length: {len(full_response)}"
+                "Streaming complete. Total chunks: %s, Final response length: %s",
+                chunk_count,
+                len(full_response),
             )
 
             # Save assistant response to database
@@ -157,7 +154,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             )
 
         except Exception as e:
-            logger.exception(f"Error streaming response: {e}")
+            logger.exception("Error streaming response: %s", e)
             await self.send_json(
                 {
                     "type": "error",
@@ -165,7 +162,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 }
             )
 
-    async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
+    async def _stream_response(self, user_message: str) -> AsyncGenerator[str]:
         """Stream response chunks from the agent."""
         try:
             chunk_count = 0
@@ -174,16 +171,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     if text_delta:
                         chunk_count += 1
                         logger.debug(
-                            f"_stream_response yielding delta chunk #{chunk_count}: "
-                            f"{repr(text_delta[:100])}, length={len(text_delta)}"
+                            "_stream_response yielding delta chunk #%s: %s, length=%s",
+                            chunk_count,
+                            repr(text_delta[:100]),
+                            len(text_delta),
                         )
                         yield text_delta
         except Exception as e:
-            logger.exception(f"Error in agent stream: {e}")
+            logger.exception("Error in agent stream: %s", e)
             raise
 
     async def disconnect(self, code):
         """Handle WebSocket disconnection."""
         logger.info(
-            f"Chat connection closed for investor {self.investor_id} with code {code}"
+            "Chat connection closed for investor %s with code %s",
+            self.investor_id,
+            code,
         )
