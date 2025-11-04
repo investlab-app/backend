@@ -1,77 +1,20 @@
 import logging
-from typing import Any
 
 from pydantic_ai import Agent
 from pydantic_ai.models.groq import GroqModel
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
 from config.clients import groq_provider
-from modules.chat.services.database_tools import (
-    create_performance_tool,
-    create_portfolio_tool,
-    create_transactions_tool,
-)
-from modules.chat.services.mcp_massive_client import MCPMassiveClient
 
 logger = logging.getLogger(__name__)
 
-# Global MCP client instance
-_mcp_client: MCPMassiveClient | None = None
 
-
-async def get_mcp_client() -> MCPMassiveClient:
-    """Get or initialize the global MCP client."""
-    global _mcp_client
-
-    if _mcp_client is None:
-        _mcp_client = MCPMassiveClient()
-        await _mcp_client.initialize()
-
-    return _mcp_client
+model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
-    """
-    Create a Pydantic-AI agent for financial assistance with MCP integration.
+    toolset = FastMCPToolset("http://localhost:8050/mcp")
 
-    The agent has access to:
-    - Real-time stock data via Massive API (MCP)
-    - User portfolio and position data
-    - Transaction history
-    - Performance metrics
-    - Comprehensive market analysis tools
-
-    Args:
-        investor_id: The investor's UUID as string
-
-    Returns:
-        Configured Agent instance with MCP tools
-    """
-
-    model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
-
-    # Initialize database tools
-    database_tools = [
-        create_portfolio_tool(),
-        create_transactions_tool(),
-        create_performance_tool(),
-    ]
-
-    # Initialize MCP Massive API tools
-    mcp_tools = []
-    try:
-        mcp_client = await get_mcp_client()
-        mcp_tools = mcp_client.create_tools()
-        logger.info(f"Loaded {len(mcp_tools)} MCP tools from Massive API")
-    except Exception as e:
-        logger.warning(
-            f"Failed to initialize MCP tools: {e}. Continuing with database tools only."
-        )
-        mcp_tools = []
-
-    # Combine all tools
-    all_tools = database_tools + mcp_tools
-
-    # Create agent with system prompt
     system_prompt = """You are a financial assistant for InvestLab paper trading.
 
 This application simulates stock market trading.
@@ -110,34 +53,6 @@ Guidelines:
 - When using Massive API tools, they fetch data directly from the market"""
 
     # Create the agent
-    agent = Agent(
-        model=model,
-        system_prompt=system_prompt,
-        tools=all_tools,
-    )
+    agent = Agent(model=model, system_prompt=system_prompt, tools=[toolset])
 
     return agent
-
-
-async def stream_agent_response(
-    agent: Agent,
-    investor_id: str,
-    user_message: str,
-) -> Any:
-    """
-    Stream a response from the financial agent.
-
-    Args:
-        agent: The configured Agent instance
-        investor_id: The investor's UUID as string
-        user_message: The user's message/query
-
-    Yields:
-        Response chunks from the agent
-    """
-    # Stream the response
-    async with agent.run_stream(
-        user_message,
-    ) as result:
-        async for chunk in result:
-            yield chunk

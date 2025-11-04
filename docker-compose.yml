@@ -139,7 +139,7 @@ services:
       - default
 
   mcp-massive:
-    image: ghcr.io/astral-sh/uv:alpine
+    image: ghcr.io/astral-sh/uv:debian
     command:
       [
         "uvx",
@@ -149,8 +149,11 @@ services:
       ]
     env_file: .env
     restart: unless-stopped
+    ports:
+      - "8050:8000"
     environment:
       - MASSIVE_API_KEY=${MASSIVE_API_KEY}
+      - MCP_TRANSPORT=streamable-http
     networks:
       - app_network
     profiles:

@@ -1,13 +1,12 @@
 import json
 import logging
-from typing import AsyncGenerator
+from collections.abc import AsyncGenerator
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from pydantic_ai import Agent
 
 from modules.chat.models import ChatMessage
-from modules.chat.services.agent import create_financial_agent, stream_agent_response
+from modules.chat.services.agent import create_financial_agent
 from modules.investors.models import Investor
 
 logger = logging.getLogger(__name__)
