@@ -73,7 +73,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
             old_description = instrument.description
             old_description_pl = instrument.description_pl
-            new_description = ticker_details.get("description")
+            new_description = getattr(ticker_details, "description", None)
             is_description_updated = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
@@ -83,7 +83,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
             if not old_description_pl and is_description_updated and new_description:
                 try:
                     polish_translation = self.translation_service.translate_to_polish(
-                        ticker_details["description"]
+                        new_description
                     )
 
                     if polish_translation:
