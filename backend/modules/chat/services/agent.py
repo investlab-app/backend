@@ -7,6 +7,11 @@ from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
 from config.clients import groq_provider
+from modules.chat.services.database_tools import (
+    get_portfolio,
+    get_portfolio_performance,
+    get_transactions,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -16,7 +21,7 @@ scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 qwen = "qwen/qwen3-32b"
 
 model = GroqModel(
-    llama,
+    qwen,
     provider=groq_provider,
 )
 
@@ -51,6 +56,17 @@ historical price data for the past day"
 When users ask about current time or date, you can reference the time \
 context above or use the get_current_time tool for more detailed time \
 information.
+
+PORTFOLIO & TRADING TOOLS:
+You have access to the user's portfolio data:
+1. get_portfolio - View current holdings, positions, cash balance, and total value
+2. get_transactions - Review recent trading history (buys/sells)
+3. get_portfolio_performance - Analyze performance metrics over time periods
+
+Use these tools when users ask about:
+- "What's in my portfolio?" or "Show my positions"
+- "What trades have I made?" or "My transaction history"
+- "How am I performing?" or "Show my gains/losses"
 
 TOOL USAGE GUIDE:
 For stock price lookups, use these tools in order of preference:
@@ -133,7 +149,7 @@ CRITICAL - Parameter Validation:
         "tool_choice": "auto",
     }
 
-    # Create the agent
+    # Create the agent with investor_id as deps (context)
     if toolset:
         print("WITH TOOLS")
         agent = Agent(
@@ -142,6 +158,7 @@ CRITICAL - Parameter Validation:
             toolsets=[toolset],
             retries=retries,
             model_settings=model_settings,
+            deps_type=str,  # investor_id as string
         )
     else:
         print("NO TOOLS")
@@ -150,6 +167,7 @@ CRITICAL - Parameter Validation:
             system_prompt=system_prompt,
             retries=retries,
             model_settings=model_settings,
+            deps_type=str,  # investor_id as string
         )
 
     # Define and register time tool
@@ -175,5 +193,10 @@ CRITICAL - Parameter Validation:
             "day_of_week": now_utc.strftime("%A"),
             "timezone": str(now_utc.tzinfo),
         }
+
+    # Register database tools with the agent
+    agent.tool(get_portfolio, retries=2)
+    agent.tool(get_transactions, retries=2)
+    agent.tool(get_portfolio_performance, retries=2)
 
     return agent

@@ -245,6 +245,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 user_message,
                 message_history=message_history,
                 event_stream_handler=self._event_stream_handler,
+                deps=str(self.investor.id),
             ) as response:
                 print("STREAMING TEXT FROM AGENT (delta mode)")
                 async for text_delta in response.stream_text(delta=True):
