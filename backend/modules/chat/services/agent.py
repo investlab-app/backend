@@ -16,7 +16,7 @@ scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 qwen = "qwen/qwen3-32b"
 
 model = GroqModel(
-    qwen,
+    scout,
     provider=groq_provider,
 )
 
@@ -36,8 +36,15 @@ a paper trading simulator.
 
 Help users analyze stocks and trading performance. Be concise and use \
 available tools for real data.
-Provide educational insights, not financial advice. Format responses in \
-markdown with code examples when relevant.
+Provide educational insights, not financial advice.
+
+RESPONSE FORMATTING RULES:
+- NEVER include code blocks, code snippets, or programming examples
+- Write responses in natural, conversational language only
+- Use plain text markdown for emphasis (bold, italic, lists)
+- When suggesting actions, describe them in plain English
+- Example: Instead of "get_aggs(AAPL, 1_day, ...)", say "I can check \
+historical price data for the past day"
 
 {current_time_context}
 
@@ -52,7 +59,9 @@ list_universal_snapshots
 - For ticker lookups: try list_tickers if get_ticker_details fails
 - Always provide helpful information even if specific data is unavailable
 - Suggest alternatives: "I couldn't get X, but I can help you with Y instead"
-- Never give up after a single tool failure - be resourceful and try different approaches"""
+- Never give up after a single tool failure - be resourceful and try different approaches
+- When suggesting what you can do, describe capabilities in plain language, \
+NEVER show function names or code"""
 
     # Define allowed tools from Polygon API
     allowed_tools = {
