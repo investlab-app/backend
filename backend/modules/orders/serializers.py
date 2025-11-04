@@ -30,7 +30,9 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
             is_buy=validated_data["is_buy"],
         )
         if not order:
-            raise serializers.ValidationError("Cannot create market order due to blocked funds")
+            raise serializers.ValidationError(
+                "Cannot create market order due to blocked funds"
+            )
 
         return order
 
