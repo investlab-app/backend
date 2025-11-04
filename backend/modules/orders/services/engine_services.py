@@ -94,7 +94,7 @@ class PricesFetcher:
 
 
 class TradeEngineOutputHandler:
-    def __init__(self, order_service: MarketOrderService = None):
+    def __init__(self, order_service: MarketOrderService | None = None):
         self.order_service = order_service or MarketOrderService()
 
     async def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
