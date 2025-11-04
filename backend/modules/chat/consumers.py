@@ -182,10 +182,12 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             async with self.agent.run_stream(
                 user_message, event_stream_handler=self._event_stream_handler
             ) as response:
-                print("STREAMING TEXT FROM AGENT")
-                async for text_chunk in response.stream_text():
-                    print(f"YIELDING CHUNK: {repr(text_chunk[:50])}")
-                    yield text_chunk
+                print("STREAMING TEXT FROM AGENT (delta mode)")
+                async for text_delta in response.stream_text(delta=True):
+                    print(
+                        f"YIELDING DELTA: {repr(text_delta[:50] if len(text_delta) > 50 else text_delta)}"
+                    )
+                    yield text_delta
 
             print("STREAM COMPLETE")
 
