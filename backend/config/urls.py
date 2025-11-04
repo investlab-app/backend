@@ -8,9 +8,9 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from modules.core.views import StatusView
 from modules.chat.consumers import ChatConsumer
-from modules.notifications.consumers import Websocket, NotificationsConsumer
+from modules.core.views import StatusView
+from modules.notifications.consumers import NotificationsConsumer, Websocket
 
 PREFIX = "api"
 

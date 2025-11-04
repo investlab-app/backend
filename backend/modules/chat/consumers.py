@@ -15,176 +15,108 @@ logger = logging.getLogger(__name__)
 class ChatConsumer(AsyncJsonWebsocketConsumer):
     """WebSocket consumer for real-time financial chat with streaming responses."""
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.investor = None
-        self.agent = None
-        self.investor_id = None
-
     async def connect(self):
         """Handle WebSocket connection."""
+        print("CONNECTING")
         if not self.scope["user"].is_authenticated:
             await self.accept()
             await self.close()
             return
 
-        clerk_id = self.scope["user"].id
-
         # Get investor instance
+        print("FETCHING INVESTOR")
         self.investor = await sync_to_async(
-            Investor.objects.filter(clerk_id=clerk_id).first
+            Investor.objects.filter(clerk_id=self.scope["user"].id).first
         )()
 
+        print("HANDLING INVESTOR")
         if not self.investor:
             await self.accept()
             await self.send_json(
-                {
-                    "type": "error",
-                    "message": "Investor profile not found",
-                }
+                {"type": "error", "message": "Investor profile not found"}
             )
             await self.close()
             return
 
-        self.investor_id = str(self.investor.id)
-
         # Initialize the financial agent
+        print("INITIALIZING AGENT")
         try:
-            self.agent = await create_financial_agent(self.investor_id)
+            self.agent = await create_financial_agent(str(self.investor.id))
         except Exception as e:
-            await self.accept()
             logger.warning("Failed to initialize chat agent: %s", e)
-            await self.send_json(
-                {
-                    "type": "warning",
-                    "message": (
-                        "Chat initialized with limited features. "
-                        "Some tools may not be available."
-                    ),
-                }
-            )
+            self.agent = None
 
+        print("ACCEPTING CONNECTION")
         await self.accept()
-        logger.info("Chat connection established for investor %s", self.investor_id)
 
     async def receive(self, text_data=None, bytes_data=None):
         """Handle incoming WebSocket messages."""
-        if text_data is None:
+        print("RECEIVING MESSAGE")
+        if not text_data:
             return
 
+        print("PARSING MESSAGE")
         if isinstance(text_data, (bytes, bytearray)):
             text_data = text_data.decode("utf-8")
 
+        print("LOADING JSON")
         try:
             data = json.loads(text_data)
-        except json.JSONDecodeError:
-            await self.send_json(
-                {
-                    "type": "error",
-                    "message": "Invalid JSON format",
-                }
-            )
+            message = data.get("message", "").strip()
+        except (json.JSONDecodeError, AttributeError):
+            await self.send_json({"type": "error", "message": "Invalid JSON format"})
             return
 
-        message = data.get("message", "").strip()
-
+        print("CHECKING MESSAGE")
         if not message:
             await self.send_json(
-                {
-                    "type": "error",
-                    "message": "Message cannot be empty",
-                }
+                {"type": "error", "message": "Message cannot be empty"}
             )
             return
 
-        # Save user message to database
+        # Save user message
+        print("SAVING USER MESSAGE")
         await sync_to_async(ChatMessage.objects.create)(
             investor=self.investor,
             role=ChatMessage.ROLE_USER,
             content=message,
         )
 
-        # Send start signal
-        await self.send_json(
-            {
-                "type": "start",
-                "message": "Processing your query...",
-            }
-        )
-
         # Stream agent response
+        print("STREAMING RESPONSE")
+        await self.send_json({"type": "start", "message": "Processing your query..."})
+
+        print("STARTING STREAM")
         try:
             full_response = ""
-            chunk_count = 0
             async for chunk in self._stream_response(message):
-                chunk_count += 1
-                logger.debug(
-                    "Streaming chunk #%s: %s, length=%s, accumulated_length=%s",
-                    chunk_count,
-                    repr(chunk[:100]),
-                    len(chunk),
-                    len(full_response) + len(chunk),
-                )
-                await self.send_json(
-                    {
-                        "type": "chunk",
-                        "content": chunk,
-                    }
-                )
+                await self.send_json({"type": "chunk", "content": chunk})
                 full_response += chunk
 
-            logger.debug(
-                "Streaming complete. Total chunks: %s, Final response length: %s",
-                chunk_count,
-                len(full_response),
-            )
-
-            # Save assistant response to database
+            # Save assistant response
             await sync_to_async(ChatMessage.objects.create)(
                 investor=self.investor,
                 role=ChatMessage.ROLE_ASSISTANT,
                 content=full_response,
             )
 
-            # Send completion signal
-            await self.send_json(
-                {
-                    "type": "end",
-                }
-            )
+            await self.send_json({"type": "end"})
 
         except Exception as e:
             logger.exception("Error streaming response: %s", e)
-            await self.send_json(
-                {
-                    "type": "error",
-                    "message": f"Error processing your query: {str(e)}",
-                }
-            )
+            await self.send_json({"type": "error", "message": f"Error: {str(e)}"})
 
-    async def _stream_response(self, user_message: str) -> AsyncGenerator[str]:
+    async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """Stream response chunks from the agent."""
-        try:
-            chunk_count = 0
-            async with self.agent.run_stream(user_message) as result:
-                async for text_delta in result.stream_text(delta=True):
-                    if text_delta:
-                        chunk_count += 1
-                        logger.debug(
-                            "_stream_response yielding delta chunk #%s: %s, length=%s",
-                            chunk_count,
-                            repr(text_delta[:100]),
-                            len(text_delta),
-                        )
-                        yield text_delta
-        except Exception as e:
-            logger.exception("Error in agent stream: %s", e)
-            raise
+        if not self.agent:
+            raise RuntimeError("Agent not initialized")
+
+        print("RUNNING AGENT STREAM")
+        async with self.agent.run_stream(user_message) as result:
+            async for text_delta in result.stream_text(delta=True):
+                if text_delta:
+                    yield text_delta
 
     async def disconnect(self, code):
         """Handle WebSocket disconnection."""
-        logger.info(
-            "Chat connection closed for investor %s with code %s",
-            self.investor_id,
-            code,
-        )
+        pass

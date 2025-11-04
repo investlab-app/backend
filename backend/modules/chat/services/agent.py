@@ -13,6 +13,9 @@ model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
+    """Create a financial agent with MCP tools for market data and portfolio analysis."""
+    toolsets = []
+
     try:
         # Connect to MCP server using StdioTransport
         massive_mcp = MCPServerStdio(
@@ -23,9 +26,10 @@ async def create_financial_agent(investor_id: str) -> Agent:
                 "mcp_massive",
             ],
         )
+        toolsets.append(massive_mcp)
+        logger.info("MCP tools initialized successfully")
     except Exception as e:
-        logger.warning("Failed to initialize MCP tools, using fallback: %s", e)
-        massive_mcp = None
+        logger.warning("Failed to initialize MCP tools, continuing without them: %s", e)
 
     system_prompt = """You are a financial assistant for InvestLab paper trading.
 
@@ -64,12 +68,11 @@ Guidelines:
 - Provide context about market conditions and trends
 - When using Massive API tools, they fetch data directly from the market"""
 
-    # Create the agent with or without tools
-    if massive_mcp:
-        print("Creating agent with MCP tools...")
-        agent = Agent(model=model, system_prompt=system_prompt, tools=[massive_mcp])
-    else:
-        print("No MCP tools available, creating agent without tools...")
-        agent = Agent(model=model, system_prompt=system_prompt)
+    # Create the agent with toolsets
+    agent = Agent(
+        model=model,
+        system_prompt=system_prompt,
+        toolsets=toolsets if toolsets else None,
+    )
 
     return agent
