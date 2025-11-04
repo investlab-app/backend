@@ -16,7 +16,7 @@ scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 qwen = "qwen/qwen3-32b"
 
 model = GroqModel(
-    scout,
+    llama,
     provider=groq_provider,
 )
 
