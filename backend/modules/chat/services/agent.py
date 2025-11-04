@@ -19,9 +19,12 @@ gpt_oss = "openai/gpt-oss-20b"
 llama = "llama-3.1-8b-instant"
 scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 qwen = "qwen/qwen3-32b"
+nvidia = "nvidia/nemotron-nano-12b-v2-vl:free"
+glm = "z-ai/glm-4.5-air:free"
+llama_free = "meta-llama/llama-3.3-8b-instruct:free"
 
 model = OpenAIModel(
-    qwen,
+    llama_free,
     provider=openai_provider,
 )
 
