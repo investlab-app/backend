@@ -1,11 +1,23 @@
 import asyncio
 import json
 import logging
-from collections.abc import AsyncGenerator
+from collections.abc import AsyncGenerator, AsyncIterable
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
-from pydantic_ai import Agent
+from pydantic_ai import (
+    Agent,
+    AgentStreamEvent,
+    FinalResultEvent,
+    FunctionToolCallEvent,
+    FunctionToolResultEvent,
+    PartDeltaEvent,
+    PartStartEvent,
+    RunContext,
+    TextPartDelta,
+    ThinkingPartDelta,
+    ToolCallPartDelta,
+)
 
 from modules.chat.models import ChatMessage
 from modules.chat.services.agent import create_financial_agent
@@ -126,40 +138,56 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             print(f"EXCEPTION IN STREAM: {e}")
             await self.send_json({"type": "error", "message": f"Error: {str(e)}"})
 
+    async def _event_stream_handler(
+        self, ctx: RunContext, event_stream: AsyncIterable[AgentStreamEvent]
+    ):
+        """Handle and log agent stream events."""
+        async for event in event_stream:
+            if isinstance(event, PartStartEvent):
+                print(f"[Event] Starting part {event.index}: {event.part!r}")
+            elif isinstance(event, PartDeltaEvent):
+                if isinstance(event.delta, TextPartDelta):
+                    print(
+                        f"[Event] Part {event.index} text delta: {event.delta.content_delta!r}"
+                    )
+                elif isinstance(event.delta, ThinkingPartDelta):
+                    print(
+                        f"[Event] Part {event.index} thinking delta: {event.delta.content_delta!r}"
+                    )
+                elif isinstance(event.delta, ToolCallPartDelta):
+                    print(
+                        f"[Event] Part {event.index} tool args delta: {event.delta.args_delta}"
+                    )
+            elif isinstance(event, FunctionToolCallEvent):
+                print(
+                    f"[Event] LLM calls tool={event.part.tool_name!r} with args={event.part.args} (tool_call_id={event.part.tool_call_id!r})"
+                )
+            elif isinstance(event, FunctionToolResultEvent):
+                print(
+                    f"[Event] Tool call {event.tool_call_id!r} returned => {event.result.content}"
+                )
+            elif isinstance(event, FinalResultEvent):
+                print(
+                    f"[Event] Model producing final result (tool_name={event.tool_name})"
+                )
+
     async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """Stream response chunks from the agent."""
         if not self.agent:
             raise RuntimeError("Agent not initialized")
 
-        print("RUNNING AGENT - Getting full response first")
+        print(f"RUNNING AGENT with message: {user_message}")
         try:
-            # Get the complete response first to avoid truncation issues with run_stream()
-            out = []
-            async with self.agent.iter("get_aggs AAPL") as agent_run:
-                async for node in agent_run:
-                    print(f"AGG NODE: {node}")
-                    out.append(str(node))
+            # Use run_stream to get real-time streaming responses with event handler
+            async with self.agent.run_stream(
+                user_message, event_stream_handler=self._event_stream_handler
+            ) as response:
+                print("STREAMING TEXT FROM AGENT")
+                async for text_chunk in response.stream_text():
+                    print(f"YIELDING CHUNK: {repr(text_chunk[:50])}")
+                    yield text_chunk
 
-            result = "".join(out)
-
-            full_text = result
-
-            print(f"GOT FULL RESPONSE: {len(full_text)} characters")
-            print(f"Response preview: {repr(full_text[:100])}")
-
-            # Now stream it in chunks to the frontend
-            chunk_size = 50  # Stream in 50-character chunks
-            chunk_count = 0
-
-            for i in range(0, len(full_text), chunk_size):
-                chunk = full_text[i : i + chunk_size]
-                print(f"YIELDING CHUNK #{chunk_count}: {repr(chunk[:50])}")
-                yield chunk
-                chunk_count += 1
-
-            print(
-                f"STREAM COMPLETE - Yielded {chunk_count} chunks, total {len(full_text)} chars"
-            )
+            print("STREAM COMPLETE")
 
         except Exception as e:
             print(f"ERROR IN _stream_response: {type(e).__name__}: {e}")
