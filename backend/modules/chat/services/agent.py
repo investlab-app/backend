@@ -26,10 +26,13 @@ llama_free = "meta-llama/llama-3.3-8b-instruct:free"
 deepseek = "deepseek/deepseek-chat-v3-0324:free"
 gpt_oss = "openai/gpt-oss-20b:free"
 gemini = "google/gemini-2.0-flash-exp:free"
+flash_exp = "gemini-2.0-flash-exp"
+flash_2_5_lite = "gemini-2.5-flash-lite"
+flash_2_5 = "gemini-2.5-flash"
 
 # model = OpenAIModel(llama, provider=groq_provider)
 # model = GroqModel(llama, provider=groq_provider)
-model = GoogleModel("gemini-2.0-flash-exp", provider=gemini_provider)
+model = GoogleModel(flash_2_5, provider=gemini_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
@@ -53,10 +56,13 @@ RESPONSE FORMATTING RULES:
 - NEVER include code blocks, code snippets, or programming examples
 - Write responses in natural, conversational language only
 - Use plain text markdown for emphasis (bold, italic, lists)
+- Generate tables in markdown format when displaying tabular data
+- YOU CAN and SHOULD use markdown tables
 - When suggesting actions, describe them in plain English
 - Example: Instead of "get_aggs(AAPL, 1_day, ...)", say "I can check \
 historical price data for the past day"
 
+TODAY IS:
 {current_time_context}
 
 When users ask about current time or date, you can reference the time \
