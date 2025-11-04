@@ -18,6 +18,13 @@ from pydantic_ai import (
     ToolCallPartDelta,
     UnexpectedModelBehavior,
 )
+from pydantic_ai.messages import (
+    ModelMessage,
+    ModelRequest,
+    ModelResponse,
+    TextPart,
+    UserPromptPart,
+)
 
 from modules.chat.models import ChatMessage
 from modules.chat.services.agent import create_financial_agent
@@ -65,6 +72,25 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         print("ACCEPTING CONNECTION")
         await self.accept()
 
+    async def _load_message_history(self) -> list[ModelMessage]:
+        """Load chat history from database and convert to agent message format."""
+        messages = await sync_to_async(list)(
+            ChatMessage.objects.filter(investor=self.investor)
+            .order_by("created_at")
+            .values("role", "content")
+        )
+
+        history = []
+        for msg in messages:
+            if msg["role"] == ChatMessage.ROLE_USER:
+                history.append(
+                    ModelRequest(parts=[UserPromptPart(content=msg["content"])])
+                )
+            elif msg["role"] == ChatMessage.ROLE_ASSISTANT:
+                history.append(ModelResponse(parts=[TextPart(content=msg["content"])]))
+
+        return history
+
     async def receive(self, text_data=None, bytes_data=None):
         """Handle incoming WebSocket messages."""
         print("RECEIVING MESSAGE")
@@ -102,6 +128,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             content=message,
         )
 
+        # Load conversation history from database
+        print("LOADING HISTORY")
+        message_history = await self._load_message_history()
+
         # Stream agent response
         print("STREAMING RESPONSE")
         await self.send_json({"type": "start", "message": "Processing your query..."})
@@ -110,17 +140,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         try:
             full_response = ""
             chunk_count = 0
-            async for chunk in self._stream_response(message):
+            async for chunk in self._stream_response(message, message_history):
                 print(f"RECEIVED CHUNK #{chunk_count}: {repr(chunk)}")
                 await self.send_json({"type": "chunk", "content": chunk})
                 full_response += chunk
                 chunk_count += 1
 
             print(
-                f"STREAM COMPLETED: Total chunks = {chunk_count}, Total length = {len(full_response)}"
+                f"STREAM COMPLETED: Total chunks = {chunk_count}, "
+                f"Total length = {len(full_response)}"
             )
             logger.info(
-                f"Stream completed with {chunk_count} chunks, total {len(full_response)} chars"
+                "Stream completed with %d chunks, total %d chars",
+                chunk_count,
+                len(full_response),
             )
 
             # Save assistant response
@@ -148,54 +181,66 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             elif isinstance(event, PartDeltaEvent):
                 if isinstance(event.delta, TextPartDelta):
                     print(
-                        f"[Event] Part {event.index} text delta: {event.delta.content_delta!r}"
+                        f"[Event] Part {event.index} text delta: "
+                        f"{event.delta.content_delta!r}"
                     )
                 elif isinstance(event.delta, ThinkingPartDelta):
                     print(
-                        f"[Event] Part {event.index} thinking delta: {event.delta.content_delta!r}"
+                        f"[Event] Part {event.index} thinking delta: "
+                        f"{event.delta.content_delta!r}"
                     )
                 elif isinstance(event.delta, ToolCallPartDelta):
                     print(
-                        f"[Event] Part {event.index} tool args delta: {event.delta.args_delta}"
+                        f"[Event] Part {event.index} tool args delta: "
+                        f"{event.delta.args_delta}"
                     )
             elif isinstance(event, FunctionToolCallEvent):
                 print(
-                    f"[Event] LLM calls tool={event.part.tool_name!r} with args={event.part.args} (tool_call_id={event.part.tool_call_id!r})"
+                    f"[Event] LLM calls tool={event.part.tool_name!r} "
+                    f"with args={event.part.args} "
+                    f"(tool_call_id={event.part.tool_call_id!r})"
                 )
             elif isinstance(event, FunctionToolResultEvent):
                 print(
-                    f"[Event] Tool call {event.tool_call_id!r} returned => {event.result.content}"
+                    f"[Event] Tool call {event.tool_call_id!r} returned => "
+                    f"{event.result.content}"
                 )
             elif isinstance(event, FinalResultEvent):
                 print(
-                    f"[Event] Model producing final result (tool_name={event.tool_name})"
+                    f"[Event] Model producing final result "
+                    f"(tool_name={event.tool_name})"
                 )
 
-    async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
+    async def _stream_response(
+        self, user_message: str, message_history: list[ModelMessage] = None
+    ) -> AsyncGenerator[str]:
         """Stream response chunks from the agent."""
         if not self.agent:
             raise RuntimeError("Agent not initialized")
 
         print(f"RUNNING AGENT with message: {user_message}")
+        print(f"HISTORY LENGTH: {len(message_history) if message_history else 0}")
         try:
             # Use run_stream to get real-time streaming responses with event handler
             # Add usage limits to prevent infinite loops
             async with self.agent.run_stream(
                 user_message,
+                message_history=message_history,
                 event_stream_handler=self._event_stream_handler,
             ) as response:
                 print("STREAMING TEXT FROM AGENT (delta mode)")
                 async for text_delta in response.stream_text(delta=True):
-                    print(
-                        f"YIELDING DELTA: {repr(text_delta[:50] if len(text_delta) > 50 else text_delta)}"
+                    delta_preview = (
+                        text_delta[:50] if len(text_delta) > 50 else text_delta
                     )
+                    print(f"YIELDING DELTA: {repr(delta_preview)}")
                     yield text_delta
 
             print("STREAM COMPLETE")
 
         except UnexpectedModelBehavior as e:
             print(f"MODEL BEHAVIOR ERROR: {e}")
-            logger.warning(f"Agent encountered unexpected behavior: {e}")
+            logger.warning("Agent encountered unexpected behavior: %s", e)
             # Provide a helpful fallback message
             yield (
                 "I encountered an issue while processing your request. "
@@ -214,4 +259,3 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
     async def disconnect(self, code):
         """Handle WebSocket disconnection."""
-        pass

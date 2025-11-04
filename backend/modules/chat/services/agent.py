@@ -2,7 +2,7 @@ import logging
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from pydantic_ai import Agent, ModelRetry, RunContext
+from pydantic_ai import Agent, RunContext
 from pydantic_ai.models.groq import GroqModel
 from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
@@ -52,14 +52,29 @@ When users ask about current time or date, you can reference the time \
 context above or use the get_current_time tool for more detailed time \
 information.
 
+TOOL USAGE GUIDE:
+For stock price lookups, use these tools in order of preference:
+1. get_previous_close_agg - Best for current/latest price (yesterday's close)
+2. get_daily_open_close_agg - For specific date's OHLC data (format: YYYY-MM-DD)
+3. list_universal_snapshots - For real-time snapshots of multiple tickers
+4. get_ticker_details - For company information and general ticker data
+
+For historical data:
+- get_aggs or list_aggs - Historical price aggregates over time ranges
+
+For market information:
+- get_market_status - Check if markets are open
+- get_market_holidays - Find market holidays
+
 IMPORTANT - Tool Failure Handling:
 - If a tool call fails, try alternative tools or approaches
-- For stock prices: try get_stock_price, get_daily_open_close_agg, or \
+- For stock prices: try get_previous_close_agg, get_daily_open_close_agg, or \
 list_universal_snapshots
 - For ticker lookups: try list_tickers if get_ticker_details fails
 - Always provide helpful information even if specific data is unavailable
 - Suggest alternatives: "I couldn't get X, but I can help you with Y instead"
-- Never give up after a single tool failure - be resourceful and try different approaches
+- Never give up after a single tool failure - be resourceful and try different \
+approaches
 - When suggesting what you can do, describe capabilities in plain language, \
 NEVER show function names or code"""
 
@@ -144,71 +159,5 @@ NEVER show function names or code"""
             "day_of_week": now_utc.strftime("%A"),
             "timezone": str(now_utc.tzinfo),
         }
-
-    # Add a wrapper tool for price lookups with better error handling
-    @agent.tool(retries=3)
-    async def get_stock_price(ctx: RunContext[None], ticker: str) -> dict:
-        """
-        Get the current price and details for a stock ticker.
-
-        Args:
-            ticker: The stock ticker symbol (e.g., 'AAPL', 'GOOGL')
-
-        Returns:
-            Dictionary with price information including current price, change, volume, etc.
-        """
-        if not toolset:
-            raise ModelRetry(
-                "Price lookup service is currently unavailable. "
-                "Please try again later or ask about something else."
-            )
-
-        try:
-            # Use the filtered toolset to get ticker details
-            # This wraps the MCP tool call with better error handling
-            ticker = ticker.upper().strip()
-
-            # Try to get snapshot first (real-time data)
-            try:
-                from datetime import date
-
-                today = date.today().isoformat()
-
-                # Get daily snapshot which includes price info
-                result = await toolset.call_tool(
-                    ctx, "get_daily_open_close_agg", {"ticker": ticker, "date": today}
-                )
-
-                if isinstance(result, dict) and "error" in result:
-                    raise ModelRetry(
-                        f"Unable to fetch price for {ticker}. "
-                        f"Please verify the ticker symbol is correct. "
-                        f"Common tickers include: AAPL, GOOGL, MSFT, TSLA, AMZN."
-                    )
-
-                return result
-
-            except Exception as e:
-                logger.warning(f"Failed to get snapshot for {ticker}: {e}")
-                # Fallback: try to get ticker details instead
-                raise ModelRetry(
-                    f"Could not retrieve current price for {ticker}. "
-                    f"This might be due to: market being closed, invalid ticker symbol, "
-                    f"or temporary service issues. Try asking for: "
-                    f"1) A different ticker symbol, "
-                    f"2) Historical data instead, or "
-                    f"3) General information about the company."
-                )
-
-        except ModelRetry:
-            # Re-raise ModelRetry so the LLM can try again with different params
-            raise
-        except Exception as e:
-            logger.error(f"Unexpected error in get_stock_price for {ticker}: {e}")
-            raise ModelRetry(
-                f"An unexpected error occurred while fetching price data. "
-                f"Error details: {str(e)[:100]}. "
-                f"Please try rephrasing your question or ask about a different stock."
-            )
 
     return agent
