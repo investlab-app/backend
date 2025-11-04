@@ -59,6 +59,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         if isinstance(text_data, (bytes, bytearray)):
             text_data = text_data.decode("utf-8")
 
+        if text_data == "ping":
+            await self.send(text_data="pong")
+            return
+
         print("LOADING JSON")
         try:
             data = json.loads(text_data)

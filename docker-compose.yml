@@ -138,7 +138,28 @@ services:
     profiles:
       - default
 
-  
+  mcp-massive:
+    image: ghcr.io/astral-sh/uv:debian
+    command:
+      [
+        "uvx",
+        "--from",
+        "git+https://github.com/mikolajkapica/mcp_massive",
+        "mcp_massive",
+      ]
+    env_file: .env
+    restart: unless-stopped
+    ports:
+      - "8050:8000"
+    environment:
+      - MASSIVE_API_KEY=${MASSIVE_API_KEY}
+      - MCP_TRANSPORT=streamable-http
+      - MASSIVE_MCP_HOST=0.0.0.0
+    networks:
+      - app_network
+    profiles:
+      - default
+
 volumes:
   postgres_data:
 

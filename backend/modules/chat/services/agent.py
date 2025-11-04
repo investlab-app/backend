@@ -1,36 +1,21 @@
 import logging
 
 from pydantic_ai import Agent
-from pydantic_ai.mcp import MCPServerStdio
 from pydantic_ai.models.groq import GroqModel
+from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
 from config.clients import groq_provider
 
 logger = logging.getLogger(__name__)
 
+gpt_oss = "openai/gpt-oss-20b"
+llama = "llama-3.1-8b-instant"
+scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 
-model = GroqModel("llama-3.1-8b-instant", provider=groq_provider)
+model = GroqModel(scout, provider=groq_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
-    """Create a financial agent with MCP tools for market data and portfolio analysis."""
-    toolsets = []
-
-    try:
-        # Connect to MCP server using StdioTransport
-        massive_mcp = MCPServerStdio(
-            command="uvx",
-            args=[
-                "--from",
-                "git+https://github.com/massive-com/mcp_massive@v0.6.0",
-                "mcp_massive",
-            ],
-        )
-        toolsets.append(massive_mcp)
-        logger.info("MCP tools initialized successfully")
-    except Exception as e:
-        logger.warning("Failed to initialize MCP tools, continuing without them: %s", e)
-
     system_prompt = """You are a financial assistant for InvestLab paper trading.
 
 This application simulates stock market trading.
@@ -68,11 +53,29 @@ Guidelines:
 - Provide context about market conditions and trends
 - When using Massive API tools, they fetch data directly from the market"""
 
-    # Create the agent with toolsets
-    agent = Agent(
-        model=model,
-        system_prompt=system_prompt,
-        toolsets=toolsets if toolsets else None,
-    )
+    # Initialize the FastMCPToolset
+    try:
+        # Use the Docker service name instead of localhost
+        toolset = FastMCPToolset("http://mcp-massive:8000/mcp")
+        logger.info("Successfully initialized FastMCPToolset")
+    except Exception as e:
+        logger.error("Failed to initialize FastMCPToolset: %s", e)
+        # Create agent without tools if MCP server is not available
+        toolset = None
+
+    # Create the agent
+    if toolset:
+        print("WITH TOOLS")
+        agent = Agent(
+            model=model,
+            system_prompt=system_prompt,
+            toolsets=[toolset],
+        )
+    else:
+        print("NO TOOLS")
+        agent = Agent(
+            model=model,
+            system_prompt=system_prompt,
+        )
 
     return agent
