@@ -152,7 +152,7 @@ services:
     ports:
       - "8050:8000"
     environment:
-      - MASSIVE_API_KEY=${MASSIVE_API_KEY}
+      - MASSIVE_API_KEY=upVhXU4WjOQGByYr5rAcTzWfJ91umKeA      - MCP_TRANSPORT=streamable-http
       - MCP_TRANSPORT=streamable-http
       - MASSIVE_MCP_HOST=0.0.0.0
     networks:
