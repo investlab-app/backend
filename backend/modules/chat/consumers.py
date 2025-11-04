@@ -17,6 +17,8 @@ from pydantic_ai import (
     TextPartDelta,
     ThinkingPartDelta,
     ToolCallPartDelta,
+    UnexpectedModelBehavior,
+    UsageLimits,
 )
 
 from modules.chat.models import ChatMessage
@@ -179,8 +181,14 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         print(f"RUNNING AGENT with message: {user_message}")
         try:
             # Use run_stream to get real-time streaming responses with event handler
+            # Add usage limits to prevent infinite loops
             async with self.agent.run_stream(
-                user_message, event_stream_handler=self._event_stream_handler
+                user_message,
+                event_stream_handler=self._event_stream_handler,
+                usage_limits=UsageLimits(
+                    request_limit=10,  # Max 10 requests to prevent infinite loops
+                    total_tokens_limit=12000,  # Reasonable token limit
+                ),
             ) as response:
                 print("STREAMING TEXT FROM AGENT (delta mode)")
                 async for text_delta in response.stream_text(delta=True):
@@ -191,6 +199,20 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
 
             print("STREAM COMPLETE")
 
+        except UnexpectedModelBehavior as e:
+            print(f"MODEL BEHAVIOR ERROR: {e}")
+            logger.warning(f"Agent encountered unexpected behavior: {e}")
+            # Provide a helpful fallback message
+            yield (
+                "I encountered an issue while processing your request. "
+                "This might be due to:\n"
+                "- The requested tool or data is temporarily unavailable\n"
+                "- The query requires information I don't have access to\n\n"
+                "Please try:\n"
+                "- Rephrasing your question\n"
+                "- Asking about a different topic\n"
+                "- Being more specific about what you need\n"
+            )
         except Exception as e:
             print(f"ERROR IN _stream_response: {type(e).__name__}: {e}")
             logger.exception("Error in _stream_response")
