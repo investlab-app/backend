@@ -4,6 +4,8 @@ set -euo pipefail # Stop the script if any command fails
 echo "Migrating database"
 uv run manage.py migrate --noinput
 
+echo "Checking OPENAI_API_KEY: $OPENAI_API_KEY"
+
 # Choose the server based on DEBUG
 if [[ "$DEBUG" =~ ^(1|true|True|TRUE|on|yes)$ ]]; then
     echo "Starting Django development server"

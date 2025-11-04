@@ -3,10 +3,10 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.groq import GroqModel
+from pydantic_ai.models.openai import OpenAIModel
 from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
-from config.clients import groq_provider
+from config.clients import openai_provider
 from modules.chat.services.database_tools import (
     get_portfolio,
     get_portfolio_performance,
@@ -20,9 +20,9 @@ llama = "llama-3.1-8b-instant"
 scout = "meta-llama/llama-4-scout-17b-16e-instruct"
 qwen = "qwen/qwen3-32b"
 
-model = GroqModel(
+model = OpenAIModel(
     qwen,
-    provider=groq_provider,
+    provider=openai_provider,
 )
 
 
@@ -143,8 +143,8 @@ CRITICAL - Parameter Validation:
 
     # Model settings with better error handling
     model_settings = {
-        "timeout": 120.0,
-        "max_tokens": 16000,
+        "timeout": 240.0,
+        "max_tokens": 4000,
         # Allow model to choose when to use tools instead of forcing tool calls
         "tool_choice": "auto",
     }
