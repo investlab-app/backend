@@ -429,6 +429,8 @@ VAPID_CLAIMS = {
     "sub": f"mailto:{ADMIN_EMAIL}",
 }
 
-# OpenAI
-OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
-OPENAI_MODEL = os.environ["OPENAI_MODEL"]
+# AI
+AI_MODEL = os.environ["AI_MODEL"]
+GROQ_API_KEY = os.environ["GROQ_API_KEY"]
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]

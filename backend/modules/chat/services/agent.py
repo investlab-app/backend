@@ -3,10 +3,11 @@ from datetime import datetime
 from zoneinfo import ZoneInfo
 
 from pydantic_ai import Agent, RunContext
-from pydantic_ai.models.openai import OpenAIModel
+from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.toolsets.fastmcp import FastMCPToolset
 
-from config.clients import openai_provider
+# from config.clients import openai_provider
+from config.clients import gemini_provider
 from modules.chat.services.database_tools import (
     get_portfolio,
     get_portfolio_performance,
@@ -22,11 +23,13 @@ qwen = "qwen/qwen3-32b"
 nvidia = "nvidia/nemotron-nano-12b-v2-vl:free"
 glm = "z-ai/glm-4.5-air:free"
 llama_free = "meta-llama/llama-3.3-8b-instruct:free"
+deepseek = "deepseek/deepseek-chat-v3-0324:free"
+gpt_oss = "openai/gpt-oss-20b:free"
+gemini = "google/gemini-2.0-flash-exp:free"
 
-model = OpenAIModel(
-    llama_free,
-    provider=openai_provider,
-)
+# model = OpenAIModel(llama, provider=groq_provider)
+# model = GroqModel(llama, provider=groq_provider)
+model = GoogleModel("gemini-2.0-flash-exp", provider=gemini_provider)
 
 
 async def create_financial_agent(investor_id: str) -> Agent:
@@ -127,17 +130,20 @@ CRITICAL - Parameter Validation:
     try:
         # Use the Docker service name instead of localhost
         base_toolset = FastMCPToolset("http://mcp-massive:8000/mcp")
+        print("FastMCPToolset base initialized successfully")
 
         # Filter tools using Pydantic AI's .filtered() method
         toolset = base_toolset.filtered(
             lambda ctx, tool_def: tool_def.name in allowed_tools
         )
+        print("FastMCPToolset filtered successfully")
 
         logger.info(
             "Successfully initialized FastMCPToolset with filtered Polygon API tools"
         )
     except Exception as e:
         logger.error("Failed to initialize FastMCPToolset: %s", e)
+        print(f"Failed to initialize FastMCPToolset: {e}")
         # Create agent without tools if MCP server is not available
         toolset = None
 
@@ -148,8 +154,7 @@ CRITICAL - Parameter Validation:
     model_settings = {
         "timeout": 240.0,
         "max_tokens": 4000,
-        # Allow model to choose when to use tools instead of forcing tool calls
-        "tool_choice": "auto",
+        # Enable tool usage - remove tool_choice to let model properly invoke tools
     }
 
     # Create the agent with investor_id as deps (context)

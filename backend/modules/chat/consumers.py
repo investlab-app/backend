@@ -132,6 +132,8 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         # Load conversation history from database
         print("LOADING HISTORY")
         message_history = await self._load_message_history()
+        if message_history and message_history[-1].parts[0].content == message:
+            message_history = message_history[:-1]
 
         # Stream agent response
         print("STREAMING RESPONSE")
@@ -248,11 +250,10 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                 deps=str(self.investor.id),
             ) as response:
                 print("STREAMING TEXT FROM AGENT (delta mode)")
-                async for text_delta in response.stream_text(delta=True):
-                    delta_preview = (
-                        text_delta[:50] if len(text_delta) > 50 else text_delta
-                    )
-                    print(f"YIELDING DELTA: {repr(delta_preview)}")
+                async for text_delta in response.stream_text(
+                    delta=True, debounce_by=0.01
+                ):
+                    print(f"YIELDING DELTA: {text_delta}")
                     yield text_delta
 
             print("STREAM COMPLETE")
