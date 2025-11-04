@@ -76,7 +76,15 @@ list_universal_snapshots
 - Never give up after a single tool failure - be resourceful and try different \
 approaches
 - When suggesting what you can do, describe capabilities in plain language, \
-NEVER show function names or code"""
+NEVER show function names or code
+- If you encounter persistent tool failures, provide general information based \
+on your knowledge instead
+
+CRITICAL - Parameter Validation:
+- Always validate ticker symbols are uppercase and valid (e.g., AAPL not aapl)
+- Dates must be in YYYY-MM-DD format
+- If unsure about parameters, ask the user for clarification instead of guessing
+- Don't make tool calls with incomplete or invalid parameters"""
 
     # Define allowed tools from Polygon API
     allowed_tools = {
@@ -117,6 +125,14 @@ NEVER show function names or code"""
     # Configure default retry behavior for agent
     retries = 2
 
+    # Model settings with better error handling
+    model_settings = {
+        "timeout": 120.0,
+        "max_tokens": 16000,
+        # Allow model to choose when to use tools instead of forcing tool calls
+        "tool_choice": "auto",
+    }
+
     # Create the agent
     if toolset:
         print("WITH TOOLS")
@@ -125,7 +141,7 @@ NEVER show function names or code"""
             system_prompt=system_prompt,
             toolsets=[toolset],
             retries=retries,
-            model_settings={"timeout": 60.0, "max_tokens": 1500},
+            model_settings=model_settings,
         )
     else:
         print("NO TOOLS")
@@ -133,7 +149,7 @@ NEVER show function names or code"""
             model=model,
             system_prompt=system_prompt,
             retries=retries,
-            model_settings={"timeout": 60.0, "max_tokens": 1500},
+            model_settings=model_settings,
         )
 
     # Define and register time tool

@@ -4,6 +4,7 @@ from collections.abc import AsyncGenerator, AsyncIterable
 
 from asgiref.sync import sync_to_async
 from channels.generic.websocket import AsyncJsonWebsocketConsumer
+from groq import APIError as GroqAPIError
 from pydantic_ai import (
     Agent,
     AgentStreamEvent,
@@ -171,45 +172,62 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             print(f"EXCEPTION IN STREAM: {e}")
             await self.send_json({"type": "error", "message": f"Error: {str(e)}"})
 
+    def _handle_part_delta_event(self, event: PartDeltaEvent):
+        """Handle part delta events."""
+        if isinstance(event.delta, TextPartDelta):
+            print(
+                f"[Event] Part {event.index} text delta: {event.delta.content_delta!r}"
+            )
+        elif isinstance(event.delta, ThinkingPartDelta):
+            print(
+                f"[Event] Part {event.index} thinking delta: "
+                f"{event.delta.content_delta!r}"
+            )
+        elif isinstance(event.delta, ToolCallPartDelta):
+            print(
+                f"[Event] Part {event.index} tool args delta: {event.delta.args_delta}"
+            )
+
     async def _event_stream_handler(
         self, ctx: RunContext, event_stream: AsyncIterable[AgentStreamEvent]
     ):
-        """Handle and log agent stream events."""
-        async for event in event_stream:
-            if isinstance(event, PartStartEvent):
-                print(f"[Event] Starting part {event.index}: {event.part!r}")
-            elif isinstance(event, PartDeltaEvent):
-                if isinstance(event.delta, TextPartDelta):
+        """Handle and log agent stream events with error handling."""
+        try:
+            async for event in event_stream:
+                if isinstance(event, PartStartEvent):
+                    print(f"[Event] Starting part {event.index}: {event.part!r}")
+                elif isinstance(event, PartDeltaEvent):
+                    self._handle_part_delta_event(event)
+                elif isinstance(event, FunctionToolCallEvent):
                     print(
-                        f"[Event] Part {event.index} text delta: "
-                        f"{event.delta.content_delta!r}"
+                        f"[Event] LLM calls tool={event.part.tool_name!r} "
+                        f"with args={event.part.args} "
+                        f"(tool_call_id={event.part.tool_call_id!r})"
                     )
-                elif isinstance(event.delta, ThinkingPartDelta):
+                    logger.info(
+                        "Tool call: %s with args: %s",
+                        event.part.tool_name,
+                        event.part.args,
+                    )
+                elif isinstance(event, FunctionToolResultEvent):
                     print(
-                        f"[Event] Part {event.index} thinking delta: "
-                        f"{event.delta.content_delta!r}"
+                        f"[Event] Tool call {event.tool_call_id!r} returned => "
+                        f"{event.result.content}"
                     )
-                elif isinstance(event.delta, ToolCallPartDelta):
+                    result_preview = str(event.result.content)[:200]
+                    logger.info(
+                        "Tool result for %s: %s",
+                        event.tool_call_id,
+                        result_preview,
+                    )
+                elif isinstance(event, FinalResultEvent):
                     print(
-                        f"[Event] Part {event.index} tool args delta: "
-                        f"{event.delta.args_delta}"
+                        f"[Event] Model producing final result "
+                        f"(tool_name={event.tool_name})"
                     )
-            elif isinstance(event, FunctionToolCallEvent):
-                print(
-                    f"[Event] LLM calls tool={event.part.tool_name!r} "
-                    f"with args={event.part.args} "
-                    f"(tool_call_id={event.part.tool_call_id!r})"
-                )
-            elif isinstance(event, FunctionToolResultEvent):
-                print(
-                    f"[Event] Tool call {event.tool_call_id!r} returned => "
-                    f"{event.result.content}"
-                )
-            elif isinstance(event, FinalResultEvent):
-                print(
-                    f"[Event] Model producing final result "
-                    f"(tool_name={event.tool_name})"
-                )
+        except Exception as e:
+            logger.exception("Error in event stream handler: %s", e)
+            # Don't re-raise - let the main stream continue
 
     async def _stream_response(
         self, user_message: str, message_history: list[ModelMessage] = None
@@ -237,6 +255,44 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     yield text_delta
 
             print("STREAM COMPLETE")
+
+        except GroqAPIError as e:
+            print(f"GROQ API ERROR: {e}")
+            error_msg = str(e)
+
+            # Try to extract more details from the error
+            error_details = {
+                "error_message": error_msg,
+                "user_message": user_message,
+                "history_length": len(message_history) if message_history else 0,
+            }
+
+            # Log detailed error information
+            logger.error(
+                "Groq API function call failed: %s. Details: %s",
+                error_msg,
+                error_details,
+            )
+
+            # Check if it's a function call error
+            if "Failed to call a function" in error_msg:
+                yield (
+                    "I'm having trouble using the tools to fetch that "
+                    "information right now. "
+                    "This could be due to:\n"
+                    "- Temporary API limitations\n"
+                    "- Invalid parameters for the data request\n"
+                    "- Market data service being unavailable\n\n"
+                    "You can try:\n"
+                    "- Asking a more general question\n"
+                    "- Requesting different information\n"
+                    "- Trying again in a moment\n"
+                )
+            else:
+                yield (
+                    "I encountered a technical issue while processing your request. "
+                    "Please try rephrasing your question or ask about something else."
+                )
 
         except UnexpectedModelBehavior as e:
             print(f"MODEL BEHAVIOR ERROR: {e}")
