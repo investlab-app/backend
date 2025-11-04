@@ -48,6 +48,7 @@ urlpatterns = [
     ),
     # Modules
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/chat/", include("modules.chat.urls")),
     path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
     path(f"{PREFIX}/markets/", include("modules.markets.urls")),

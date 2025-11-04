@@ -1,4 +1,3 @@
-import asyncio
 import json
 import logging
 from collections.abc import AsyncGenerator, AsyncIterable
@@ -18,15 +17,6 @@ from pydantic_ai import (
     ThinkingPartDelta,
     ToolCallPartDelta,
     UnexpectedModelBehavior,
-    UsageLimits,
-)
-from pydantic_ai.messages import (
-    ModelMessage,
-    ModelRequest,
-    ModelResponse,
-    SystemPromptPart,
-    TextPart,
-    UserPromptPart,
 )
 
 from modules.chat.models import ChatMessage
@@ -112,10 +102,6 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
             content=message,
         )
 
-        # Get conversation history
-        print("FETCHING CONVERSATION HISTORY")
-        message_history = await self._get_message_history()
-
         # Stream agent response
         print("STREAMING RESPONSE")
         await self.send_json({"type": "start", "message": "Processing your query..."})
@@ -124,7 +110,7 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
         try:
             full_response = ""
             chunk_count = 0
-            async for chunk in self._stream_response(message, message_history):
+            async for chunk in self._stream_response(message):
                 print(f"RECEIVED CHUNK #{chunk_count}: {repr(chunk)}")
                 await self.send_json({"type": "chunk", "content": chunk})
                 full_response += chunk
@@ -185,69 +171,17 @@ class ChatConsumer(AsyncJsonWebsocketConsumer):
                     f"[Event] Model producing final result (tool_name={event.tool_name})"
                 )
 
-    async def _get_message_history(self) -> list[ModelMessage]:
-        """Retrieve recent conversation history for context."""
-        print("QUERYING MESSAGE HISTORY")
-        # Get last 20 messages (10 exchanges) for context
-        messages = await sync_to_async(
-            lambda: list(
-                ChatMessage.objects.filter(investor=self.investor)
-                .order_by("-created_at")[:20]
-                .values("role", "content")
-            )
-        )()
-
-        # Reverse to chronological order (oldest first)
-        messages.reverse()
-
-        # Format for pydantic-ai using proper ModelMessage format
-        formatted_messages: list[ModelMessage] = []
-        for msg in messages:
-            role = msg["role"]
-            content = msg["content"]
-
-            # Map ChatMessage roles to pydantic-ai ModelMessage objects
-            if role == ChatMessage.ROLE_USER:
-                # User messages are ModelRequest with UserPromptPart
-                formatted_messages.append(
-                    ModelRequest(parts=[UserPromptPart(content=content)])
-                )
-            elif role == ChatMessage.ROLE_ASSISTANT:
-                # Assistant messages are ModelResponse with TextPart
-                formatted_messages.append(
-                    ModelResponse(parts=[TextPart(content=content)])
-                )
-
-        print(f"LOADED {len(formatted_messages)} HISTORICAL MESSAGES")
-        print("MESSAGE HISTORY CONTENT:")
-        for i, msg in enumerate(formatted_messages):
-            if isinstance(msg, ModelRequest):
-                content = msg.parts[0].content if msg.parts else ""
-                print(
-                    f"  [{i}] user: {content[:100]}{'...' if len(content) > 100 else ''}"
-                )
-            elif isinstance(msg, ModelResponse):
-                content = msg.parts[0].content if msg.parts else ""
-                print(
-                    f"  [{i}] assistant: {content[:100]}{'...' if len(content) > 100 else ''}"
-                )
-        return formatted_messages
-
-    async def _stream_response(
-        self, user_message: str, message_history: list[ModelMessage]
-    ) -> AsyncGenerator[str, None]:
+    async def _stream_response(self, user_message: str) -> AsyncGenerator[str, None]:
         """Stream response chunks from the agent."""
         if not self.agent:
             raise RuntimeError("Agent not initialized")
 
         print(f"RUNNING AGENT with message: {user_message}")
-        print(f"WITH {len(message_history)} HISTORY MESSAGES")
         try:
             # Use run_stream to get real-time streaming responses with event handler
             # Add usage limits to prevent infinite loops
             async with self.agent.run_stream(
                 user_message,
-                message_history=message_history,
                 event_stream_handler=self._event_stream_handler,
             ) as response:
                 print("STREAMING TEXT FROM AGENT (delta mode)")
