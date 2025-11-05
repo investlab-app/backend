@@ -1,12 +1,11 @@
-import logging
 from collections.abc import Iterable
+
+from polygon.rest.models.tickers import TickerDetails
 
 from modules.core.mixins import UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
 from modules.instruments.services.translation_service import TranslationService
-
-logger = logging.getLogger(__name__)
 
 
 class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
@@ -60,48 +59,74 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self.repository = repository or PolygonTickersRepository()
         self.translation_service = translation_service or TranslationService()
 
+    def _translate_description_if_needed(
+        self,
+        instrument: Instrument,
+        ticker_details: TickerDetails,
+        is_description_updated: bool,
+    ) -> tuple[Instrument, bool, int]:
+        """
+        Translate description to Polish if needed.
+        Returns updated instrument, whether it was updated, and number of translation errors.
+
+        Args:
+            instrument (Instrument): The instrument to update.
+            ticker_details (TickerDetails): The ticker details from Polygon.
+            is_description_updated (bool): Whether the description has been updated.
+
+        Returns:
+            tuple[Instrument, bool, int]: Updated instrument, update status, translation error count.
+        """
+        translation_errors = 0
+        updated = False
+        new_description = ticker_details.description
+
+        if not instrument.description_pl and is_description_updated and new_description:
+            try:
+                polish_translation = self.translation_service.translate_to_polish(
+                    new_description
+                )
+                if polish_translation:
+                    instrument.description_pl = polish_translation
+                    updated = True
+                else:
+                    translation_errors += 1
+
+            except Exception:
+                translation_errors += 1
+
+        return instrument, updated, translation_errors
+
     def sync_instruments_details(self) -> dict[str, int]:
         """Synchronize instruments details based on Polygon TickerDetails."""
         to_update = []
         no_changes, errors, translation_errors = 0, 0, 0
 
-        for instrument in self.instruments[:10]:
+        for instrument in self.instruments:
             ticker_details = self.repository.get_ticker_details(instrument.ticker)
             if not ticker_details:
                 errors += 1
                 continue
 
             old_description = instrument.description
-            old_description_pl = instrument.description_pl
-            new_description = ticker_details.get("description")
+            new_description = ticker_details.description
             is_description_updated = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
 
-            if not old_description_pl and is_description_updated and new_description:
-                try:
-                    polish_translation = self.translation_service.translate_to_polish(
-                        ticker_details["description"]
-                    )
+            (
+                updated_instrument,
+                translation_updated,
+                translation_error_count,
+            ) = self._translate_description_if_needed(
+                updated_instrument, ticker_details, is_description_updated
+            )
 
-                    if polish_translation:
-                        updated_instrument.description_pl = polish_translation
-                        updated = True
-                        logger.info(
-                            "Successfully translated description for %s",
-                            instrument.ticker,
-                        )
-                    else:
-                        logger.warning(
-                            "Failed to translate description for %s", instrument.ticker
-                        )
-                        translation_errors += 1
-
-                except Exception as e:
-                    logger.error("Translation error for %s: %s", instrument.ticker, e)
-                    translation_errors += 1
+            translation_errors += translation_error_count
+            if translation_updated:
+                updated = True
 
             if updated:
                 to_update.append(updated_instrument)
