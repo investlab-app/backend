@@ -1,6 +1,7 @@
 from datetime import datetime
 from typing import Any, Optional
 from dataclasses import dataclass
+from modules.graph_lang.framework.price_provider import PrefetchRange
 
 from modules.graph_lang.framework.actions import GraphActionSet
 from modules.graph_lang.framework.price_provider import PriceProvider
@@ -57,7 +58,6 @@ class NodeInput:
         self.raw_value = value
 
 
-# TODO: define TYPE_NAME for all nodes
 class Node:
     _time_at: datetime | None = None
     all_edges: list
@@ -113,6 +113,24 @@ class Node:
     def get_execution_time(self) -> datetime:
         return self._time_at
 
+    def prefetch_data(self, data_range :PrefetchRange):
+        new_data_range = self._get_new_time_range(data_range)
+        self._prefetch_data(new_data_range)
+
+        edges = self.get_incoming_edges()
+        for e in edges:
+            edge = getattr(self, e.field_name)
+            edge.output.node.prefetch_data(new_data_range)
+    
+    # Can be overridden
+    def _get_new_time_range(self, data_range :PrefetchRange) -> PrefetchRange:
+        return data_range
+
+    # Can be overridden
+    def _prefetch_data(self, data_range :PrefetchRange):
+        pass
+
+
 
 
 
@@ -135,3 +153,6 @@ class NodeFactory:
         return node_type(
             price_provider=self._price_provider, action_set=self._action_set
         )
+
+    def type_exists(self, name):
+        return name.lower() in self._types

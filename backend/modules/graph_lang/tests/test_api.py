@@ -1,9 +1,10 @@
 import pytest
+from pydantic import BaseModel
 from dataclasses import dataclass, asdict
 from django.urls import reverse
 from json import dumps, loads
 from modules.core.tests.conftest import api_client_auth, api_client, user
-from modules.investors.test.conftest import fake_investor
+from modules.investors.tests.conftest import create_fake_investor
 from modules.graph_lang.tests.conftest_mocks import (
     MockParser,
     MockValidator,
@@ -28,13 +29,16 @@ def fake_graph(investor, *, save=False) -> Graph:
 
 pytestmark = pytest.mark.django_db
 
+class MockParserReturn(BaseModel):
+    some_data :str
+
 class TestGraphListCreate:
 
     @pytest.fixture(autouse=True)
     def setup(self, monkeypatch, user):
         self.url = reverse('graph-list-create')
-        self.investor = fake_investor(clerk_id=user.id, save=True)
-        self.other_investor = fake_investor(clerk_id='im_a_fake', save=True)
+        self.investor = create_fake_investor(clerk_id=user.id, save=True)
+        self.other_investor = create_fake_investor(clerk_id='im_a_fake', save=True)
         self.parser = MockParser()
         self.validator = MockValidator()
 
@@ -45,7 +49,7 @@ class TestGraphListCreate:
     def test_create__parser_fail(self, api_client_auth):
         self.parser.set_data(None)
 
-        response = api_client_auth.post(self.url, {'raw_graph_data': 'hehexd'}, format='json')
+        response = api_client_auth.post(self.url, {'name': 'name', 'raw_graph_data': 'hehexd'}, format='json')
         errors = response.data['non_field_errors']
 
         assert response.status_code == 400
@@ -61,7 +65,7 @@ class TestGraphListCreate:
             MockValidatorError(id='2')
         ])
 
-        response = api_client_auth.post(self.url, {'raw_graph_data': graph_data}, format='json')
+        response = api_client_auth.post(self.url, {'name': 'name', 'raw_graph_data': graph_data}, format='json')
         errors = response.data['non_field_errors']
 
         assert response.status_code == 400
@@ -72,7 +76,7 @@ class TestGraphListCreate:
 
     def test_create__success(self, api_client_auth):
         graph_data = dumps({'graph_data': 'fdasf'})
-        parser_return = {'ooh a graph': 'hehexd'}
+        parser_return = MockParserReturn(some_data='hehexd')
         self.parser.set_data(parser_return)
         self.validator.set_errors([])
 
@@ -83,7 +87,7 @@ class TestGraphListCreate:
 
         graph = Graph.objects.first()
         assert loads(graph.raw_graph_data) == loads(graph_data)
-        assert loads(graph.graph_data) == parser_return
+        assert MockParserReturn.model_validate(loads(graph.graph_data)) == parser_return
         assert graph.investor == self.investor
 
     def test_get__returns_valid_graph(self, api_client_auth):

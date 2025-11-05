@@ -1,3 +1,5 @@
+import json
+from modules.graph_lang.models import Graph
 from modules.graph_lang.framework.nodes import Node, NodeFactory
 from modules.graph_lang.framework.nodes.node import NodeInput
 from modules.graph_lang.framework.parser import GraphData
@@ -11,7 +13,8 @@ class GraphBuilder:
         nodes: dict[str, Node] = {}
 
         for node_data in validated_data.nodes:
-            node = self.factory.from_type(node_data.type)
+            node_type = self.factory.name_to_type(node_data.type)
+            node = self.factory.from_type(node_type)
             node.id = node_data.id
             nodes[node.id] = node
 
@@ -33,3 +36,13 @@ class GraphBuilder:
 
         trigger = next(node for node in nodes.values() if node.TRIGGER)
         return trigger
+
+    def get_from_db(self, graph_id):
+        try:
+            graph = Graph.objects.get(id=graph_id)
+        except:
+            raise ValueError('Specified graph does not exist')
+
+        json_data = json.loads(graph.graph_data)
+        graph_data = GraphData.model_validate(json_data)
+        return self.build(graph_data)

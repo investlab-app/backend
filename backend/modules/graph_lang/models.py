@@ -6,5 +6,6 @@ from modules.investors.models import Investor
 
 class Graph(BaseModel):
     investor = models.ForeignKey(Investor, on_delete=models.CASCADE)
-    raw_graph_data = models.TextField()
-    graph_data = models.TextField()
+    name = models.CharField(max_length=100, blank=False)
+    raw_graph_data = models.JSONField()
+    graph_data = models.JSONField()

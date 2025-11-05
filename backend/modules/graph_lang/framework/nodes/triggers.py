@@ -4,6 +4,7 @@ from modules.graph_lang.framework.nodes.node import Node
 
 class CheckEveryNode(Node):
     TYPE_NAME = 'checkEvery'
+    TRIGGER = True
 
     timespan = edges.TimespanType(direction=edges.INPUT)
 

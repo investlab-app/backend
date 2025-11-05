@@ -10,7 +10,7 @@ class IsGreaterLesserNode(Node):
     inValue = edges.NumberType(direction=edges.INPUT)
     inX = edges.NumberType(direction=edges.INPUT)
     direction = edges.EnumType(
-        direction=edges.INPUT, allowed_values=["greater", "lesser"]
+        direction=edges.INPUT, allowed_values=["greater", "less"]
     )
 
     out = edges.BoolType(direction=edges.OUTPUT)
@@ -20,7 +20,7 @@ class IsGreaterLesserNode(Node):
         value = self.inValue()
         x = self.inX()
 
-        if direction == "lesser":
+        if direction == "less":
             self.out.set(value < x)
         else:
             self.out.set(value > x)

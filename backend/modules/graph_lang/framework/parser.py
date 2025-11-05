@@ -9,7 +9,7 @@ logger = logging.Logger(__name__)
 
 class NodeData(BaseModel):
     id: str
-    type: type[Node] | None
+    type: str | type
     fields: dict[str, str] = {}
 
 
@@ -26,9 +26,6 @@ class GraphData(BaseModel):
 
 
 class Parser:
-    def __init__(self, node_factory: NodeFactory = None):
-        self._node_factory = node_factory or NodeFactory()
-
     def parse(self, json: dict) -> Optional[GraphData]:
         try:
             return self._try_parse(json)
@@ -42,16 +39,16 @@ class Parser:
 
         for node_json in json["nodes"]:
             data = {}
-            for key, value in node_json["settings"]["data"].items():
-                data[key] = value
-            if 'unit' in data and 'period' in data:
+            for key, value in node_json["data"]["settings"].items():
+                data[key] = str(value)
+            if 'unit' in data and 'interval' in data:
                 unit = data.pop('unit')
-                period = data.pop('period')
+                period = data.pop('interval')
                 data['timespan'] = f'{period} {unit}'
             nodes.append(
                 NodeData(
                     id=node_json["id"],
-                    type=self._node_factory.name_to_type(node_json["type"]),
+                    type=node_json["type"],
                     fields=data,
                 )
             )

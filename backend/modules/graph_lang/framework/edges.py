@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
 from typing import Any, TYPE_CHECKING
+from datetime import timedelta
+from modules.instruments.models import Instrument
 
 if TYPE_CHECKING:
     from modules.graph_lang.framework.nodes.node import NodeOutput, NodeInput
@@ -37,7 +39,7 @@ class EdgeType:
         raise NotImplementedError
 
     def validate_connected_output(self, other: "EdgeType") -> bool:
-        raise NotImplementedError
+        return isinstance(other, type(self))
 
     def validate_value(self, value) -> bool:
         raise NotImplementedError
@@ -45,9 +47,6 @@ class EdgeType:
 
 @dataclass
 class NumberType(EdgeType):
-    def validate_connected_output(self, other: EdgeType) -> bool:
-        return isinstance(other, NumberType)
-
     def validate_value(self, value) -> bool:
         try:
             int(value)
@@ -62,6 +61,9 @@ class NumberType(EdgeType):
 @dataclass
 class EnumType(EdgeType):
     allowed_values: list[str] = field(default_factory=list)
+
+    def validate_connected_output(self, other):
+        raise NotImplementedError()
 
     def validate_value(self, value) -> bool:
         return value in self.allowed_values
@@ -83,14 +85,41 @@ class BoolType(EdgeType):
 
 @dataclass
 class TimespanType(EdgeType):
-    pass
+    def validate_value(self, value :str):
+        try:
+            interval, unit = value.split(' ')
+            assert unit in ['day', 'hour', 'week', 'month']
+            int(interval)
+            return True
+        except Exception as e:
+            return False
+
+    def parse(self, value :str) -> timedelta:
+        interval, unit = value.split(' ')
+        interval = int(interval)
+        if unit == 'day':
+            return timedelta(days=interval)
+        if unit == 'month':
+            return timedelta(days=30*interval)
+        if unit == 'week':
+            return timedelta(weeks=interval)
+        if unit == 'hour':
+            return timedelta(hours=interval)
 
 
 @dataclass
 class VoidType(EdgeType):
-    pass
+    def validate_value(self, value):
+        return True
+
+    def parse(self, value):
+        return None
 
 
 @dataclass
 class InstrumentType(EdgeType):
-    pass
+    def validate_value(self, value :str):
+        return Instrument.objects.filter(ticker__iexact=value).exists()
+    
+    def parse(self, value):
+        return value

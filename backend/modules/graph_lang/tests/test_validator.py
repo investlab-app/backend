@@ -21,7 +21,7 @@ class NodeFactory:
     def __init__(self):
         self.types = {}
 
-    def type_from_str(self, name) -> type:
+    def name_to_type(self, name) -> type:
         return self.types[name]
 
     def type_exists(self, name) -> bool:
@@ -34,7 +34,17 @@ class NodeFactory:
 class TestValidator:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.validator = Validator()
+        factory = NodeFactory()
+        factory.set_type('EmptyNode', EmptyNode)
+        factory.set_type('EnumInputNode', EnumInputNode)
+        factory.set_type('NumberInputChangeSourceNode', NumberInputChangeSourceNode)
+        factory.set_type('NumberInputNode', NumberInputNode)
+        factory.set_type('NumberInputOutputNode', NumberInputOutputNode)
+        factory.set_type('NumberOutputNode', NumberOutputNode)
+        factory.set_type('TriggerNode', TriggerNode)
+        factory.set_type('TwoBoolInputNode', TwoBoolInputNode)
+        factory.set_type('TypeMismatchNode', TypeMismatchNode)
+        self.validator = Validator(factory)
 
     def run(self, data):
         return self.validator.validate(data)
@@ -45,7 +55,7 @@ class TestValidator:
     def test__invalid_node_type__returns_invalid_type_error(self):
         errors = self.run(
             GraphData(
-                nodes=[NodeData(id="0", type=None), NodeData(id="1", type=EmptyNode)]
+                nodes=[NodeData(id="0", type='invalid'), NodeData(id="1", type='EmptyNode')]
             )
         )
 
@@ -54,14 +64,14 @@ class TestValidator:
 
     def test__node_id_repeated__returns_id_repeated(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=EmptyNode), NodeData(id="0", type=EmptyNode)]
+            nodes=[NodeData(id="0", type='EmptyNode'), NodeData(id="0", type='EmptyNode')]
         )
         errors = self.run(data)
         assert IdRepeated(id="0") in errors
 
     def test__edge_connected_to_invalid_id__returns_edge_wrong_id(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=EmptyNode)],
+            nodes=[NodeData(id="0", type='EmptyNode')],
             edges=[
                 EdgeData(id_a="0", handle_a="a", id_b="1", handle_b="b"),
                 EdgeData(id_a="2", handle_a="a", id_b="0", handle_b="b"),
@@ -73,28 +83,28 @@ class TestValidator:
 
     def test__node_has_invalid_field__returns_invalid_node_field(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=EmptyNode, fields={"invalid": "hehexd"})]
+            nodes=[NodeData(id="0", type='EmptyNode', fields={"invalid": "hehexd"})]
         )
         errors = self.run(data)
         assert InvalidNodeField("0", "invalid") in errors
 
     def test__invalid_node_field_value(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=EnumInputNode, fields={"value": "invalid"})]
+            nodes=[NodeData(id="0", type='EnumInputNode', fields={"value": "invalid"})]
         )
         errors = self.run(data)
         assert InvalidNodeFieldValue("0", "value", "invalid") in errors
 
     def test__valid_node_field_value(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=EnumInputNode, fields={"value": "valid1"})]
+            nodes=[NodeData(id="0", type='EnumInputNode', fields={"value": "valid1"})]
         )
         errors = self.run(data)
         assert self.error_absent(InvalidNodeFieldValue, errors)
 
     def test__not_all_inputs_connected(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type=TwoBoolInputNode, fields={"inA": "False"})]
+            nodes=[NodeData(id="0", type='TwoBoolInputNode', fields={"inA": "False"})]
         )
         errors = self.run(data)
 
@@ -103,8 +113,8 @@ class TestValidator:
     def test__edge_invalid_handle(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberInputNode),
-                NodeData(id="1", type=NumberOutputNode),
+                NodeData(id="0", type='NumberInputNode'),
+                NodeData(id="1", type='NumberOutputNode'),
             ],
             edges=[
                 EdgeData(id_a="0", handle_a="illegal_1", id_b="1", handle_b="illegal_2")
@@ -118,10 +128,10 @@ class TestValidator:
     def test__edge_direction__allows_only_in_to_out_connections(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberInputNode),
-                NodeData(id="1", type=NumberInputNode),
-                NodeData(id="2", type=NumberOutputNode),
-                NodeData(id="3", type=NumberOutputNode),
+                NodeData(id="0", type='NumberInputNode'),
+                NodeData(id="1", type='NumberInputNode'),
+                NodeData(id="2", type='NumberOutputNode'),
+                NodeData(id="3", type='NumberOutputNode'),
             ],
             edges=[
                 EdgeData(id_a="0", handle_a="number", id_b="1", handle_b="number"),
@@ -140,9 +150,9 @@ class TestValidator:
     def test__edge_mismatch(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberOutputNode),
-                NodeData(id="1", type=NumberOutputNode),
-                NodeData(id="2", type=TypeMismatchNode),
+                NodeData(id="0", type='NumberOutputNode'),
+                NodeData(id="1", type='NumberOutputNode'),
+                NodeData(id="2", type='TypeMismatchNode'),
             ],
             edges=[
                 EdgeData(id_a="2", handle_a="match_val", id_b="0", handle_b="number"),
@@ -159,10 +169,10 @@ class TestValidator:
     def test__connection_duplicate(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberOutputNode),
-                NodeData(id="1", type=NumberInputNode),
-                NodeData(id="2", type=NumberInputNode),
-                NodeData(id="3", type=NumberInputNode),
+                NodeData(id="0", type='NumberOutputNode'),
+                NodeData(id="1", type='NumberInputNode'),
+                NodeData(id="2", type='NumberInputNode'),
+                NodeData(id="3", type='NumberInputNode'),
             ],
             edges=[
                 EdgeData(id_a="0", handle_a="number", id_b="1", handle_b="number"),
@@ -185,10 +195,10 @@ class TestValidator:
     def test__cycles(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberInputOutputNode),
-                NodeData(id="1", type=NumberInputOutputNode),
-                NodeData(id="2", type=NumberInputOutputNode),
-                NodeData(id="3", type=NumberInputOutputNode),
+                NodeData(id="0", type='NumberInputOutputNode'),
+                NodeData(id="1", type='NumberInputOutputNode'),
+                NodeData(id="2", type='NumberInputOutputNode'),
+                NodeData(id="3", type='NumberInputOutputNode'),
             ],
             edges=[
                 EdgeData(id_a="0", handle_a="inVal", id_b="1", handle_b="outVal"),
@@ -204,9 +214,9 @@ class TestValidator:
     def test_dangling_nodes(self):
         data = GraphData(
             nodes=[
-                NodeData(id="0", type=NumberOutputNode),
-                NodeData(id="1", type=NumberInputNode),
-                NodeData(id="2", type=NumberOutputNode),
+                NodeData(id="0", type='NumberOutputNode'),
+                NodeData(id="1", type='NumberInputNode'),
+                NodeData(id="2", type='NumberOutputNode'),
             ],
             edges=[
                 EdgeData(id_a="0", handle_a="number", id_b="1", handle_b="number"),
@@ -226,7 +236,7 @@ class TestValidator:
     )
     def test_number_of_triggers(self, no_triggers, raises_error):
         data = GraphData(
-            nodes=[NodeData(id=str(i), type=TriggerNode) for i in range(no_triggers)],
+            nodes=[NodeData(id=str(i), type='TriggerNode') for i in range(no_triggers)],
         )
         errors = self.run(data)
 
@@ -238,11 +248,11 @@ class TestValidator:
     def test_custom_source(self):
         data = GraphData(
             nodes=[
-                NodeData(id="1", type=NumberInputChangeSourceNode),
+                NodeData(id="1", type='NumberInputChangeSourceNode'),
                 NodeData(
-                    id="2", type=NumberInputChangeSourceNode, fields={"inVal": "3"}
+                    id="2", type='NumberInputChangeSourceNode', fields={"inVal": "3"}
                 ),
-                NodeData(id="3", type=NumberOutputNode),
+                NodeData(id="3", type='NumberOutputNode'),
             ],
             edges=[EdgeData(id_a="1", handle_a="inVal", id_b="3", handle_b="number")],
         )

@@ -11,27 +11,14 @@ from modules.graph_lang.framework.parser import (
 )
 
 
-class MockType(Node):
-    pass
 
-
-class MockFactory:
-    def __init__(self):
-        self.types = {}
-
-    def name_to_type(self, name: str) -> Optional[type[Node]]:
-        return self.types.get(name, None)
-
-    def register_type(self, name: str, type: type):
-        self.types[name] = type
 
 
 # TODO write test for minimal passing data
 class TestParser:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self._mock_factory = MockFactory()
-        self._parser = Parser(self._mock_factory)
+        self._parser = Parser()
 
     def test_parse_fails_bad_structure(self):
         json_data = {"invalid": "data"}
@@ -45,8 +32,8 @@ class TestParser:
             "nodes": [
                 {
                     "id": "1",
-                    "type": "UnknownNode",
-                    "settings": {"data": {}},
+                    "type": "A type",
+                    "data": {"settings": {}},
                 }
             ],
             "edges": [],
@@ -54,34 +41,17 @@ class TestParser:
 
         result = self._parser.parse(json_data)
 
-        assert result == GraphData(nodes=[NodeData(id="1", type=None, fields={})])
-
-    def test_parse__valid_node_type(self):
-        self._mock_factory.register_type("ValidNode", MockType)
-        json_data = {
-            "nodes": [
-                {
-                    "id": "1",
-                    "type": "ValidNode",
-                    "settings": {"data": {}},
-                },
-            ],
-        }
-
-        result = self._parser.parse(json_data)
-
-        assert result == GraphData(nodes=[NodeData(id="1", type=MockType, fields={})])
+        assert result == GraphData(nodes=[NodeData(id="1", type='A type', fields={})])
 
     def test_parse__replaces_unit_period_with_timespan(self):
-        self._mock_factory.register_type("ValidNode", MockType)
         json_data = {
             "nodes": [
                 {
                     "id": "1",
-                    "type": "ValidNode",
-                    "settings": {"data": {
+                    "type": "node_type",
+                    "data": {"settings": {
                         "unit": "day",
-                        "period": 4
+                        "interval": 4
                     }},
                 },
             ],
@@ -89,26 +59,25 @@ class TestParser:
 
         result = self._parser.parse(json_data)
 
-        assert result == GraphData(nodes=[NodeData(id="1", type=MockType, fields={
+        assert result == GraphData(nodes=[NodeData(id="1", type='node_type', fields={
             "timespan": "4 day"
 
         })])
 
     def test_parse__test_valid_data(self):
-        self._mock_factory.register_type("ValidNode", MockType)
         json_data = {
             "nodes": [
-                {"id": "1", "type": "ValidNode", "settings": {"data": {}}},
+                {"id": "1", "type": "node_type1", "data": {"settings": {}}},
                 {
                     "id": "2",
-                    "type": "ValidNode",
-                    "settings": {"data": {"field1": "value"}},
+                    "type": "node_type2",
+                    "data": {"settings": {"field1": "value"}},
                 },
                 {
                     "id": "3",
-                    "type": "InvalidNode",
-                    "settings": {
-                        "data": {
+                    "type": "node_type3",
+                    "data": {
+                        "settings": {
                             "field1": "value1",
                             "field2": "value2",
                             "field3": "value3",
@@ -130,11 +99,11 @@ class TestParser:
 
         assert result == GraphData(
             nodes=[
-                NodeData(id="1", type=MockType, fields={}),
-                NodeData(id="2", type=MockType, fields={"field1": "value"}),
+                NodeData(id="1", type='node_type1', fields={}),
+                NodeData(id="2", type='node_type2', fields={"field1": "value"}),
                 NodeData(
                     id="3",
-                    type=None,
+                    type='node_type3',
                     fields={
                         "field1": "value1",
                         "field2": "value2",

@@ -59,6 +59,9 @@ class PriceProvider:
             raise ValueError(f"{ticker} was never prefetched")
         return self.prefetch_strategy.select(self.data[ticker], date_at)
 
+    def clear(self):
+        raise NotImplementedError()
+
 
 class PrefetchStrategy:
     def __init__(self, samples=100):

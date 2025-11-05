@@ -18,17 +18,17 @@ class GraphValidationError(BaseException):
 
 
 class GraphSerializer(serializers.ModelSerializer):
-    graph_data = serializers.JSONField(read_only=True)
-
     class Meta:
         model = Graph
-        fields = ["raw_graph_data", "graph_data"]
+        fields = ['id', 'name', "raw_graph_data"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parser = Parser()
         self.validator = Validator()
 
+        # Idk czy to jest 'czyste'
+        self.fields['id'].read_only = True
 
     def validate(self, attrs):
         graph_data = self.parser.parse(attrs["raw_graph_data"])
@@ -50,12 +50,48 @@ class GraphSerializer(serializers.ModelSerializer):
         investor = validated_data["investor"]
         return Graph.objects.create(
             investor=investor,
+            name=validated_data['name'],
             raw_graph_data=validated_data["raw_graph_data"],
-            graph_data=json.dumps(validated_data["graph_data"]),
+            graph_data=validated_data["graph_data"].model_dump(),
         )
 
+class GraphUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Graph
+        fields = ['id', 'name', 'raw_graph_data']
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+        self.parser = Parser()
+        self.validator = Validator()
+
+        # Idk czy to jest czyste
+        self.fields['id'].read_only = True
+        for field in self.fields.values():
+            field.required = False
+
+    def validate(self, attrs):
+        if 'raw_graph_data' in attrs:
+            graph_data = self.parser.parse(attrs["raw_graph_data"])
+
+            if not graph_data:
+                raise serializers.ValidationError(
+                    "Failed to parse graph", code="parse_error"
+                )
+            errors = self.validator.validate(graph_data)
+            if errors:
+                errors = [json.dumps(asdict(e)) for e in errors]
+
+                raise serializers.ValidationError(errors, code="validation_error")
+
+            attrs["graph_data"] = graph_data
+        return attrs
+
     def update(self, instance, validated_data):
-        instance.raw_graph_data = validated_data["raw_graph_data"]
-        instance.graph_data = json.dumps(validated_data["graph_data"])
+        instance.name = validated_data.get('name', instance.name)
+        instance.raw_graph_data = validated_data.get("raw_graph_data", instance.raw_graph_data)
+        if 'graph_data' in validated_data:
+            instance.graph_data = validated_data["graph_data"].model_dump()
         instance.save()
         return instance

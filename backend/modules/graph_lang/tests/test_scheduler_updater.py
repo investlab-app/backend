@@ -6,7 +6,6 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
 from modules.graph_lang.models import Graph
-from modules.investors.test.conftest import fake_investor
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
 
 fake = faker.Faker()

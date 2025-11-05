@@ -1,17 +1,25 @@
 from collections import defaultdict
+from copy import deepcopy
 from dataclasses import dataclass, field
 
 from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
+from modules.graph_lang.framework.nodes import NodeFactory
 
 
 class Validator:
+
+    def __init__(self, node_factory :NodeFactory = None):
+        self._node_factory = node_factory or NodeFactory(None, None)
+
     # TODO: catch any unknown error, return unknown validation error
     # TODO: try to build the graph at the end
     # TODO: implement trigger node at the top check
     def validate(self, data: GraphData):
+        data = deepcopy(data)
         self.errors = []
 
+        self._assign_node_types(data.nodes)
         self._check_node_types(data.nodes)
         self._check_node_id_repeats(data.nodes)
         self._validate_edges_ids(data)
@@ -34,6 +42,13 @@ class Validator:
         self._validate_dangling_nodes(data)
         self._validate_triggers(data.nodes)
         return self.errors
+
+    def _assign_node_types(self, nodes: list[NodeData]):
+        for n in nodes:
+            if self._node_factory.type_exists(n.type):
+                n.type = self._node_factory.name_to_type(n.type)
+            else:
+                n.type = ''
 
     def _check_node_id_repeats(self, nodes: list[NodeData]):
         node_ids = set()

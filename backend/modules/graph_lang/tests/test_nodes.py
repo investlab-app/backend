@@ -102,7 +102,7 @@ def test_greater_lesser_node_lesser(in_value, in_x, expected):
     node = IsGreaterLesserNode()
     node.inValue.set(in_value)
     node.inX.set(in_x)
-    node.direction.set("lesser")
+    node.direction.set("less")
 
     assert node.out.get() == expected
 

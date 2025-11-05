@@ -5,7 +5,7 @@ from datetime import datetime, timedelta
 from decimal import Decimal
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
 from modules.graph_lang.models import Graph
-from modules.investors.test.conftest import fake_investor
+from modules.investors.tests.conftest import create_fake_investor
 
 fake = faker.Faker()
 pytestmark = pytest.mark.django_db
@@ -20,13 +20,14 @@ def fake_graph(
     save = False
 ) -> Graph:
 
-    investor = investor or fake_investor(save=save)
+    investor = investor or create_fake_investor(save=save)
     id = id or fake.uuid4()
+    print(graph_data)
     graph = Graph(
         id=id,
         investor = investor,
-        raw_graph_data = "",
-        graph_data = "",
+        raw_graph_data = raw_graph_data,
+        graph_data = graph_data,
     )
     if save:
         graph.save()
