@@ -45,6 +45,9 @@ class MarketOrder(BaseModel):
         max_digits=15, decimal_places=2, default=0, verbose_name=_("Volume Processed")
     )
     is_buy = models.BooleanField(verbose_name=_("Is Buy"))
+    blocked_funds = models.DecimalField(
+        max_digits=30, decimal_places=2, default="0", verbose_name=_("Blocked Funds")
+    )
 
     class Meta:
         verbose_name = _("Market Order")

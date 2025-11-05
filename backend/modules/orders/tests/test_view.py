@@ -1,3 +1,6 @@
+from decimal import Decimal
+from unittest.mock import patch
+
 import pytest
 from django.urls import reverse
 
@@ -19,12 +22,16 @@ class TestCreateMarketOrderView:
         self.user = user
         self.url = reverse("create-market-order")
 
-    def test_happy(self, api_client):
+    @patch(
+        "modules.orders.services.order_services.MarketOrderService._get_current_price"
+    )
+    def test_happy(self, _get_current_price, api_client):
         data = {
             "ticker": self.instrument.ticker,
             "volume": "10.00",
             "is_buy": True,
         }
+        _get_current_price.return_value = Decimal(0)
         api_client.force_authenticate(user=self.user)
         response = api_client.post(self.url, data, content_type="application/json")
         assert response.status_code == 201

@@ -13,6 +13,7 @@ class InvestorSerializer(serializers.ModelSerializer):
             "id",
             "clerk_id",
             "balance",
+            "blocked_funds",
             "language",
             "watching_instruments",
         ]
