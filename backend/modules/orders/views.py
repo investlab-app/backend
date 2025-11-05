@@ -4,6 +4,7 @@ from rest_framework import generics
 from modules.investors.models import Investor
 from modules.orders.models import Order
 from modules.orders.serializers import CreateMarketOrderSerializer, OrderSerializer
+from modules.orders.services.order_services import MarketOrderService
 
 
 class CreateMarketOrderView(generics.CreateAPIView):
@@ -29,3 +30,7 @@ class DestroyOrderView(generics.DestroyAPIView):
     def get_queryset(self):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         return Order.objects.filter(investor=investor)
+
+    def perform_destroy(self, instance):
+        service = MarketOrderService()
+        service.delete(instance)
