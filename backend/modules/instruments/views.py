@@ -1,3 +1,5 @@
+import contextlib
+
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics
@@ -11,7 +13,6 @@ from modules.instruments.serializers import (
 )
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
-import contextlib
 
 
 class InstrumentsListView(generics.ListAPIView):

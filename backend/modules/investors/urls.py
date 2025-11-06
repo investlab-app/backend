@@ -5,8 +5,8 @@ from modules.investors.views import (
     CurrentInvestorView,
     DepositMoneyView,
     InvestorDetailView,
+    ToggleWatchedInstrumentView,
     WatchedTickersListView,
-    toggle_watched_instrument,
 )
 
 app_name = "investors"
@@ -25,7 +25,7 @@ urlpatterns = [
     ),
     path(
         "me/watched-instruments/<str:instrument_id>/toggle/",
-        toggle_watched_instrument,
+        ToggleWatchedInstrumentView.as_view(),
         name="toggle-watched-instrument",
     ),
     path("deposit/", DepositMoneyView.as_view(), name="deposit"),
