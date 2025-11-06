@@ -124,7 +124,7 @@ class AccountValueOverTimeView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class WatchedInstrumentView(generics.GenericAPIView):
+class WatchedTickersTickerView(generics.GenericAPIView):
     serializer_class = ToggleWatchedInstrumentSerializer
 
     def post(self, request: Request, instrument_id: str) -> Response:
