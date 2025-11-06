@@ -8,17 +8,14 @@ from drf_spectacular.views import (
     SpectacularSwaggerView,
 )
 
-from modules.chat.consumers import ChatConsumer
 from modules.core.views import StatusView
-from modules.notifications.consumers import NotificationsConsumer, Websocket
+from modules.notifications.consumers import Websocket
 
 PREFIX = "api"
 
 websocket_urlpatterns = [
-    path("ws/chat/", ChatConsumer.as_asgi()),
-    path("ws/prices/", Websocket.as_asgi()),
-    path("ws/prices/<str:names>/", Websocket.as_asgi()),
-    path("ws/notifications/", NotificationsConsumer.as_asgi()),
+    path("ws/", Websocket.as_asgi()),
+    path("ws/<str:names>/", Websocket.as_asgi()),
 ]
 
 urlpatterns = [
@@ -48,7 +45,6 @@ urlpatterns = [
     ),
     # Modules
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
-    path(f"{PREFIX}/chat/", include("modules.chat.urls")),
     path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
     path(f"{PREFIX}/markets/", include("modules.markets.urls")),

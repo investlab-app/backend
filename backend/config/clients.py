@@ -2,9 +2,6 @@ from django.conf import settings
 from openai import OpenAI
 from polygon import RESTClient, WebSocketClient
 from polygon.websocket.models import Feed, Market
-from pydantic_ai.providers.google import GoogleProvider
-from pydantic_ai.providers.groq import GroqProvider
-from pydantic_ai.providers.openai import OpenAIProvider
 
 polygon_client = RESTClient(settings.POLYGON_SECRET_KEY)
 

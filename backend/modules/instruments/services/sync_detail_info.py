@@ -1,4 +1,3 @@
-import logging
 from collections.abc import Iterable
 
 from config.settings import TRANSLATE_INSTRUMENT_DESCRIPTION
@@ -86,7 +85,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         to_update = []
         no_changes, errors, translation_errors = 0, 0, 0
 
-        for instrument in self.instruments[:10]:
+        for instrument in self.instruments:
             ticker_details = self.repository.get_ticker_details(instrument.ticker)
             if not ticker_details:
                 errors += 1

@@ -11,6 +11,7 @@ from modules.instruments.serializers import (
 )
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
+import contextlib
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -87,13 +88,10 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         except Exception:
             snapshot_map = {}
 
-        # Get investor if user is authenticated
         investor = None
         if request.user and hasattr(request.user, "id"):
-            try:
+            with contextlib.suppress(Investor.DoesNotExist):
                 investor = Investor.objects.get(clerk_id=request.user.id)
-            except Investor.DoesNotExist:
-                pass
 
         context = {
             **self.get_serializer_context(),
