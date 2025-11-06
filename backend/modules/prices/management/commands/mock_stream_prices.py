@@ -22,7 +22,7 @@ class PriceStreamMock:
                 PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
             )
 
-            await asyncio.sleep(10)
+            await asyncio.sleep(1)
 
     def get_random_ohlc(self, ticker: str) -> dict:
         now_ms = int(time.time() * 1000)

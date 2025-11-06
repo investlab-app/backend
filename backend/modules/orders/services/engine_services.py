@@ -40,12 +40,7 @@ class RunOrderEngineService:
             data = await self.data_fetcher.fetch()
             prices = self.price_listener.get_prices()
             data.prices = prices
-
-            print("Running trade engine with orders:", data.orders)
-            await asyncio.sleep(1)
-
             output = self.engine.run(data)
-
             await self.output_handler.handle(output, prices)
 
 
