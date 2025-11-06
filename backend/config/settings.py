@@ -429,8 +429,12 @@ VAPID_CLAIMS = {
     "sub": f"mailto:{ADMIN_EMAIL}",
 }
 
-# AI
-AI_MODEL = os.environ["AI_MODEL"]
-GROQ_API_KEY = os.environ["GROQ_API_KEY"]
-GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
-OPENROUTER_API_KEY = os.environ["OPENROUTER_API_KEY"]
+# OpenAI
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_API_URL = os.environ["OPENAI_API_URL"]
+OPENAI_TRANSLATING_MODEL = os.environ["OPENAI_TRANSLATING_MODEL"]
+
+# LLM Translation Settings
+TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
+    os.environ.get("TRANSLATE_INSTRUMENT_DESCRIPTION", "false")
+)

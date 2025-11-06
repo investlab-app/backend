@@ -1,12 +1,11 @@
 import logging
 from collections.abc import Iterable
 
+from config.settings import TRANSLATE_INSTRUMENT_DESCRIPTION
 from modules.core.mixins import UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
 from modules.instruments.services.translation_service import TranslationService
-
-logger = logging.getLogger(__name__)
 
 
 class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
@@ -60,6 +59,28 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self.repository = repository or PolygonTickersRepository()
         self.translation_service = translation_service or TranslationService()
 
+    def _translate_description(
+        self,
+        instrument: Instrument,
+        description: str,
+    ) -> tuple[Instrument, bool]:
+        """
+        Translate description to Polish.
+        Returns a tuple of (updated_instrument, translation_performed).
+        """
+        try:
+            polish_translation = self.translation_service.translate_to_polish(
+                description
+            )
+            if polish_translation:
+                instrument.description_pl = polish_translation
+                return instrument, True
+
+        except Exception:
+            pass
+
+        return instrument, False
+
     def sync_instruments_details(self) -> dict[str, int]:
         """Synchronize instruments details based on Polygon TickerDetails."""
         to_update = []
@@ -72,35 +93,24 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
                 continue
 
             old_description = instrument.description
-            old_description_pl = instrument.description_pl
-            new_description = getattr(ticker_details, "description", None)
-            is_description_updated = old_description != new_description
+            new_description = ticker_details.description
+            need_of_translation = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
 
-            if not old_description_pl and is_description_updated and new_description:
-                try:
-                    polish_translation = self.translation_service.translate_to_polish(
-                        new_description
-                    )
+            if TRANSLATE_INSTRUMENT_DESCRIPTION and need_of_translation:
+                (
+                    updated_instrument,
+                    translation_updated,
+                ) = self._translate_description(
+                    updated_instrument, ticker_details.description
+                )
 
-                    if polish_translation:
-                        updated_instrument.description_pl = polish_translation
-                        updated = True
-                        logger.info(
-                            "Successfully translated description for %s",
-                            instrument.ticker,
-                        )
-                    else:
-                        logger.warning(
-                            "Failed to translate description for %s", instrument.ticker
-                        )
-                        translation_errors += 1
-
-                except Exception as e:
-                    logger.error("Translation error for %s: %s", instrument.ticker, e)
+                if translation_updated:
+                    updated = True
+                else:
                     translation_errors += 1
 
             if updated:

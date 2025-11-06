@@ -12,15 +12,6 @@ polygon_websocket_client = WebSocketClient(
     api_key=settings.POLYGON_SECRET_KEY, feed=Feed.Delayed, market=Market.Stocks
 )
 
-openai_client = OpenAI(api_key=settings.GROQ_API_KEY)
-
-groq_provider = GroqProvider(
-    api_key=settings.GROQ_API_KEY,
-)
-openai_provider = OpenAIProvider(
-    base_url="https://openrouter.ai/api/v1",
-    api_key=settings.OPENROUTER_API_KEY,
-)
-gemini_provider = GoogleProvider(
-    api_key=settings.GEMINI_API_KEY,
+openai_client = OpenAI(
+    api_key=settings.OPENAI_API_KEY, base_url=settings.OPENAI_API_URL
 )

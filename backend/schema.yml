@@ -1675,6 +1675,10 @@ components:
           format: decimal
           pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
           readOnly: true
+        blocked_funds:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
         language:
           type: string
           description: User's preferred language (e.g., 'en', 'pl')
@@ -2203,6 +2207,10 @@ components:
     PatchedInvestorRequest:
       type: object
       properties:
+        blocked_funds:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
         language:
           type: string
           minLength: 1
