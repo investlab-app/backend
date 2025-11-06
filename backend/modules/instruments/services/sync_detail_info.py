@@ -1,7 +1,6 @@
 from collections.abc import Iterable
 
-from polygon.rest.models.tickers import TickerDetails
-
+from config.settings import TRANSLATE_INSTRUMENT_DESCRIPTION
 from modules.core.mixins import UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
@@ -59,46 +58,27 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self.repository = repository or PolygonTickersRepository()
         self.translation_service = translation_service or TranslationService()
 
-    def _translate_description_if_needed(
+    def _translate_description(
         self,
         instrument: Instrument,
-        ticker_details: TickerDetails,
-        *,
-        update: bool = True,
-    ) -> tuple[Instrument, bool, int]:
+        description: str,
+    ) -> tuple[Instrument, bool]:
         """
-        Translate description to Polish if needed.
-        Returns updated instrument, whether it was
-        updated, and number of translation errors.
-
-        Args:
-            instrument (Instrument): The instrument to update.
-            ticker_details (TickerDetails): The ticker details from Polygon.
-            update (bool): Whether to perform the update.
-
-        Returns:
-            tuple[Instrument, bool, int]:
-            Updated instrument, update status, translation error count.
+        Translate description to Polish.
+        Returns a tuple of (updated_instrument, translation_performed).
         """
-        translation_errors = 0
-        updated = False
-        new_description = ticker_details.description
+        try:
+            polish_translation = self.translation_service.translate_to_polish(
+                description
+            )
+            if polish_translation:
+                instrument.description_pl = polish_translation
+                return instrument, True
 
-        if update and new_description:
-            try:
-                polish_translation = self.translation_service.translate_to_polish(
-                    new_description
-                )
-                if polish_translation:
-                    instrument.description_pl = polish_translation
-                    updated = True
-                else:
-                    translation_errors += 1
+        except Exception:
+            pass
 
-            except Exception:
-                translation_errors += 1
-
-        return instrument, updated, translation_errors
+        return instrument, False
 
     def sync_instruments_details(self) -> dict[str, int]:
         """Synchronize instruments details based on Polygon TickerDetails."""
@@ -113,23 +93,24 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
             old_description = instrument.description
             new_description = ticker_details.description
-            update_description = old_description != new_description
+            need_of_translation = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
 
-            (
-                updated_instrument,
-                translation_updated,
-                translation_error_count,
-            ) = self._translate_description_if_needed(
-                updated_instrument, ticker_details, update=update_description
-            )
+            if TRANSLATE_INSTRUMENT_DESCRIPTION and need_of_translation:
+                (
+                    updated_instrument,
+                    translation_updated,
+                ) = self._translate_description(
+                    updated_instrument, ticker_details.description
+                )
 
-            translation_errors += translation_error_count
-            if translation_updated:
-                updated = True
+                if translation_updated:
+                    updated = True
+                else:
+                    translation_errors += 1
 
             if updated:
                 to_update.append(updated_instrument)
