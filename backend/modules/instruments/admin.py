@@ -48,6 +48,7 @@ class InstrumentAdmin(ModelAdmin):
                     "active",
                     "type",
                     "description",
+                    "description_pl",
                     "homepage_url",
                     "phone_number",
                 )
