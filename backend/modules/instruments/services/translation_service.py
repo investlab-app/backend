@@ -1,6 +1,7 @@
 import logging
 
 from config.clients import openai_client as client
+from config.settings import OPENAI_TRANSLATING_MODEL
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +26,7 @@ class TranslationService:
         for attempt in range(max_retries):
             try:
                 response = client.chat.completions.create(
-                    model="llama-3.1-8b-instant",
+                    model=OPENAI_TRANSLATING_MODEL or "llama-3.1-8b-instant",
                     messages=[
                         {
                             "role": "system",
