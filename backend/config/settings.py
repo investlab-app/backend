@@ -427,3 +427,7 @@ VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
 VAPID_CLAIMS = {
     "sub": f"mailto:{ADMIN_EMAIL}",
 }
+
+# OpenAI
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_MODEL = os.environ["OPENAI_MODEL"]
