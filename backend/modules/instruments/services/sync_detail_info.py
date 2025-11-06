@@ -63,25 +63,28 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self,
         instrument: Instrument,
         ticker_details: TickerDetails,
-        is_description_updated: bool,
+        *,
+        update: bool = True,
     ) -> tuple[Instrument, bool, int]:
         """
         Translate description to Polish if needed.
-        Returns updated instrument, whether it was updated, and number of translation errors.
+        Returns updated instrument, whether it was
+        updated, and number of translation errors.
 
         Args:
             instrument (Instrument): The instrument to update.
             ticker_details (TickerDetails): The ticker details from Polygon.
-            is_description_updated (bool): Whether the description has been updated.
+            update (bool): Whether to perform the update.
 
         Returns:
-            tuple[Instrument, bool, int]: Updated instrument, update status, translation error count.
+            tuple[Instrument, bool, int]:
+            Updated instrument, update status, translation error count.
         """
         translation_errors = 0
         updated = False
         new_description = ticker_details.description
 
-        if not instrument.description_pl and is_description_updated and new_description:
+        if update and new_description:
             try:
                 polish_translation = self.translation_service.translate_to_polish(
                     new_description
@@ -110,7 +113,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
             old_description = instrument.description
             new_description = ticker_details.description
-            is_description_updated = old_description != new_description
+            update_description = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
@@ -121,7 +124,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
                 translation_updated,
                 translation_error_count,
             ) = self._translate_description_if_needed(
-                updated_instrument, ticker_details, is_description_updated
+                updated_instrument, ticker_details, update=update_description
             )
 
             translation_errors += translation_error_count
