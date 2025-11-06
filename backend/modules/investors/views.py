@@ -1,5 +1,6 @@
 import logging
 
+from django.db import transaction
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.functions.datetime import TruncDate
 from django.shortcuts import get_object_or_404
@@ -123,33 +124,32 @@ class AccountValueOverTimeView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class ToggleWatchedInstrumentView(generics.GenericAPIView):
+class WatchedInstrumentView(generics.GenericAPIView):
     serializer_class = ToggleWatchedInstrumentSerializer
 
     def post(self, request: Request, instrument_id: str) -> Response:
-        try:
-            instrument = get_object_or_404(Instrument, id=instrument_id)
-            investor = Investor.objects.get(clerk_id=request.user.id)
+        investor, _ = Investor.objects.get_or_create(clerk_id=request.user.id)
+        instrument = get_object_or_404(Instrument, id=instrument_id)
 
-            if investor.watching_instruments.filter(id=instrument.id).exists():
-                investor.watching_instruments.remove(instrument)
-                is_watched = False
-            else:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+        should_watch = serializer.validated_data["is_watched"]
+
+        with transaction.atomic():
+            if should_watch:
                 investor.watching_instruments.add(instrument)
-                is_watched = True
+            else:
+                investor.watching_instruments.remove(instrument)
 
-            serializer = self.get_serializer(
-                {
-                    "is_watched": is_watched,
-                    "instrument_id": str(instrument.id),
-                }
-            )
-            return Response(serializer.data, status=status.HTTP_200_OK)
-        except Investor.DoesNotExist:
-            return Response(
-                {"error": "Investor profile not found"},
-                status=status.HTTP_404_NOT_FOUND,
-            )
+        return Response(
+            {
+                "instrument_id": str(instrument.id),
+                "is_watched": should_watch,
+            },
+            status=status.HTTP_200_OK,
+        )
 
 
 class DepositMoneyView(generics.GenericAPIView):
