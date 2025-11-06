@@ -16,6 +16,7 @@ from modules.investors.serializers import (
     AssetSerializer,
     DepositMoneySerializer,
     InvestorSerializer,
+    NotificationHistorySerializer,
     ToggleWatchedInstrumentSerializer,
     WatchedTickerSerializer,
 )
@@ -170,3 +171,17 @@ class DepositMoneyView(generics.GenericAPIView):
         logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
         return Response({"status": "success", "amount": str(amount)}, status=200)
+
+
+class NotificationHistoryView(generics.ListAPIView):
+    serializer_class = NotificationHistorySerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.notifications.order_by("-sent_at")
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

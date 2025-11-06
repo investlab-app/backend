@@ -4,7 +4,12 @@ from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
-from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.models import (
+    AccountValueSnapshot,
+    Asset,
+    Investor,
+    NotificationHistory,
+)
 
 
 class InvestorSerializer(serializers.ModelSerializer):
@@ -74,3 +79,25 @@ class DepositMoneySerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0.01")
     )
+
+
+class NotificationHistorySerializer(serializers.ModelSerializer):
+    """Serializer for NotificationHistory model."""
+
+    type = serializers.CharField(help_text="Type of the notification")
+    message = serializers.CharField(help_text="Notification message in English")
+    message_pl = serializers.CharField(help_text="Notification message in Polish")
+    sent_at = serializers.DateTimeField(help_text="When the notification was sent")
+
+    class Meta:
+        model = NotificationHistory
+        fields = [
+            "id",
+            "type",
+            "message",
+            "message_pl",
+            "sent_at",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = ["id", "sent_at", "created_at", "updated_at"]

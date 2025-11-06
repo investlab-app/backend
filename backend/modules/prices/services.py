@@ -6,6 +6,7 @@ from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
 
+from modules.investors.services import NotificationHistoryService
 from modules.notifications.services import (
     EmailPayload,
     NotificationService,
@@ -19,8 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 class PriceAlertHandler:
-    def __init__(self, notification_service: NotificationService | None = None):
+    def __init__(
+        self,
+        notification_service: NotificationService | None = None,
+        notification_history_service: NotificationHistoryService | None = None,
+    ):
         self.notification_service = notification_service or NotificationService()
+        self.notification_history_service = NotificationHistoryService()
 
     async def handle(
         self,
@@ -119,8 +125,74 @@ class PriceAlertHandler:
                     price_alert.investor,
                     websocket_payload,
                 )
+
+            if any(
+                [
+                    price_alert.notification_config.is_email,
+                    price_alert.notification_config.is_push,
+                    price_alert.notification_config.is_websocket,
+                ]
+            ):
+                message_en, message_pl = self.get_notification_messages(
+                    language,
+                    price_alert.instrument.ticker,
+                    current_price,
+                    price_alert,
+                )
+                await self.notification_history_service.save_notification_to_history(
+                    investor_id=price_alert.investor.id,
+                    notification_type="price_alert",
+                    message_en=message_en,
+                    message_pl=message_pl,
+                )
         except Exception as e:
             logger.error("Error handling notification %s: %s", price_alert.id, e)
+
+    def get_notification_messages(
+        self,
+        language: str,
+        ticker: str,
+        current_price: float,
+        notification: PriceAlert,
+    ) -> tuple[str, str]:
+        """Generate notification messages for history storage."""
+        if language == "pl":
+            threshold_type = (
+                "powyżej" if notification.threshold_type == "above" else "poniżej"
+            )
+            message_pl = (
+                f"Twój alert dla {ticker} "
+                f"został wyzwolony. Cena jest teraz "
+                f"{threshold_type} {notification.threshold_value}. "
+                f"Aktualna cena: {current_price}"
+            )
+        else:
+            message_pl = (
+                f"Your alert for {ticker} "
+                f"has been triggered. The price is now "
+                f"{notification.threshold_type} {notification.threshold_value}. "
+                f"Current price: {current_price}"
+            )
+
+        if language == "pl":
+            threshold_type = (
+                "powyżej" if notification.threshold_type == "above" else "poniżej"
+            )
+            message_en = (
+                f"Your alert for {ticker} "
+                f"has been triggered. The price is now "
+                f"{notification.threshold_type} {notification.threshold_value}. "
+                f"Current price: {current_price}"
+            )
+        else:
+            message_en = (
+                f"Your alert for {ticker} "
+                f"has been triggered. The price is now "
+                f"{notification.threshold_type} {notification.threshold_value}. "
+                f"Current price: {current_price}"
+            )
+
+        return message_en, message_pl
 
     def get_email_payload(
         self,
