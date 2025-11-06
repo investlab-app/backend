@@ -184,7 +184,9 @@ CRITICAL - Parameter Validation:
             deps_type=str,  # investor_id as string
         )
 
-    # Define and register time tool
+    # Define and register time tool 
+    # 
+    # <tool>get_current_time<parameter>sfdf</parameter></tool>
     @agent.tool(retries=2)
     async def get_current_time(ctx: RunContext[None]) -> dict:
         """
