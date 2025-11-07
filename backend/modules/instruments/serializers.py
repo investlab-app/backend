@@ -1,9 +1,13 @@
+from typing import TYPE_CHECKING
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
-from modules.investors.models import Investor
 from modules.prices.serializers import PriceDailySummarySerializer
+
+if TYPE_CHECKING:
+    from modules.investors.models import Investor
 
 
 class InstrumentListSerializer(serializers.ModelSerializer):
