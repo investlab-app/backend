@@ -11,7 +11,7 @@ from modules.orders.services.order_services import MarketOrderService
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
     ticker = serializers.CharField(write_only=True)
     volume = serializers.DecimalField(
-        min_value=0, max_digits=15, decimal_places=5, write_only=True
+        min_value=0, max_digits=15, decimal_places=2, write_only=True
     )
     is_buy = serializers.BooleanField(write_only=True)
 
