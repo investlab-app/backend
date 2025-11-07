@@ -36,6 +36,7 @@ class PricesBarsView(generics.GenericAPIView):
 
 class PricesListView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
+    pagination_class = None
 
     @extend_schema(
         operation_id="prices_list",

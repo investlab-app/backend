@@ -314,8 +314,8 @@ paths:
                   $ref: '#/components/schemas/WatchedTicker'
           description: ''
   /api/investors/me/watched-tickers/{instrument_id}/:
-    put:
-      operationId: investors_me_watched_tickers_update
+    patch:
+      operationId: investors_me_watched_tickers_partial_update
       parameters:
       - in: path
         name: instrument_id
@@ -328,8 +328,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/WatchedTickersTickerRequest'
-        required: true
+              $ref: '#/components/schemas/PatchedWatchedTickersTickerRequest'
       security:
       - ClerkAuth: []
       - ClerkAuth: []
@@ -516,24 +515,12 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateMarketOrder'
+                $ref: '#/components/schemas/Order'
           description: ''
   /api/prices/:
     get:
       operationId: prices_list
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
-        schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
       - in: query
         name: tickers
         schema:
@@ -554,7 +541,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedPriceDailySummaryList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceDailySummary'
           description: ''
   /api/prices/{ticker}/:
     get:
@@ -1139,20 +1128,6 @@ components:
       required:
       - email
       - password
-    CreateMarketOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        investor:
-          type: string
-          format: uuid
-          readOnly: true
-      required:
-      - id
-      - investor
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1989,29 +1964,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PriceAlert'
-    PaginatedPriceDailySummaryList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/PriceDailySummary'
     PatchedInvestorRequest:
       type: object
       properties:
@@ -2041,6 +1993,12 @@ components:
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
           $ref: '#/components/schemas/NotificationConfigRequest'
+    PatchedWatchedTickersTickerRequest:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
     Position:
       type: object
       properties:
@@ -2413,14 +2371,6 @@ components:
       - name
       - ticker
     WatchedTickersTicker:
-      type: object
-      properties:
-        is_watched:
-          type: boolean
-          description: Whether the instrument is now being watched
-      required:
-      - is_watched
-    WatchedTickersTickerRequest:
       type: object
       properties:
         is_watched:

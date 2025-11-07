@@ -48,6 +48,8 @@ class MarketOrderService:
 
                 investor.blocked_funds += total_cost
                 investor.save()
+            else:
+                total_cost = Decimal(0)
 
             detail = MarketOrder.objects.create(
                 volume=volume,
