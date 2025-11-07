@@ -1138,7 +1138,7 @@ components:
         volume:
           type: string
           format: decimal
-          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
           writeOnly: true
         is_buy:
           type: boolean
@@ -1792,7 +1792,7 @@ components:
         type:
           type: string
           description: Type of the notification
-        message:
+        message_en:
           type: string
           description: Notification message in English
         message_pl:
@@ -1813,7 +1813,7 @@ components:
       required:
       - created_at
       - id
-      - message
+      - message_en
       - message_pl
       - sent_at
       - type

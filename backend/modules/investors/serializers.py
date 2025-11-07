@@ -84,7 +84,7 @@ class NotificationHistorySerializer(serializers.ModelSerializer):
     """Serializer for NotificationHistory model."""
 
     type = serializers.CharField(help_text="Type of the notification")
-    message = serializers.CharField(help_text="Notification message in English")
+    message_en = serializers.CharField(help_text="Notification message in English")
     message_pl = serializers.CharField(help_text="Notification message in Polish")
     sent_at = serializers.DateTimeField(help_text="When the notification was sent")
 
@@ -93,7 +93,7 @@ class NotificationHistorySerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "type",
-            "message",
+            "message_en",
             "message_pl",
             "sent_at",
             "created_at",
