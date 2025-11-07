@@ -37,7 +37,11 @@ class PricesBarsView(generics.GenericAPIView):
 class PricesListView(generics.GenericAPIView):
     serializer_class = PriceDailySummarySerializer
 
-    @extend_schema(operation_id="prices_list", parameters=[PricesListQueryParams])
+    @extend_schema(
+        operation_id="prices_list",
+        parameters=[PricesListQueryParams],
+        responses=PriceDailySummarySerializer(many=True),
+    )
     def get(self, request: Request) -> Response:
         params = PricesListQueryParams(data=request.query_params)
         params.is_valid(raise_exception=True)
