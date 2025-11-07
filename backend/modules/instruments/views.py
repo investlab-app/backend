@@ -1,4 +1,4 @@
-import contextlib
+from contextlib import suppress
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -91,7 +91,7 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
 
         investor = None
         if request.user and hasattr(request.user, "id"):
-            with contextlib.suppress(Investor.DoesNotExist):
+            with suppress(Investor.DoesNotExist):
                 investor = Investor.objects.get(clerk_id=request.user.id)
 
         context = {

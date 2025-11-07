@@ -79,9 +79,6 @@ class WatchedTickersListView(generics.ListAPIView):
         investor = Investor.objects.get(clerk_id=self.request.user.id)
         return investor.watching_instruments.all()
 
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
-
 
 class AccountValueOverTimeView(generics.ListAPIView):
     """
