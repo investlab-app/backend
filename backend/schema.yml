@@ -1138,7 +1138,7 @@ components:
         volume:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
           writeOnly: true
         is_buy:
           type: boolean
@@ -1193,7 +1193,9 @@ components:
           type: boolean
           description: True if the transaction was a buy False if it was a sell
         quantity:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Number of shares traded
         share_price:
           type: number
@@ -1648,11 +1650,11 @@ components:
         volume:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
         volume_processed:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
         is_buy:
           type: boolean
       required:
@@ -2015,7 +2017,9 @@ components:
           format: uri
           nullable: true
         quantity:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Total quantity of shares
         market_value:
           type: number

@@ -129,7 +129,9 @@ class HistoryEntrySerializer(serializers.Serializer):
     )
 
     # Transaction.volume
-    quantity = serializers.IntegerField(help_text="Number of shares traded")
+    quantity = serializers.DecimalField(
+        max_digits=20, decimal_places=5, help_text="Number of shares traded"
+    )
 
     # Transaction.transaction_price / Transaction.volume
     share_price = serializers.FloatField(
@@ -150,7 +152,9 @@ class PositionSerializer(serializers.Serializer):
     icon = serializers.ImageField(allow_null=True)
 
     # AssetAllocation.asset.volume
-    quantity = serializers.IntegerField(help_text="Total quantity of shares")
+    quantity = serializers.DecimalField(
+        max_digits=20, decimal_places=5, help_text="Total quantity of shares"
+    )
 
     # Prices.???
     market_value = serializers.FloatField(help_text="Current market value")
