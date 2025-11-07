@@ -133,12 +133,23 @@ class PriceAlertHandler:
                     price_alert.notification_config.is_websocket,
                 ]
             ):
-                message_en, message_pl = self.get_notification_messages(
-                    language,
-                    price_alert.instrument.ticker,
-                    current_price,
-                    price_alert,
+                threshold_type = (
+                    "powyżej" if price_alert.threshold_type == "above" else "poniżej"
                 )
+                message_pl = (
+                    f"Twój alert dla {price_alert.instrument.ticker} "
+                    f"został wyzwolony. Cena jest teraz "
+                    f"{threshold_type} {price_alert.threshold_value}. "
+                    f"Aktualna cena: {current_price}"
+                )
+
+                message_en = (
+                    f"Your alert for {price_alert.instrument.ticker} "
+                    f"has been triggered. The price is now "
+                    f"{price_alert.threshold_type} {price_alert.threshold_value}. "
+                    f"Current price: {current_price}"
+                )
+
                 await self.notification_history_service.save_notification_to_history(
                     investor_id=price_alert.investor.id,
                     notification_type="price_alert",
@@ -147,52 +158,6 @@ class PriceAlertHandler:
                 )
         except Exception as e:
             logger.error("Error handling notification %s: %s", price_alert.id, e)
-
-    def get_notification_messages(
-        self,
-        language: str,
-        ticker: str,
-        current_price: float,
-        notification: PriceAlert,
-    ) -> tuple[str, str]:
-        """Generate notification messages for history storage."""
-        if language == "pl":
-            threshold_type = (
-                "powyżej" if notification.threshold_type == "above" else "poniżej"
-            )
-            message_pl = (
-                f"Twój alert dla {ticker} "
-                f"został wyzwolony. Cena jest teraz "
-                f"{threshold_type} {notification.threshold_value}. "
-                f"Aktualna cena: {current_price}"
-            )
-        else:
-            message_pl = (
-                f"Your alert for {ticker} "
-                f"has been triggered. The price is now "
-                f"{notification.threshold_type} {notification.threshold_value}. "
-                f"Current price: {current_price}"
-            )
-
-        if language == "pl":
-            threshold_type = (
-                "powyżej" if notification.threshold_type == "above" else "poniżej"
-            )
-            message_en = (
-                f"Your alert for {ticker} "
-                f"has been triggered. The price is now "
-                f"{notification.threshold_type} {notification.threshold_value}. "
-                f"Current price: {current_price}"
-            )
-        else:
-            message_en = (
-                f"Your alert for {ticker} "
-                f"has been triggered. The price is now "
-                f"{notification.threshold_type} {notification.threshold_value}. "
-                f"Current price: {current_price}"
-            )
-
-        return message_en, message_pl
 
     def get_email_payload(
         self,
