@@ -28,6 +28,16 @@ class CurrentAccountValueSerializer(serializers.Serializer):
     gain_percentage = serializers.FloatField(allow_null=True)
 
 
+class AssetAllocationQueryParams(serializers.Serializer):
+    instruments_number = serializers.IntegerField(
+        required=False,
+        min_value=3,
+        max_value=30,
+        default=5,
+        help_text="Number of top instruments without `Other` position",
+    )
+
+
 class AssetAllocationItemSerializer(serializers.Serializer):
     instrument_name = serializers.CharField(max_length=255)
     instrument_ticker = serializers.CharField(max_length=20)

@@ -14,6 +14,7 @@ from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.investors.services import InvestorStatsService
 from modules.statistics.serializers import (
+    AssetAllocationQueryParams,
     AssetAllocationSerializer,
     CurrentAccountValueSerializer,
     InvestorStatsSerializer,
@@ -143,6 +144,9 @@ class AssetAllocationView(generics.RetrieveAPIView):
     serializer_class = AssetAllocationSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        parameters = AssetAllocationQueryParams(data=request.query_params)
+        parameters.is_valid(raise_exception=True)
+        instruments_number = parameters.validated_data["instruments_number"]
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         investor_tickers = get_investor_tickers(investor)
 
@@ -156,6 +160,11 @@ class AssetAllocationView(generics.RetrieveAPIView):
         is_service = InvestorStatsService()
         total_value = is_service.get_total_value(investor=investor)
         asset_allocations = is_service.get_asset_allocation(investor=investor)
+        asset_allocations = sorted(
+            asset_allocations, key=lambda x: x.percentage, reverse=True
+        )
+        main_allocations = asset_allocations[:instruments_number]
+        rest_allocations = asset_allocations[instruments_number:]
 
         response_data = {
             "total_value": round(total_value, 2),
@@ -173,14 +182,34 @@ class AssetAllocationView(generics.RetrieveAPIView):
                     "value": round(allocation.total_value, 2),
                     "percentage": round(allocation.percentage, 2),
                 }
-                for allocation in asset_allocations
+                for allocation in main_allocations
             ],
         }
+
+        # Add "Other" allocation if there are remaining allocations
+        if rest_allocations:
+            response_data["allocations"].append(
+                {
+                    "instrument_name": "Other",
+                    "instrument_ticker": "OTHER",
+                    "instrument_logo": None,
+                    "instrument_icon": None,
+                    "value": round(
+                        sum(a.total_value for a in rest_allocations),
+                        2,
+                    ),
+                    "percentage": round(
+                        sum(a.percentage for a in rest_allocations),
+                        2,
+                    ),
+                }
+            )
 
         serializer = self.get_serializer(response_data)
         return Response(serializer.data)
 
     @extend_schema(
+        parameters=[AssetAllocationQueryParams],
         responses={200: AssetAllocationSerializer},
         summary="Get asset allocation",
         description="Get asset allocation data for the currently authenticated user.",
