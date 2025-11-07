@@ -17,8 +17,8 @@ from modules.investors.serializers import (
     DepositMoneySerializer,
     InvestorSerializer,
     NotificationHistorySerializer,
-    ToggleWatchedInstrumentSerializer,
     WatchedTickerSerializer,
+    WatchedTickersTickerSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -126,9 +126,9 @@ class AccountValueOverTimeView(generics.ListAPIView):
 
 
 class WatchedTickersTickerView(generics.GenericAPIView):
-    serializer_class = ToggleWatchedInstrumentSerializer
+    serializer_class = WatchedTickersTickerSerializer
 
-    def post(self, request: Request, instrument_id: str) -> Response:
+    def patch(self, request: Request, instrument_id: str) -> Response:
         investor, _ = Investor.objects.get_or_create(clerk_id=request.user.id)
         instrument = get_object_or_404(Instrument, id=instrument_id)
 

@@ -314,8 +314,8 @@ paths:
                   $ref: '#/components/schemas/WatchedTicker'
           description: ''
   /api/investors/me/watched-tickers/{instrument_id}/:
-    post:
-      operationId: investors_me_watched_tickers_create
+    put:
+      operationId: investors_me_watched_tickers_update
       parameters:
       - in: path
         name: instrument_id
@@ -328,7 +328,7 @@ paths:
         content:
           application/json:
             schema:
-              $ref: '#/components/schemas/ToggleWatchedInstrumentRequest'
+              $ref: '#/components/schemas/WatchedTickersTickerRequest'
         required: true
       security:
       - ClerkAuth: []
@@ -338,7 +338,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/ToggleWatchedInstrument'
+                $ref: '#/components/schemas/WatchedTickersTicker'
           description: ''
   /api/markets/holidays/:
     get:
@@ -2366,31 +2366,6 @@ components:
         title:
           type: string
           nullable: true
-    ToggleWatchedInstrument:
-      type: object
-      properties:
-        is_watched:
-          type: boolean
-          description: Whether the instrument is now being watched
-        instrument_id:
-          type: string
-          description: ID of the instrument
-      required:
-      - instrument_id
-      - is_watched
-    ToggleWatchedInstrumentRequest:
-      type: object
-      properties:
-        is_watched:
-          type: boolean
-          description: Whether the instrument is now being watched
-        instrument_id:
-          type: string
-          minLength: 1
-          description: ID of the instrument
-      required:
-      - instrument_id
-      - is_watched
     TradingOverview:
       type: object
       properties:
@@ -2437,6 +2412,22 @@ components:
       required:
       - name
       - ticker
+    WatchedTickersTicker:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
+      required:
+      - is_watched
+    WatchedTickersTickerRequest:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
+      required:
+      - is_watched
   securitySchemes:
     ClerkAuth:
       type: http

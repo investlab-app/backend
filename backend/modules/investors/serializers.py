@@ -39,11 +39,10 @@ class InvestorUpdateSerializer(serializers.ModelSerializer):
         read_only_fields = ["id", "clerk_id", "balance"]
 
 
-class ToggleWatchedInstrumentSerializer(serializers.Serializer):
+class WatchedTickersTickerSerializer(serializers.Serializer):
     is_watched = serializers.BooleanField(
         help_text="Whether the instrument is now being watched"
     )
-    instrument_id = serializers.CharField(help_text="ID of the instrument")
 
 
 class AssetSerializer(serializers.ModelSerializer):
