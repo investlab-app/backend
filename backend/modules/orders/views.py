@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 
 from modules.investors.models import Investor
@@ -9,6 +10,10 @@ from modules.orders.services.order_services import MarketOrderService
 
 class CreateMarketOrderView(generics.CreateAPIView):
     serializer_class = CreateMarketOrderSerializer
+
+    @extend_schema(responses={201: OrderSerializer})
+    def post(self, request, *args, **kwargs):
+        return super().post(request, *args, **kwargs)
 
     def perform_create(self, serializer):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)

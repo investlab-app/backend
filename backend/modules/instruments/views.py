@@ -1,3 +1,5 @@
+from contextlib import suppress
+
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics
@@ -9,6 +11,7 @@ from modules.instruments.serializers import (
     InstrumentRetrieveSerializer,
     InstrumentWithPriceSerializer,
 )
+from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
 
 
@@ -86,7 +89,16 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         except Exception:
             snapshot_map = {}
 
-        context = {**self.get_serializer_context(), "snapshot_map": snapshot_map}
+        investor = None
+        if request.user and hasattr(request.user, "id"):
+            with suppress(Investor.DoesNotExist):
+                investor = Investor.objects.get(clerk_id=request.user.id)
+
+        context = {
+            **self.get_serializer_context(),
+            "snapshot_map": snapshot_map,
+            "investor": investor,
+        }
         serializer = self.get_serializer(items, many=True, context=context)
 
         if page is not None:

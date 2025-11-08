@@ -1,11 +1,20 @@
+import logging
 from collections.abc import Iterable
 from decimal import Decimal
 
+from asgiref.sync import sync_to_async
 from django.db import transaction
 
-from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.models import (
+    AccountValueSnapshot,
+    Asset,
+    Investor,
+    NotificationHistory,
+)
 from modules.investors.schemas import AssetAllocation
 from modules.prices.repositories import PolygonPricesRepository
+
+logger = logging.getLogger(__name__)
 
 
 class InvestorStatsService:
@@ -61,3 +70,23 @@ class InvestorValueHistoryService:
 
         with transaction.atomic():
             [s.save() for s in snapshots]
+
+
+class NotificationHistoryService:
+    async def save_notification_to_history(
+        self,
+        investor_id: str,
+        notification_type: str,
+        message_en: str,
+        message_pl: str,
+    ) -> None:
+        try:
+            await sync_to_async(NotificationHistory.objects.create)(
+                investor_id=investor_id,
+                type=notification_type,
+                message_en=message_en,
+                message_pl=message_pl,
+            )
+            logger.debug("Saved notification to history for investor %s", investor_id)
+        except Exception as e:
+            logger.error("Failed to save notification to history: %s", e)

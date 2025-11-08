@@ -39,14 +39,14 @@ class Order(BaseModel):
 
 class MarketOrder(BaseModel):
     volume = models.DecimalField(
-        max_digits=15, decimal_places=2, verbose_name=_("Volume")
+        max_digits=15, decimal_places=5, verbose_name=_("Volume")
     )
     volume_processed = models.DecimalField(
-        max_digits=15, decimal_places=2, default=0, verbose_name=_("Volume Processed")
+        max_digits=15, decimal_places=5, default=0, verbose_name=_("Volume Processed")
     )
     is_buy = models.BooleanField(verbose_name=_("Is Buy"))
     blocked_funds = models.DecimalField(
-        max_digits=30, decimal_places=2, default="0", verbose_name=_("Blocked Funds")
+        max_digits=30, decimal_places=5, default="0", verbose_name=_("Blocked Funds")
     )
 
     class Meta:

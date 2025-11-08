@@ -1,19 +1,24 @@
 import logging
 
+from django.db import transaction
 from django.db.models.expressions import OuterRef, Subquery
 from django.db.models.functions.datetime import TruncDate
+from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics
+from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.instruments.models import Instrument
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
     DepositMoneySerializer,
     InvestorSerializer,
-    LanguageUpdateSerializer,
+    NotificationHistorySerializer,
+    WatchedTickerSerializer,
+    WatchedTickersTickerSerializer,
 )
 
 logger = logging.getLogger(__name__)
@@ -66,6 +71,15 @@ class AssetListView(generics.ListAPIView):
         return Asset.objects.filter(investor=investor)
 
 
+class WatchedTickersListView(generics.ListAPIView):
+    serializer_class = WatchedTickerSerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.watching_instruments.all()
+
+
 class AccountValueOverTimeView(generics.ListAPIView):
     """
     Get account value over time data for the current authenticated user.
@@ -108,24 +122,32 @@ class AccountValueOverTimeView(generics.ListAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class LanguageUpdateView(generics.CreateAPIView):
-    serializer_class = LanguageUpdateSerializer
+class WatchedTickersTickerView(generics.GenericAPIView):
+    serializer_class = WatchedTickersTickerSerializer
 
-    def post(self, request: Request, *args, **kwargs) -> Response:
+    def patch(self, request: Request, instrument_id: str) -> Response:
+        investor, _ = Investor.objects.get_or_create(clerk_id=request.user.id)
+        instrument = get_object_or_404(Instrument, id=instrument_id)
+
         serializer = self.get_serializer(data=request.data)
         if not serializer.is_valid():
-            return Response(serializer.errors, status=400)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-        language = serializer.validated_data["language"]
+        should_watch = serializer.validated_data["is_watched"]
 
-        user_clerk_id = request.user.id
+        with transaction.atomic():
+            if should_watch:
+                investor.watching_instruments.add(instrument)
+            else:
+                investor.watching_instruments.remove(instrument)
 
-        investor, _ = Investor.objects.update_or_create(
-            clerk_id=user_clerk_id, defaults={"language": language}
+        return Response(
+            {
+                "instrument_id": str(instrument.id),
+                "is_watched": should_watch,
+            },
+            status=status.HTTP_200_OK,
         )
-
-        response_serializer = self.get_serializer({"language": investor.language})
-        return Response(response_serializer.data, status=200)
 
 
 class DepositMoneyView(generics.GenericAPIView):
@@ -146,3 +168,17 @@ class DepositMoneyView(generics.GenericAPIView):
         logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
         return Response({"status": "success", "amount": str(amount)}, status=200)
+
+
+class NotificationHistoryView(generics.ListAPIView):
+    serializer_class = NotificationHistorySerializer
+    pagination_class = None
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.notifications.order_by("-sent_at")
+
+    def list(self, request: Request, *args, **kwargs) -> Response:
+        queryset = self.get_queryset()
+        serializer = self.get_serializer(queryset, many=True)
+        return Response(serializer.data)

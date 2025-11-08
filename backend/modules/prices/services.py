@@ -6,6 +6,7 @@ from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
 
+from modules.investors.services import NotificationHistoryService
 from modules.notifications.services import (
     EmailPayload,
     NotificationService,
@@ -19,8 +20,13 @@ logger = logging.getLogger(__name__)
 
 
 class PriceAlertHandler:
-    def __init__(self, notification_service: NotificationService | None = None):
+    def __init__(
+        self,
+        notification_service: NotificationService | None = None,
+        notification_history_service: NotificationHistoryService | None = None,
+    ):
         self.notification_service = notification_service or NotificationService()
+        self.notification_history_service = NotificationHistoryService()
 
     async def handle(
         self,
@@ -118,6 +124,37 @@ class PriceAlertHandler:
                 await self.notification_service.send_websocket_notifications(
                     price_alert.investor,
                     websocket_payload,
+                )
+
+            if any(
+                [
+                    price_alert.notification_config.is_email,
+                    price_alert.notification_config.is_push,
+                    price_alert.notification_config.is_websocket,
+                ]
+            ):
+                threshold_type = (
+                    "powyżej" if price_alert.threshold_type == "above" else "poniżej"
+                )
+                message_pl = (
+                    f"Twój alert dla {price_alert.instrument.ticker} "
+                    f"został wyzwolony. Cena jest teraz "
+                    f"{threshold_type} {price_alert.threshold_value}. "
+                    f"Aktualna cena: {current_price}"
+                )
+
+                message_en = (
+                    f"Your alert for {price_alert.instrument.ticker} "
+                    f"has been triggered. The price is now "
+                    f"{price_alert.threshold_type} {price_alert.threshold_value}. "
+                    f"Current price: {current_price}"
+                )
+
+                await self.notification_history_service.save_notification_to_history(
+                    investor_id=price_alert.investor.id,
+                    notification_type="price_alert",
+                    message_en=message_en,
+                    message_pl=message_pl,
                 )
         except Exception as e:
             logger.error("Error handling notification %s: %s", price_alert.id, e)

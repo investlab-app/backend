@@ -41,8 +41,8 @@ class AssetAllocationQueryParams(serializers.Serializer):
 class AssetAllocationItemSerializer(serializers.Serializer):
     instrument_name = serializers.CharField(max_length=255)
     instrument_ticker = serializers.CharField(max_length=20)
-    instrument_logo = serializers.URLField(allow_null=True)
-    instrument_icon = serializers.URLField(allow_null=True)
+    instrument_logo = serializers.ImageField(allow_null=True)
+    instrument_icon = serializers.ImageField(allow_null=True)
 
     # AssetAllocation.total_value
     value = serializers.FloatField()
@@ -110,7 +110,7 @@ class MostTradedItemSerializer(serializers.Serializer):
     gain = serializers.FloatField()
 
     # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField()
+    gain_percentage = serializers.FloatField(allow_null=True)
 
 
 class TransactionHistoryQueryParams(serializers.Serializer):
@@ -139,7 +139,9 @@ class HistoryEntrySerializer(serializers.Serializer):
     )
 
     # Transaction.volume
-    quantity = serializers.IntegerField(help_text="Number of shares traded")
+    quantity = serializers.DecimalField(
+        max_digits=20, decimal_places=5, help_text="Number of shares traded"
+    )
 
     # Transaction.transaction_price / Transaction.volume
     share_price = serializers.FloatField(
@@ -153,10 +155,16 @@ class HistoryEntrySerializer(serializers.Serializer):
 
 
 class PositionSerializer(serializers.Serializer):
-    name = serializers.CharField(max_length=10, help_text="Ticker symbol")
+    symbol = serializers.CharField(max_length=10, help_text="Ticker symbol")
+
+    name = serializers.CharField(max_length=255, help_text="Instrument name")
+
+    icon = serializers.ImageField(allow_null=True)
 
     # AssetAllocation.asset.volume
-    quantity = serializers.IntegerField(help_text="Total quantity of shares")
+    quantity = serializers.DecimalField(
+        max_digits=20, decimal_places=5, help_text="Total quantity of shares"
+    )
 
     # Prices.???
     market_value = serializers.FloatField(help_text="Current market value")
@@ -165,6 +173,8 @@ class PositionSerializer(serializers.Serializer):
     gain = serializers.FloatField(help_text="Total gain or loss")
 
     # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField(help_text="Total gain or loss percentage")
+    gain_percentage = serializers.FloatField(
+        help_text="Total gain or loss percentage", allow_null=True
+    )
 
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")
