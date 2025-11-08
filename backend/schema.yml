@@ -279,6 +279,66 @@ paths:
                 items:
                   $ref: '#/components/schemas/AccountValueSnapshotDaily'
           description: ''
+  /api/investors/me/notifications/:
+    get:
+      operationId: investors_me_notifications_list
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/NotificationHistory'
+          description: ''
+  /api/investors/me/watched-tickers/:
+    get:
+      operationId: investors_me_watched_tickers_list
+      tags:
+      - investors
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/WatchedTicker'
+          description: ''
+  /api/investors/me/watched-tickers/{instrument_id}/:
+    patch:
+      operationId: investors_me_watched_tickers_partial_update
+      parameters:
+      - in: path
+        name: instrument_id
+        schema:
+          type: string
+        required: true
+      tags:
+      - investors
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedWatchedTickersTickerRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WatchedTickersTicker'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
@@ -455,7 +515,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/CreateMarketOrder'
+                $ref: '#/components/schemas/Order'
           description: ''
   /api/prices/:
     get:
@@ -481,7 +541,9 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PriceDailySummary'
+                type: array
+                items:
+                  $ref: '#/components/schemas/PriceDailySummary'
           description: ''
   /api/prices/{ticker}/:
     get:
@@ -1075,20 +1137,6 @@ components:
       required:
       - email
       - password
-    CreateMarketOrder:
-      type: object
-      properties:
-        id:
-          type: string
-          format: uuid
-          readOnly: true
-        investor:
-          type: string
-          format: uuid
-          readOnly: true
-      required:
-      - id
-      - investor
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1099,7 +1147,7 @@ components:
         volume:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
           writeOnly: true
         is_buy:
           type: boolean
@@ -1154,7 +1202,9 @@ components:
           type: boolean
           description: True if the transaction was a buy False if it was a sell
         quantity:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Number of shares traded
         share_price:
           type: number
@@ -1435,8 +1485,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/PriceDailySummary'
           readOnly: true
+        is_watched:
+          type: boolean
+          readOnly: true
       required:
       - id
+      - is_watched
       - market
       - name
       - price_info
@@ -1599,17 +1653,21 @@ components:
     MarketOrder:
       type: object
       properties:
+        detail_type:
+          type: string
+          readOnly: true
         volume:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
         volume_processed:
           type: string
           format: decimal
-          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
         is_buy:
           type: boolean
       required:
+      - detail_type
       - is_buy
       - volume
     MarketStatus:
@@ -1657,6 +1715,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
       required:
       - buys
       - gain
@@ -1731,6 +1790,43 @@ components:
           title: Send WebSocket
         is_active:
           type: boolean
+    NotificationHistory:
+      type: object
+      description: Serializer for NotificationHistory model.
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        type:
+          type: string
+          description: Type of the notification
+        message_en:
+          type: string
+          description: Notification message in English
+        message_pl:
+          type: string
+          description: Notification message in Polish
+        sent_at:
+          type: string
+          format: date-time
+          description: When the notification was sent
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_en
+      - message_pl
+      - sent_at
+      - type
+      - updated_at
     Order:
       type: object
       properties:
@@ -1908,15 +2004,31 @@ components:
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
           $ref: '#/components/schemas/NotificationConfigRequest'
+    PatchedWatchedTickersTickerRequest:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
     Position:
       type: object
       properties:
-        name:
+        symbol:
           type: string
           description: Ticker symbol
           maxLength: 10
+        name:
+          type: string
+          description: Instrument name
+          maxLength: 255
+        icon:
+          type: string
+          format: uri
+          nullable: true
         quantity:
-          type: integer
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Total quantity of shares
         market_value:
           type: number
@@ -1929,6 +2041,7 @@ components:
         gain_percentage:
           type: number
           format: double
+          nullable: true
           description: Total gain or loss percentage
         history:
           type: array
@@ -1939,9 +2052,11 @@ components:
       - gain
       - gain_percentage
       - history
+      - icon
       - market_value
       - name
       - quantity
+      - symbol
     PriceAlert:
       type: object
       properties:
@@ -2246,6 +2361,36 @@ components:
           type: string
       required:
       - public_key
+    WatchedTicker:
+      type: object
+      description: Serializer for watched tickers with icon and ticker information.
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 255
+        icon:
+          type: string
+          format: uri
+          nullable: true
+        logo:
+          type: string
+          format: uri
+          nullable: true
+      required:
+      - name
+      - ticker
+    WatchedTickersTicker:
+      type: object
+      properties:
+        is_watched:
+          type: boolean
+          description: Whether the instrument is now being watched
+      required:
+      - is_watched
   securitySchemes:
     ClerkAuth:
       type: http

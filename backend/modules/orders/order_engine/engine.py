@@ -140,7 +140,7 @@ class SingleInvestorTradeEngine:
         price = self._prices[ticker]
 
         volume_needed = order.volume - order.volume_processed
-        volume = min(volume_needed, balance / price)
+        volume = min(volume_needed, (balance / price))
         if volume == 0:
             return
 
