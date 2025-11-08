@@ -10,7 +10,7 @@ from modules.graph_lang.framework.nodes import NodeFactory
 class Validator:
 
     def __init__(self, node_factory :NodeFactory = None):
-        self._node_factory = node_factory or NodeFactory(None, None)
+        self._node_factory = node_factory or NodeFactory()
 
     # TODO: catch any unknown error, return unknown validation error
     # TODO: try to build the graph at the end

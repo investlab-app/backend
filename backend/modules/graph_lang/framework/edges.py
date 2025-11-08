@@ -1,4 +1,5 @@
 from dataclasses import dataclass, field
+from decimal import Decimal
 from typing import Any, TYPE_CHECKING
 from datetime import timedelta
 from modules.instruments.models import Instrument
@@ -49,13 +50,13 @@ class EdgeType:
 class NumberType(EdgeType):
     def validate_value(self, value) -> bool:
         try:
-            int(value)
+            Decimal(value)
             return True
         except ValueError:
             return False
 
-    def parse(self, value) -> int:
-        return int(value)
+    def parse(self, value) -> Decimal:
+        return Decimal(value)
 
 
 @dataclass
@@ -76,7 +77,10 @@ class EnumType(EdgeType):
 
 @dataclass
 class BoolType(EdgeType):
-    def validate_value(self, value) -> bool:
+    def validate_value(self, value :Any) -> bool:
+        if isinstance(value, bool):
+            return True
+
         return value.lower() in ("true", "false")
 
     def parse(self, value) -> bool:
@@ -85,7 +89,10 @@ class BoolType(EdgeType):
 
 @dataclass
 class TimespanType(EdgeType):
-    def validate_value(self, value :str):
+    def validate_value(self, value :Any):
+        if isinstance(value, timedelta):
+            return True
+
         try:
             interval, unit = value.split(' ')
             assert unit in ['day', 'hour', 'week', 'month']
@@ -95,6 +102,9 @@ class TimespanType(EdgeType):
             return False
 
     def parse(self, value :str) -> timedelta:
+        if isinstance(value, timedelta):
+            return value
+
         interval, unit = value.split(' ')
         interval = int(interval)
         if unit == 'day':

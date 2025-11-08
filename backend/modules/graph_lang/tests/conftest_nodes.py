@@ -3,14 +3,14 @@ from datetime import datetime
 from decimal import Decimal
 
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes import Node
+from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
 class VoidSensorNode(Node):
     out = edges.VoidType(direction=edges.OUTPUT)
     executed = False
 
-    def execute(self):
+    def execute(self, context):
         self.out.set(None)
         self.executed = True
 
@@ -19,8 +19,8 @@ class NumberBasedOnTimeNode(Node):
     out = edges.NumberType(direction=edges.OUTPUT)
     _values = {}
 
-    def execute(self):
-        val = self._values[self._time_at]
+    def execute(self, context :ExecutionContext):
+        val = self._values[context.time_at]
         self.out.set(val)
 
     def set_val(self, val, time_at):
@@ -32,8 +32,8 @@ class PassNumberNode(Node):
 
     out = edges.NumberType(direction=edges.OUTPUT)
 
-    def execute(self):
-        self.out.set(self.in_())
+    def execute(self, context):
+        self.out.set(self.in_(context))
 
 
 class PriceProviderMock(Node):

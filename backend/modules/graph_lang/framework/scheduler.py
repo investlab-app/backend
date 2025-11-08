@@ -58,7 +58,7 @@ class Scheduler:
 
     def step(self):
         for graph in self.graphs:
-            should_execute_at = self.last_run_time[graph.id] + graph.trigger.timespan()
+            should_execute_at = self.last_run_time[graph.id] + graph.trigger.timespan(None)
             if datetime.now() >= should_execute_at:
                 self.runner.run(graph.id)
                 self.last_run_time[graph.id] = datetime.now()
@@ -67,7 +67,7 @@ class Scheduler:
         min_timespan = self.max_sleep_timespan
 
         for g in self.graphs:
-            if g.trigger.timespan() < min_timespan:
-                min_timespan = g.trigger.timespan()
+            if g.trigger.timespan(None) < min_timespan:
+                min_timespan = g.trigger.timespan(None)
 
         return datetime.now() + min_timespan

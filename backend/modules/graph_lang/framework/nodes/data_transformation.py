@@ -1,5 +1,5 @@
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
 class ChangeOverTimeNode(Node):
@@ -10,13 +10,13 @@ class ChangeOverTimeNode(Node):
 
     out = edges.NumberType(direction=edges.OUTPUT)
 
-    def execute(self):
-        if self._time_at is None:
-            raise RuntimeError("Execution time needs to be set for this node to run")
+    def execute(self, context :ExecutionContext):
+        time = context.time_at
 
-        timespan = self.timespan()
+        in_now = self.in_(context)
+        context.time_at -= self.timespan(context)
+        in_before = self.in_(context)
 
-        in_now = self.in_()
-        in_before = self.in_(self._time_at - timespan)
+        context.time_at = time
 
         self.out.set(in_now - in_before)

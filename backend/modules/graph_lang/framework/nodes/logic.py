@@ -1,5 +1,5 @@
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 # ruff: noqa: N815
 
@@ -12,9 +12,9 @@ class AndNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self):
-        a = self.inA()
-        b = self.inB()
+    def execute(self, context :ExecutionContext):
+        a = self.inA(context)
+        b = self.inB(context)
 
         self.out.set(a and b)
 
@@ -27,9 +27,11 @@ class OrNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self):
-        a = self.inA()
-        b = self.inB()
+
+
+    def execute(self, context :ExecutionContext):
+        a = self.inA(context)
+        b = self.inB(context)
 
         self.out.set(a or b)
 
@@ -40,7 +42,7 @@ class NotNode(Node):
     inVal = edges.BoolType(direction=edges.INPUT, source="in")
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self):
-        val = self.inVal()
+    def execute(self, context :ExecutionContext):
+        val = self.inVal(context)
 
         self.out.set(not val)

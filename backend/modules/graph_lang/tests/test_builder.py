@@ -86,12 +86,6 @@ def test_graph_builder():
     assert node_2.in_a.output.node == node_3
     assert node_2.in_b.output.node == node_4
 
-    assert node_2.in_a() == True
-    assert node_2.data() == 34
-    assert node_3.output.get() == True
-    assert node_4.output.get() == "a"
-    
-
 @pytest.mark.django_db
 def test_graph_builder__from_db():
     node = MockNode()

@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+
 import pytest
 from faker import Faker
 
@@ -15,6 +16,7 @@ from modules.graph_lang.framework.nodes import (
     OrNode,
     PriceOfNode,
 )
+from modules.graph_lang.framework.nodes.node import ExecutionContext
 from modules.graph_lang.tests.conftest_nodes import (
     NumberBasedOnTimeNode,
     PassNumberNode,
@@ -39,7 +41,9 @@ def test_and_node(in_a, in_b, expected):
     node.inA.set(in_a)
     node.inB.set(in_b)
 
-    assert node.out.get() == expected
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) == expected
 
 
 @pytest.mark.parametrize(
@@ -56,7 +60,9 @@ def test_or_node(in_a, in_b, expected):
     node.inA.set(in_a)
     node.inB.set(in_b)
 
-    assert node.out.get() == expected
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) == expected
 
 
 @pytest.mark.parametrize(
@@ -70,7 +76,9 @@ def test_not_node(in_val, expected):
     node = NotNode()
     node.inVal.set(in_val)
 
-    assert node.out.get() == expected
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) == expected
 
 
 @pytest.mark.parametrize(
@@ -87,7 +95,9 @@ def test_greater_lesser_node__greater(in_value, in_x, expected):
     node.inX.set(in_x)
     node.direction.set("greater")
 
-    assert node.out.get() == expected
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) == expected
 
 
 @pytest.mark.parametrize(
@@ -104,7 +114,9 @@ def test_greater_lesser_node_lesser(in_value, in_x, expected):
     node.inX.set(in_x)
     node.direction.set("less")
 
-    assert node.out.get() == expected
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) == expected
 
 
 @pytest.mark.parametrize(
@@ -122,7 +134,9 @@ def test_flow_if_node(if_value, then_executed, else_executed):
     node.inThen.connect(then_node.out)
     node.inElse.connect(else_node.out)
 
-    assert node.out.get() is None
+    context = ExecutionContext(None, {}, fake.date_time())
+
+    assert node.out.get(context) is None
     assert then_node.executed == then_executed
     assert else_node.executed == else_executed
 
@@ -137,21 +151,10 @@ def test_change_over_time_node():
 
     node.timespan.set(dt_2 - dt_1)
     node.in_.connect(number_node.out)
-    node.set_execution_time(dt_2)
 
-    assert node.out.get() == 10 - 3
+    context = ExecutionContext(None, {}, dt_2)
 
-
-def test_change_over_time__execution_time_not_given__raises_runtime_error():
-    node = ChangeOverTimeNode()
-    dt_1 = fake.date_time()
-    dt_2 = fake.date_time_between(start_date=dt_1)
-
-    node.timespan.set(dt_2 - dt_1)
-    node.in_.set(10)
-
-    with pytest.raises(RuntimeError):
-        node.out.get()
+    assert node.out.get(context) == 10 - 3
 
 
 def test_check_every_node():
@@ -159,23 +162,25 @@ def test_check_every_node():
     void_sensor_node = VoidSensorNode()
     node.in_.connect(void_sensor_node.out)
 
-    node.execute()
+    context = ExecutionContext(None, {}, fake.date_time())
+    node.execute(context)
 
     assert void_sensor_node.executed is True
 
 
 def test_buy_sell_amount_node():
-    action_set = GraphActionSet()
+    action_set = set()
     trigger_node = CheckEveryNode()
-    node = BuySellAmountNode(action_set)
+    node = BuySellAmountNode()
     node.action.set("buy")
     node.amount.set(25)
     node.ticker.set("AAPL")
     trigger_node.in_.connect(node.out)
 
-    trigger_node.execute()
+    context = ExecutionContext(None, action_set, fake.date_time())
+    trigger_node.execute(context)
 
-    assert action_set.get_actions() == {BuySellAction("buy", Decimal(25), "AAPL")}
+    assert action_set == {BuySellAction("buy", Decimal(25), "AAPL")}
 
 
 def test_price_of_node():
@@ -183,21 +188,12 @@ def test_price_of_node():
     price_provider = PriceProviderMock()
     price_provider.set("AAPL", dt, Decimal(10))
 
-    node = PriceOfNode(price_provider)
-    node.ticker.set("AAPL")
-    node.set_execution_time(dt)
-
-    assert node.out.get() == 10
-
-
-def test_price_of_node__execution_time_not_given__raises_runtime_error():
-    price_provider = PriceProviderMock()
-
-    node = PriceOfNode(price_provider)
+    node = PriceOfNode()
     node.ticker.set("AAPL")
 
-    with pytest.raises(RuntimeError):
-        node.out.get()
+    context = ExecutionContext(price_provider, {}, dt)
+
+    assert node.out.get(context) == 10
 
 
 def test_node__execution_time_gets_auto_propagated():
@@ -216,6 +212,6 @@ def test_node__execution_time_gets_auto_propagated():
     node_4.set_val(1, dt_1)
     node_4.set_val(2, dt_2)
 
-    node_1.set_execution_time(dt_2)
+    context = ExecutionContext(None, {}, dt_2)
 
-    assert node_1.out.get() == 2
+    assert node_1.out.get(context) == 2

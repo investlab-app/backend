@@ -1,5 +1,5 @@
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 # ruff: noqa: N815
 
@@ -13,9 +13,9 @@ class FlowIfNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    def execute(self):
-        if self.inIf():
-            self.inThen()
+    def execute(self, context :ExecutionContext):
+        if self.inIf(context):
+            self.inThen(context)
         else:
-            self.inElse()
+            self.inElse(context)
         self.out.set(None)

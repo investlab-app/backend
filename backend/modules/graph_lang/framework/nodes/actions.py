@@ -1,6 +1,6 @@
 from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.actions import BuySellAction, GraphActionSet
-from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
 class BuySellAmountNode(Node):
@@ -12,16 +12,12 @@ class BuySellAmountNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    action_set: GraphActionSet
-
-    def __init__(self, action_set: GraphActionSet):
-        super().__init__()
-        self.action_set = action_set
-
-    def execute(self):
+    def execute(self, context :ExecutionContext):
         action = BuySellAction(
-            action=self.action(), amount=self.amount(), ticker=self.ticker()
+            action=self.action(context), 
+            amount=self.amount(context), 
+            ticker=self.ticker(context)
         )
-        self.action_set.add_action(action)
+        context.effects.add(action)
 
         self.out.set(None)

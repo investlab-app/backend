@@ -20,14 +20,14 @@ class GraphBuilder:
 
             for field, value in node_data.fields.items():
                 parsed = type(node).get_edge_by_source_name(field).parse(value)
-                node.get_input_by_source_name(field).set(parsed)
+                node.get_io_by_source_name(field).set(parsed)
 
         for edge in validated_data.edges:
             node_a = nodes[edge.id_a]
             node_b = nodes[edge.id_b]
 
-            in_a = node_a.get_input_by_source_name(edge.handle_a)
-            in_b = node_b.get_input_by_source_name(edge.handle_b)
+            in_a = node_a.get_io_by_source_name(edge.handle_a)
+            in_b = node_b.get_io_by_source_name(edge.handle_b)
 
             if isinstance(in_a, NodeInput):
                 in_a.connect(in_b)
