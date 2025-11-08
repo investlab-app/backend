@@ -77,7 +77,7 @@ class EnumType(EdgeType):
 
 @dataclass
 class BoolType(EdgeType):
-    def validate_value(self, value :Any) -> bool:
+    def validate_value(self, value: Any) -> bool:
         if isinstance(value, bool):
             return True
 
@@ -89,31 +89,31 @@ class BoolType(EdgeType):
 
 @dataclass
 class TimespanType(EdgeType):
-    def validate_value(self, value :Any):
+    def validate_value(self, value: Any):
         if isinstance(value, timedelta):
             return True
 
         try:
-            interval, unit = value.split(' ')
-            assert unit in ['day', 'hour', 'week', 'month']
+            interval, unit = value.split(" ")
+            assert unit in ["day", "hour", "week", "month"]
             int(interval)
             return True
         except Exception as e:
             return False
 
-    def parse(self, value :str) -> timedelta:
+    def parse(self, value: str) -> timedelta:
         if isinstance(value, timedelta):
             return value
 
-        interval, unit = value.split(' ')
+        interval, unit = value.split(" ")
         interval = int(interval)
-        if unit == 'day':
+        if unit == "day":
             return timedelta(days=interval)
-        if unit == 'month':
-            return timedelta(days=30*interval)
-        if unit == 'week':
+        if unit == "month":
+            return timedelta(days=30 * interval)
+        if unit == "week":
             return timedelta(weeks=interval)
-        if unit == 'hour':
+        if unit == "hour":
             return timedelta(hours=interval)
 
 
@@ -128,8 +128,8 @@ class VoidType(EdgeType):
 
 @dataclass
 class InstrumentType(EdgeType):
-    def validate_value(self, value :str):
+    def validate_value(self, value: str):
         return Instrument.objects.filter(ticker__iexact=value).exists()
-    
+
     def parse(self, value):
         return value

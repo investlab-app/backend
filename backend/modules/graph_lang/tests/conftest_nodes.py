@@ -19,7 +19,7 @@ class NumberBasedOnTimeNode(Node):
     out = edges.NumberType(direction=edges.OUTPUT)
     _values = {}
 
-    def execute(self, context :ExecutionContext):
+    def execute(self, context: ExecutionContext):
         val = self._values[context.time_at]
         self.out.set(val)
 
@@ -39,7 +39,7 @@ class PassNumberNode(Node):
 class PriceProviderMock(Node):
     _prices = {}
 
-    def get(self, ticker: str, time_at: datetime) -> Decimal:
+    def get_price(self, ticker: str, time_at: datetime) -> Decimal:
         return self._prices[(ticker, time_at)]
 
     def set(self, ticker: str, time_at: datetime, price: Decimal):

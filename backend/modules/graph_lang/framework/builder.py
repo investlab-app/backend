@@ -6,8 +6,8 @@ from modules.graph_lang.framework.parser import GraphData
 
 
 class GraphBuilder:
-    def __init__(self, node_factory: NodeFactory):
-        self.factory = node_factory
+    def __init__(self, node_factory: NodeFactory = None):
+        self.factory = node_factory or NodeFactory()
 
     def build(self, validated_data: GraphData) -> Node:
         nodes: dict[str, Node] = {}
@@ -41,7 +41,7 @@ class GraphBuilder:
         try:
             graph = Graph.objects.get(id=graph_id)
         except:
-            raise ValueError('Specified graph does not exist')
+            raise ValueError("Specified graph does not exist")
 
         json_data = json.loads(graph.graph_data)
         graph_data = GraphData.model_validate(json_data)

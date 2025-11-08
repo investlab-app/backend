@@ -8,8 +8,7 @@ from modules.graph_lang.framework.nodes import NodeFactory
 
 
 class Validator:
-
-    def __init__(self, node_factory :NodeFactory = None):
+    def __init__(self, node_factory: NodeFactory = None):
         self._node_factory = node_factory or NodeFactory()
 
     # TODO: catch any unknown error, return unknown validation error
@@ -48,7 +47,7 @@ class Validator:
             if self._node_factory.type_exists(n.type):
                 n.type = self._node_factory.name_to_type(n.type)
             else:
-                n.type = ''
+                n.type = ""
 
     def _check_node_id_repeats(self, nodes: list[NodeData]):
         node_ids = set()

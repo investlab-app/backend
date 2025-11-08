@@ -39,6 +39,7 @@ class MockValidatorError:
     id: str
     msg: str = field(default="error", init=False)
 
+
 class MockScheduler:
     def __init__(self):
         self.events = []
@@ -70,6 +71,7 @@ class MockScheduler:
 
     def set_max_idle_datetime(self, datetime):
         self.max_idle_datetime = datetime
+
 
 class MockFactory:
     def __init__(self):

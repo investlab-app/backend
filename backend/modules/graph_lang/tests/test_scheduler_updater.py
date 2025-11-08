@@ -12,8 +12,6 @@ fake = faker.Faker()
 pytestmark = pytest.mark.django_db
 
 
-
-
 class TestSchedulerUpdater:
     @pytest.fixture(autouse=True)
     def setup(self, datetime_mock, sleep_mock):

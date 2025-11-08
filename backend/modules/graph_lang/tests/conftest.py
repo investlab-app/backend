@@ -12,22 +12,15 @@ pytestmark = pytest.mark.django_db
 
 
 def fake_graph(
-    id = None,
-    investor = None,
-    raw_graph_data = "",
-    graph_data = "",
-    *,
-    save = False
+    id=None, investor=None, raw_graph_data="", graph_data="", *, save=False
 ) -> Graph:
-
     investor = investor or create_fake_investor(save=save)
     id = id or fake.uuid4()
-    print(graph_data)
     graph = Graph(
         id=id,
-        investor = investor,
-        raw_graph_data = raw_graph_data,
-        graph_data = graph_data,
+        investor=investor,
+        raw_graph_data=raw_graph_data,
+        graph_data=graph_data,
     )
     if save:
         graph.save()

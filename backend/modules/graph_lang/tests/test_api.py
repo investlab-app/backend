@@ -29,58 +29,67 @@ def fake_graph(investor, *, save=False) -> Graph:
 
 pytestmark = pytest.mark.django_db
 
+
 class MockParserReturn(BaseModel):
-    some_data :str
+    some_data: str
+
 
 class TestGraphListCreate:
-
     @pytest.fixture(autouse=True)
     def setup(self, monkeypatch, user):
-        self.url = reverse('graph-list-create')
+        self.url = reverse("graph-list-create")
         self.investor = create_fake_investor(clerk_id=user.id, save=True)
-        self.other_investor = create_fake_investor(clerk_id='im_a_fake', save=True)
+        self.other_investor = create_fake_investor(clerk_id="im_a_fake", save=True)
         self.parser = MockParser()
         self.validator = MockValidator()
 
-        monkeypatch.setattr('modules.graph_lang.serializers.Parser', lambda: self.parser)
-        monkeypatch.setattr('modules.graph_lang.serializers.Validator', lambda: self.validator)
-
+        monkeypatch.setattr(
+            "modules.graph_lang.serializers.Parser", lambda: self.parser
+        )
+        monkeypatch.setattr(
+            "modules.graph_lang.serializers.Validator", lambda: self.validator
+        )
 
     def test_create__parser_fail(self, api_client_auth):
         self.parser.set_data(None)
 
-        response = api_client_auth.post(self.url, {'name': 'name', 'raw_graph_data': 'hehexd'}, format='json')
-        errors = response.data['non_field_errors']
+        response = api_client_auth.post(
+            self.url, {"name": "name", "raw_graph_data": "hehexd"}, format="json"
+        )
+        errors = response.data["non_field_errors"]
 
         assert response.status_code == 400
         assert len(errors) == 1
-        assert errors[0].code == 'parse_error'
+        assert errors[0].code == "parse_error"
 
     def test_create__validator_fail(self, api_client_auth):
-        graph_data = dumps({'graph_data': 'fdasf'})
-        parser_return = {'ooh a graph': 'hehexd'}
+        graph_data = dumps({"graph_data": "fdasf"})
+        parser_return = {"ooh a graph": "hehexd"}
         self.parser.set_data(parser_return)
-        self.validator.set_errors([
-            MockValidatorError(id='1'),
-            MockValidatorError(id='2')
-        ])
+        self.validator.set_errors(
+            [MockValidatorError(id="1"), MockValidatorError(id="2")]
+        )
 
-        response = api_client_auth.post(self.url, {'name': 'name', 'raw_graph_data': graph_data}, format='json')
-        errors = response.data['non_field_errors']
+        response = api_client_auth.post(
+            self.url, {"name": "name", "raw_graph_data": graph_data}, format="json"
+        )
+        errors = response.data["non_field_errors"]
 
         assert response.status_code == 400
-        assert loads(errors[0]) == {'id': '1', 'msg': 'error'}
-        assert loads(errors[1]) == {'id': '2', 'msg': 'error'}
+        assert loads(errors[0]) == {"id": "1", "msg": "error"}
+        assert loads(errors[1]) == {"id": "2", "msg": "error"}
         assert self.parser.called_with == graph_data
         assert self.validator.called_with == parser_return
 
     def test_create__success(self, api_client_auth):
-        graph_data = {'graph_data': 'fdasf'}
-        parser_return = MockParserReturn(some_data='hehexd')
+        graph_data = {"graph_data": "fdasf"}
+        parser_return = MockParserReturn(some_data="hehexd")
         self.parser.set_data(parser_return)
         self.validator.set_errors([])
 
-        response = api_client_auth.post(self.url, {'name': 'name','raw_graph_data': graph_data}, format='json')
+        response = api_client_auth.post(
+            self.url, {"name": "name", "raw_graph_data": graph_data}, format="json"
+        )
 
         assert response.status_code == 201
         assert len(Graph.objects.all()) == 1
@@ -89,23 +98,23 @@ class TestGraphListCreate:
         assert graph.raw_graph_data == graph_data
         assert MockParserReturn.model_validate(graph.graph_data) == parser_return
         assert graph.investor == self.investor
-        assert graph.name == 'name'
+        assert graph.name == "name"
 
     def test_get__success(self, api_client_auth):
         graph = fake_graph(self.investor, save=True)
 
-        url = reverse('graph-detail', args=[graph.id])
+        url = reverse("graph-detail", args=[graph.id])
         response = api_client_auth.get(url)
 
         result = response.data
         assert response.status_code == 200
-        assert result['raw_graph_data'] == graph.raw_graph_data
-        assert result['id'] == str(graph.id)
+        assert result["raw_graph_data"] == graph.raw_graph_data
+        assert result["id"] == str(graph.id)
 
     def test_get__invalid_investor__returns_404(self, api_client_auth):
         graph = fake_graph(self.other_investor, save=True)
 
-        url = reverse('graph-detail', args=[graph.id])
+        url = reverse("graph-detail", args=[graph.id])
         response = api_client_auth.get(url)
 
         assert response.status_code == 404
@@ -115,10 +124,9 @@ class TestGraphListCreate:
 
         response = api_client_auth.get(self.url)
 
-        result = response.data['results'][0]
-        assert result['raw_graph_data'] == graph.raw_graph_data
-        assert result['id'] == str(graph.id)
-
+        result = response.data["results"][0]
+        assert result["raw_graph_data"] == graph.raw_graph_data
+        assert result["id"] == str(graph.id)
 
     def test_list__ignores_other_investors(self, api_client_auth):
         [fake_graph(self.investor, save=True) for _ in range(3)]
@@ -126,19 +134,20 @@ class TestGraphListCreate:
 
         response = api_client_auth.get(self.url)
         assert response.status_code == 200
-        assert response.data['count'] == 3
-
+        assert response.data["count"] == 3
 
     def test_update__success(self, api_client_auth):
         graph = fake_graph(self.investor, save=True)
-        new_raw = {'updated': 'data'}
-        parser_return = MockParserReturn(some_data='aaa')
+        new_raw = {"updated": "data"}
+        parser_return = MockParserReturn(some_data="aaa")
 
         self.parser.set_data(parser_return)
         self.validator.set_errors([])
 
-        url = reverse('graph-detail', args=[graph.id])
-        response = api_client_auth.patch(url, {'raw_graph_data': new_raw}, format='json')
+        url = reverse("graph-detail", args=[graph.id])
+        response = api_client_auth.patch(
+            url, {"raw_graph_data": new_raw}, format="json"
+        )
 
         graph.refresh_from_db()
         assert response.status_code == 200
@@ -147,38 +156,44 @@ class TestGraphListCreate:
 
     def test_update__parser_fail(self, api_client_auth):
         graph = fake_graph(self.investor, save=True)
-        url = reverse('graph-detail', args=[graph.id])
+        url = reverse("graph-detail", args=[graph.id])
         self.parser.set_data(None)
 
-        response = api_client_auth.patch(url, {'raw_graph_data': 'invalid'}, format='json')
-        errors = response.data['non_field_errors']
+        response = api_client_auth.patch(
+            url, {"raw_graph_data": "invalid"}, format="json"
+        )
+        errors = response.data["non_field_errors"]
 
         assert response.status_code == 400
-        assert errors[0].code == 'parse_error'
+        assert errors[0].code == "parse_error"
 
     def test_update__validator_fail(self, api_client_auth):
         graph = fake_graph(self.investor, save=True)
-        url = reverse('graph-detail', args=[graph.id])
-        new_raw = dumps({'updated': 'data'})
-        parser_return = {'parsed': 'data'}
+        url = reverse("graph-detail", args=[graph.id])
+        new_raw = dumps({"updated": "data"})
+        parser_return = {"parsed": "data"}
         self.parser.set_data(parser_return)
-        self.validator.set_errors([MockValidatorError(id='10')])
+        self.validator.set_errors([MockValidatorError(id="10")])
 
-        response = api_client_auth.patch(url, {'raw_graph_data': new_raw}, format='json')
-        errors = response.data['non_field_errors']
+        response = api_client_auth.patch(
+            url, {"raw_graph_data": new_raw}, format="json"
+        )
+        errors = response.data["non_field_errors"]
 
         assert response.status_code == 400
-        assert loads(errors[0]) == {'id': '10', 'msg': 'error'}
+        assert loads(errors[0]) == {"id": "10", "msg": "error"}
 
     def test_update__forbidden_for_other_investor(self, api_client_auth):
         graph = fake_graph(self.other_investor, save=True)
-        url = reverse('graph-detail', args=[graph.id])
-        response = api_client_auth.patch(url, {'raw_graph_data': dumps({'x': 1})}, format='json')
+        url = reverse("graph-detail", args=[graph.id])
+        response = api_client_auth.patch(
+            url, {"raw_graph_data": dumps({"x": 1})}, format="json"
+        )
         assert response.status_code == 404
 
     def test_delete__success(self, api_client_auth):
         graph = fake_graph(self.investor, save=True)
-        url = reverse('graph-detail', args=[graph.id])
+        url = reverse("graph-detail", args=[graph.id])
 
         response = api_client_auth.delete(url)
 
@@ -187,7 +202,7 @@ class TestGraphListCreate:
 
     def test_delete__forbidden_for_other_investor(self, api_client_auth):
         graph = fake_graph(self.other_investor, save=True)
-        url = reverse('graph-detail', args=[graph.id])
+        url = reverse("graph-detail", args=[graph.id])
 
         response = api_client_auth.delete(url)
 

@@ -11,9 +11,6 @@ from modules.graph_lang.framework.parser import (
 )
 
 
-
-
-
 # TODO write test for minimal passing data
 class TestParser:
     @pytest.fixture(autouse=True)
@@ -41,7 +38,7 @@ class TestParser:
 
         result = self._parser.parse(json_data)
 
-        assert result == GraphData(nodes=[NodeData(id="1", type='A type', fields={})])
+        assert result == GraphData(nodes=[NodeData(id="1", type="A type", fields={})])
 
     def test_parse__replaces_unit_period_with_timespan(self):
         json_data = {
@@ -49,20 +46,16 @@ class TestParser:
                 {
                     "id": "1",
                     "type": "node_type",
-                    "data": {"settings": {
-                        "unit": "day",
-                        "interval": 4
-                    }},
+                    "data": {"settings": {"unit": "day", "interval": 4}},
                 },
             ],
         }
 
         result = self._parser.parse(json_data)
 
-        assert result == GraphData(nodes=[NodeData(id="1", type='node_type', fields={
-            "timespan": "4 day"
-
-        })])
+        assert result == GraphData(
+            nodes=[NodeData(id="1", type="node_type", fields={"timespan": "4 day"})]
+        )
 
     def test_parse__test_valid_data(self):
         json_data = {
@@ -99,11 +92,11 @@ class TestParser:
 
         assert result == GraphData(
             nodes=[
-                NodeData(id="1", type='node_type1', fields={}),
-                NodeData(id="2", type='node_type2', fields={"field1": "value"}),
+                NodeData(id="1", type="node_type1", fields={}),
+                NodeData(id="2", type="node_type2", fields={"field1": "value"}),
                 NodeData(
                     id="3",
-                    type='node_type3',
+                    type="node_type3",
                     fields={
                         "field1": "value1",
                         "field2": "value2",
@@ -111,5 +104,5 @@ class TestParser:
                     },
                 ),
             ],
-            edges=[EdgeData(id_a="14", handle_a="4chan", id_b= "1", handle_b="asdf")],
+            edges=[EdgeData(id_a="14", handle_a="4chan", id_b="1", handle_b="asdf")],
         )

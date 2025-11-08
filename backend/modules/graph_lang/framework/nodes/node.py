@@ -7,11 +7,13 @@ from modules.graph_lang.framework.actions import GraphActionSet
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
 
+
 @dataclass
 class ExecutionContext:
-    price_provider :Any 
-    effects :set 
-    time_at :datetime
+    price_provider: Any
+    effects: set
+    time_at: datetime
+
 
 class NodeOutput:
     node: "Node"
@@ -36,11 +38,11 @@ class NodeInput:
     validated_value: Any | None = None
     raw_value: Any | None = None
 
-    def __init__(self, node: "Node", og_edge :edges.EdgeType):
+    def __init__(self, node: "Node", og_edge: edges.EdgeType):
         self.node = node
         self.edge = og_edge
 
-    def __call__(self, context :ExecutionContext):
+    def __call__(self, context: ExecutionContext):
         if self.output is not None:
             return self.output.get(context)
         else:
@@ -57,6 +59,7 @@ class NodeInput:
 
     def set_raw_value(self, value):
         self.raw_value = value
+
 
 class NodeUtilsMixin:
     def get_first_output(self) -> NodeOutput:
@@ -92,13 +95,14 @@ class NodeUtilsMixin:
             (e for e in cls.get_all_edges() if e.source_name == source_name), None
         )
 
+
 class Node(NodeUtilsMixin):
     all_edges: list
     id: str | None
     TRIGGER = False
     TYPE_NAME = None
 
-    def __init__(self, inputs = {}):
+    def __init__(self, inputs={}):
         self._initialize_input_outputs()
         self._pass_data_to_inputs(inputs)
 
@@ -112,18 +116,18 @@ class Node(NodeUtilsMixin):
                 setattr(self, name, value)
 
     def _pass_data_to_inputs(self, inputs):
-        edges =  type(self).get_incoming_edges()
+        edges = type(self).get_incoming_edges()
         for name, value in inputs.items():
             edge = next((e for e in edges if e.source_name == name), None)
             if not edge:
                 continue
 
-            field :NodeInput = getattr(self, edge.field_name)
+            field: NodeInput = getattr(self, edge.field_name)
             if self._is_output_name_and_node_pair(value):
                 output_name = value[0]
-                node :Node = value[1]
+                node: Node = value[1]
                 output = node.get_io_by_source_name(output_name)
-                
+
                 field.connect(output)
             elif isinstance(value, Node):
                 field.connect(value.get_first_output())
@@ -131,9 +135,14 @@ class Node(NodeUtilsMixin):
                 field.set(value)
 
     def _is_output_name_and_node_pair(self, value):
-        return isinstance(value, tuple) and len(value) == 2 and isinstance(value[0], str) and isinstance(value[1], Node)
+        return (
+            isinstance(value, tuple)
+            and len(value) == 2
+            and isinstance(value[0], str)
+            and isinstance(value[1], Node)
+        )
 
-    def execute(self, context :"ExecutionContext"):
+    def execute(self, context: "ExecutionContext"):
         pass
 
     def calculate_needed_historical_prices(self):
@@ -144,8 +153,10 @@ class Node(NodeUtilsMixin):
 
             if edge.output:
                 child_range = edge.output.node.calculate_needed_historical_prices()
-                children_ranges = self._combine_price_ranges(children_ranges, child_range)
-        
+                children_ranges = self._combine_price_ranges(
+                    children_ranges, child_range
+                )
+
         self_prices = self._get_needed_prices()
         children_ranges = self._combine_price_ranges(children_ranges, self_prices)
         for key in children_ranges:
@@ -154,8 +165,8 @@ class Node(NodeUtilsMixin):
 
     def _combine_price_ranges(
         self,
-        d1 :dict[str, timedelta],
-        d2 :dict[str, timedelta],
+        d1: dict[str, timedelta],
+        d2: dict[str, timedelta],
     ):
         result = {}
         common_tickers = set(d1.keys()).intersection(set(d2.keys()))
@@ -172,7 +183,7 @@ class Node(NodeUtilsMixin):
                 result[ticker] = d2[ticker]
 
         return result
-    
+
     # Can be overridden
     def _get_working_timespan(self) -> timedelta:
         return timedelta()

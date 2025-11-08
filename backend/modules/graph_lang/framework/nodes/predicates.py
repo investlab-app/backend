@@ -5,7 +5,7 @@ from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
 class IsGreaterLesserNode(Node):
-    TYPE_NAME = 'isGreaterLesser'
+    TYPE_NAME = "isGreaterLesser"
 
     inValue = edges.NumberType(direction=edges.INPUT)
     inX = edges.NumberType(direction=edges.INPUT)
@@ -15,7 +15,7 @@ class IsGreaterLesserNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, context :ExecutionContext):
+    def execute(self, context: ExecutionContext):
         direction = self.direction(context)
         value = self.inValue(context)
         x = self.inX(context)

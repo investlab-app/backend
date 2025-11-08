@@ -30,7 +30,7 @@ class Parser:
         try:
             return self._try_parse(json)
         except Exception as e:
-            logger.warning(f'Failed to parse graph. Exception: %s', e)
+            logger.warning(f"Failed to parse graph. Exception: %s", e)
             return None
 
     def _try_parse(self, json: dict) -> GraphData:
@@ -41,10 +41,10 @@ class Parser:
             data = {}
             for key, value in node_json["data"]["settings"].items():
                 data[key] = str(value)
-            if 'unit' in data and 'interval' in data:
-                unit = data.pop('unit')
-                period = data.pop('interval')
-                data['timespan'] = f'{period} {unit}'
+            if "unit" in data and "interval" in data:
+                unit = data.pop("unit")
+                period = data.pop("interval")
+                data["timespan"] = f"{period} {unit}"
             nodes.append(
                 NodeData(
                     id=node_json["id"],
@@ -53,7 +53,7 @@ class Parser:
                 )
             )
 
-        if 'edges' in json:
+        if "edges" in json:
             for edge_json in json["edges"]:
                 edges.append(
                     EdgeData(

@@ -13,6 +13,7 @@ class MockTrigger(Node):
 
     inVal = edges.VoidType(direction=edges.INPUT, source="input")
 
+
 class MockNode(Node):
     TRIGGER = True
 
@@ -43,13 +44,12 @@ class MockNodeFactory:
     def from_type(self, type: type[Node]) -> Node:
         return self.types[type]
 
-    def name_to_type(self, name :str) -> type:
+    def name_to_type(self, name: str) -> type:
         return self.names[name]
 
-    def set_node(self, type_name :str,  type: type[Node], node: Node):
+    def set_node(self, type_name: str, type: type[Node], node: Node):
         self.names[type_name] = type
         self.types[type] = node
-
 
 
 @pytest.mark.django_db
@@ -60,17 +60,17 @@ def test_graph_builder():
     node_4 = MockEnumOutput()
 
     factory = MockNodeFactory()
-    factory.set_node('MockTrigger', MockTrigger, node_1)
-    factory.set_node('MockSplitNode', MockSplitNode, node_2)
-    factory.set_node('MockBoolOutput', MockBoolOutput, node_3)
-    factory.set_node('MockEnumOutput', MockEnumOutput, node_4)
+    factory.set_node("MockTrigger", MockTrigger, node_1)
+    factory.set_node("MockSplitNode", MockSplitNode, node_2)
+    factory.set_node("MockBoolOutput", MockBoolOutput, node_3)
+    factory.set_node("MockEnumOutput", MockEnumOutput, node_4)
 
     data = GraphData(
         nodes=[
-            NodeData(id="1", type='MockTrigger'),
-            NodeData(id="2", type='MockSplitNode', fields={"data": "34"}),
-            NodeData(id="3", type='MockBoolOutput', fields={"output": "True"}),
-            NodeData(id="4", type='MockEnumOutput', fields={"hehexd": "a"}),
+            NodeData(id="1", type="MockTrigger"),
+            NodeData(id="2", type="MockSplitNode", fields={"data": "34"}),
+            NodeData(id="3", type="MockBoolOutput", fields={"output": "True"}),
+            NodeData(id="4", type="MockEnumOutput", fields={"hehexd": "a"}),
         ],
         edges=[
             EdgeData(id_a="1", handle_a="input", id_b="2", handle_b="output"),
@@ -86,17 +86,15 @@ def test_graph_builder():
     assert node_2.in_a.output.node == node_3
     assert node_2.in_b.output.node == node_4
 
+
 @pytest.mark.django_db
 def test_graph_builder__from_db():
     node = MockNode()
-    data = GraphData(nodes=[NodeData(id='4', type='MockNode')])
+    data = GraphData(nodes=[NodeData(id="4", type="MockNode")])
     factory = MockNodeFactory()
-    factory.set_node('MockNode', MockNode, node)
+    factory.set_node("MockNode", MockNode, node)
 
-    graph = fake_graph(
-        graph_data=json.dumps(data.model_dump()),
-        save=True
-    )
+    graph = fake_graph(graph_data=json.dumps(data.model_dump()), save=True)
 
     result = GraphBuilder(factory).get_from_db(graph.id)
 
@@ -108,5 +106,4 @@ def test_graph_builder__from_db__graph_not_in_db__raises_value_error():
     factory = MockNodeFactory()
 
     with pytest.raises(ValueError):
-        GraphBuilder(factory).get_from_db('doesn`t exist')
-    
+        GraphBuilder(factory).get_from_db("doesn`t exist")

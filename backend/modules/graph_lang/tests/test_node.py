@@ -56,7 +56,6 @@ class TimeAwareNode(Node):
         super().__init__()
         self._timespan = timespan
 
-
     def _get_working_timespan(self):
         return self._timespan
 
@@ -102,9 +101,7 @@ class TestNode:
 
         data = time_aware_node.calculate_needed_historical_prices()
 
-        data == {
-            "AAPL": timedelta(days=4)
-        }
+        data == {"AAPL": timedelta(days=4)}
 
     def test__integration(self):
         # nodes = TimeAwareNode(
@@ -135,7 +132,4 @@ class TestNode:
 
         data = root.calculate_needed_historical_prices()
 
-        data == {
-            "AAPL": timedelta(days=1),
-            "MSQ": timedelta(days=3)
-        }
+        data == {"AAPL": timedelta(days=1), "MSQ": timedelta(days=3)}

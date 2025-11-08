@@ -1,203 +1,149 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import MagicMock
-
+from unittest.mock import MagicMock, call
+from modules.prices.schemas import PriceBar, PriceDailySummary
 import pytest
 from faker import Faker
 
-from modules.graph_lang.framework.price_provider import (
-    FetcherData,
-    PrefetchRange,
-    PrefetchStrategy,
-    PriceFetcher,
-    PricePoint,
-    PriceProvider,
-    PriceSelectStrategy,
-)
+from modules.graph_lang.framework.price_provider import PriceProvider
+
 
 fake = Faker()
 
 
-class DummyFetcher:
-    def fetch(self, fetcher_data):
-        # Return dummy data for each ticker
-        result = {}
-        for fd in fetcher_data:
-            result[fd.ticker] = [
-                PricePoint(price=Decimal("100.0"), date_at=fd.min_time),
-                PricePoint(price=Decimal("110.0"), date_at=fd.max_time),
-            ]
-        return result
-
-
-class DummyPrefetchStrategy:
-    def select(self, prices, date_at):
-        # Return the first price for simplicity
-        return prices[0].price
-
-
-class DummySelectStrategy:
-    def select(self, prices, time_at):
-        # Return the price closest to time_at
-        return min(
-            prices, key=lambda p: abs((p.date_at - time_at).total_seconds())
-        ).price
-
-
 class TestPriceProvider:
-    def setup_method(self):
-        self.fetcher = DummyFetcher()
-        self.prefetch_strategy = DummyPrefetchStrategy()
-        self.select_strategy = DummySelectStrategy()
-        self.provider = PriceProvider(
-            self.fetcher, self.prefetch_strategy, self.select_strategy
-        )
-        self.provider.price_ranges = [
-            MagicMock(
-                ticker="AAPL",
-                min_time=datetime(2020, 1, 1),
-                max_time=datetime(2020, 1, 2),
-                interval="1d",
-            ),
-            MagicMock(
-                ticker="GOOG",
-                min_time=datetime(2020, 1, 1),
-                max_time=datetime(2020, 1, 2),
-                interval="1d",
-            ),
-        ]
+    SAMPLES = 100
 
-    def test_prefetch_data(self):
-        self.provider.prefetch_data()
-        assert "AAPL" in self.provider.data
-        assert "GOOG" in self.provider.data
-        assert isinstance(self.provider.data["AAPL"][0], PricePoint)
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.repo = MagicMock()
+        self.provider = PriceProvider(self.repo, samples=self.SAMPLES)
 
-    def test_lazy_prefetch_single_ticker_new(self):
-        rng = PrefetchRange(datetime(2020, 1, 1), datetime(2020, 1, 2))
-        self.provider.lazy_prefetch_single_ticker("AAPL", rng)
-        assert "AAPL" in self.provider.data_to_prefetch
-        assert self.provider.data_to_prefetch["AAPL"] == rng
+    @pytest.fixture()
+    def dt(self):
+        return fake.date_time()
 
-    def test_lazy_prefetch_single_ticker_extend(self):
-        rng1 = PrefetchRange(datetime(2020, 1, 2), datetime(2020, 1, 3))
-        rng2 = PrefetchRange(datetime(2020, 1, 1), datetime(2020, 1, 4))
-        self.provider.lazy_prefetch_single_ticker("AAPL", rng1)
-        self.provider.lazy_prefetch_single_ticker("AAPL", rng2)
-        result = self.provider.data_to_prefetch["AAPL"]
-        assert result.min_time == datetime(2020, 1, 1)
-        assert result.max_time == datetime(2020, 1, 4)
-
-    def test_get_price_success(self):
-        self.provider.prefetch_data()
-        price = self.provider.get_price("AAPL", datetime(2020, 1, 1))
-        assert price == Decimal("100.0")
-
-    def test_get_price_no_prefetch(self):
-        with pytest.raises(ValueError):
-            self.provider.get_price("AAPL", datetime(2020, 1, 1))
-
-    def test_get_price_ticker_not_prefetched(self):
-        self.provider.prefetch_data()
-        with pytest.raises(ValueError):
-            self.provider.get_price("MSFT", datetime(2020, 1, 1))
-
-
-class TestPriceSelectStrategy:
-    def setup_method(self):
-        self.strategy = PriceSelectStrategy()
-
-    @pytest.mark.parametrize(
-        "prices, time_at, expected",
-        [
-            # Closest is at base
-            (
-                [
-                    PricePoint(
-                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 50, 0)
-                    ),
-                    PricePoint(
-                        price=Decimal("110.0"), date_at=datetime(2020, 1, 1, 12, 0, 0)
-                    ),
-                    PricePoint(
-                        price=Decimal("120.0"), date_at=datetime(2020, 1, 1, 12, 10, 0)
-                    ),
-                ],
-                datetime(2020, 1, 1, 12, 0, 0),
-                Decimal("110.0"),
-            ),
-            # Closest is +2 minutes
-            (
-                [
-                    PricePoint(
-                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 55, 0)
-                    ),
-                    PricePoint(
-                        price=Decimal("200.0"), date_at=datetime(2020, 1, 1, 12, 2, 0)
-                    ),
-                ],
-                datetime(2020, 1, 1, 12, 0, 0),
-                Decimal("200.0"),
-            ),
-            # Equal distance, picks first
-            (
-                [
-                    PricePoint(
-                        price=Decimal("100.0"), date_at=datetime(2020, 1, 1, 11, 55, 0)
-                    ),
-                    PricePoint(
-                        price=Decimal("200.0"), date_at=datetime(2020, 1, 1, 12, 5, 0)
-                    ),
-                ],
-                datetime(2020, 1, 1, 12, 0, 0),
-                Decimal("100.0"),
-            ),
-        ],
-    )
-    def test_select_parametrized(self, prices, time_at, expected):
-        result = self.strategy.select(prices, time_at)
-        assert result == expected
-
-    def test_select_empty_list(self):
-        with pytest.raises(ValueError):
-            self.strategy.select([], datetime(2020, 1, 1))
-
-
-class TestPrefetchStrategy:
-    @pytest.mark.parametrize(
-        "samples,min_time,max_time,expected_unit,int_multiplier",
-        [
-            (5, datetime(2020, 1, 1), datetime(2020, 1, 6), "d", 1),
-            (10, datetime(2020, 1, 1), datetime(2020, 1, 2), "h", 2),
-            (2, datetime(2020, 1, 1, 0, 0), datetime(2020, 1, 1, 0, 10), "m", 5),
-            (3, datetime(2020, 1, 1, 0, 0), datetime(2020, 1, 1, 0, 0, 30), "s", 10),
-        ],
-    )
-    def test_calculate_intervals_parametrized(
-        self, samples, min_time, max_time, expected_unit, int_multiplier
-    ):
-        strategy = PrefetchStrategy(samples=samples)
-        prices_to_prefetch = [("AAPL", max_time, min_time)]
-        result = strategy.calculate(prices_to_prefetch)
-        assert result == [
-            FetcherData(
-                ticker="AAPL",
-                min_time=min_time,
-                max_time=max_time,
-                interval=expected_unit,
-                interval_multiplier=int_multiplier,
+    def set_price_repository_response(self, price_bars):
+        if isinstance(price_bars, list):
+            self.repo.get_ohlc.side_effect = (
+                lambda ticker, date_from, date_to, interval, interval_multiplier: price_bars
             )
-        ]
+        else:
+            self.repo.get_ohlc.side_effect = (
+                lambda ticker, date_from, date_to, interval, interval_multiplier: price_bars[ticker]
+            )
 
-    def test_calculate_multiple_tickers(self):
-        strategy = PrefetchStrategy(samples=3)
-        min_time = datetime(2021, 1, 1)
-        max_time = datetime(2021, 1, 4)
-        prices_to_prefetch = [
-            ("AAPL", max_time, min_time),
-            ("GOOG", max_time + timedelta(days=1), min_time),
-        ]
-        result = strategy.calculate(prices_to_prefetch)
-        assert len(result) == 2
-        tickers = {fd.ticker for fd in result}
-        assert tickers == {"AAPL", "GOOG"}
+    def set_price_repository_snapshot_response(self, price_daily_summary):
+        self.repo.get_price.side_effect = lambda ticker: price_daily_summary
+
+    def price_bar(self, dt, price):
+        return PriceBar(
+            dt,
+            open=0,
+            high=0,
+            low=0,
+            close=price,
+            volume=0,
+        )
+
+    def price_daily_summary(self, ticker, price):
+        return PriceDailySummary(
+            ticker=ticker,
+            current_price=Decimal(price),
+            daily_summary=None,
+            todays_change=0,
+            todays_change_percent=0,
+            last_updated=fake.date_time(),
+        )
+
+    def test__prefetch_data__no_data__nothing_happens(self, dt):
+        self.provider.prefetch_data({}, dt)
+
+    def test__no_prefetch__get_price_raises_value_error(self, dt):
+        with pytest.raises(ValueError):
+            self.provider.get_price("AAPL", dt)
+
+    def test__prefetch_single_ticker__get_other_ticker__raises(self, dt):
+        self.provider.prefetch_data({"AAPL": timedelta()}, dt)
+
+        with pytest.raises(ValueError):
+            self.provider.get_price("HEHE", dt)
+
+    @pytest.mark.parametrize("timespan", [timedelta(days=2), timedelta(days=-2)])
+    def test__prefetch_single_ticker__price_outside_time_range__raises(
+        self, timespan, dt
+    ):
+        self.provider.prefetch_data({"AAPL": timedelta(days=1)}, dt)
+
+        with pytest.raises(ValueError):
+            self.provider.get_price("AAPL", dt + timespan)
+
+    def test__prefetch_single_ticker__returns_price_from_price_repo(self, dt):
+        self.set_price_repository_response([self.price_bar(dt, 100)])
+
+        self.provider.prefetch_data({"AAPL": timedelta()}, dt)
+
+        assert self.provider.get_price("AAPL", dt) == 100
+
+    def test__single_ticker__repo_returns_inexact_datetime__price_gets_returned(
+        self, dt
+    ):
+        self.set_price_repository_response([self.price_bar(dt - timedelta(days=1), 100)])
+
+        self.provider.prefetch_data({"AAPL": timedelta(days=1)}, dt)
+
+        assert self.provider.get_price("AAPL", dt) == 100
+
+    def test__get_price__repo_returns_two_datetimes__closest_price_is_returned(
+        self, dt
+    ):
+        self.set_price_repository_response(
+            [
+                self.price_bar(dt - timedelta(days=1), 100),
+                self.price_bar(dt - timedelta(days=5), 200),
+            ]
+        )
+
+        self.provider.prefetch_data({"AAPL": timedelta(days=7)}, dt)
+
+        assert self.provider.get_price("AAPL", dt) == 100
+        assert self.provider.get_price("AAPL", dt - timedelta(days=1)) == 100
+        assert self.provider.get_price("AAPL", dt - timedelta(days=4)) == 200
+        assert self.provider.get_price("AAPL", dt - timedelta(days=7)) == 200
+
+    def test__get_price__two_tickers__returns_correct_price_for_ticker(self, dt):
+        self.set_price_repository_response(
+            {"AAPL": [self.price_bar(dt, 100)], "GOGL": [self.price_bar(dt, 200)]}
+        )
+
+        self.provider.prefetch_data({"AAPL": timedelta(), "GOGL": timedelta()}, dt)
+
+        assert self.provider.get_price("AAPL", dt) == 100
+        assert self.provider.get_price("GOGL", dt) == 200
+
+    def test__repository_function_gets_called_with_correct_args(self, dt):
+        self.set_price_repository_response(
+            {"AAPL": [self.price_bar(dt, 100)], "GOGL": [self.price_bar(dt, 200)]}
+        )
+
+        self.provider.prefetch_data(
+            {"AAPL": timedelta(seconds=100), "GOGL": timedelta(seconds=250)}, dt
+        )
+
+        self.repo.get_ohlc.assert_has_calls(
+            [
+                call("AAPL", dt - timedelta(minutes=15, seconds=100), dt - timedelta(minutes=15), 'second', 1),
+                call("GOGL", dt - timedelta(minutes=15, seconds=250), dt - timedelta(minutes=15), 'second', 2),
+            ]
+        )
+
+    def test__get_prices_returned_empty_list__price_is_from_snapshot(self, dt):
+        self.set_price_repository_response([])
+        self.set_price_repository_snapshot_response(
+            self.price_daily_summary("AAPL", 100)
+        )
+
+        self.provider.prefetch_data({"AAPL": timedelta()}, dt)
+
+        assert self.provider.get_price("AAPL", dt) == 100
+        self.repo.get_price.assert_called_once_with("AAPL")

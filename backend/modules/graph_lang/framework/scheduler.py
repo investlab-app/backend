@@ -58,7 +58,9 @@ class Scheduler:
 
     def step(self):
         for graph in self.graphs:
-            should_execute_at = self.last_run_time[graph.id] + graph.trigger.timespan(None)
+            should_execute_at = self.last_run_time[graph.id] + graph.trigger.timespan(
+                None
+            )
             if datetime.now() >= should_execute_at:
                 self.runner.run(graph.id)
                 self.last_run_time[graph.id] = datetime.now()

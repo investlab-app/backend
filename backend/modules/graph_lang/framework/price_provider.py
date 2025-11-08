@@ -1,6 +1,9 @@
+from modules.prices.schemas import PriceBar
+from math import ceil, floor
+from modules.prices.repositories import PolygonPricesRepository
 from collections import defaultdict
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 
 
@@ -25,106 +28,86 @@ class PricePoint:
     date_at: datetime
 
 
+# TODO 
+# There's a problem with prefetching data for different date_at than now
+# There is no good way to get the price of an instrument given a datetime
+# OHLC bar can return empty list and ticker snapshot only works for 'now'
+# Possible solution would be to try bigger and bigger OHLC bars, until one
+# of them returns non-empty list. For now it won't work well when date_at != now()
 class PriceProvider:
-    data: dict[str, list[PricePoint]]
-    data_to_prefetch: dict[str, PrefetchRange]
+    fetched_ranges: dict[str, (datetime, datetime)]
+    prices: dict[str, list[Decimal, datetime]]
 
     def __init__(
         self,
-        fetcher: "PriceFetcher",
-        prefetch_strategy: "PrefetchStrategy",
-        select_strategy: "PriceSelectStrategy",
+        repository :PolygonPricesRepository = None,
+        samples=100,
     ):
-        self.fetcher = fetcher
-        self.prefetch_strategy = prefetch_strategy
-        self.price_select_strategy = select_strategy
-        self.data = None
-        self.data_to_prefetch = {}
+        self.fetched_ranges = {}
+        self.prices = {}
+        self.repository = repository or PolygonPricesRepository()
+        self.samples = samples
 
-    def prefetch_data(self):
-        self.data = self.fetcher.fetch(self.price_ranges)
+    def prefetch_data(self, data: dict[str, timedelta], date_at: datetime):
+        for ticker, timespan in data.items():
+            bars = self.repository.get_ohlc(
+                ticker,
+                date_at - timespan - timedelta(minutes=15),
+                date_at - timedelta(minutes=15),
+                'second',
+                max(floor(timespan.total_seconds()  / self.samples), 1) # TODO add test for max
+            )
+            data = []
+            for bar in bars:
+                data.append((bar.close, bar.timestamp))
+            if not data:
+                snapshot = self.repository.get_price(ticker)
+                data.append((snapshot.current_price, date_at))
 
-    def lazy_prefetch_single_ticker(self, ticker: str, data_range: PrefetchRange):
-        if ticker in self.data_to_prefetch:
-            current_range = self.data_to_prefetch[ticker]
-            current_range.min_time = min(current_range.min_time, data_range.min_time)
-            current_range.max_time = max(current_range.max_time, data_range.max_time)
-        else:
-            self.data_to_prefetch[ticker] = data_range
+            self.prices[ticker] = data
+            self.fetched_ranges[ticker] = (date_at - timespan, date_at)
 
     def get_price(self, ticker: str, date_at: datetime):
-        if self.data is None:
-            raise ValueError("Prefetch was never called")
-        if ticker not in self.data:
-            raise ValueError(f"{ticker} was never prefetched")
-        return self.prefetch_strategy.select(self.data[ticker], date_at)
+        if not ticker in self.fetched_ranges:
+            raise ValueError(f"Prefetch was not called for {ticker}")
 
-    def clear(self):
-        raise NotImplementedError()
-
-
-class PrefetchStrategy:
-    def __init__(self, samples=100):
-        self.samples = samples
-
-    def calculate(
-        self, prices_to_prefetch: list[(str, datetime, datetime)]
-    ) -> list[FetcherData]:
-        fetcher_data = []
-        for ticker, max_time, min_time in prices_to_prefetch:
-            total_seconds = int((max_time - min_time).total_seconds())
-            if self.samples > 1:
-                interval_seconds = max(1, total_seconds // (self.samples))
-            else:
-                interval_seconds = total_seconds
-
-            value, unit = self._best_interval_unit(interval_seconds)
-
-            fetcher_data.append(
-                FetcherData(
-                    ticker=ticker,
-                    min_time=min_time,
-                    max_time=max_time,
-                    interval=unit,
-                    interval_multiplier=int(value),
-                )
+        date_range = self.fetched_ranges[ticker]
+        if date_at < date_range[0] or date_at > date_range[1]:
+            raise ValueError(
+                f"Price of {ticker} accessed outside of prefetched timerange"
             )
-        return fetcher_data
 
-    def _best_interval_unit(self, seconds):
-        if seconds < 60:
-            return seconds, "s"
-        if seconds < 60 * 60:
-            return seconds / 60, "m"
-        if seconds < 60 * 60 * 24:
-            return seconds / (60 * 60), "h"
-        else:
-            return seconds / (60 * 60 * 24), "d"
+        return self._select_closest_price(ticker, date_at)
 
+    def _select_closest_price(self, ticker: str, date_at: datetime):
+        prices = self.prices[ticker]
 
-class PriceSelectStrategy:
-    def select(self, prices: list[PricePoint], time_at: datetime):
-        return min(
-            prices, key=lambda p: abs((p.date_at - time_at).total_seconds())
-        ).price
+        closest_price = None
+        smallest_seconds_diff = None
+        for price, timestamp in prices:
+            seconds_diff = abs((date_at - timestamp).total_seconds())
+            if smallest_seconds_diff is None or seconds_diff < smallest_seconds_diff:
+                closest_price = price
+                smallest_seconds_diff = seconds_diff
+
+        return closest_price
 
 
-class PriceFetcher:
-    def __init__(self, price_repository, samples=100):
-        self.price_repository = price_repository
-        self.samples = samples
+class MockPriceProvider:
+    def __init__(self):
+        self.prices = {}
 
-    def fetch(self, fetcher_data: list[FetcherData]) -> dict[str, list[PricePoint]]:
-        result = defaultdict(list)
-        for fd in fetcher_data:
-            bars = self.price_repository.get_ohlc(
-                fd.ticker,
-                fd.max_time,
-                fd.min_time,
-                interval=fd.interval,
-                interval_multiplier=fd.interval_multiplier,
-            )
-            for bar in bars:
-                price = PricePoint(bar.close, bar.timestamp)
-                result[fd.ticker].append(price)
-        return result
+    def prefetch_data(self, data: dict[str, timedelta], date_at: datetime):
+        pass
+
+    def set_prices(self, ticker: str, price_points: list[tuple[datetime, Decimal]]):
+        self.prices[ticker] = sorted(price_points, key=lambda x: x[0])
+
+    def get_price(self, ticker: str, date_at: datetime) -> Decimal | None:
+        if ticker not in self.prices:
+            return None
+        points = self.prices[ticker]
+        before = [p for d, p in points if d <= date_at]
+        if not before:
+            raise ValueError(f"You did not specify price for this date {date_at}")
+        return before[-1]

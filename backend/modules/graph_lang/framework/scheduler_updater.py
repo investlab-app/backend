@@ -4,6 +4,7 @@ from django.dispatch import receiver
 from time import sleep
 from modules.graph_lang.models import Graph
 
+
 class SchedulerUpdater:
     stop = False
 
@@ -16,13 +17,12 @@ class SchedulerUpdater:
         post_delete.connect(self.handle_graph_delete, sender=Graph)
 
     def get_all_graphs(self) -> list[Graph]:
-        ids = Graph.objects.values_list('id', flat=True)
+        ids = Graph.objects.values_list("id", flat=True)
         for id in ids:
             self.scheduler.add_graph(id)
 
     def run(self):
         while not self.stop:
-
             if self._pre_step_callback:
                 self._pre_step_callback()
 
@@ -40,7 +40,7 @@ class SchedulerUpdater:
         else:
             self.scheduler.update_graph(instance.id)
 
-    def handle_graph_delete(self, instance,  **kwargs):
+    def handle_graph_delete(self, instance, **kwargs):
         self.scheduler.remove_graph(instance.id)
 
     def set_post_step_callback(self, callback):

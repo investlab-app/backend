@@ -5,7 +5,7 @@ from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
 class FlowIfNode(Node):
-    TYPE_NAME = 'flowIF'
+    TYPE_NAME = "flowIF"
 
     inIf = edges.BoolType(direction=edges.INPUT)
     inThen = edges.VoidType(direction=edges.INPUT)
@@ -13,7 +13,7 @@ class FlowIfNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    def execute(self, context :ExecutionContext):
+    def execute(self, context: ExecutionContext):
         if self.inIf(context):
             self.inThen(context)
         else:
