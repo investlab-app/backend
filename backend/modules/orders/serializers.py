@@ -11,7 +11,7 @@ from modules.orders.services.order_services import MarketOrderService
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
     ticker = serializers.CharField(write_only=True)
     volume = serializers.DecimalField(
-        min_value=0, max_digits=15, decimal_places=2, write_only=True
+        min_value=0, max_digits=15, decimal_places=5, write_only=True
     )
     is_buy = serializers.BooleanField(write_only=True)
 
@@ -41,9 +41,14 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
 
 class MarketOrderSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
     class Meta:
         model = MarketOrder
-        fields = ["volume", "volume_processed", "is_buy"]
+        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
+
+    def get_detail_type(self, obj) -> str:
+        return "market"
 
 
 class OrderSerializer(serializers.ModelSerializer):

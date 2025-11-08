@@ -5,6 +5,9 @@ from modules.investors.views import (
     CurrentInvestorView,
     DepositMoneyView,
     InvestorDetailView,
+    NotificationHistoryView,
+    WatchedTickersListView,
+    WatchedTickersTickerView,
 )
 
 app_name = "investors"
@@ -15,6 +18,21 @@ urlpatterns = [
         "me/account-value/",
         AccountValueOverTimeView.as_view(),
         name="account-value-over-time",
+    ),
+    path(
+        "me/notifications/",
+        NotificationHistoryView.as_view(),
+        name="notification-history",
+    ),
+    path(
+        "me/watched-tickers/",
+        WatchedTickersListView.as_view(),
+        name="watched-tickers",
+    ),
+    path(
+        "me/watched-tickers/<str:instrument_id>/",
+        WatchedTickersTickerView.as_view(),
+        name="watched-ticker",
     ),
     path("deposit/", DepositMoneyView.as_view(), name="deposit"),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),

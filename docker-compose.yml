@@ -1,4 +1,5 @@
 x-backend-common: &backend-common
+  image: investlab-backend:latest
   build:
     context: ./backend
   env_file: .env
@@ -17,7 +18,7 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - ./.postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
       test:
         ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
@@ -82,11 +83,6 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
-    healthcheck:
-      test: ["CMD", "/bin/true"]
-      interval: 10s
-      timeout: 10s
-      retries: 3
     ports:
       - "8000:8000"
     profiles:
