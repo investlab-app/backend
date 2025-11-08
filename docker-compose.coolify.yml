@@ -9,9 +9,10 @@ services:
       - POSTGRES_PORT=${POSTGRES_PORT:-5432}
     restart: unless-stopped
     volumes:
-      - .postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: [ "CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}" ]
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -30,15 +31,19 @@ services:
       - SECRET_KEY=${SECRET_KEY}
       - ALLOWED_HOSTS=${ALLOWED_HOSTS:-"*"}
       - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS}
-      - CLERK_JWKS_URL=${CLERK_JWKS_URL}
+      - CLERK_JWT_KEY=${CLERK_JWT_KEY}
       - CLERK_SECRET_KEY=${CLERK_SECRET_KEY}
       - CLERK_ISSUER=${CLERK_ISSUER}
+      - POLYGON_SECRET_KEY=${POLYGON_SECRET_KEY}
+      - ALPACA_PUBLIC_KEY=${ALPACA_PUBLIC_KEY}
+      - ALPACA_SECRET_KEY=${ALPACA_SECRET_KEY}
 
     restart: unless-stopped
     depends_on:
       - postgres
     volumes:
       - ./backend:/backend
+      - /backend/.venv
     networks:
       - app_network
 

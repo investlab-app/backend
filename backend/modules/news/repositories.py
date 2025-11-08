@@ -1,0 +1,45 @@
+from collections.abc import Iterator
+
+from polygon import RESTClient as PolygonClient
+from polygon.exceptions import BadResponse
+from polygon.rest.models.tickers import TickerNews
+
+from config.clients import polygon_client
+
+
+class PolygonNewsRepository:
+    def __init__(self, client: PolygonClient | None = None):
+        self.polygon_client = client or polygon_client
+
+    def list_news(
+        self,
+        ticker: str | None = None,
+        published_utc: str | None = None,
+        published_utc_lt: str | None = None,
+        published_utc_lte: str | None = None,
+        published_utc_gt: str | None = None,
+        published_utc_gte: str | None = None,
+        sort: str | None = None,
+        order: str | None = None,
+        news_per_page: int = 30,
+        **kwargs,
+    ) -> Iterator[TickerNews] | None:
+        """List tickers from Polygon API.
+        - default `sort` is by published_utc
+        - default `order` is desc
+        """
+        try:
+            return self.polygon_client.list_ticker_news(
+                ticker=ticker.upper() if ticker else None,
+                published_utc=published_utc,
+                published_utc_lt=published_utc_lt,
+                published_utc_lte=published_utc_lte,
+                published_utc_gt=published_utc_gt,
+                published_utc_gte=published_utc_gte,
+                sort=sort,
+                order=order,
+                limit=news_per_page,  # Max news per one request
+                **kwargs,
+            )
+        except BadResponse:
+            return None

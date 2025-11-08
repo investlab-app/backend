@@ -1,159 +1,44 @@
 import logging
-import random
-from datetime import date, timedelta
 
-from django.db.models import Q
+from django.db.models.expressions import OuterRef, Subquery
+from django.db.models.functions.datetime import TruncDate
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
-from rest_framework.pagination import PageNumberPagination
-from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from modules.authentication.clerk_auth import ClerkAuthentication
-from modules.investors.models import Investor
+from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.investors.serializers import (
-    AccountValueOverTimeSerializer,
-    AssetAllocationSerializer,
-    CurrentAccountValueSerializer,
-    InvestorCreateSerializer,
-    InvestorListQueryParams,
+    AccountValueSnapshotDailySerializer,
+    AssetSerializer,
+    DepositMoneySerializer,
     InvestorSerializer,
-    InvestorStatsSerializer,
-    InvestorUpdateSerializer,
-    OwnedSharesSerializer,
+    LanguageUpdateSerializer,
 )
 
 logger = logging.getLogger(__name__)
 
 
-class InvestorPagination(PageNumberPagination):
-    page_size = 10
-    page_size_query_param = "page_size"
-    max_page_size = 100
-
-
-class InvestorListCreateView(generics.ListCreateAPIView):
-    """
-    List all investors or create a new investor.
-    """
-
-    queryset = Investor.objects.select_related("user").prefetch_related(
-        "watching_instruments"
-    )
+class InvestorDetailView(generics.RetrieveUpdateAPIView):
+    queryset = Investor.objects.all()
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-    pagination_class = InvestorPagination
-
-    def get_serializer_class(self):
-        if self.request.method == "POST":
-            return InvestorCreateSerializer
-        return InvestorSerializer
-
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        search = self.request.query_params.get("search", "")
-
-        if search:
-            queryset = queryset.filter(
-                Q(user__email__icontains=search)
-                | Q(user__first_name__icontains=search)
-                | Q(user__last_name__icontains=search)
-            )
-
-        return queryset.order_by("-id")
-
-    @extend_schema(
-        parameters=[InvestorListQueryParams],
-        responses={200: InvestorSerializer(many=True)},
-        summary="List investors",
-        description="Get a paginated list of investors with optional search filtering.",
-    )
-    def get(self, request: Request) -> Response:
-        return super().get(request)
-
-    @extend_schema(
-        request=InvestorCreateSerializer,
-        responses={201: InvestorSerializer},
-        summary="Create investor",
-        description="Create a new investor associated with a user.",
-    )
-    def post(self, request: Request) -> Response:
-        return super().post(request)
+    http_method_names = ["get", "patch"]
+    lookup_field = "clerk_id"
 
 
-class InvestorDetailView(generics.RetrieveUpdateDestroyAPIView):
-    """
-    Retrieve, update, or delete an investor.
-    """
-
-    queryset = Investor.objects.select_related("user").prefetch_related(
-        "watching_instruments"
-    )
-    serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_serializer_class(self):
-        if self.request.method in ["PUT", "PATCH"]:
-            return InvestorUpdateSerializer
-        return InvestorSerializer
-
-    @extend_schema(
-        responses={200: InvestorSerializer},
-        summary="Get investor",
-        description="Retrieve a specific investor by ID.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
-
-    @extend_schema(
-        request=InvestorUpdateSerializer,
-        responses={200: InvestorSerializer},
-        summary="Update investor",
-        description="Update an investor's information.",
-    )
-    def put(self, request: Request, *args, **kwargs) -> Response:
-        return super().put(request, *args, **kwargs)
-
-    @extend_schema(
-        request=InvestorUpdateSerializer,
-        responses={200: InvestorSerializer},
-        summary="Partially update investor",
-        description="Partially update an investor's information.",
-    )
-    def patch(self, request: Request, *args, **kwargs) -> Response:
-        return super().patch(request, *args, **kwargs)
-
-    @extend_schema(
-        responses={204: None},
-        summary="Delete investor",
-        description="Delete an investor.",
-    )
-    def delete(self, request: Request, *args, **kwargs) -> Response:
-        return super().delete(request, *args, **kwargs)
-
-
-class CurrentInvestorView(generics.RetrieveAPIView):
+class CurrentInvestorView(generics.RetrieveUpdateAPIView):
     """
     Get the current authenticated user's investor profile.
     """
 
     serializer_class = InvestorSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
+    queryset = Investor.objects.all()
+    http_method_names = ["get", "patch"]
 
     def get_object(self):
-        try:
-            return (
-                Investor.objects.select_related("user")
-                .prefetch_related("watching_instruments")
-                .get(user=self.request.user)
-            )
-        except Investor.DoesNotExist:
-            # Create investor if it doesn't exist
-            return Investor.objects.create(user=self.request.user)
+        """Retrieve the current authenticated user's investor profile."""
+        investor, _ = Investor.objects.get_or_create(clerk_id=self.request.user.id)
+        return investor
 
     @extend_schema(
         responses={200: InvestorSerializer},
@@ -163,101 +48,57 @@ class CurrentInvestorView(generics.RetrieveAPIView):
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
 
-
-class InvestorStatsView(generics.RetrieveAPIView):
-    """
-    Get investor statistics for the current authenticated user.
-    """
-
-    serializer_class = InvestorStatsSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
-
-    def retrieve(self, request, *args, **kwargs):
-        # Generate random stats data
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
-
-        # Generate realistic-looking stats
-        invested = round(random.uniform(1000, 50000), 2)
-        total_return = round(random.uniform(-invested * 0.3, invested * 0.5), 2)
-        todays_return = round(random.uniform(-invested * 0.05, invested * 0.05), 2)
-        total_value = invested + total_return
-
-        stats_data = {
-            "todays_return": todays_return,
-            "total_return": total_return,
-            "invested": invested,
-            "total_value": total_value,
-        }
-
-        serializer = self.get_serializer(stats_data)
-        return Response(serializer.data)
-
     @extend_schema(
-        responses={200: InvestorStatsSerializer},
-        summary="Get investor stats",
-        description="Get investor statistics for the currently authenticated user.",
+        request=InvestorSerializer,
+        responses={200: InvestorSerializer},
+        summary="Update current investor",
+        description="Update the investor profile for the currently authenticated user.",
     )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
+    def patch(self, request: Request, *args, **kwargs) -> Response:
+        return super().patch(request, *args, **kwargs)
 
 
-class AccountValueOverTimeView(generics.RetrieveAPIView):
+class AssetListView(generics.ListAPIView):
+    serializer_class = AssetSerializer
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return Asset.objects.filter(investor=investor)
+
+
+class AccountValueOverTimeView(generics.ListAPIView):
     """
     Get account value over time data for the current authenticated user.
     """
 
-    serializer_class = AccountValueOverTimeSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
+    serializer_class = AccountValueSnapshotDailySerializer
+    pagination_class = None
 
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+    def get_queryset(self):
+        """
+        The earliest snapshot for each day is selected to represent that day's value.
+        """
+        investor_id = self.request.user.id
 
-    def retrieve(self, request, *args, **kwargs):
-        # Generate random account value data over time
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
-
-        # Generate 120 data points (approximately 4 months of weekly data)
-        data_points = []
-        today = date.today()
-        base_value = random.uniform(100, 200)
-
-        for i in range(120):
-            # Go back in time by weeks
-            data_date = today - timedelta(weeks=i)
-
-            # Add some realistic variation to the base value
-            variation = random.uniform(-0.1, 0.1)  # ±10% variation
-            value = base_value * (1 + variation)
-
-            data_points.append(
-                {"date": data_date.isoformat(), "value": round(value, 2)}
+        earliest_snapshots = (
+            AccountValueSnapshot.objects.filter(
+                investor__clerk_id=investor_id,
+                timestamp__date=OuterRef("day"),
             )
+            .order_by("timestamp")
+            .values("id")[:1]
+        )
 
-        # Reverse to get chronological order (oldest first)
-        data_points.reverse()
+        qs = (
+            AccountValueSnapshot.objects.annotate(day=TruncDate("timestamp"))
+            .filter(id__in=Subquery(earliest_snapshots))
+            .order_by("-timestamp")
+        )
 
-        response_data = {"data": data_points}
-
-        serializer = self.get_serializer(response_data)
-        return Response(serializer.data)
+        return qs
 
     @extend_schema(
-        responses={200: AccountValueOverTimeSerializer},
+        responses={200: AccountValueSnapshotDailySerializer(many=True)},
         summary="Get account value over time",
         description=(
             "Get account value over time data for the currently authenticated user."
@@ -267,215 +108,41 @@ class AccountValueOverTimeView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
 
-class CurrentAccountValueView(generics.RetrieveAPIView):
-    """
-    Get the current account value for the authenticated user.
-    """
+class LanguageUpdateView(generics.CreateAPIView):
+    serializer_class = LanguageUpdateSerializer
 
-    serializer_class = CurrentAccountValueSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
 
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+        language = serializer.validated_data["language"]
 
-    def retrieve(self, request, *args, **kwargs):
-        # Generate random account value for today, keeping it consistent with
-        # the AccountValueOverTimeView endpoint.
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
+        user_clerk_id = request.user.id
 
-        # This calculation mimics the first (most recent) value generated
-        # in the AccountValueOverTimeView.
-        base_value = random.uniform(100, 200)
-        variation = random.uniform(-0.1, 0.1)  # First variation
-        value = base_value * (1 + variation)
-
-        current_value = {"value": round(value, 2)}
-
-        serializer = self.get_serializer(current_value)
-        return Response(serializer.data)
-
-    @extend_schema(
-        responses={200: CurrentAccountValueSerializer},
-        summary="Get current account value",
-        description="Get the current account value for the authenticated user.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
-
-
-class AssetAllocationView(generics.RetrieveAPIView):
-    """
-    Get asset allocation data for the current authenticated user.
-    """
-
-    serializer_class = AssetAllocationSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
-
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
-
-    def retrieve(self, request, *args, **kwargs):
-        # Using user ID as seed for consistent data per user
-        random.seed(hash(self.request.user.id))
-
-        # Generate realistic-looking stats
-        invested = round(random.uniform(20000, 75000), 2)
-        total_return_this_year = round(
-            random.uniform(-invested * 0.1, invested * 0.15), 2
-        )
-        total_value = invested + total_return_this_year
-
-        # Generate allocations
-        allocations = []
-        remaining_percentage = 1.0
-
-        # Stocks
-        stocks_percentage = round(random.uniform(0.6, 0.8), 4)
-        remaining_percentage -= stocks_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Stocks",
-                "value": round(total_value * stocks_percentage, 2),
-                "percentage": round(stocks_percentage * 100, 2),
-            }
+        investor, _ = Investor.objects.update_or_create(
+            clerk_id=user_clerk_id, defaults={"language": language}
         )
 
-        # Bonds
-        bonds_percentage = round(random.uniform(0.1, remaining_percentage * 0.9), 4)
-        remaining_percentage -= bonds_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Bonds",
-                "value": round(total_value * bonds_percentage, 2),
-                "percentage": round(bonds_percentage * 100, 2),
-            }
-        )
-
-        # Unallocated
-        unallocated_percentage = remaining_percentage
-        allocations.append(
-            {
-                "asset_class_display_name": "Unallocated",
-                "value": round(total_value * unallocated_percentage, 2),
-                "percentage": round(unallocated_percentage * 100, 2),
-            }
-        )
-
-        # Recalculate total value from parts to avoid rounding errors
-        calculated_total_value = sum(item["value"] for item in allocations)
-
-        response_data = {
-            "total_value": calculated_total_value,
-            "total_return_this_year": total_return_this_year,
-            "allocations": allocations,
-        }
-
-        serializer = self.get_serializer(response_data)
-        return Response(serializer.data)
-
-    @extend_schema(
-        responses={200: AssetAllocationSerializer},
-        summary="Get asset allocation",
-        description="Get asset allocation data for the currently authenticated user.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
+        response_serializer = self.get_serializer({"language": investor.language})
+        return Response(response_serializer.data, status=200)
 
 
-class OwnedSharesView(generics.RetrieveAPIView):
-    """
-    Get owned shares data for the current authenticated user.
-    """
+class DepositMoneyView(generics.GenericAPIView):
+    serializer_class = DepositMoneySerializer
 
-    serializer_class = OwnedSharesSerializer
-    authentication_classes = [ClerkAuthentication]
-    permission_classes = [IsAuthenticated]
+    def post(self, request: Request, *args, **kwargs) -> Response:
+        serializer = self.get_serializer(data=request.data)
+        if not serializer.is_valid():
+            return Response(serializer.errors, status=400)
 
-    def get_object(self):
-        # Ensure investor exists for the current user
-        try:
-            return Investor.objects.get(user=self.request.user)
-        except Investor.DoesNotExist:
-            return Investor.objects.create(user=self.request.user)
+        amount = serializer.validated_data["amount"]
 
-    def retrieve(self, request, *args, **kwargs):
-        random.seed(hash(self.request.user.id))
+        user_clerk_id = request.user.id
+        investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
+        investor.balance += amount
+        investor.save()
 
-        owned_shares_data = [
-            {
-                "name": "Apple Inc.",
-                "symbol": "AAPL",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(150, 250), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Tesla, Inc.",
-                "symbol": "TSLA",
-                "volume": round(random.uniform(1, 10), 5),
-                "value": round(random.uniform(200, 300), 2),
-                "profit": round(random.uniform(-10, 10), 2),
-            },
-            {
-                "name": "Amazon.com, Inc.",
-                "symbol": "AMZN",
-                "volume": round(random.uniform(0.1, 2), 5),
-                "value": round(random.uniform(100, 200), 2),
-                "profit": round(random.uniform(-5, 5), 2),
-            },
-            {
-                "name": "Microsoft Corp.",
-                "symbol": "MSFT",
-                "volume": round(random.uniform(1, 5), 5),
-                "value": round(random.uniform(300, 450), 2),
-                "profit": round(random.uniform(-2, 2), 2),
-            },
-            {
-                "name": "NVIDIA Corp.",
-                "symbol": "NVDA",
-                "volume": round(random.uniform(0.5, 3), 5),
-                "value": round(random.uniform(800, 1000), 2),
-                "profit": round(random.uniform(-15, 15), 2),
-            },
-            {
-                "name": "Alphabet Inc.",
-                "symbol": "GOOGL",
-                "volume": round(random.uniform(1, 2), 5),
-                "value": round(random.uniform(130, 180), 2),
-                "profit": round(random.uniform(5, 20), 2),
-            },
-        ]
+        logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
-        # for each share, recalculate profit_percentage from value and profit
-        for share in owned_shares_data:
-            purchase_price = share["value"] - share["profit"]
-            if purchase_price != 0:
-                share["profit_percentage"] = round(
-                    (share["profit"] / purchase_price) * 100, 2
-                )
-            else:
-                share["profit_percentage"] = 0
-
-        response_data = {"owned_shares": owned_shares_data}
-
-        serializer = self.get_serializer(response_data)
-        return Response(serializer.data)
-
-    @extend_schema(
-        responses={200: OwnedSharesSerializer},
-        summary="Get owned shares",
-        description="Get owned shares data for the currently authenticated user.",
-    )
-    def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
+        return Response({"status": "success", "amount": str(amount)}, status=200)

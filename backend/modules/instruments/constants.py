@@ -2,14 +2,14 @@ from django.db import models
 from django.utils.translation import gettext_lazy as _
 
 
-class InstrumentTypeEnum(models.TextChoices):
-    CRYPTO = "CRYPTO", _("Crypto")
-    COMPANY = "COMPANY", _("Company")
-    ETF = "ETF", _("ETF")
-    INDEX = "INDEX", _("Index")
+class LocaleChoices(models.TextChoices):
+    US = "us", _("United States")
+    GLOBAL = "global", _("Global")
 
 
-class FiatCurrencyEnum(models.TextChoices):
-    USD = "USD", _("US Dollar")
-    EUR = "EUR", _("Euro")
-    GBP = "GBP", _("British Pound")
+class MarketChoices(models.TextChoices):
+    STOCKS = "stocks", _("Stocks")
+    CRYPTO = "crypto", _("Crypto")
+    FX = "fx", _("Foreign Exchange")
+    OTC = "otc", _("Over-the-Counter")
+    INDICES = "indices", _("Indices")

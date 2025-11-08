@@ -25,15 +25,23 @@ jobs:
       - name: Make .env file
         run: cp .env.ci .env
       - name: Run containers
-        run: docker compose up --build -d --wait
+        run: docker compose --profile ci up --build -d --wait
       - name: Run lint checks
-        run: make lint
+        run: make lint-check
       - name: Run format checks
         run: make format-check
       - name: Run type checks
-        run: make typecheck
+        run: make type-check
       - name: Run tests
         run: make test
+      - name: Regenerate schema
+        run: make schema-gen
+      - name: Check schema changes
+        run: |
+          if ! git diff --exit-code backend/schema.yml; then
+            echo "Schema has changed; please commit updated schema."
+            exit 1
+          fi
   publish:
     if: github.event_name == 'push' && github.ref == 'refs/heads/develop'
     needs: test

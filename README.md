@@ -38,12 +38,12 @@ cp .env.example .env  # Create .env file from example
 
 4. Run migrations:
 ```bash
-python manage.py migrate
+uv run manage.py migrate
 ```
 
 5. Start the development server:
 ```bash
-python manage.py runserver
+uv run manage.py runserver
 ```
 
 ## Running with Docker
@@ -65,6 +65,7 @@ make typecheck         # Run mypy type checking
 make test              # Run pytest
 make bash              # Open a bash shell in the container
 make pip <command>     # Run pip commands in the container
+make schema-gen        # Regenerate backend/schema.yml OpenAPI spec
 ```
 
 ## Code Quality

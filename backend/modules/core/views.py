@@ -1,4 +1,10 @@
+from alpaca.data import (
+    StockHistoricalDataClient,
+)
+from alpaca.data.requests import StockLatestBarRequest
+from django.conf import settings
 from drf_spectacular.utils import OpenApiResponse, extend_schema
+from polygon import RESTClient
 from rest_framework import permissions, serializers
 from rest_framework.generics import GenericAPIView
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -19,7 +25,7 @@ class AuthTestResponseSerializer(serializers.Serializer):
     """Serializer for authentication test response"""
 
     message = serializers.CharField(help_text="Authentication success message")
-    user_email = serializers.EmailField(help_text="Email of the authenticated user")
+    user_role = serializers.CharField(help_text="Role of the authenticated user")
     user_id = serializers.IntegerField(help_text="ID of the authenticated user")
 
 
@@ -92,7 +98,7 @@ class AuthTestView(GenericAPIView):
         return Response(
             {
                 "message": "Authenticated successfully!",
-                "user_email": user.email,
+                "user_role": user.role,
                 "user_id": user.id,
             },
         )
@@ -114,3 +120,49 @@ class UnauthTestView(GenericAPIView):
     )
     def get(self, _):
         return Response({"OK": "OK"})
+
+
+class PolygonTestView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = SimpleResponseSerializer
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                response=SimpleResponseSerializer,
+                description="Last trade result from Polygon",
+            )
+        },
+        summary="Fetch last trade from Polygon.io",
+        description="test polygon.",
+    )
+    def get(self, _):
+        client = RESTClient(api_key=settings.POLYGON_SECRET_KEY)
+        resp = client.get_previous_close_agg(
+            "AAPL",
+            adjusted=True,
+        )
+        return Response(str(resp))
+
+
+class AlpacaTestView(GenericAPIView):
+    permission_classes = [permissions.AllowAny]
+    serializer_class = SimpleResponseSerializer
+
+    @extend_schema(
+        responses={
+            200: OpenApiResponse(
+                response=SimpleResponseSerializer,
+                description="Last trade result from Alpaca",
+            )
+        },
+        summary="Fetch last trade from Alpaca",
+        description="test alpaca.",
+    )
+    def get(self, _):
+        client = StockHistoricalDataClient(
+            settings.ALPACA_PUBLIC_KEY, settings.ALPACA_SECRET_KEY
+        )
+        request = StockLatestBarRequest(symbol_or_symbols="AAPL")
+        response = client.get_stock_latest_bar(request_params=request)
+        return Response(str(response))

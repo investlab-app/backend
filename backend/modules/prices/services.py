@@ -1,221 +1,249 @@
 import asyncio
-import threading
-import uuid
-from datetime import datetime
-from decimal import Decimal
-from typing import TypedDict
+import logging
+from typing import Any
 
-import yfinance
+from asgiref.sync import sync_to_async
+from channels.layers import get_channel_layer
+from django.db.models import Q
 
-from config.logging import get_logger
-from config.utils import parse_time_interval
-from modules.prices.exceptions import InvalidTimeIntervalException
-from modules.prices.repositories import YfinanceRepository
-from modules.prices.schemas import (
-    Client,
-    ClientId,
-    HandlerFn,
-    InstrumentPriceSchema,
-    TickerId,
+from modules.notifications.services import (
+    EmailPayload,
+    NotificationService,
+    PushPayload,
+    WebSocketPayload,
 )
+from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.models import PriceAlert
 
-logger = get_logger(__name__)
-
-
-class PriceHistoryWithStats(TypedDict):
-    data: list[InstrumentPriceSchema]
-    min_price: Decimal
-    max_price: Decimal
+logger = logging.getLogger(__name__)
 
 
-class PricesService:
-    def __init__(self, repository: YfinanceRepository):
-        self._repository = repository
+class PriceAlertHandler:
+    def __init__(self, notification_service: NotificationService | None = None):
+        self.notification_service = notification_service or NotificationService()
 
-    def get_instrument_price_history(
+    async def handle(
         self,
-        instrument: str,
-        start_date: datetime,
-        end_date: datetime,
-        interval: str,
-    ) -> PriceHistoryWithStats:
-        """
-        Retrieves historical price data for a given instrument.
-
-        Retrieves price data with min and max price over the specified range.
-
-        Args:
-            instrument (str): The ticker symbol of the instrument (e.g., "AAPL").
-            start_date (datetime): The starting datetime for the price data range.
-            end_date (datetime): The ending datetime for the price data range.
-            interval (str): The desired data interval (e.g., "1d", "1h").
-
-        Returns:
-            PriceRangeWithStats: dict with 'data' - list[InstrumentPriceSchema],
-                'min_price', and 'max_price'
-
-        Raises:
-            ValidationError: If the start_date is after the end_date.
-            APIException: If an error occurs while fetching data from the repository.
-        """
-        if start_date > end_date:
-            raise InvalidTimeIntervalException(
-                "Invalid date order, end date cannot preceed start date.",
-            )
-        data = self._repository.get_instrument_price_history(
-            instrument,
-            start_date,
-            end_date,
-            parse_time_interval(interval.lower()),
-        )
-        logger.debug("Got data: %s", data)
-        min_price = min(d.low for d in data)
-        max_price = max(d.high for d in data)
-
-        return PriceHistoryWithStats(
-            data=data,
-            min_price=min_price,
-            max_price=max_price,
-        )
-
-
-class LivePricesService:
-    def __init__(self) -> None:
-        self._clients: dict[ClientId, Client] = {}
-        self._tickers: dict[TickerId, list[ClientId]] = {}
-        self._loop: asyncio.AbstractEventLoop | None = None
-        self._task: asyncio.Task | None = None
-        self._lock = threading.Lock()
-
-    def _restart_task(self):
-        if not self._loop:
-            logger.debug("Creating new event loop")
-            self._loop = asyncio.new_event_loop()
-            prices_thread = threading.Thread(target=self._loop.run_forever, daemon=True)
-            prices_thread.start()
-
-        def _create_task():
-            if self._task and not self._task.done():
-                logger.debug("Cancelling existing task")
-                self._task.cancel()
-
-            logger.debug("Creating new task")
-            self._task = self._loop.create_task(self._fetch_loop())
-
-        # Schedule the task creation in the event loop thread
-        self._loop.call_soon_threadsafe(_create_task)
-
-    async def _fetch_loop(self):
-        logger.debug("Starting fetch loop")
-
-        try:
-            async with yfinance.AsyncWebSocket() as ws:
-                tickers_to_subscribe = list(self._tickers.keys())
-                logger.debug("Subscribing to instruments: %s", tickers_to_subscribe)
-                await ws.subscribe(tickers_to_subscribe)
-                await ws.listen(self.message_handler)
-        except Exception as e:
-            logger.error("Error in fetch loop: %s", e)
-
-    def message_handler(self, prices):
-        # logger.debug("Received message: %s", prices)
-
-        logger.debug("clients: %s", self._clients)
-
-        handlers = [
-            handler
-            for client in self._clients.values()
-            if (handler := client.handler)
-            and client.tickers
-            and prices["id"] in client.tickers
-        ]
-
-        for handler in handlers:
-            handler(prices)
-
-    def update(
-        self,
-        client_id: uuid.UUID,
-        tickers: set[str],
+        prices: dict[str, Any],
     ) -> None:
-        logger.debug("Updating client %s with symbols: %s", client_id, tickers)
+        conditions = Q()
 
-        client = self._clients.get(client_id)
+        for ticker, price_info in prices.items():
+            current_price = price_info.get("close")
+            if current_price is None:
+                continue
 
-        if not client:
-            logger.debug("Client %s not found, not updating", client_id)
+            ticker_conditions = Q(
+                instrument__ticker=ticker,
+                threshold_type="above",
+                threshold_value__lte=current_price,
+            ) | Q(
+                instrument__ticker=ticker,
+                threshold_type="below",
+                threshold_value__gte=current_price,
+            )
+
+            conditions |= ticker_conditions
+
+        if not conditions.children:
             return
 
-        client_old_tickers = client.tickers
-
-        self._clients[client_id].tickers = tickers
-
-        client_added_tickers = tickers - client_old_tickers
-        client_removed_tickers = client_old_tickers - tickers
-
-        old_tickers = set(self._tickers.keys())
-
-        for ticker in client_added_tickers:
-            self._tickers.setdefault(ticker.upper(), []).append(client_id)
-
-        for ticker in client_removed_tickers:
-            if ticker in self._tickers:
-                self._tickers[ticker].remove(client_id)
-                if not self._tickers[ticker]:
-                    del self._tickers[ticker]
-
-        new_tickers = set(self._tickers.keys())
-
-        logger.debug(
-            "Old tickers: %s, New tickers: %s",
-            old_tickers,
-            new_tickers,
+        query = PriceAlert.objects.filter(
+            conditions,
+            notification_config__is_active=True,
+        ).select_related(
+            "instrument",
+            "investor",
+            "notification_config",
         )
 
-        if old_tickers != new_tickers:
-            logger.debug(
-                "Tickers changed, restarting task: old=%s, new=%s",
-                old_tickers,
-                new_tickers,
-            )
-            self._restart_task()
+        notifications = await sync_to_async(list)(query)
 
-    def add_client(
+        # concurrency limit
+        semaphore = asyncio.Semaphore(10)
+
+        async def process_notification(notification):
+            async with semaphore:
+                language = notification.investor.language
+                await self.send_notifications(notification, prices, language)
+                await sync_to_async(notification.delete)()
+
+        tasks = [
+            asyncio.create_task(process_notification(notification))
+            for notification in notifications
+        ]
+        await asyncio.gather(*tasks)
+
+    async def send_notifications(
         self,
-        client_id: ClientId,
-        tickers: set[TickerId],
-        handler: HandlerFn | None = None,
-    ):
-        logger.debug("Adding client %s", client_id)
-        if client_id not in self._clients:
-            self._clients[client_id] = Client(
-                tickers=tickers,
-                handler=handler,
+        price_alert: PriceAlert,
+        prices: dict[str, Any],
+        language: str,
+    ) -> None:
+        try:
+            price_info = prices[price_alert.instrument.ticker]
+            current_price = price_info["close"]
+
+            if price_alert.notification_config.is_email:
+                email_payload = self.get_email_payload(
+                    language,
+                    price_alert.instrument.ticker,
+                    current_price,
+                    price_alert,
+                )
+                await self.notification_service.send_email_notification(
+                    price_alert.investor,
+                    email_payload,
+                )
+
+            if price_alert.notification_config.is_push:
+                push_payload = self.get_push_payload(
+                    language,
+                    price_alert.instrument.ticker,
+                    current_price,
+                    price_alert,
+                )
+                await self.notification_service.send_push_notifications(
+                    price_alert.investor,
+                    push_payload,
+                )
+
+            if price_alert.notification_config.is_websocket:
+                websocket_payload = self.get_websocket_payload(
+                    language,
+                    price_alert.instrument.ticker,
+                    current_price,
+                    price_alert,
+                )
+                await self.notification_service.send_websocket_notifications(
+                    price_alert.investor,
+                    websocket_payload,
+                )
+        except Exception as e:
+            logger.error("Error handling notification %s: %s", price_alert.id, e)
+
+    def get_email_payload(
+        self,
+        language: str,
+        ticker: str,
+        current_price: float,
+        notification: PriceAlert,
+    ) -> EmailPayload:
+        if language == "pl":
+            threshold_type = (
+                "powyżej" if notification.threshold_type == "above" else "poniżej"
             )
-            logger.info("Added new client %s", client_id)
-        else:
-            logger.warning("Client %s already exists", client_id)
-
-        logger.info("CLIENTS: %s", self._clients)
-
-    def drop_client(self, client_id: uuid.UUID) -> None:
-        logger.debug("Dropping client %s", client_id)
-        old_tickers = set(self._tickers.keys())
-        if client_id in self._clients:
-            for ticker in self._clients[client_id].tickers:
-                self._tickers[ticker].remove(client_id)
-                if not self._tickers[ticker]:
-                    del self._tickers[ticker]
-            del self._clients[client_id]
-        else:
-            logger.warning("Client %s not found", client_id)
-
-        if old_tickers != set(self._tickers.keys()):
-            logger.debug(
-                "Tickers changed, restarting task: old=%s, new=%s",
-                old_tickers,
-                set(self._tickers.keys()),
+            return EmailPayload(
+                subject="Alert cenowy",
+                body=(
+                    f"Twój alert dla {ticker}. "
+                    f"został wyzwolony. Cena jest teraz "
+                    f"{threshold_type} {notification.threshold_value}. "
+                    f"Aktualna cena: {current_price}"
+                ),
             )
-            self._restart_task()
+        return EmailPayload(
+            subject="Price Alert",
+            body=(
+                f"Your alert for {ticker}. The price is now "
+                f"{notification.threshold_type} {notification.threshold_value}. "
+                f"Current price: {current_price}"
+            ),
+        )
 
-        logger.info("CLIENTS: %s", self._clients)
+    def get_push_payload(
+        self,
+        language: str,
+        ticker: str,
+        current_price: float,
+        notification: PriceAlert,
+    ) -> PushPayload:
+        if language == "pl":
+            threshold_type = (
+                "powyżej" if notification.threshold_type == "above" else "poniżej"
+            )
+            return PushPayload(
+                title="Alert cenowy",
+                body=(
+                    f"Twój alert dla {ticker} "
+                    f"został wyzwolony. Cena jest teraz "
+                    f"{threshold_type} {notification.threshold_value}. "
+                    f"Aktualna cena: {current_price}"
+                ),
+            )
+        return PushPayload(
+            title="Price Alert",
+            body=(
+                f"Your alert for {ticker} "
+                f"has been triggered. The price is now "
+                f"{notification.threshold_type} {notification.threshold_value}. "
+                f"Current price: {current_price}"
+            ),
+        )
+
+    def get_websocket_payload(
+        self,
+        language: str,
+        ticker: str,
+        current_price: float,
+        notification: PriceAlert,
+    ) -> WebSocketPayload:
+        if language == "pl":
+            threshold_type = (
+                "powyżej" if notification.threshold_type == "above" else "poniżej"
+            )
+            return WebSocketPayload(
+                message={
+                    "type": "price_alert",
+                    "title": "Alert cenowy",
+                    "body": (
+                        f"Twój alert dla {ticker} "
+                        f"został wyzwolony. Cena jest teraz "
+                        f"{threshold_type} {notification.threshold_value}. "
+                        f"Aktualna cena: {current_price}"
+                    ),
+                }
+            )
+        return WebSocketPayload(
+            message={
+                "type": "price_alert",
+                "title": "Price Alert",
+                "body": (
+                    f"Your alert for {ticker} "
+                    f"has been triggered. The price is now "
+                    f"{notification.threshold_type} {notification.threshold_value}. "
+                    f"Current price: {current_price}"
+                ),
+            }
+        )
+
+
+class PriceNotificationService:
+    def __init__(self, price_alert_handler: PriceAlertHandler | None = None):
+        self.handler = price_alert_handler or PriceAlertHandler()
+
+    async def listen_prices(self):
+        layer = get_channel_layer()
+        handler = self.handler
+
+        channel_name = await layer.new_channel()
+        await layer.group_add(PRICES_CHANNEL_LAYER, channel_name)
+        logger.info("notify_prices worker joined group %s", PRICES_CHANNEL_LAYER)
+
+        try:
+            while True:
+                try:
+                    event = await layer.receive(channel_name)
+                    data = event.get("data")
+
+                    if not data:
+                        continue
+
+                    await handler.handle(prices=data)
+                    logger.debug("Queued price alert handling for %d prices", len(data))
+                except Exception as e:
+                    logger.exception("Error while processing price alert event: %s", e)
+
+        finally:
+            await layer.group_discard(PRICES_CHANNEL_LAYER, channel_name)
+            logger.info("notify_prices worker left group %s", PRICES_CHANNEL_LAYER)

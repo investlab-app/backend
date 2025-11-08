@@ -2,23 +2,41 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from modules.instruments.models import CompanyDetails, IndexDetails, Instrument
+from modules.instruments.models import Instrument
 
 
 @admin.register(Instrument)
 class InstrumentAdmin(ModelAdmin):
     list_display = (
         "ticker",
-        "type",
         "name",
-        "currency",
+        "market",
+        "locale",
+        "primary_exchange",
+        "currency_name",
+        "active",
+    )
+    list_filter = (
+        "active",
+        "locale",
+        "market",
+        "type",
+    )
+    search_fields = (
+        "ticker",
+        "name",
+        "cik",
+        "composite_figi",
+        "share_class_figi",
+    )
+    ordering = ("ticker",)
+
+    readonly_fields = (
+        "id",
         "created_at",
         "updated_at",
     )
-    list_filter = ("type", "currency")
-    search_fields = ("id,", "ticker", "name")
-    readonly_fields = ("id", "created_at", "updated_at", "details")
-    ordering = ("ticker",)
+
     fieldsets = (
         (
             None,
@@ -26,74 +44,79 @@ class InstrumentAdmin(ModelAdmin):
                 "fields": (
                     "id",
                     "ticker",
-                    "type",
                     "name",
-                    "currency",
+                    "active",
+                    "type",
+                    "description",
+                    "description_pl",
+                    "homepage_url",
+                    "phone_number",
                 )
             },
         ),
         (
-            _("Details"),
+            _("Market Data"),
             {
                 "fields": (
-                    "details_type",
-                    "details_id",
-                    "details",
+                    "market",
+                    "locale",
+                    "market_cap",
+                    "currency_name",
+                    "currency_symbol",
+                    "base_currency_name",
+                    "base_currency_symbol",
                 )
             },
         ),
         (
-            _("Description"),
-            {"fields": ("description",)},
+            _("FIGI & Identifiers"),
+            {
+                "fields": (
+                    "cik",
+                    "composite_figi",
+                    "share_class_figi",
+                    "share_class_shares_outstanding",
+                    "weighted_shares_outstanding",
+                )
+            },
         ),
         (
-            _("Timestamps"),
-            {"fields": ("created_at", "updated_at")},
-        ),
-    )
-
-
-@admin.register(CompanyDetails)
-class CompanyDetailsAdmin(ModelAdmin):
-    list_display = (
-        "name",
-        "country",
-        "industry",
-        "created_at",
-        "updated_at",
-    )
-    search_fields = ("id", "name")
-    readonly_fields = ("id", "created_at", "updated_at")
-    ordering = ("name",)
-    fieldsets = (
-        (None, {"fields": ("id", "name")}),
-        (
-            _("Details"),
-            {"fields": ("country", "industry", "website")},
+            _("Address Information"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "address1",
+                    "address2",
+                    "city",
+                    "state",
+                    "country",
+                    "postal_code",
+                ),
+            },
         ),
         (
-            _("Timestamps"),
-            {"fields": ("created_at", "updated_at")},
+            _("Branding"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "icon",
+                    "logo",
+                ),
+            },
         ),
-    )
-
-
-@admin.register(IndexDetails)
-class IndexDetailsAdmin(ModelAdmin):
-    list_display = (
-        "name",
-        "fund_name",
-        "created_at",
-        "updated_at",
-    )
-    search_fields = ("id", "name")
-    readonly_fields = ("id", "created_at", "updated_at")
-    ordering = ("name",)
-    fieldsets = (
-        (None, {"fields": ("id", "name")}),
         (
-            _("Details"),
-            {"fields": ("fund_name",)},
+            _("Extra Info"),
+            {
+                "classes": ("collapse",),
+                "fields": (
+                    "sic_code",
+                    "sic_description",
+                    "total_employees",
+                    "ticker_root",
+                    "ticker_suffix",
+                    "list_date",
+                ),
+            },
         ),
         (
             _("Timestamps"),

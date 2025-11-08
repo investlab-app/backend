@@ -1,10 +1,7 @@
-class FetchPriceException(Exception):
-    def __init__(self, reason: str):
-        super().__init__(f"Could not fetch price data, reason: {reason}")
-        self.reason = reason
+from rest_framework.exceptions import APIException
 
 
-class InvalidTimeIntervalException(Exception):
-    def __init__(self, reason: str):
-        super().__init__(reason)
-        self.reason = reason
+class PayloadTooLarge(APIException):
+    status_code = 413
+    default_detail = "Payload too large."
+    default_code = "payload_too_large"

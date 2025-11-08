@@ -1,7 +1,10 @@
-.PHONY: uv manage format format-check lint typecheck pip bash test
+.PHONY: uv pip manage format format-check lint lint-check type-check bash test
 
 uv:
 	docker compose exec backend uv $(filter-out $@,$(MAKECMDGOALS))
+
+pip:
+	docker compose exec backend uv pip $(filter-out $@,$(MAKECMDGOALS))
 
 manage:
 	docker compose exec backend uv run manage.py $(filter-out $@,$(MAKECMDGOALS))
@@ -9,20 +12,23 @@ manage:
 format:
 	docker compose exec backend uv run ruff format .
 
-format-check: 
+format-check:
 	docker compose exec backend uv run ruff format --check .
 
 lint:
+	docker compose exec backend uv run ruff check --fix .
+
+lint-check:
 	docker compose exec backend uv run ruff check .
 
-typecheck:
+type-check:
 	docker compose exec backend uv run ty check .
-
-pip:
-	docker compose exec backend uv pip $(filter-out $@,$(MAKECMDGOALS))
 
 bash:
 	docker compose exec backend bash	
 
 test:
-	docker compose exec backend uv run pytest .
+	docker compose exec backend uv run pytest . -vv
+
+schema-gen:
+	docker compose exec backend uv run manage.py spectacular --file schema.yml

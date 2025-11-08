@@ -1,101 +1,61 @@
 import pytest
-from dependency_injector import containers, providers
 from django.urls import reverse
-from rest_framework.response import Response
 
-from config import container
-from modules.core.tests.conftest import api_client_auth
-from modules.instruments.tests.conftest import mock_yfinance_repository
-from modules.users.tests.conftest import user
+from modules.core.tests.conftest import api_client, api_client_auth
 
 pytestmark = pytest.mark.django_db
 
 
-def test_instruments_available_view_success(
-    api_client_auth, mock_yfinance_repository
-) -> None:
-    url = reverse("instruments-available")
-    with container.instruments_container.instruments_repository.override(
-        mock_yfinance_repository
-    ):
+class TestInstrumentListEndpoint:
+    @pytest.fixture(autouse=True)
+    def setup(self, instruments_factory):
+        self.instruments = [instruments_factory() for _ in range(3)]
+        self.url = reverse("instruments-list")
+
+    def test_happy(self, api_client_auth, instruments_factory):
+        response = api_client_auth.get(self.url)
+        assert response.status_code == 200
+        assert len(response.data["results"]) == len(self.instruments)
+
+    def test_no_auth(self, api_client, instruments_factory):
+        response = api_client.get(self.url)
+        assert response.status_code == 403
+
+
+class TestInstrumentDetailEndpoint:
+    @pytest.fixture(autouse=True)
+    def setup(self, instruments_factory):
+        self.instruments = [instruments_factory() for _ in range(3)]
+
+    def test_happy(self, api_client_auth):
+        instrument = self.instruments[0]
+        url = reverse("instrument-detail", query={"ticker": instrument.ticker})
         response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-    assert isinstance(response.data, dict)
-    assert "instruments" in response.data
-    assert isinstance(response.data["instruments"], list)
-    assert len(response.data["instruments"]) > 0
+        assert response.status_code == 200
+        assert response.data["id"] == str(instrument.id)
+        assert response.data["ticker"] == instrument.ticker
+        assert response.data["name"] == instrument.name
 
+    def test_not_found(self, api_client_auth):
+        url = reverse("instrument-detail", query={"ticker": "999"})
+        response = api_client_auth.get(url)
+        assert response.status_code == 404
 
-def test_instruments_list_view_success(
-    api_client_auth, mock_yfinance_repository
-) -> None:
-    url = reverse("instruments-list")
-    with container.instruments_container.instruments_repository.override(
-        mock_yfinance_repository
-    ):
-        response = api_client_auth.get(
-            url,
-            {
-                "tickers": "AAPL,MSFT",
-                "page": 1,
-                "page_size": 10,
-                "sort_by": "market_cap",
-                "sort_direction": "desc",
-            },
+    def test_no_auth(self, api_client):
+        instrument = self.instruments[0]
+        url = reverse("instrument-detail", query={"ticker": instrument.ticker})
+        response = api_client.get(url)
+        assert response.status_code == 403
+
+    def test_incorrect_query_params(self, api_client_auth):
+        instrument = self.instruments[0]
+        url = reverse(
+            "instrument-detail", query={"ticker": instrument.ticker, "cik": "123"}
         )
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-    assert isinstance(response.data, dict)
-    assert "items" in response.data
-    assert "total" in response.data
-    assert "page" in response.data
-    assert "page_size" in response.data
-    assert "num_pages" in response.data
-    assert len(response.data["items"]) > 0
-
-
-def test_instrument_detail_view_success(
-    api_client_auth, mock_yfinance_repository
-) -> None:
-    url = reverse("instrument-detail", kwargs={"ticker": "AAPL"})
-    with container.instruments_container.instruments_repository.override(
-        mock_yfinance_repository
-    ):
         response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-    assert isinstance(response.data, dict)
-    assert "ticker" in response.data
-    assert "name" in response.data
-    assert "current_price" in response.data
-    assert "market_cap" in response.data
+        assert response.status_code == 400
 
-
-def test_instrument_detail_view_invalid_ticker(api_client_auth) -> None:
-    url = reverse("instrument-detail", kwargs={"ticker": "INVALID"})
-    response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 400
-
-
-def test_instrument_news_view_success(
-    api_client_auth, mock_yfinance_repository
-) -> None:
-    url = reverse("instrument-news", kwargs={"ticker": "AAPL"})
-    with container.instruments_container.instruments_repository.override(
-        mock_yfinance_repository
-    ):
+    def test_missing_query_params(self, api_client_auth):
+        url = reverse("instrument-detail")
         response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 200
-    assert isinstance(response.data, list)
-    assert len(response.data) > 0
-    assert all(isinstance(item, dict) for item in response.data)
-
-
-def test_instrument_news_view_invalid_ticker(api_client_auth) -> None:
-    url = reverse("instrument-news", kwargs={"ticker": "INVALID"})
-    response = api_client_auth.get(url)
-    assert isinstance(response, Response)
-    assert response.status_code == 400
+        assert response.status_code == 400

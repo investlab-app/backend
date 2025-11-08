@@ -1,6 +1,8 @@
 import os
 from pathlib import Path
 
+from celery.schedules import crontab
+
 from config.utils import str_to_bool, str_to_list
 
 # from django.templatetags.static import static
@@ -15,6 +17,8 @@ DEBUG = str_to_bool(os.environ["DEBUG"])
 ALLOWED_HOSTS = str_to_list(os.environ["ALLOWED_HOSTS"])
 
 CORS_ALLOWED_ORIGINS = str_to_list(os.environ["CORS_ALLOWED_ORIGINS"])
+
+CSRF_TRUSTED_ORIGINS = str_to_list(os.environ.get("CSRF_TRUSTED_ORIGINS", ""))
 
 # Application definition
 
@@ -33,7 +37,11 @@ INSTALLED_APPS = [
     "django.contrib.sessions",
     "django.contrib.messages",
     "django.contrib.staticfiles",
+    "django_celery_results",
+    "django_celery_beat",
+    "django_filters",
     # External modules
+    "django_extensions",
     "rest_framework",
     "rest_framework_simplejwt",
     "drf_spectacular",
@@ -43,10 +51,13 @@ INSTALLED_APPS = [
     "modules.core",
     "modules.instruments",
     "modules.investors",
+    "modules.markets",
+    "modules.news",
+    "modules.notifications",
     "modules.orders",
     "modules.prices",
+    "modules.statistics",
     "modules.transactions",
-    "modules.users",
 ]
 
 if DEBUG:
@@ -142,6 +153,10 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
 
+MEDIA_URL = "/media/"
+
+MEDIA_ROOT = BASE_DIR / "media"
+
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
 
@@ -162,9 +177,8 @@ REST_FRAMEWORK = {
     ],
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "modules.authentication.clerk_auth.ClerkAuthentication",
-        # "rest_framework_simplejwt.authentication.JWTAuthentication",
-        # 'rest_framework.authentication.BearerAuthentication',
     ),
+    "DEFAULT_PAGINATION_CLASS": "modules.core.pagination.DynamicPageSizePagination",
     "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
 }
 
@@ -193,9 +207,11 @@ SPECTACULAR_SETTINGS = {
     "POSTPROCESSING_HOOKS": [
         "drf_spectacular.hooks.postprocess_schema_enums",
     ],
+    "SWAGGER_UI_SETTINGS": {
+        "deepLinking": True,
+        "displayOperationId": False,
+    },
 }
-
-AUTH_USER_MODEL = "users.User"
 
 # SIMPLE_JWT = {
 #     "ACCESS_TOKEN_LIFETIME": timedelta(minutes=120),
@@ -341,7 +357,83 @@ UNFOLD = {
     # ],
 }
 
+REDIS_HOST = os.environ["REDIS_HOST"]
+REDIS_PORT = os.environ["REDIS_PORT"]
+REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
+REDIS_URL = f"redis://:{REDIS_PASSWORD}@{REDIS_HOST}:{REDIS_PORT}"
+
+CHANNEL_LAYERS = {
+    "default": {
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [REDIS_URL],
+        },
+    },
+}
+
+# Celery settings
+CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", f"{REDIS_URL}/0")
+CELERY_RESULT_BACKEND = "django-db"
+CELERY_RESULT_EXTENDED = True
+CELERY_BEAT_SCHEDULER = "django_celery_beat.schedulers:DatabaseScheduler"
+
+if not DEBUG:
+    CELERY_BEAT_SCHEDULE = {
+        "modules.instruments.tasks.sync_instruments_base_info": {
+            "task": "modules.instruments.tasks.sync_instruments_base_info",
+            "schedule": crontab(hour=4, minute=0),  # Every day at 4:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_detail_info": {
+            "task": "modules.instruments.tasks.sync_instruments_detail_info",
+            "schedule": crontab(hour=5, minute=0),  # Every day at 5:00 AM
+        },
+        "modules.instruments.tasks.sync_instruments_images": {
+            "task": "modules.instruments.tasks.sync_instruments_images",
+            "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
+        },
+        "modules.investors.tasks.save_accounts_value_snapshot": {
+            "task": "modules.investors.tasks.save_accounts_value_snapshot",
+            "schedule": crontab(hour=1, minute=0),  # Every Wednesday at 1:00 AM
+        },
+    }
+
+
 # Clerk settings
-CLERK_SECRET_KEY = os.environ.get("CLERK_SECRET_KEY")
-CLERK_ISSUER = os.environ.get("CLERK_ISSUER")
-CLERK_JWKS_URL = os.environ.get("CLERK_JWKS_URL")
+CLERK_SECRET_KEY = os.environ["CLERK_SECRET_KEY"]
+CLERK_ISSUER = os.environ["CLERK_ISSUER"]
+CLERK_JWT_KEY = os.environ["CLERK_JWT_KEY"]
+
+# Polygon
+POLYGON_SECRET_KEY = os.environ["POLYGON_SECRET_KEY"]
+POLYGON_EXCHANGE = "XNAS"
+POLYGON_ASSET_TYPE = "stocks"
+
+# Alpaca
+ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
+ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
+
+# Datetime formats
+ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
+
+# Email
+ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
+FROM_EMAIL = os.environ["FROM_EMAIL"]
+EMAIL_BACKEND = os.environ["EMAIL_BACKEND"]
+EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH")
+
+# Web Push
+VAPID_PRIVATE_KEY = os.environ["VAPID_PRIVATE_KEY"]
+VAPID_PUBLIC_KEY = os.environ["VAPID_PUBLIC_KEY"]
+VAPID_CLAIMS = {
+    "sub": f"mailto:{ADMIN_EMAIL}",
+}
+
+# OpenAI
+OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
+OPENAI_API_URL = os.environ["OPENAI_API_URL"]
+OPENAI_TRANSLATING_MODEL = os.environ["OPENAI_TRANSLATING_MODEL"]
+
+# LLM Translation Settings
+TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
+    os.environ.get("TRANSLATE_INSTRUMENT_DESCRIPTION", "false")
+)

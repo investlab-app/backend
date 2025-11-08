@@ -1,0 +1,166 @@
+import json
+from unittest.mock import MagicMock
+
+import pytest
+from channels.layers import get_channel_layer
+from channels.testing import WebsocketCommunicator
+
+from modules.notifications.consumers import Websocket
+from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.management.commands.mock_stream_prices import PriceStreamMock
+
+
+@pytest.fixture
+async def communicator():
+    user = MagicMock(is_authenticated=True)
+    communicator = _get_websocket_communicator(user)
+    _, _ = await communicator.connect()
+    yield communicator
+    await communicator.disconnect()
+
+
+@pytest.fixture
+async def layer():
+    layer = get_channel_layer()
+    await layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
+    return layer
+
+
+def _get_websocket_communicator(user, tickers=""):
+    scope = {"user": user, "url_route": {"kwargs": {"names": tickers}}}
+
+    communicator = WebsocketCommunicator(Websocket.as_asgi(), f"/ws/{tickers}")
+    communicator.scope.update(scope)
+    return communicator
+
+
+def _create_ticker_data(*tickers: str) -> dict:
+    price_stream = PriceStreamMock()
+    return {ticker: price_stream.get_random_ohlc(ticker) for ticker in tickers}
+
+
+async def _send_ticker_data(layer, msg):
+    await layer.group_send(
+        PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": msg}
+    )
+
+
+async def _get_communicator_output(communicator):
+    output = await communicator.receive_output()
+    return json.loads(output["text"])
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_successful_connection():
+    user = MagicMock(is_authenticated=True)
+    communicator = _get_websocket_communicator(user)
+    connected, _ = await communicator.connect()
+    assert connected
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_failed_connection():
+    user = MagicMock(is_authenticated=False)
+    communicator = _get_websocket_communicator(user)
+    connected, _ = await communicator.connect()
+    msg = await communicator.receive_output(None)
+    assert msg == {"type": "websocket.close"}
+    await communicator.disconnect()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_no_subscriptions(communicator, layer):
+    await _send_ticker_data(layer, _create_ticker_data("AAPL", "XYZ", "ABC"))
+
+    assert await communicator.receive_nothing()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_empty_subscription(communicator, layer):
+    await communicator.send_to(text_data=json.dumps({"set_subscription": []}))
+
+    await _send_ticker_data(layer, _create_ticker_data("AAPL", "XYZ", "ABC"))
+
+    assert await communicator.receive_nothing()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_single_subscription(communicator, layer):
+    await communicator.send_to(text_data=json.dumps({"set_subscription": ["AAPL"]}))
+
+    ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
+    await _send_ticker_data(layer, ticker_data)
+
+    output = await _get_communicator_output(communicator)
+    assert output["prices"][0] == ticker_data["AAPL"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_multi_subscription(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+
+    ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
+    await _send_ticker_data(layer, ticker_data)
+
+    output = await _get_communicator_output(communicator)
+    assert len(output["prices"]) == 2
+    assert output["prices"][0] == ticker_data["AAPL"]
+    assert output["prices"][1] == ticker_data["ABC"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db(transaction=True)
+async def test_resubscription(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["XYZ", "ABC"]})
+    )
+
+    ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
+    await _send_ticker_data(layer, ticker_data)
+
+    output = await _get_communicator_output(communicator)
+    assert len(output["prices"]) == 2
+    assert output["prices"][0] == ticker_data["XYZ"]
+    assert output["prices"][1] == ticker_data["ABC"]
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_does_not_send_empty_msgs(communicator, layer):
+    await communicator.send_to(
+        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    )
+
+    await _send_ticker_data(layer, _create_ticker_data("XYZ"))
+
+    assert await communicator.receive_nothing()
+
+
+@pytest.mark.asyncio
+@pytest.mark.django_db
+async def test_tickers_in_query_params(layer):
+    communicator = _get_websocket_communicator(
+        MagicMock(is_authenticated=True), "AAPL,ABC"
+    )
+    await communicator.connect()
+
+    ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
+    await _send_ticker_data(layer, ticker_data)
+
+    output = await _get_communicator_output(communicator)
+    assert len(output["prices"]) == 2
+    assert output["prices"][0] == ticker_data["AAPL"]
+    assert output["prices"][1] == ticker_data["ABC"]
+    await communicator.disconnect()

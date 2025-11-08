@@ -1,5 +1,7 @@
+from django.conf import settings
+from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path, re_path
+from django.urls import include, path
 from drf_spectacular.views import (
     SpectacularAPIView,
     SpectacularRedocView,
@@ -7,27 +9,26 @@ from drf_spectacular.views import (
 )
 
 from modules.core.views import StatusView
-from modules.sse.sse_consumer_impl import SSEConsumerImpl
-from modules.sse.views import SSEUpdateView
+from modules.notifications.consumers import Websocket
 
-API_PREFIX = "api"
+PREFIX = "api"
 
-sse_urlpatterns = [
-    re_path(f"^{API_PREFIX}/sse/?$", SSEConsumerImpl.as_asgi()),
+websocket_urlpatterns = [
+    path("ws/", Websocket.as_asgi()),
+    path("ws/<str:names>/", Websocket.as_asgi()),
 ]
 
 urlpatterns = [
-    path(f"{API_PREFIX}/sse/update", SSEUpdateView.as_view(), name="sse-update"),
-    path(f"{API_PREFIX}/admin/", admin.site.urls),
-    path(f"{API_PREFIX}/status/", StatusView.as_view(), name="status"),
+    path(f"{PREFIX}/admin/", admin.site.urls),
+    path(f"{PREFIX}/status/", StatusView.as_view(), name="status"),
     # Docs
     path(
-        f"{API_PREFIX}/schema/",
+        f"{PREFIX}/schema/",
         SpectacularAPIView.as_view(authentication_classes=[]),
         name="schema",
     ),
     path(
-        f"{API_PREFIX}/docs/",
+        f"{PREFIX}/docs/",
         SpectacularSwaggerView.as_view(
             url_name="schema",
             authentication_classes=[],
@@ -35,16 +36,25 @@ urlpatterns = [
         name="swagger",
     ),
     path(
-        f"{API_PREFIX}/redoc/",
+        f"{PREFIX}/redoc/",
         SpectacularRedocView.as_view(
             url_name="schema",
             authentication_classes=[],
         ),
         name="redoc",
-    ),  # Modules
-    path(f"{API_PREFIX}/prices/", include("modules.prices.urls")),
-    path(f"{API_PREFIX}/instruments/", include("modules.instruments.urls")),
-    path(f"{API_PREFIX}/auth/", include("modules.authentication.urls")),
-    path(f"{API_PREFIX}/investors/", include("modules.investors.urls")),
-    path(f"{API_PREFIX}/test/", include("modules.core.urls")),
+    ),
+    # Modules
+    path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
+    path(f"{PREFIX}/investors/", include("modules.investors.urls")),
+    path(f"{PREFIX}/markets/", include("modules.markets.urls")),
+    path(f"{PREFIX}/news/", include("modules.news.urls")),
+    path(f"{PREFIX}/notifications/", include("modules.notifications.urls")),
+    path(f"{PREFIX}/prices/", include("modules.prices.urls")),
+    path(f"{PREFIX}/test/", include("modules.core.urls")),
+    path(f"{PREFIX}/orders/", include("modules.orders.urls")),
+    path(f"{PREFIX}/statistics/", include("modules.statistics.urls")),
 ]
+
+# Consider other media server on production
+urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)

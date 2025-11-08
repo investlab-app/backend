@@ -1,69 +1,124 @@
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import cast
+from http.client import HTTPResponse
 
-import yfinance
-from pandas import DataFrame, Timestamp
+from django.http.response import Http404
+from django.shortcuts import get_object_or_404
+from polygon import RESTClient as PolygonClient
+from polygon.exceptions import BadResponse
 
-from modules.prices.constants import YFinanceTimeInterval
-from modules.prices.exceptions import FetchPriceException
-from modules.prices.schemas import InstrumentPriceSchema
+from config.clients import polygon_client
+from config.settings import POLYGON_ASSET_TYPE
+from modules.instruments.models import Instrument
+from modules.prices.exceptions import PayloadTooLarge
+from modules.prices.schemas import PriceBar, PriceDailySummary
 
 
-class YfinanceRepository:
-    @staticmethod
-    def get_instrument_price_history(
-        instrument: str,
-        start_date: datetime,
-        end_date: datetime,
-        interval: YFinanceTimeInterval,
-    ) -> list[InstrumentPriceSchema]:
-        """
-        Fetches historical price data for a specified financial instrument.
+class PolygonPricesRepository:
+    def __init__(self, client: PolygonClient | None = None):
+        self.polygon_client = client or polygon_client
 
-        Uses the yfinance library to retrieve historical price data for the given
-        instrument.
+    def get_ohlc(
+        self,
+        ticker: str,
+        start_date: datetime | int,
+        end_date: datetime | int,
+        interval: str,
+        interval_multiplier: int,
+    ) -> list[PriceBar] | None:
+        get_object_or_404(Instrument, ticker=ticker.upper())
 
-        Args:
-            instrument (str): The ticker symbol of the instrument (e.g., "aapl").
-            start_date (datetime): The start of the time period to retrieve data for.
-            end_date (datetime): The end of the time period to retrieve data for.
-            interval (TimeInterval): The time interval for the historical data
-                (e.g., "ONE_MINUTE", "ONE_DAY").
-
-        Returns:
-            list[InstrumentPriceSchema]: A list of Pydantic models containing the
-                instrument's historical prices.
-
-        Raises:
-            FetchPriceException: If the ticker is invalid or no data is returned.
-        """
         try:
-            y_ticker = yfinance.Ticker(instrument.lower())
-            history = y_ticker.history(
-                start=start_date, end=end_date, interval=interval.value
+            aggs = self.polygon_client.list_aggs(
+                ticker=ticker.upper(),
+                multiplier=interval_multiplier,
+                timespan=interval.lower(),
+                from_=start_date,
+                to=end_date,
             )
-        except Exception as e:
-            raise FetchPriceException(str(e)) from e
+        except BadResponse:
+            return None
 
-        if history.empty:
-            raise FetchPriceException(
-                f"History is empty for the ticker {instrument}",
-            )
-        return YfinanceRepository._convert_prices_to_schema(history)
+        if isinstance(aggs, HTTPResponse):
+            return None
 
-    @staticmethod
-    def _convert_prices_to_schema(dataframe: DataFrame) -> list[InstrumentPriceSchema]:
-        prices = []
-        for index, row in dataframe.iterrows():
-            ts = cast("Timestamp", index)
-            prices.append(
-                InstrumentPriceSchema(
-                    timestamp=ts.to_pydatetime(),
-                    open=Decimal(row["Open"]),
-                    high=Decimal(row["High"]),
-                    low=Decimal(row["Low"]),
-                    close=Decimal(row["Close"]),
-                ),
+        results = []
+        for idx, agg in enumerate(aggs, start=1):
+            if idx > 10_000:
+                raise PayloadTooLarge
+            results.append(PriceBar.from_agg(agg))
+
+        return results
+
+    def get_price(self, ticker: str) -> PriceDailySummary | None:
+        ticker_upper = ticker.upper()
+        get_object_or_404(Instrument, ticker=ticker_upper)
+
+        try:
+            snapshot = self.polygon_client.get_snapshot_ticker(
+                market_type=POLYGON_ASSET_TYPE, ticker=ticker_upper
             )
+        except BadResponse:
+            return None
+
+        if isinstance(snapshot, HTTPResponse):
+            return None
+
+        required_fields = [
+            "min",
+            "day",
+            "todays_change",
+            "todays_change_percent",
+            "updated",
+        ]
+
+        for field in required_fields:
+            if not getattr(snapshot, field, None):
+                return None
+
+        return PriceDailySummary.from_snapshot(snapshot)
+
+    def get_prices(self, tickers: list[str]) -> list[PriceDailySummary] | None:
+        tickers = [t.upper() for t in tickers]
+        if len(tickers) > 200:
+            raise PayloadTooLarge("Maximum of 200 tickers allowed per request.")
+
+        if Instrument.objects.filter(ticker__in=tickers).count() != len(tickers):
+            raise Http404("One or more tickers not found in the database.")
+
+        try:
+            snapshots = self.polygon_client.get_snapshot_all(
+                market_type=POLYGON_ASSET_TYPE,
+                tickers=tickers,
+                include_otc=False,
+            )
+        except BadResponse:
+            return None
+
+        if isinstance(snapshots, HTTPResponse):
+            return None
+
+        return list(map(PriceDailySummary.from_snapshot, snapshots))
+
+    def get_prices_at(
+        self, tickers: list[Instrument], timestamp: datetime
+    ) -> dict[Instrument, Decimal]:
+        prices = {}
+        for instrument in tickers:
+            ohlc = self.get_ohlc(
+                ticker=instrument.ticker,
+                start_date=timestamp,
+                end_date=timestamp + timedelta(minutes=10),
+                interval="minute",
+                interval_multiplier=1,
+            )
+            if ohlc and len(ohlc) > 0:
+                prices[instrument] = ohlc[0].open
         return prices
+
+    def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
+        prices = self.get_prices(tickers)
+        if prices is None:
+            return None
+
+        return {price.ticker: price for price in prices}

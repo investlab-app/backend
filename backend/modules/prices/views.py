@@ -1,68 +1,90 @@
-from typing import cast
-
-from dependency_injector.wiring import Provide
 from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
+from rest_framework import generics
 from rest_framework.request import Request
 from rest_framework.response import Response
 
-from config.containers import AppContainer
-from modules.prices.exceptions import FetchPriceException, InvalidTimeIntervalException
+from modules.investors.models import Investor
+from modules.prices.models import PriceAlert
+from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.serializers import (
-    InstrumentPriceQueryParams,
-    InstrumentPriceResponseSerializer,
+    PriceAlertCreateSerializer,
+    PriceAlertSerializer,
+    PriceBarSerializer,
+    PriceBarsQueryParams,
+    PriceDailySummarySerializer,
+    PricesListQueryParams,
 )
-from modules.prices.services import PricesService
 
 
-class PricesView(generics.GenericAPIView):
-    def __init__(
-        self,
-        service: PricesService = Provide[AppContainer.prices_container.prices_service],
-    ):
-        super().__init__()
-        self._service = service
+class PricesBarsView(generics.GenericAPIView):
+    serializer_class = PriceBarSerializer
+    pagination_class = None
 
     @extend_schema(
-        parameters=[InstrumentPriceQueryParams],
-        responses={200: InstrumentPriceResponseSerializer(many=True)},
-        summary="Get instrument prices",
-        description="Get price data for financial instruments",
+        operation_id="prices_bars",
+        parameters=[PriceBarsQueryParams],
+        responses=PriceBarSerializer(many=True),
     )
     def get(self, request: Request) -> Response:
-        params = InstrumentPriceQueryParams(data=request.query_params)
-        if not params.is_valid():
-            return Response(
-                {"errors": params.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-        validated = cast("dict", params.validated_data)
+        params = PriceBarsQueryParams(data=request.query_params)
+        params.is_valid(raise_exception=True)
+        repository = PolygonPricesRepository()
+        price_bars = repository.get_ohlc(**params.validated_data)  # type: ignore[missing-argument]
+        serializer = self.get_serializer(instance=price_bars, many=True)
+        return Response(serializer.data)
 
-        try:
-            price_history = self._service.get_instrument_price_history(
-                validated["ticker"],
-                validated["start_date"],
-                validated["end_date"],
-                validated["interval"],
-            )
-        except (FetchPriceException, InvalidTimeIntervalException) as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        records = [
-            InstrumentPriceResponseSerializer.sanitize_output(item.model_dump())
-            for item in price_history["data"]
-        ]
-        serialized = InstrumentPriceResponseSerializer(data=records, many=True)
+class PricesListView(generics.GenericAPIView):
+    serializer_class = PriceDailySummarySerializer
 
-        if not serialized.is_valid():
-            return Response(
-                {"errors": serialized.errors},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-        return Response(
-            {
-                "data": serialized.data,
-                "min_price": price_history["min_price"],
-                "max_price": price_history["max_price"],
-            },
-        )
+    @extend_schema(operation_id="prices_list", parameters=[PricesListQueryParams])
+    def get(self, request: Request) -> Response:
+        params = PricesListQueryParams(data=request.query_params)
+        params.is_valid(raise_exception=True)
+
+        tickers_list = params.validated_data.get("tickers")
+        tickers_list = [ticker.upper() for ticker in tickers_list]
+
+        repository = PolygonPricesRepository()
+        prices = repository.get_prices(tickers=tickers_list)
+
+        serializer = self.get_serializer(instance=prices, many=True)
+        return Response(serializer.data)
+
+
+class PricesRetrieveView(generics.GenericAPIView):
+    serializer_class = PriceDailySummarySerializer
+
+    @extend_schema(operation_id="prices_retrieve")
+    def get(self, request: Request, ticker: str) -> Response:
+        repository = PolygonPricesRepository()
+        prices = repository.get_price(ticker=ticker)
+        serializer = self.get_serializer(instance=prices)
+        return Response(serializer.data)
+
+
+class PriceAlertListCreateView(generics.ListCreateAPIView):
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(
+            investor__clerk_id=clerk_id,
+            notification_config__is_active=True,
+        ).select_related("instrument")
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return PriceAlertCreateSerializer
+        return PriceAlertSerializer
+
+    def perform_create(self, serializer):
+        clerk_id = self.request.user.id
+        investor = Investor.objects.get(clerk_id=clerk_id)
+        serializer.save(investor=investor)
+
+
+class PriceAlertDetailView(generics.RetrieveUpdateDestroyAPIView):
+    serializer_class = PriceAlertSerializer
+
+    def get_queryset(self):
+        clerk_id = self.request.user.id
+        return PriceAlert.objects.filter(investor__clerk_id=clerk_id)

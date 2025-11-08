@@ -1,210 +1,94 @@
-from typing import cast
-
-from dependency_injector.wiring import Provide, inject
-from drf_spectacular.utils import extend_schema
-from rest_framework import generics, status
-from rest_framework.request import Request
+from django.shortcuts import get_object_or_404
+from drf_spectacular.utils import OpenApiParameter, extend_schema
+from rest_framework import filters, generics
 from rest_framework.response import Response
 
-from config.containers import AppContainer
-from config.logging import get_logger
-from modules.instruments.exceptions import (
-    FetchInstrumentInfoException,
-    FetchInstrumentNewsException,
-)
+from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
-    InstrumentDetailedInfoSerializer,
-    InstrumentInfoSerializer,
-    InstrumentsListQueryParams,
-    PaginatedInstrumentsResponseSerializer,
+    InstrumentListSerializer,
+    InstrumentRetrieveSerializer,
+    InstrumentWithPriceSerializer,
 )
-from modules.instruments.services import InstrumentsService
-
-logger = get_logger(__name__)
+from modules.prices.repositories import PolygonPricesRepository
 
 
-class InstrumentsAvailableView(generics.GenericAPIView):
-    @inject
-    def __init__(
-        self,
-        service: InstrumentsService = Provide[
-            AppContainer.instruments_container.instruments_service
-        ],
-    ):
-        super().__init__()
-        self.service = service
-
-    @extend_schema(
-        responses={
-            "200": {
-                "type": "object",
-                "properties": {
-                    "instruments": {"type": "array", "items": {"type": "string"}}
-                },
-            }
-        },
-    )
-    def get(self, request: Request) -> Response:
-        """
-        Get a list of some available instruments (from S&P 500 for 6/9/2025).
-        """
-        logger.debug("Getting available instruments from service: %s", self.service)
-        instruments: list[str] = self.service.get_instruments_available()
-        logger.debug("Got instruments: %s", instruments)
-
-        return Response(data={"instruments": instruments}, status=status.HTTP_200_OK)
+class InstrumentsListView(generics.ListAPIView):
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentListSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
+    ordering_fields = ["ticker", "name", "market_cap"]
 
 
-class InstrumentsListView(generics.GenericAPIView):
-    @inject
-    def __init__(
-        self,
-        service: InstrumentsService = Provide[
-            AppContainer.instruments_container.instruments_service
-        ],
-    ):
-        super().__init__()
-        self.service = service
+class InstrumentsRetrieveView(generics.GenericAPIView):
+    """
+    Retrieve an instrument by one of the following query parameters:
+    id, ticker, cik, composite_figi, share_class_figi
+    """
+
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentRetrieveSerializer
+    lookup_fields = ["id", "ticker", "cik", "composite_figi", "share_class_figi"]
 
     @extend_schema(
-        parameters=[InstrumentsListQueryParams],
-        responses={200: PaginatedInstrumentsResponseSerializer},
-        summary="List instruments with pagination",
-        description="Get a paginated list of financial instruments",
-        operation_id="instruments_list",
+        responses=InstrumentRetrieveSerializer,
+        parameters=[
+            OpenApiParameter(
+                name=field,
+                description=f"Filter by {field}.",
+                required=False,
+                location=OpenApiParameter.QUERY,
+                type=str,
+            )
+            for field in lookup_fields
+        ],
+        description=(
+            "Retrieve an instrument by one of the following query parameters: "
+            "id, ticker, cik, composite_figi, or share_class_figi. "
+            "Provide exactly one of these fields."
+        ),
     )
-    def get(self, request: Request) -> Response:
-        """
-        Get a paginated, sorted, and filtered list of instruments.
-        """
-        params = InstrumentsListQueryParams(data=request.query_params)
-        if not params.is_valid():
-            return Response(
-                {"errors": params.errors},
-                status=status.HTTP_400_BAD_REQUEST,
-            )
-
-        validated = cast("dict", params.validated_data)  # pylint: disable=duplicate-code
-
-        raw_tickers = (validated.get("tickers") or "").split(",")
-        tickers = list(
-            {t.upper() for t in (piece.strip() for piece in raw_tickers) if t}
-        )
-
-        try:
-            result = self.service.get_instruments_list(
-                tickers=tickers,
-                page=validated.get("page", 1),
-                page_size=validated.get("page_size", 10),
-                sort_by=validated.get("sort_by"),
-                sort_direction=validated.get("sort_direction", "asc"),
-                filter_sector=validated.get("sector"),
-                filter_industry=validated.get("industry"),
-            )
-        except FetchInstrumentInfoException as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        processed_items = [
-            InstrumentInfoSerializer.sanitize_output(item.model_dump())
-            for item in result["items"]
-        ]
-
-        response_data = {
-            "items": processed_items,
-            "total": result["total"],
-            "page": result["page"],
-            "page_size": result["page_size"],
-            "num_pages": result["num_pages"],
+    def get(self, request, *args, **kwargs):
+        criteria = {
+            field: request.query_params.get(field).upper()
+            for field in self.lookup_fields
+            if request.query_params.get(field)
         }
-
-        serialized = PaginatedInstrumentsResponseSerializer(data=response_data)
-
-        if not serialized.is_valid():
+        if not criteria or len(criteria) > 1:
             return Response(
-                {"errors": serialized.errors},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                "Please provide exactly one of the following query parameters: "
+                "id, ticker, cik, composite_figi, or share_class_figi.",
+                status=400,
             )
 
-        return Response(serialized.data)
+        instrument = get_object_or_404(self.get_queryset(), **criteria)
+        serializer = self.get_serializer(instrument)
+        return Response(serializer.data)
 
 
-class InstrumentDetailView(generics.GenericAPIView):
-    def __init__(
-        self,
-        service: InstrumentsService = Provide[
-            AppContainer.instruments_container.instruments_service
-        ],
-    ):
-        super().__init__()
-        self._service = service
+class InstrumentsWithPricesListView(generics.ListAPIView):
+    queryset = Instrument.objects.all()
+    serializer_class = InstrumentWithPriceSerializer
+    filter_backends = [filters.SearchFilter, filters.OrderingFilter]
+    search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
+    ordering_fields = ["ticker", "name", "market_cap"]
 
-    @extend_schema(
-        responses={200: InstrumentDetailedInfoSerializer},
-        summary="Get instrument details",
-        description="Get detailed information about a specific instrument by ticker",
-        operation_id="instrument_detail",
-    )
-    def get(self, request: Request, ticker: str) -> Response:  # pylint: disable=unused-argument
-        """
-        Get detailed information for a single instrument.
-        """
+    def list(self, request, *args, **kwargs):
+        queryset = self.filter_queryset(self.get_queryset())
+
+        page = self.paginate_queryset(queryset)
+        items = page if page is not None else queryset
+
+        tickers = [obj.ticker.upper() for obj in items]
+        repository = PolygonPricesRepository()
         try:
-            result = self._service.get_instrument_detailed_info(ticker)
-        except FetchInstrumentInfoException as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            snapshot_map = repository.get_prices_map(tickers=tickers) or {}
+        except Exception:
+            snapshot_map = {}
 
-        result_dict = result.model_dump()
+        context = {**self.get_serializer_context(), "snapshot_map": snapshot_map}
+        serializer = self.get_serializer(items, many=True, context=context)
 
-        processed_data = InstrumentDetailedInfoSerializer.sanitize_output(result_dict)
-
-        serialized = InstrumentDetailedInfoSerializer(data=processed_data)
-
-        if not serialized.is_valid():
-            return Response(
-                {"errors": serialized.errors},
-                status=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            )
-
-        return Response(serialized.data)
-
-
-class InstrumentNewsView(generics.GenericAPIView):
-    @inject
-    def __init__(
-        self,
-        service: InstrumentsService = Provide[
-            AppContainer.instruments_container.instruments_service
-        ],
-    ):
-        super().__init__()
-        self.service = service
-
-    @extend_schema(
-        responses={
-            "200": {
-                "type": "array",
-                "items": {
-                    "type": "object",
-                    "description": "News item for the instrument",
-                },
-            }
-        },
-    )
-    def get(self, request: Request, ticker: str) -> Response:
-        """
-
-        Args:
-            request (Request): The HTTP request object.
-            ticker (str): The ticker symbol to fetch news for.
-
-        Returns:
-            Response: A response containing the news items for the instrument.
-        """
-        try:
-            result = self.service.get_news(ticker)
-        except FetchInstrumentNewsException as e:
-            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-
-        result_dict = [item.model_dump() for item in result]
-
-        return Response(result_dict)
+        if page is not None:
+            return self.get_paginated_response(serializer.data)
+        return Response(serializer.data)

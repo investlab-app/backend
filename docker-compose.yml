@@ -1,3 +1,14 @@
+x-backend-common: &backend-common
+  build:
+    context: ./backend
+  env_file: .env
+  restart: unless-stopped
+  volumes:
+    - ./backend:/backend:delegated
+    - /backend/.venv
+  networks:
+    - app_network
+
 services:
   postgres:
     image: postgres:17
@@ -6,29 +17,131 @@ services:
     ports:
       - "${POSTGRES_PORT}:5432"
     volumes:
-      - .postgres_data:/var/lib/postgresql/data
+      - ./.postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
+      test:
+        ["CMD", "pg_isready", "-U", "${POSTGRES_USER}", "-d", "${POSTGRES_DB}"]
       interval: 10s
       timeout: 5s
       retries: 5
     networks:
       - app_network
+    profiles:
+      - default
+      - ci
+
+  redis:
+    image: redis:8.2
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+    networks:
+      - app_network
+    profiles:
+      - default
+      - ci
+
+  celery:
+    <<: *backend-common
+    command: ["uv", "run", "celery", "-A", "config", "worker", "-l", "info"]
+    healthcheck:
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    profiles:
+      - default
+
+  celery-beat:
+    <<: *backend-common
+    command: ["uv", "run", "celery", "-A", "config", "beat", "-l", "info"]
+    healthcheck:
+      test: ["CMD", "uv", "run", "celery", "-A", "config", "inspect", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    depends_on:
+      redis:
+        condition: service_healthy
+      backend:
+        condition: service_healthy
+    profiles:
+      - default
 
   backend:
-    build: ./backend
-    env_file: .env
-    restart: unless-stopped
+    <<: *backend-common
     depends_on:
       postgres:
         condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
     ports:
       - "8000:8000"
-    volumes:
-      - ./backend:/backend:delegated
-      - /backend/.venv
-    networks:
-      - app_network
+    profiles:
+      - default
+      - ci
+
+  backend-price-stream:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "mock_stream_prices"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - DJANGO_LOG_LEVEL=INFO
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - default
+
+  backend-price-notifier:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "notify_prices"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - default
+
+  backend-order-engine:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "run_order_engine"]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "/bin/true"]
+      interval: 10s
+      timeout: 10s
+      retries: 3
+    profiles:
+      - default
 
 volumes:
   postgres_data:
