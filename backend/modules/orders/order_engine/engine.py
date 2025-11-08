@@ -12,6 +12,7 @@ from modules.orders.order_engine.structures import (
     TradeEngineInput,
     TradeEngineOutput,
 )
+from modules.orders.order_engine.structures import LimitEngineOrder, LimitEngineOrderUpdate
 
 
 class TradeEngine:
@@ -99,8 +100,33 @@ class SingleInvestorTradeEngine:
                 continue
             if isinstance(o, MarketEngineOrder):
                 self._handle_market_order(o)
+            elif isinstance(o, LimitEngineOrder):
+                self._handle_limit_order(o)
             else:
                 raise RuntimeError("Unsupported order type")
+
+    def _handle_limit_order(self, order: LimitEngineOrder):
+        """
+        Execute a limit order only when the market price meets the limit price
+        condition. For buy orders we require market_price <= limit_price.
+        For sell orders we require market_price >= limit_price.
+        Otherwise the order stays untouched.
+        """
+        ticker = order.ticker
+        price = self._prices[ticker]
+
+        # Check if limit condition is satisfied
+        if order.is_buy:
+            # buy only when market price is at or below limit price
+            if price > order.limit_price:
+                return
+            # then behave like market buy at current market price
+            self._handle_market_buy(order)
+        else:
+            # sell only when market price is at or above limit price
+            if price < order.limit_price:
+                return
+            self._handle_market_sell(order)
 
     def _handle_market_order(self, order: MarketEngineOrder):
         if order.is_buy:

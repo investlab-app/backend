@@ -16,11 +16,22 @@ class MarketEngineOrder(EngineOrder):
     volume_processed: Decimal = Decimal(0)
 
 
+class LimitEngineOrder(EngineOrder):
+    volume: Decimal
+    is_buy: bool
+    limit_price: Decimal
+    volume_processed: Decimal = Decimal(0)
+
+
 class EngineOrderUpdate(BaseModel):
     id: uuid.UUID
 
 
 class MarketEngineOrderUpdate(EngineOrderUpdate):
+    volume_processed: Decimal
+
+
+class LimitEngineOrderUpdate(EngineOrderUpdate):
     volume_processed: Decimal
 
 

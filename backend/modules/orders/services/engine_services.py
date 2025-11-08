@@ -8,7 +8,7 @@ from django.db import transaction
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
-from modules.orders.models import Order
+from modules.orders.models import Order, LimitOrder, MarketOrder
 from modules.orders.order_engine.converters import (
     asset_to_engine_asset,
     order_to_engine_order,
@@ -18,10 +18,11 @@ from modules.orders.order_engine.structures import (
     EngineOrderUpdate,
     EngineTransaction,
     MarketEngineOrderUpdate,
+    LimitEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
-from modules.orders.services.order_services import MarketOrderService
+from modules.orders.services.order_services import MarketOrderService, LimitOrderService
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.transactions.schemas import TransactionParams
 from modules.transactions.services import ExecuteTransactionService
@@ -94,8 +95,13 @@ class PricesFetcher:
 
 
 class TradeEngineOutputHandler:
-    def __init__(self, order_service: MarketOrderService | None = None):
-        self.order_service = order_service or MarketOrderService()
+    def __init__(
+        self,
+        market_order_service: MarketOrderService | None = None,
+        limit_order_service: LimitOrderService | None = None,
+    ):
+        self.market_order_service = market_order_service or MarketOrderService()
+        self.limit_order_service = limit_order_service or LimitOrderService()
 
     async def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
         await database_sync_to_async(self._handle_output_sync)(output, prices)
@@ -107,8 +113,14 @@ class TradeEngineOutputHandler:
             self._handle_transactions(output.transactions, prices)
 
     def _handle_completed_orders(self, orders: list[uuid.UUID]):
-        for order in Order.objects.filter(id__in=orders):
-            self.order_service.delete(order)
+        # Delete orders of the correct type and release blocked funds
+        for order in Order.objects.filter(id__in=orders).prefetch_related("detail"):
+            if isinstance(order.detail, MarketOrder):
+                self.market_order_service.delete(order)
+            elif isinstance(order.detail, LimitOrder):
+                self.limit_order_service.delete(order)
+            else:
+                raise ValueError("Object not supported")
 
     def _handle_updated_orders(self, orders: list[EngineOrderUpdate]):
         ids = [o.id for o in orders]
@@ -118,6 +130,9 @@ class TradeEngineOutputHandler:
         for o in real_orders:
             corresponding_engine_order = orders_dict[o.id]
             if isinstance(corresponding_engine_order, MarketEngineOrderUpdate):
+                o.detail.volume_processed = corresponding_engine_order.volume_processed
+                o.detail.save()
+            elif isinstance(corresponding_engine_order, LimitEngineOrderUpdate):
                 o.detail.volume_processed = corresponding_engine_order.volume_processed
                 o.detail.save()
             else:
