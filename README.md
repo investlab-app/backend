@@ -51,7 +51,7 @@ uv run manage.py runserver
 First, start the containers:
 
 ```bash
-docker compose up --build
+docker compose --profile default up --build  
 ```
 
 Available commands to run in the container:
