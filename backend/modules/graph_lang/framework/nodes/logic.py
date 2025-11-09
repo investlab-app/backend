@@ -12,11 +12,18 @@ class AndNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
-        a = self.inA(context)
-        b = self.inB(context)
+    def _execute(self, context: ExecutionContext):
+        a = self._get(self.inA)
+        b = self._get(self.inB)
+        output = a and b
 
-        self.out.set(a and b)
+        self.out.set(output)
+
+        context.log(self.id, 'And', {
+            'a': a,
+            'b': b,
+            'out': output
+        })
 
 
 class OrNode(Node):
@@ -27,11 +34,18 @@ class OrNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
-        a = self.inA(context)
-        b = self.inB(context)
+    def _execute(self, context: ExecutionContext):
+        a = self._get(self.inA)
+        b = self._get(self.inB)
+        output = a or b
 
-        self.out.set(a or b)
+        self.out.set(output)
+
+        context.log(self.id, 'or', {
+            'a': a,
+            'b': b,
+            'out': output
+        })
 
 
 class NotNode(Node):
@@ -40,7 +54,13 @@ class NotNode(Node):
     inVal = edges.BoolType(direction=edges.INPUT, source="in")
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
-        val = self.inVal(context)
+    def _execute(self, context: ExecutionContext):
+        val = self._get(self.inVal)
+        output = not val
 
-        self.out.set(not val)
+        self.out.set(output)
+
+        context.log(self.id, 'not', {
+            'in': val,
+            'out': output
+        })

@@ -12,13 +12,21 @@ class BuySellAmountNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
+    def _execute(self, context: ExecutionContext):
+        action=self._get(self.action)
+        amount=self._get(self.amount)
+        ticker=self._get(self.ticker)
+
         action = BuySellAction(
-            action=self.action(context),
-            amount=self.amount(context),
-            ticker=self.ticker(context),
+            action=action,
+            amount=amount,
+            ticker=ticker
         )
         context.effects.add(action)
 
         self.out.set(None)
+
+        context.log(self.id, 'BuySell', {
+            'action': action,
+        })
 

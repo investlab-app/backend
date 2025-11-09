@@ -15,12 +15,20 @@ class IsGreaterLesserNode(Node):
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
-        direction = self.direction(context)
-        value = self.inValue(context)
-        x = self.inX(context)
+    def _execute(self, context: ExecutionContext):
+        direction = self._get(self.direction)
+        value = self._get(self.inValue)
+        x = self._get(self.inX)
 
         if direction == "less":
-            self.out.set(value < x)
+            output = value < x
         else:
-            self.out.set(value > x)
+            output = value > x
+
+        self.out.set(output)
+
+        context.log(self.id, direction, {
+            'inVal': value,
+            'x': x,
+            'output': output
+        })

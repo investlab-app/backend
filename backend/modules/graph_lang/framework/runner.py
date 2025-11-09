@@ -37,5 +37,6 @@ class Runner:
         )
 
         root_node.execute(context)
+        context.dump_logs()
 
         return effect_set

@@ -13,9 +13,16 @@ class FlowIfNode(Node):
 
     out = edges.VoidType(direction=edges.OUTPUT)
 
-    def execute(self, context: ExecutionContext):
-        if self.inIf(context):
-            self.inThen(context)
+    def _execute(self, context: ExecutionContext):
+        inIf = self._get(self.inIf)
+
+        if inIf:
+            self._get(self.inThen)
         else:
-            self.inElse(context)
+            self._get(self.inElse)
         self.out.set(None)
+
+        context.log(self.id, 'If', {
+            'if': inIf,
+            'then' if inIf else 'else': None,
+        })

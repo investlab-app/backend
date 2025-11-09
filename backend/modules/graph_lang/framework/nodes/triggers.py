@@ -10,5 +10,7 @@ class CheckEveryNode(Node):
 
     in_ = edges.VoidType(direction=edges.INPUT, source="in")
 
-    def execute(self, context: ExecutionContext):
-        self.in_(context)
+    def _execute(self, context: ExecutionContext):
+        self._get(self.in_)
+
+        context.log(self.id, 'Check every trigger')

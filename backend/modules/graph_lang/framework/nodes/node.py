@@ -1,11 +1,19 @@
+from decimal import Decimal
 from datetime import datetime, timedelta
 from typing import Any, Optional
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from modules.graph_lang.framework.price_provider import PrefetchRange
 
 from modules.graph_lang.framework.actions import GraphActionSet
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
+
+@dataclass
+class NodeLog:
+    id :str
+    name :str
+    fields :dict[str, Any]
+    level :int = 0
 
 
 @dataclass
@@ -13,6 +21,62 @@ class ExecutionContext:
     price_provider: Any
     effects: set
     time_at: datetime
+
+    level: int = 0
+    logs: list = field(default_factory=list)
+
+    def log(self, id, name, fields = {}):
+        log = NodeLog(id, name, fields, self.level)
+        self.logs.append(log)
+    
+    def get_logs(self) -> list[NodeLog]:
+        @dataclass
+        class TreeLog:
+            log: NodeLog
+            children: list['TreeLog'] = field(default_factory=list)
+
+        logs = list(reversed(self.logs))
+
+        def get_tree_log(logs :list[NodeLog], start :int) -> tuple[TreeLog, int]:
+            log = logs[start]
+            level = logs[start].level
+            children = []
+
+            start+=1
+            while start < len(logs) and level < logs[start].level:
+                child_log, start = get_tree_log(logs, start)
+                children.append(child_log)
+
+            return TreeLog(log, list(reversed(children))), start
+
+        tree_log, _ = get_tree_log(logs, 0)
+
+        def traverse_pre_order(tree_log :TreeLog) -> list[NodeLog]:
+            result = [tree_log.log]
+            for c in tree_log.children:
+                result += traverse_pre_order(c)
+            return result
+                
+        return traverse_pre_order(tree_log)
+
+    def dump_logs(self):
+        logs = self.get_logs()
+        print('\n')
+        print('GRAPH RUN LOGS ############################')
+        for l in logs:
+            log_string = ''
+            log_string += ' ' * l.level * 4
+            log_string += f'{l.name} ({l.id}) ['
+            for key, value in l.fields.items():
+                if isinstance(value, (float, Decimal)):
+                    log_string += f'{key}: {value:.2f} '
+                else:
+                    log_string += f'{key}: {value} '
+            log_string += ']'
+            print(log_string)
+        print('END OF GRAPH RUN LOGS #####################')
+        print('\n')
+
 
 
 class NodeOutput:
@@ -98,13 +162,14 @@ class NodeUtilsMixin:
 
 class Node(NodeUtilsMixin):
     all_edges: list
-    id: str | None
+    id: str | None = None
     TRIGGER = False
     TYPE_NAME = None
 
     def __init__(self, inputs={}):
         self._initialize_input_outputs()
         self._pass_data_to_inputs(inputs)
+        self._context = None
 
     def _initialize_input_outputs(self):
         for name, field in self.__class__.__dict__.items():
@@ -143,7 +208,31 @@ class Node(NodeUtilsMixin):
         )
 
     def execute(self, context: "ExecutionContext"):
+        self._context = context
+        self._execute(context)
+        self._context = None
+
+        if context.level == 0:
+            pass
+
+    def _execute(self, context: "ExecutionContext"):
         pass
+
+    def _get(self, edge :NodeInput, time_at :datetime = None):
+        if not self._context:
+            return edge(None)
+
+        original_time = self._context.time_at
+        time_at = time_at or original_time
+        self._context.time_at = time_at
+        self._context.level += 1
+
+        value = edge(self._context)
+
+        self._context.level -= 1
+        self._context.time_at = original_time
+
+        return value
 
     def calculate_needed_historical_prices(self):
         children_ranges: dict[str, PrefetchRange] = {}

@@ -104,19 +104,6 @@ class TestNode:
         data == {"AAPL": timedelta(days=4)}
 
     def test__integration(self):
-        # nodes = TimeAwareNode(
-        #     timespan=timedelta(days=1),
-        #     inVal = PassByNode(
-        #         inVal = BranchNode(
-        #             inA = TickerNode(self.price_provider, 'AAPL'),
-        #             inB = TimeAwareNode(
-        #                 timespan=timedelta(days=1),
-        #                 inVal = TickerNode(self.price_provider, 'MSQ')
-        #             )
-        #         )
-        #     )
-        # )
-
         root = TimeAwareNode(timespan=timedelta(days=1))
         pass_by = PassByNode()
         branch = BranchNode()
