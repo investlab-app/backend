@@ -114,6 +114,14 @@ class SingleInvestorTradeEngine:
         """
         ticker = order.ticker
         price = self._prices[ticker]
+        market_order = MarketEngineOrder(
+            id=order.id,
+            ticker=order.ticker,
+            investor_id=order.investor_id,
+            volume=order.volume,
+            is_buy=order.is_buy,
+            volume_processed=order.volume_processed,
+        )
 
         # Check if limit condition is satisfied
         if order.is_buy:
@@ -121,12 +129,12 @@ class SingleInvestorTradeEngine:
             if price > order.limit_price:
                 return
             # then behave like market buy at current market price
-            self._handle_market_buy(order)
+            self._handle_market_buy(market_order)
         else:
             # sell only when market price is at or above limit price
             if price < order.limit_price:
                 return
-            self._handle_market_sell(order)
+            self._handle_market_sell(market_order)
 
     def _handle_market_order(self, order: MarketEngineOrder):
         if order.is_buy:
