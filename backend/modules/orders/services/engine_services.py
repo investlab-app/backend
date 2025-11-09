@@ -8,7 +8,7 @@ from django.db import transaction
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
-from modules.orders.models import Order, LimitOrder, MarketOrder
+from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.orders.order_engine.converters import (
     asset_to_engine_asset,
     order_to_engine_order,
@@ -17,12 +17,12 @@ from modules.orders.order_engine.engine import TradeEngine
 from modules.orders.order_engine.structures import (
     EngineOrderUpdate,
     EngineTransaction,
-    MarketEngineOrderUpdate,
     LimitEngineOrderUpdate,
+    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
-from modules.orders.services.order_services import MarketOrderService, LimitOrderService
+from modules.orders.services.order_services import LimitOrderService, MarketOrderService
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.transactions.schemas import TransactionParams
 from modules.transactions.services import ExecuteTransactionService
@@ -127,10 +127,10 @@ class TradeEngineOutputHandler:
 
         for o in real_orders:
             corresponding_engine_order = orders_dict[o.id]
-            if isinstance(corresponding_engine_order, MarketEngineOrderUpdate):
-                o.detail.volume_processed = corresponding_engine_order.volume_processed
-                o.detail.save()
-            elif isinstance(corresponding_engine_order, LimitEngineOrderUpdate):
+            if isinstance(
+                corresponding_engine_order,
+                (MarketEngineOrderUpdate, LimitEngineOrderUpdate),
+            ):
                 o.detail.volume_processed = corresponding_engine_order.volume_processed
                 o.detail.save()
             else:

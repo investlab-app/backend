@@ -1,6 +1,6 @@
 from modules.core.constants import PrecisionType
 from modules.orders.order_engine.engine import TradeEngine
-from modules.orders.order_engine.structures import TradeEngineInput, EngineTransaction
+from modules.orders.order_engine.structures import EngineTransaction, TradeEngineInput
 
 
 def _order_ids_match(orders, ids):

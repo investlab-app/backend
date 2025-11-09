@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 
 from modules.instruments.tests.conftest import create_fake_instrument
-from modules.orders.models import MarketOrder, Order, LimitOrder
+from modules.orders.models import LimitOrder, MarketOrder, Order
 
 
 @pytest.fixture

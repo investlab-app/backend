@@ -4,7 +4,7 @@ from django.db import transaction
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
-from modules.orders.models import MarketOrder, Order, LimitOrder
+from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.repositories import PolygonPricesRepository
 
 
@@ -128,7 +128,6 @@ class LimitOrderService:
         return order
 
     def delete(self, order: Order):
-
         if not isinstance(order.detail, LimitOrder):
             raise ValueError("Only limit orders can be deleted with this service.")
 

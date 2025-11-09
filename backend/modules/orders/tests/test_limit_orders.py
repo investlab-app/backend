@@ -1,4 +1,5 @@
 from decimal import Decimal
+
 import pytest
 
 from modules.orders.order_engine.structures import (
@@ -7,7 +8,7 @@ from modules.orders.order_engine.structures import (
     LimitEngineOrder,
     TradeEngineInput,
 )
-from modules.orders.tests._utils import _run_test
+from modules.orders.tests.utils import _run_test
 
 TEST_INVESTOR_ID = "816e3548-a012-412d-879a-cc742b58e721"
 
@@ -111,7 +112,11 @@ def test_limit_sell_not_triggered(uuids):
                     limit_price=Decimal(11),
                 )
             ],
-            assets=[EngineAsset(investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(1))],
+            assets=[
+                EngineAsset(
+                    investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(1)
+                )
+            ],
             prices={"AAPL": Decimal(10)},
             balances={TEST_INVESTOR_ID: Decimal(100)},
         ),
@@ -134,7 +139,11 @@ def test_limit_sell_triggered_success(uuids):
                     limit_price=Decimal(9),
                 )
             ],
-            assets=[EngineAsset(investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(1))],
+            assets=[
+                EngineAsset(
+                    investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(1)
+                )
+            ],
             prices={"AAPL": Decimal(10)},
             balances={TEST_INVESTOR_ID: Decimal(100)},
         ),
@@ -164,7 +173,11 @@ def test_limit_sell_partial_due_to_assets(uuids):
                     limit_price=Decimal(9),
                 )
             ],
-            assets=[EngineAsset(investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(5))],
+            assets=[
+                EngineAsset(
+                    investor_id=TEST_INVESTOR_ID, ticker="AAPL", volume=Decimal(5)
+                )
+            ],
             prices={"AAPL": Decimal(10)},
             balances={TEST_INVESTOR_ID: Decimal(100)},
         ),

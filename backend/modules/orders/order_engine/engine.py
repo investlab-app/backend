@@ -7,12 +7,12 @@ from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineOrder,
     EngineTransaction,
+    LimitEngineOrder,
     MarketEngineOrder,
     MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
-from modules.orders.order_engine.structures import LimitEngineOrder, LimitEngineOrderUpdate
 
 
 class TradeEngine:

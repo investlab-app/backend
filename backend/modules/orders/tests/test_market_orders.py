@@ -8,8 +8,8 @@ from modules.orders.order_engine.structures import (
     MarketEngineOrder,
     TradeEngineInput,
 )
-from modules.orders.tests._utils import _run_test
 from modules.orders.tests.conftest import uuids
+from modules.orders.tests.utils import _run_test
 
 TEST_INVESTOR_ID = "816e3548-a012-412d-879a-cc742b58e721"
 

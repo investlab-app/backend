@@ -57,7 +57,7 @@ class MarketOrder(BaseModel):
         verbose_name_plural = _("Market Orders")
 
     def __str__(self):
-        return f"Market order for volume: {self.volume}. Buy: {self.is_buy}"
+        return f"MarketOrder(volume={self.volume}, is_buy={self.is_buy})"
 
 
 class LimitOrder(BaseModel):
@@ -80,4 +80,7 @@ class LimitOrder(BaseModel):
         verbose_name_plural = _("Limit Orders")
 
     def __str__(self):
-        return f"Limit order for volume: {self.volume}. Buy: {self.is_buy} @ {self.limit_price}"
+        return (
+            f"LimitOrder(volume={self.volume}, "
+            f"is_buy={self.is_buy}, limit_price={self.limit_price})"
+        )
