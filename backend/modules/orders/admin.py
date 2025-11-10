@@ -2,8 +2,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from modules.orders.models import MarketOrder, Order
-from modules.orders.models import LimitOrder
+from modules.orders.models import LimitOrder, MarketOrder, Order
 
 
 @admin.register(Order)
@@ -22,6 +21,7 @@ class OrderAdmin(ModelAdmin):
         (_("Detail"), {"fields": ("detail_type", "detail_id")}),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )
+
     @admin.display(description=_("Detail"))
     def detail_repr(self, obj):
         return str(obj.detail) if obj.detail else "-"
@@ -72,5 +72,5 @@ class LimitOrderAdmin(ModelAdmin):
                 )
             },
         ),
-        (_("Timestamps"), {"fields": ("created_at", "updated_at")} ),
+        (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )
