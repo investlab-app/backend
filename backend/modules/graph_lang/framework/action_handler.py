@@ -68,7 +68,7 @@ class ActionHandler:
 
     def _handle_buy_sell_price(self, investor :Investor, graph :Graph, action :BuySellForPriceAction):
         prices = json.loads(redis_client.get('latest_prices'))
-        volume = action.price / prices[action.ticker]
+        volume = action.price / prices[action.ticker]['close']
         self._try_create_market_order(
             investor=investor,
             graph=graph,
@@ -146,3 +146,5 @@ class ActionHandler:
                 success = success,
                 effect = effect_detail
             )
+
+#  TODO what happens if there is no latest price for ticker? Should fail, implement

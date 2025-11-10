@@ -1,4 +1,6 @@
 import json
+from modules.instruments.serializers import InstrumentNameSerializer
+from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
 
 from rest_framework import serializers
 from rest_framework import exceptions
@@ -6,7 +8,7 @@ from dataclasses import asdict
 from modules.graph_lang.framework.parser import Parser
 from modules.graph_lang.framework.validator import Validator
 
-from modules.graph_lang.models import Graph
+from modules.graph_lang.models import BuySellEffect, Graph, GraphEffect, NotificationEffect
 
 
 class GraphValidationError(BaseException):
@@ -125,3 +127,48 @@ class GraphResultSerializer(serializers.Serializer):
 
 class RunGraphResultSerializer(serializers.Serializer):
     results = GraphResultSerializer(many=True)
+
+
+class GraphTransactionEffectSerializer(serializers.ModelSerializer):
+    instrument = InstrumentNameSerializer()
+
+    class Meta:
+        model = BuySellEffect
+        fields = ['instrument', 'is_buy', 'amount']
+
+    def get_effect_type(self, obj) -> str:
+        return 'transaction'
+
+class GraphNotificationEffectSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = NotificationEffect
+        fields = ['message', 'format']
+
+    def get_effect_type(self, obj) -> str:
+        return 'notification'
+
+class GraphEffectSerializer(serializers.ModelSerializer):
+    effect = serializers.SerializerMethodField()
+
+    class Meta:
+        model = GraphEffect
+        fields = ['created_at', 'effect_type', 'effect', 'success']
+
+    @extend_schema_field(
+        PolymorphicProxySerializer(
+            component_name="GraphEffectDetail",
+            serializers = {
+                'transaction': GraphTransactionEffectSerializer,
+                'notification': GraphNotificationEffectSerializer
+            },
+            resource_type_field_name='effect_type'
+        )
+    )
+    def get_effect(self, obj):
+        mapping = {
+            BuySellEffect: GraphTransactionEffectSerializer,
+            NotificationEffect: GraphNotificationEffectSerializer
+        }
+        return mapping[obj.effect_type.model_class()](obj.effect).data
+
+# TODO why tf is effect a number

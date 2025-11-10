@@ -18,6 +18,7 @@ from modules.investors.models import Asset, Investor
 from modules.graph_lang.models import GraphEffect, BuySellEffect, NotificationEffect
 from modules.graph_lang.tests.conftest import fake_graph
 from modules.notifications.services import EmailPayload, PushPayload
+from modules.prices.tests.conftest import get_fake_ohlc
 
 pytestmark = pytest.mark.django_db
 
@@ -41,7 +42,10 @@ class TestActionHandlerBase:
         )
 
     def set_prices(self, prices):
-        redis_client.set('latest_prices', json.dumps(prices))
+        ohlc_prices = {}
+        for key, value in prices.items():
+            ohlc_prices[key] = get_fake_ohlc(ticker=key, close=value)
+        redis_client.set('latest_prices', json.dumps(ohlc_prices))
 
     def set_assets(self, volume):
         Asset.objects.create(
@@ -251,6 +255,7 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.handle_default({self.buy_price('AAPL', 100)})
 
         assert GraphEffect.objects.all()[0].success
+        self.clear_prices()
 
     def test__buy_sell_price__multiple_effects__all_handled(self):
         self.set_prices({'AAPL': 50})
@@ -259,6 +264,7 @@ class TestBuySellPrice(TestActionHandlerBase):
 
         assert self.order_service.create.call_count == 2
         assert len(GraphEffect.objects.all()) == 2
+        self.clear_prices()
 
     def test__buy_sell_price_fail__failed_effect_is_created(self):
         self.order_service.create.return_value = None
@@ -267,6 +273,7 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.handle_default({self.buy_price('AAPL', 100)})
 
         assert not GraphEffect.objects.all()[0].success
+        self.clear_prices()
 
 class TestNotificationEffect(TestActionHandlerBase):
     @pytest.fixture(autouse=True)
@@ -333,3 +340,4 @@ class TestNotificationEffect(TestActionHandlerBase):
 # TODO make 'latest_prices' from redis client constant
 # TODO make fixture for redis_client prices
 # TODO check ticker case sensitivity
+# TODO extract set_prices into prices conftest

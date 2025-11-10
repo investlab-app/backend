@@ -7,17 +7,21 @@ from rest_framework.views import APIView
 from rest_framework import exceptions
 from rest_framework import status
 from rest_framework.response import Response
+from django.http import JsonResponse
 import json
 from drf_spectacular.utils import extend_schema
 
 
-from modules.graph_lang.models import Graph
+from modules.graph_lang.models import Graph, GraphEffect
 from modules.investors.models import Investor
 from modules.graph_lang.serializers import (
     GraphSerializer,
     GraphUpdateSerializer,
     RunGraphSerializer,
     RunGraphResultSerializer,
+    GraphTransactionEffectSerializer,
+    GraphNotificationEffectSerializer,
+    GraphEffectSerializer
 )
 from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.framework.price_provider import MockPriceProvider
@@ -86,3 +90,16 @@ class RunGraphView(APIView):
 
         output_serializer = RunGraphResultSerializer({"results": actions})
         return Response(output_serializer.data)
+
+class GraphResultView(generics.ListAPIView):
+    serializer_class = GraphEffectSerializer 
+
+    def get_queryset(self):
+        pk = self.kwargs.get('pk')
+        print(self.request.query_params)
+        print(pk)
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        print(investor)
+        graph = get_object_or_404(Graph, investor=investor, pk = pk)
+        print(graph)
+        return GraphEffect.objects.filter(graph = graph)
