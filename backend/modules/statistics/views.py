@@ -14,6 +14,7 @@ from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.investors.services import InvestorStatsService
 from modules.statistics.serializers import (
+    AssetAllocationQueryParams,
     AssetAllocationSerializer,
     CurrentAccountValueSerializer,
     InvestorStatsSerializer,
@@ -143,6 +144,9 @@ class AssetAllocationView(generics.RetrieveAPIView):
     serializer_class = AssetAllocationSerializer
 
     def retrieve(self, request, *args, **kwargs):
+        parameters = AssetAllocationQueryParams(data=request.query_params)
+        parameters.is_valid(raise_exception=True)
+        instruments_number = parameters.validated_data["instruments_number"]
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         investor_tickers = get_investor_tickers(investor)
 
@@ -156,6 +160,11 @@ class AssetAllocationView(generics.RetrieveAPIView):
         is_service = InvestorStatsService()
         total_value = is_service.get_total_value(investor=investor)
         asset_allocations = is_service.get_asset_allocation(investor=investor)
+        asset_allocations = sorted(
+            asset_allocations, key=lambda x: x.percentage, reverse=True
+        )
+        main_allocations = asset_allocations[:instruments_number]
+        rest_allocations = asset_allocations[instruments_number:]
 
         response_data = {
             "total_value": round(total_value, 2),
@@ -164,19 +173,43 @@ class AssetAllocationView(generics.RetrieveAPIView):
                 {
                     "instrument_name": allocation.asset.ticker.name,
                     "instrument_ticker": allocation.asset.ticker.ticker,
-                    "instrument_logo": allocation.asset.ticker.logo,
-                    "instrument_icon": allocation.asset.ticker.icon,
+                    "instrument_logo": (
+                        logo if (logo := allocation.asset.ticker.logo) else None
+                    ),
+                    "instrument_icon": (
+                        icon if (icon := allocation.asset.ticker.icon) else None
+                    ),
                     "value": round(allocation.total_value, 2),
                     "percentage": round(allocation.percentage, 2),
                 }
-                for allocation in asset_allocations
+                for allocation in main_allocations
             ],
         }
+
+        # Add "Other" allocation if there are remaining allocations
+        if rest_allocations:
+            response_data["allocations"].append(
+                {
+                    "instrument_name": "Other",
+                    "instrument_ticker": "OTHER",
+                    "instrument_logo": None,
+                    "instrument_icon": None,
+                    "value": round(
+                        sum(a.total_value for a in rest_allocations),
+                        2,
+                    ),
+                    "percentage": round(
+                        sum(a.percentage for a in rest_allocations),
+                        2,
+                    ),
+                }
+            )
 
         serializer = self.get_serializer(response_data)
         return Response(serializer.data)
 
     @extend_schema(
+        parameters=[AssetAllocationQueryParams],
         responses={200: AssetAllocationSerializer},
         summary="Get asset allocation",
         description="Get asset allocation data for the currently authenticated user.",
@@ -351,8 +384,10 @@ class TransactionHistoryView(generics.RetrieveAPIView):
         parameters.is_valid(raise_exception=True)
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         position_type = parameters.validated_data.get("type", "both")
-        tickers = parameters.validated_data.get("tickers", [])
-        if not tickers:
+        tickers_names = parameters.validated_data.get("tickers", [])
+        if tickers_names:
+            tickers = Instrument.objects.filter(ticker__in=tickers_names)
+        else:
             tickers = get_investor_tickers(investor)
 
         transactions = Transaction.objects.filter(investor=investor).select_related(
@@ -401,7 +436,9 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 market_value = asset_allocations_map[ticker_symbol].total_value
 
             position = {
-                "name": ticker_symbol,
+                "symbol": ticker_symbol,
+                "name": ticker.name,
+                "icon": (icon if (icon := ticker.icon) else None),
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain": round(stats_map[ticker_symbol].gain, 2),

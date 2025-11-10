@@ -1,4 +1,3 @@
-from django.db import transaction
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_field
 from rest_framework import serializers
@@ -6,12 +5,13 @@ from rest_framework import serializers
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import InstrumentNameSerializer
 from modules.orders.models import MarketOrder, Order
+from modules.orders.services.order_services import MarketOrderService
 
 
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
     ticker = serializers.CharField(write_only=True)
     volume = serializers.DecimalField(
-        min_value=0, max_digits=15, decimal_places=2, write_only=True
+        min_value=0, max_digits=15, decimal_places=5, write_only=True
     )
     is_buy = serializers.BooleanField(write_only=True)
 
@@ -22,16 +22,16 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
-
-        with transaction.atomic():
-            detail = MarketOrder.objects.create(
-                volume=validated_data["volume"],
-                volume_processed=0,
-                is_buy=validated_data["is_buy"],
-            )
-
-            order = Order.objects.create(
-                ticker=instrument, investor=validated_data["investor"], detail=detail
+        service = MarketOrderService()
+        order = service.create(
+            instrument=instrument,
+            investor=validated_data["investor"],
+            volume=validated_data["volume"],
+            is_buy=validated_data["is_buy"],
+        )
+        if not order:
+            raise serializers.ValidationError(
+                "Cannot create market order due to blocked funds"
             )
 
         return order
@@ -41,9 +41,14 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
 
 class MarketOrderSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
     class Meta:
         model = MarketOrder
-        fields = ["volume", "volume_processed", "is_buy"]
+        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
+
+    def get_detail_type(self, obj) -> str:
+        return "market"
 
 
 class OrderSerializer(serializers.ModelSerializer):

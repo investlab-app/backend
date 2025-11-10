@@ -20,6 +20,9 @@ class Investor(BaseModel):
     balance = models.DecimalField(
         max_digits=30, decimal_places=2, default="0", verbose_name=_("Balance")
     )
+    blocked_funds = models.DecimalField(
+        max_digits=30, decimal_places=2, default="0", verbose_name=_("Blocked Funds")
+    )
 
     class Meta:
         verbose_name = _("Investor")
@@ -70,3 +73,24 @@ class AccountValueSnapshot(BaseModel):
         verbose_name = _("Account Value Snapshot")
         verbose_name_plural = _("Account Value Snapshots")
         ordering = ["-timestamp"]
+
+
+class NotificationHistory(BaseModel):
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        related_name="notifications",
+        verbose_name=_("Investor"),
+    )
+    type = models.CharField(max_length=50, verbose_name=_("Notification Type"))
+    message_en = models.TextField(verbose_name=_("Notification Message (english)"))
+    message_pl = models.TextField(verbose_name=_("Notification Message (polish)"))
+    sent_at = models.DateTimeField(auto_now_add=True, verbose_name=_("Sent At"))
+
+    class Meta:
+        verbose_name = _("Notification History")
+        verbose_name_plural = _("Notification Histories")
+        ordering = ["-sent_at"]
+
+    def __str__(self):
+        return f"Notification to Investor {self.investor.id} at {self.sent_at}"

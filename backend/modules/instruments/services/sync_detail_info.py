@@ -1,8 +1,10 @@
 from collections.abc import Iterable
 
+from config.settings import TRANSLATE_INSTRUMENT_DESCRIPTION
 from modules.core.mixins import UpdateWithMappingMixin
 from modules.instruments.models import Instrument
 from modules.instruments.repositories import PolygonTickersRepository
+from modules.instruments.services.translation_service import TranslationService
 
 
 class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
@@ -16,6 +18,7 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         "base_currency_symbol": "base_currency_symbol",
         "base_currency_name": "base_currency_name",
         "description": "description",
+        "description_pl": "description_pl",
         "ticker_root": "ticker_root",
         "ticker_suffix": "ticker_suffix",
         "homepage_url": "homepage_url",
@@ -49,14 +52,38 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
         self,
         instruments: Iterable[Instrument] | None = None,
         repository: PolygonTickersRepository | None = None,
+        translation_service: TranslationService | None = None,
     ):
         self.instruments = instruments or Instrument.objects.all()
         self.repository = repository or PolygonTickersRepository()
+        self.translation_service = translation_service or TranslationService()
+
+    def _translate_description(
+        self,
+        instrument: Instrument,
+        description: str,
+    ) -> tuple[Instrument, bool]:
+        """
+        Translate description to Polish.
+        Returns a tuple of (updated_instrument, translation_performed).
+        """
+        try:
+            polish_translation = self.translation_service.translate_to_polish(
+                description
+            )
+            if polish_translation:
+                instrument.description_pl = polish_translation
+                return instrument, True
+
+        except Exception:
+            pass
+
+        return instrument, False
 
     def sync_instruments_details(self) -> dict[str, int]:
         """Synchronize instruments details based on Polygon TickerDetails."""
         to_update = []
-        no_changes, errors = 0, 0
+        no_changes, errors, translation_errors = 0, 0, 0
 
         for instrument in self.instruments:
             ticker_details = self.repository.get_ticker_details(instrument.ticker)
@@ -64,9 +91,27 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
                 errors += 1
                 continue
 
+            old_description = instrument.description
+            new_description = ticker_details.description
+            need_of_translation = old_description != new_description
+
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
+
+            if TRANSLATE_INSTRUMENT_DESCRIPTION and need_of_translation:
+                (
+                    updated_instrument,
+                    translation_updated,
+                ) = self._translate_description(
+                    updated_instrument, ticker_details.description
+                )
+
+                if translation_updated:
+                    updated = True
+                else:
+                    translation_errors += 1
+
             if updated:
                 to_update.append(updated_instrument)
             else:
@@ -82,4 +127,5 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
             "updated": len(to_update),
             "no_changes": no_changes,
             "errors": errors,
+            "translation_errors": translation_errors,
         }
