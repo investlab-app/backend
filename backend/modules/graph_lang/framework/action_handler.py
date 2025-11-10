@@ -1,4 +1,7 @@
+from decimal import Decimal
+import json
 from uuid import UUID
+from config.clients import redis_client
 from django.db import transaction
 from modules.graph_lang.framework.actions import (
     BuySellAmountAction,
@@ -28,32 +31,85 @@ class ActionHandler:
         graph_id: UUID,
         action_set: set[Action],
     ):
+        graph = Graph.objects.get(id=graph_id)
+        investor = Investor.objects.get(id=investor_id)
         for action in action_set:
             if isinstance(action, BuySellAmountAction):
                 self._handle_buy_sell_amount(
-                    investor_id=investor_id, graph_id=graph_id, action=action
+                    investor=investor, graph=graph, action=action
+                )
+            if isinstance(action, BuySellForPriceAction):
+                self._handle_buy_sell_price(
+                    investor=investor, graph=graph, action=action
+                )
+            if isinstance(action, BuySellPercentAction):
+                self._handle_buy_sell_percentage_of_assets(
+                    investor=investor, graph=graph, action=action
                 )
 
-    def _handle_buy_sell_amount(
-        self, investor_id: UUID, graph_id: UUID, action: BuySellAmountAction
-    ):
-        with transaction.atomic():
-            graph = Graph.objects.get(id=graph_id)
-            investor = Investor.objects.get(id=investor_id)
-            instrument = Instrument.objects.get(ticker__iexact=action.ticker)
 
-            result = self._order_service.create(
-                investor=investor,
-                instrument=instrument,
-                volume=action.amount,
-                is_buy=action.action == "buy",
-            )
-            success = result != None
+    def _handle_buy_sell_amount(
+        self, investor: Investor, graph: Graph, action: BuySellAmountAction,
+    ):
+        self._try_create_market_order(
+            investor=investor,
+            graph=graph,
+            volume=action.amount,
+            is_buy=action.action == 'buy',
+            ticker=action.ticker
+        )
+
+    def _handle_buy_sell_price(self, investor :Investor, graph :Graph, action :BuySellForPriceAction):
+        prices = json.loads(redis_client.get('latest_prices'))
+        volume = action.price / prices[action.ticker]
+        self._try_create_market_order(
+            investor=investor,
+            graph=graph,
+            volume=volume,
+            is_buy=action.action == 'buy',
+            ticker=action.ticker
+        )
+
+    def _handle_buy_sell_percentage_of_assets(self, investor :Investor, graph :Graph, action :BuySellPercentAction):
+        if action.percent < 0 or action.percent > 1:
+            volume = 0
+        else:
+            try:
+                asset = Asset.objects.get(investor = investor, ticker__ticker__iexact = action.ticker)
+                volume = asset.volume * action.percent
+            except Exception as e:
+                volume = 0
+        
+        self._try_create_market_order(
+            investor=investor,
+            graph=graph,
+            volume=volume,
+            is_buy=action.action == 'buy',
+            ticker=action.ticker
+        )
+
+        
+
+    def _try_create_market_order(self, investor :Investor, graph :Graph, volume :Decimal, is_buy :bool, ticker :str):
+        with transaction.atomic():
+            instrument = Instrument.objects.get(ticker__iexact=ticker)
+
+            if volume > 0:
+                result = self._order_service.create(
+                    investor=investor,
+                    instrument=instrument,
+                    volume=volume,
+                    is_buy=is_buy,
+                )
+                success = result is not None
+            else:
+                volume = 0
+                success = False
 
             effect_detail = BuySellEffect.objects.create(
                 instrument=instrument,
-                is_buy=action.action == "buy",
-                amount=action.amount,
+                is_buy=is_buy,
+                amount=volume,
             )
             GraphEffect.objects.create(
                 graph=graph, success=success, effect=effect_detail
