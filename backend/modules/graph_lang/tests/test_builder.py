@@ -94,7 +94,7 @@ def test_graph_builder__from_db():
     factory = MockNodeFactory()
     factory.set_node("MockNode", MockNode, node)
 
-    graph = fake_graph(graph_data=json.dumps(data.model_dump()), save=True)
+    graph = fake_graph(graph_data=data.model_dump(), save=True)
 
     result = GraphBuilder(factory).get_from_db(graph.id)
 

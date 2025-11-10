@@ -1,4 +1,5 @@
 from decimal import Decimal
+from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.models import Graph
 from modules.graph_lang.framework.builder import GraphBuilder
 from modules.graph_lang.framework.nodes import (
@@ -27,9 +28,9 @@ class Scheduler:
     max_sleep_timespan: timedelta
     _builder: GraphBuilder
 
-    def __init__(self, runner, builder, max_sleep_timespan=timedelta(seconds=1)):
-        self.runner = runner
-        self._builder = builder
+    def __init__(self, runner = None, builder = None, max_sleep_timespan=timedelta(seconds=1)):
+        self.runner = runner or Runner()
+        self._builder = builder or GraphBuilder()
         self.graphs = []
         self.max_sleep_timespan = max_sleep_timespan
         self.last_run_time = {}
@@ -45,7 +46,6 @@ class Scheduler:
     def _try_add_graph(self, id: str):
         graph = Graph.objects.get(id = id)
         node = self._builder.get_from_db(id)
-        print(graph.investor.id)
         graph = SchedulerGraph(id, graph.investor.id, node)
         self.graphs.append(graph)
         self.last_run_time[id] = datetime.now()

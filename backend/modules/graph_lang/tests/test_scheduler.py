@@ -157,14 +157,14 @@ class TestScheduler(TestSchedulerBase):
 
         self.assert_graphs_ran([])
 
-    def test_remove_graph__invalid_id_passed__gets_ignored(self):
-        self.scheduler.remove_graph("test")
+    def test_remove_graph__invalid_id_passed__gets_ignored(self, uuid):
+        self.scheduler.remove_graph(uuid)
 
-    def test_add_graph__graph_does_not_exist__gets_ignored(self):
-        self.scheduler.add_graph("test")
+    def test_add_graph__graph_does_not_exist__gets_ignored(self, uuid):
+        self.scheduler.add_graph(uuid)
 
-    def test_update_graph__graph_does_not_exist__gets_ignored(self):
-        self.scheduler.add_graph("test")
+    def test_update_graph__graph_does_not_exist__gets_ignored(self, uuid):
+        self.scheduler.add_graph(uuid)
 
 
 class TestMultipleTimersScheduler(TestSchedulerBase):

@@ -43,6 +43,5 @@ class GraphBuilder:
         except:
             raise ValueError("Specified graph does not exist")
 
-        json_data = json.loads(graph.graph_data)
-        graph_data = GraphData.model_validate(json_data)
+        graph_data = GraphData.model_validate(graph.graph_data)
         return self.build(graph_data)

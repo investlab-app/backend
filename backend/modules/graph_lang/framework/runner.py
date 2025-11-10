@@ -11,6 +11,7 @@ from modules.graph_lang.framework.builder import GraphBuilder
 logging = Logger(__name__)
 
 
+# TODO rename to GraphRunner
 class Runner:
     def __init__(self, builder: GraphBuilder = None):
         self._graph_builder = builder or GraphBuilder()
