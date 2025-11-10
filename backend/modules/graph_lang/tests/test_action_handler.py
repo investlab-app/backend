@@ -17,18 +17,23 @@ from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.graph_lang.models import GraphEffect, BuySellEffect, NotificationEffect
 from modules.graph_lang.tests.conftest import fake_graph
+from modules.notifications.services import EmailPayload, PushPayload
 
 pytestmark = pytest.mark.django_db
 
 
-class TestActionHandler:
+class TestActionHandlerBase:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.investor = create_fake_investor(save=True)
         self.graph = fake_graph(investor=self.investor, save=True)
         self.instrument = create_fake_instrument(ticker="AAPL", save=True)
         self.order_service = MagicMock()
-        self.handler = ActionHandler(self.order_service)
+        self.notification_service = MagicMock()
+        self.handler = ActionHandler(
+            order_service=self.order_service,
+            notification_service = self.notification_service
+            )
 
     def handle_default(self, action_set):
         self.handler.handle(
@@ -48,24 +53,6 @@ class TestActionHandler:
     def clear_prices(self):
         redis_client.delete('latest_prices')
 
-    def buy_amount(self, ticker, amount):
-        return BuySellAmountAction(action="buy", amount=Decimal(amount), ticker=ticker)
-
-    def sell_amount(self, ticker, amount):
-        return BuySellAmountAction(action="sell", amount=Decimal(amount), ticker=ticker)
-
-    def buy_price(self, ticker, price):
-        return BuySellForPriceAction(action='buy', price=Decimal(price), ticker=ticker)
-    
-    def sell_price(self, ticker, price):
-        return BuySellForPriceAction(action='sell', price=Decimal(price), ticker=ticker)
-
-    def buy_percentage(self, ticker, percent):
-        return BuySellPercentAction(action='buy', percent=Decimal(percent), ticker=ticker)
-
-    def sell_percentage(self, ticker, percent):
-        return BuySellPercentAction(action='sell', percent=Decimal(percent), ticker=ticker)
-
     def buy_sell_effect_equals(
         self, effect, is_buy, amount, success=True, graph=None, instrument=None
     ):
@@ -82,6 +69,17 @@ class TestActionHandler:
 
     def test__no_actions_given__nothing_happens(self):
         self.handle_default(action_set={})
+
+
+
+
+
+class TestBuySellAmount(TestActionHandlerBase):
+    def buy_amount(self, ticker, amount):
+        return BuySellAmountAction(action="buy", amount=Decimal(amount), ticker=ticker)
+
+    def sell_amount(self, ticker, amount):
+        return BuySellAmountAction(action="sell", amount=Decimal(amount), ticker=ticker)
 
     def test__buy_amount_action__calls_buy_service(self):
         self.handle_default(
@@ -143,39 +141,28 @@ class TestActionHandler:
         assert effect[0].success == False
         assert effect[1].success == False
 
-    def test__buy_sell_price__service_gets_called(self):
-        self.set_prices({'AAPL': 50})
-        self.handle_default({self.buy_price('AAPL', 100)})
+    def test__volume_is_zero__create_is_not_called(self):
+        self.handle_default({self.buy_amount('AAPL', 0)})
 
-        self.order_service.create.assert_called_once_with(
-            investor = self.investor,
-            instrument = self.instrument,
-            volume  = 2,
-            is_buy = True
+        assert self.order_service.create.call_count == 0
+
+    def test__volume_is_zero__failed_effect_is_added(self):
+        self.handle_default({self.buy_amount('AAPL', 0)})
+
+        effect = GraphEffect.objects.all()[0]
+        assert self.buy_sell_effect_equals(
+            effect,
+            is_buy=True,
+            amount=0,
+            success=False
         )
-        self.clear_prices()
 
-    def test__buy_sell_price__success_effect_is_created(self):
-        self.set_prices({'AAPL': 50})
-        self.handle_default({self.buy_price('AAPL', 100)})
+class TestBuyPercentage(TestActionHandlerBase):
+    def buy_percentage(self, ticker, percent):
+        return BuySellPercentAction(action='buy', percent=Decimal(percent), ticker=ticker)
 
-        assert GraphEffect.objects.all()[0].success
-
-    def test__buy_sell_price__multiple_effects__all_handled(self):
-        self.set_prices({'AAPL': 50})
-
-        self.handle_default({self.buy_price('AAPL', 100), self.sell_price('AAPL', 100)})
-
-        assert self.order_service.create.call_count == 2
-        assert len(GraphEffect.objects.all()) == 2
-
-    def test__buy_sell_price_fail__failed_effect_is_created(self):
-        self.order_service.create.return_value = None
-        self.set_prices({'AAPL': 50})
-
-        self.handle_default({self.buy_price('AAPL', 100)})
-
-        assert not GraphEffect.objects.all()[0].success
+    def sell_percentage(self, ticker, percent):
+        return BuySellPercentAction(action='sell', percent=Decimal(percent), ticker=ticker)
 
     def test__buy_percentage__service_gets_called(self):
         self.set_assets(50)
@@ -220,21 +207,6 @@ class TestActionHandler:
 
         assert not GraphEffect.objects.all()[0].success
 
-    def test__volume_is_zero__create_is_not_called(self):
-        self.handle_default({self.buy_amount('AAPL', 0)})
-
-        assert self.order_service.create.call_count == 0
-
-    def test__volume_is_zero__failed_effect_is_added(self):
-        self.handle_default({self.buy_amount('AAPL', 0)})
-
-        effect = GraphEffect.objects.all()[0]
-        assert self.buy_sell_effect_equals(
-            effect,
-            is_buy=True,
-            amount=0,
-            success=False
-        )
 
     def test__percentage_is_outside_range__create_not_called(self):
         self.set_assets(100)
@@ -255,7 +227,107 @@ class TestActionHandler:
             success=False
         )
 
+class TestBuySellPrice(TestActionHandlerBase):
+    def buy_price(self, ticker, price):
+        return BuySellForPriceAction(action='buy', price=Decimal(price), ticker=ticker)
+    
+    def sell_price(self, ticker, price):
+        return BuySellForPriceAction(action='sell', price=Decimal(price), ticker=ticker)
 
+    def test__buy_sell_price__service_gets_called(self):
+        self.set_prices({'AAPL': 50})
+        self.handle_default({self.buy_price('AAPL', 100)})
+
+        self.order_service.create.assert_called_once_with(
+            investor = self.investor,
+            instrument = self.instrument,
+            volume  = 2,
+            is_buy = True
+        )
+        self.clear_prices()
+
+    def test__buy_sell_price__success_effect_is_created(self):
+        self.set_prices({'AAPL': 50})
+        self.handle_default({self.buy_price('AAPL', 100)})
+
+        assert GraphEffect.objects.all()[0].success
+
+    def test__buy_sell_price__multiple_effects__all_handled(self):
+        self.set_prices({'AAPL': 50})
+
+        self.handle_default({self.buy_price('AAPL', 100), self.sell_price('AAPL', 100)})
+
+        assert self.order_service.create.call_count == 2
+        assert len(GraphEffect.objects.all()) == 2
+
+    def test__buy_sell_price_fail__failed_effect_is_created(self):
+        self.order_service.create.return_value = None
+        self.set_prices({'AAPL': 50})
+
+        self.handle_default({self.buy_price('AAPL', 100)})
+
+        assert not GraphEffect.objects.all()[0].success
+
+class TestNotificationEffect(TestActionHandlerBase):
+    @pytest.fixture(autouse=True)
+    def setup_notification(self):
+        self.notification_service.sync_send_email_notification.return_value = True
+        self.notification_service.sync_send_push_notifications.return_value = True
+
+    def email_notif(self, message = ""):
+        return NotificationAction(format='email', message=message)
+
+    def push_notif(self, message = ""):
+        return NotificationAction(format='push', message=message)
+
+    def test__notification_effect__notification_service_gets_called(self):
+        self.handle_default(action_set={self.email_notif('hehexd')})
+
+        self.notification_service.sync_send_email_notification.assert_called_once_with(
+            investor = self.investor,
+            email_payload = EmailPayload(subject='Notification from graph', body='hehexd')
+        )
+
+    def test__push_effect__notification_service_gets_called(self):
+        self.handle_default(action_set={self.push_notif('hehexd')})
+
+        self.notification_service.sync_send_push_notifications.assert_called_once_with(
+            investor = self.investor,
+            push_payload = PushPayload(title='Notification from graph', body='hehexd')
+        )
+
+    def test__mail_effect_success__new_effect_gets_created(self):
+        self.handle_default(action_set={self.email_notif('hehexd')})
+
+        effect = GraphEffect.objects.all()[0]
+        assert effect.graph == self.graph
+        assert effect.success == True
+        assert effect.effect.format == NotificationEffect.MAIL 
+        assert effect.effect.message == 'hehexd'
+
+    def test__push_effect_success__new_effect_gets_created(self):
+        self.handle_default(action_set={self.push_notif('hehexd')})
+
+        effect = GraphEffect.objects.all()[0]
+        assert effect.graph == self.graph
+        assert effect.success == True
+        assert effect.effect.format == NotificationEffect.PUSH 
+        assert effect.effect.message == 'hehexd'
+
+    def test__push_effect_failed__failed_effects_get_created(self):
+        self.notification_service.sync_send_email_notification.return_value = False
+        self.notification_service.sync_send_push_notifications.return_value = False
+
+        self.handle_default(action_set={
+            self.push_notif('hehexd'),
+            self.email_notif('hehexd'),
+        })
+
+        effects = GraphEffect.objects.all()
+        assert len(effects) == 2
+        assert effects[0].success == False
+        assert effects[1].success == False
+        
 
 
 # TODO make 'latest_prices' from redis client constant

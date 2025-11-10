@@ -11,6 +11,7 @@ from modules.graph_lang.framework.actions import (
     Action,
 )
 from modules.orders.services.order_services import MarketOrderService
+from modules.notifications.services import NotificationService
 from modules.investors.models import Investor, Asset
 from modules.instruments.models import Instrument
 from modules.graph_lang.models import (
@@ -19,11 +20,13 @@ from modules.graph_lang.models import (
     BuySellEffect,
     NotificationEffect,
 )
+from modules.notifications.services import EmailPayload, PushPayload
 
 
 class ActionHandler:
-    def __init__(self, order_service: MarketOrderService):
+    def __init__(self, order_service: MarketOrderService = None, notification_service :NotificationService = None):
         self._order_service = order_service or MarketOrderService()
+        self._notification_service = notification_service or NotificationService()
 
     def handle(
         self,
@@ -44,6 +47,10 @@ class ActionHandler:
                 )
             if isinstance(action, BuySellPercentAction):
                 self._handle_buy_sell_percentage_of_assets(
+                    investor=investor, graph=graph, action=action
+                )
+            if isinstance(action, NotificationAction):
+                self._handle_notification(
                     investor=investor, graph=graph, action=action
                 )
 
@@ -88,8 +95,6 @@ class ActionHandler:
             ticker=action.ticker
         )
 
-        
-
     def _try_create_market_order(self, investor :Investor, graph :Graph, volume :Decimal, is_buy :bool, ticker :str):
         with transaction.atomic():
             instrument = Instrument.objects.get(ticker__iexact=ticker)
@@ -113,4 +118,31 @@ class ActionHandler:
             )
             GraphEffect.objects.create(
                 graph=graph, success=success, effect=effect_detail
+            )
+
+    def _handle_notification(self, investor :Investor, graph :Graph, action :NotificationAction):
+        if action.format == 'email':
+            payload = EmailPayload(subject='Notification from graph', body=action.message)
+            success = self._notification_service.sync_send_email_notification(
+                investor=investor,
+                email_payload=payload
+            )
+            format = NotificationEffect.MAIL
+        else:
+            payload = PushPayload(title='Notification from graph', body=action.message)
+            success = self._notification_service.sync_send_push_notifications(
+                investor=investor,
+                push_payload=payload
+            )
+            format = NotificationEffect.PUSH
+
+        with transaction.atomic():
+            effect_detail = NotificationEffect.objects.create(
+                format = format,
+                message = action.message
+            )
+            GraphEffect.objects.create(
+                graph = graph,
+                success = success,
+                effect = effect_detail
             )
