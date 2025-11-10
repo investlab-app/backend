@@ -1,4 +1,6 @@
 from decimal import Decimal
+from modules.graph_lang.models import Graph
+from modules.graph_lang.framework.builder import GraphBuilder
 from modules.graph_lang.framework.nodes import (
     CheckEveryNode,
     BoughtSoldNode,
@@ -23,10 +25,11 @@ class Scheduler:
     graphs: list[SchedulerGraph]
     last_run_time: dict[str, datetime]
     max_sleep_timespan: timedelta
+    _builder: GraphBuilder
 
-    def __init__(self, runner, provider, max_sleep_timespan=timedelta(seconds=1)):
+    def __init__(self, runner, builder, max_sleep_timespan=timedelta(seconds=1)):
         self.runner = runner
-        self.provider = provider
+        self._builder = builder
         self.graphs = []
         self.max_sleep_timespan = max_sleep_timespan
         self.last_run_time = {}
@@ -34,13 +37,16 @@ class Scheduler:
     def add_graph(self, id: str):
         try:
             self._try_add_graph(id)
-        except Exception:
+        except Exception as e:
             logging.error(
                 f"Tried to add graph that does not exist to scheduler. Graph id: {id}"
             )
 
-    def _try_add_graph(self, id :str):
-        graph: SchedulerGraph = self.provider.get_graph(id)
+    def _try_add_graph(self, id: str):
+        graph = Graph.objects.get(id = id)
+        node = self._builder.get_from_db(id)
+        print(graph.investor.id)
+        graph = SchedulerGraph(id, graph.investor.id, node)
         self.graphs.append(graph)
         self.last_run_time[id] = datetime.now()
 
@@ -52,7 +58,7 @@ class Scheduler:
                 f"Tried to remove graph that does not exist from scheduler. Graph id: {id}"
             )
 
-    def _try_remove_graph(self, id :str):
+    def _try_remove_graph(self, id: str):
         graph = next(g for g in self.graphs if g.id == id)
         self.graphs.remove(graph)
         self.last_run_time.pop(id)
@@ -138,3 +144,4 @@ class Scheduler:
 
 
 # TODO normalize how node inputs are get, is it node._get(input) or node.input(None)
+# TODO Make member variables private
