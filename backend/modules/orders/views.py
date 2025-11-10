@@ -59,5 +59,4 @@ class DestroyOrderView(generics.DestroyAPIView):
         elif isinstance(instance.detail, LimitOrder):
             LimitOrderService().delete(instance)
         else:
-            # fallback
-            MarketOrderService().delete(instance)
+            raise ValueError("Object not supported")
