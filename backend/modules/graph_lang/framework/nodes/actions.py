@@ -1,5 +1,5 @@
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.actions import BuySellAction, GraphActionSet
+from modules.graph_lang.framework.actions import BuySellAmountAction
 from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
 
 
@@ -17,7 +17,7 @@ class BuySellAmountNode(Node):
         amount = self._get(self.amount)
         ticker = self._get(self.ticker)
 
-        action = BuySellAction(action=action, amount=amount, ticker=ticker)
+        action = BuySellAmountAction(action=action, amount=amount, ticker=ticker)
         context.effects.add(action)
 
         self.out.set(None)

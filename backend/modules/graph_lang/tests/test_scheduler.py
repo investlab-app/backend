@@ -21,6 +21,7 @@ pytestmark = pytest.mark.django_db
 
 fake = faker.Faker()
 
+
 class MockRunner:
     def __init__(self):
         self.ran_graphs = Counter()
@@ -82,11 +83,12 @@ class TestSchedulerBase:
     def uuid_factory(self):
         def _uuids(n) -> UUID:
             return [uuid.uuid4() for _ in range(n)]
+
         return _uuids
 
     def create_graph(self, id: UUID, investor_id: UUID):
         try:
-            investor = Investor.objects.get(id = investor_id)
+            investor = Investor.objects.get(id=investor_id)
         except:
             investor = create_fake_investor(investor_id=investor_id, save=True)
         fake_graph(
@@ -258,7 +260,9 @@ class TestPriceTriggerScheduler(TestSchedulerBase):
 
         self.assert_graphs_ran([uuid_2])
 
-    def test__two_price_triggers_different_names__both_triggered__both_graphs_ran(self, uuid_factory):
+    def test__two_price_triggers_different_names__both_triggered__both_graphs_ran(
+        self, uuid_factory
+    ):
         uuid_1, uuid_2 = uuid_factory(2)
         self.add_price_trigger_node(uuid_1, "aapl", 20, price_over=True)
         self.add_price_trigger_node(uuid_2, "gogl", 10, price_over=False)

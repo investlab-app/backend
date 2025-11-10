@@ -4,7 +4,7 @@ from decimal import Decimal
 import pytest
 from faker import Faker
 
-from modules.graph_lang.framework.actions import BuySellAction, GraphActionSet
+from modules.graph_lang.framework.actions import BuySellAmountAction
 from modules.graph_lang.framework.nodes import (
     AndNode,
     BuySellAmountNode,
@@ -180,7 +180,7 @@ def test_buy_sell_amount_node():
     context = ExecutionContext(None, action_set, fake.date_time())
     trigger_node.execute(context)
 
-    assert action_set == {BuySellAction("buy", Decimal(25), "AAPL")}
+    assert action_set == {BuySellAmountAction("buy", Decimal(25), "AAPL")}
 
 
 def test_price_of_node():

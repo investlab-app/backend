@@ -28,7 +28,9 @@ class Scheduler:
     max_sleep_timespan: timedelta
     _builder: GraphBuilder
 
-    def __init__(self, runner = None, builder = None, max_sleep_timespan=timedelta(seconds=1)):
+    def __init__(
+        self, runner=None, builder=None, max_sleep_timespan=timedelta(seconds=1)
+    ):
         self.runner = runner or Runner()
         self._builder = builder or GraphBuilder()
         self.graphs = []
@@ -44,7 +46,7 @@ class Scheduler:
             )
 
     def _try_add_graph(self, id: str):
-        graph = Graph.objects.get(id = id)
+        graph = Graph.objects.get(id=id)
         node = self._builder.get_from_db(id)
         graph = SchedulerGraph(id, graph.investor.id, node)
         self.graphs.append(graph)
