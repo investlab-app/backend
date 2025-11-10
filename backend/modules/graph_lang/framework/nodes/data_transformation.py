@@ -20,11 +20,11 @@ class ChangeOverTimeNode(Node):
 
         self.out.set(output)
 
-        context.log(self.id, 'ChangeOverTime', {
-            'in_now': in_now,
-            'in_before': in_before,
-            'out': output
-        })
+        context.log(
+            self.id,
+            "ChangeOverTime",
+            {"in_now": in_now, "in_before": in_before, "out": output},
+        )
 
     def _get_working_timespan(self):
         return self._get(self.timespan)

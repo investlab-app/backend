@@ -13,7 +13,12 @@ from drf_spectacular.utils import extend_schema
 
 from modules.graph_lang.models import Graph
 from modules.investors.models import Investor
-from modules.graph_lang.serializers import GraphSerializer, GraphUpdateSerializer, RunGraphSerializer, RunGraphResultSerializer
+from modules.graph_lang.serializers import (
+    GraphSerializer,
+    GraphUpdateSerializer,
+    RunGraphSerializer,
+    RunGraphResultSerializer,
+)
 from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.framework.price_provider import MockPriceProvider
 
@@ -50,37 +55,34 @@ class RetrieveUpdateDestroyGraphView(generics.RetrieveUpdateDestroyAPIView):
         instance.delete()
 
 
-
-
-@extend_schema(request = RunGraphSerializer, responses = RunGraphResultSerializer)
+@extend_schema(request=RunGraphSerializer, responses=RunGraphResultSerializer)
 class RunGraphView(APIView):
     def post(self, request, pk):
         get_object_or_404(Graph, pk=pk)
 
-        input_serializer = RunGraphSerializer(data = request.data)
+        input_serializer = RunGraphSerializer(data=request.data)
         input_serializer.is_valid(raise_exception=True)
 
         data = input_serializer.validated_data
 
         price_provider = None
         time_at = datetime.now()
-        if 'time_at' in data and 'prices' in data:
+        if "time_at" in data and "prices" in data:
             price_provider = MockPriceProvider()
-            time_at = data['time_at']
-            for ticker_prices in data['prices']:
-                ticker = ticker_prices['ticker']
+            time_at = data["time_at"]
+            for ticker_prices in data["prices"]:
+                ticker = ticker_prices["ticker"]
                 prices = []
-                for price_point in ticker_prices['prices']:
-                    prices.append((price_point['timestamp'], price_point['price']))
+                for price_point in ticker_prices["prices"]:
+                    prices.append((price_point["timestamp"], price_point["price"]))
                 price_provider.set_prices(ticker, prices)
-
 
         runner = Runner()
         effects = runner.run(pk, time_at=time_at, price_provider=price_provider)
 
         actions = []
         for effect in effects:
-            actions.append({'action': asdict(effect)})
+            actions.append({"action": asdict(effect)})
 
-        output_serializer = RunGraphResultSerializer({'results': actions} )
+        output_serializer = RunGraphResultSerializer({"results": actions})
         return Response(output_serializer.data)

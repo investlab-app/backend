@@ -26,11 +26,19 @@ class TestPriceProvider:
     def set_price_repository_response(self, price_bars):
         if isinstance(price_bars, list):
             self.repo.get_ohlc.side_effect = (
-                lambda ticker, date_from, date_to, interval, interval_multiplier: price_bars
+                lambda ticker,
+                date_from,
+                date_to,
+                interval,
+                interval_multiplier: price_bars
             )
         else:
             self.repo.get_ohlc.side_effect = (
-                lambda ticker, date_from, date_to, interval, interval_multiplier: price_bars[ticker]
+                lambda ticker,
+                date_from,
+                date_to,
+                interval,
+                interval_multiplier: price_bars[ticker]
             )
 
     def set_price_repository_snapshot_response(self, price_daily_summary):
@@ -88,7 +96,9 @@ class TestPriceProvider:
     def test__single_ticker__repo_returns_inexact_datetime__price_gets_returned(
         self, dt
     ):
-        self.set_price_repository_response([self.price_bar(dt - timedelta(days=1), 100)])
+        self.set_price_repository_response(
+            [self.price_bar(dt - timedelta(days=1), 100)]
+        )
 
         self.provider.prefetch_data({"AAPL": timedelta(days=1)}, dt)
 
@@ -132,8 +142,20 @@ class TestPriceProvider:
 
         self.repo.get_ohlc.assert_has_calls(
             [
-                call("AAPL", dt - timedelta(minutes=15, seconds=100), dt - timedelta(minutes=15), 'second', 1),
-                call("GOGL", dt - timedelta(minutes=15, seconds=250), dt - timedelta(minutes=15), 'second', 2),
+                call(
+                    "AAPL",
+                    dt - timedelta(minutes=15, seconds=100),
+                    dt - timedelta(minutes=15),
+                    "second",
+                    1,
+                ),
+                call(
+                    "GOGL",
+                    dt - timedelta(minutes=15, seconds=250),
+                    dt - timedelta(minutes=15),
+                    "second",
+                    2,
+                ),
             ]
         )
 

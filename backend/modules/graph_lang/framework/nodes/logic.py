@@ -19,11 +19,7 @@ class AndNode(Node):
 
         self.out.set(output)
 
-        context.log(self.id, 'And', {
-            'a': a,
-            'b': b,
-            'out': output
-        })
+        context.log(self.id, "And", {"a": a, "b": b, "out": output})
 
 
 class OrNode(Node):
@@ -41,11 +37,7 @@ class OrNode(Node):
 
         self.out.set(output)
 
-        context.log(self.id, 'or', {
-            'a': a,
-            'b': b,
-            'out': output
-        })
+        context.log(self.id, "or", {"a": a, "b": b, "out": output})
 
 
 class NotNode(Node):
@@ -60,7 +52,4 @@ class NotNode(Node):
 
         self.out.set(output)
 
-        context.log(self.id, 'not', {
-            'in': val,
-            'out': output
-        })
+        context.log(self.id, "not", {"in": val, "out": output})

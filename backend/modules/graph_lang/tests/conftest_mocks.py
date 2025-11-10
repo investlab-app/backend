@@ -55,10 +55,14 @@ class MockScheduler:
         self.events += [f"update graph {id}"]
 
     def price_changed(self, prices: dict[str, Decimal]):
-        pass
+        print(prices)
+        self.events += [("prices changed", prices)]
 
-    def transaction_executed(self, investor_id: str, ticker: str, amount: Decimal):
-        pass
+    def buy_executed(self, investor_id: str, ticker: str, amount: Decimal):
+        self.events += [f"buy {investor_id} {ticker} {amount}"]
+
+    def sell_executed(self, investor_id: str, ticker: str, amount: Decimal):
+        self.events += [f"sell {investor_id} {ticker} {amount}"]
 
     def step(self):
         self.events.append("step")

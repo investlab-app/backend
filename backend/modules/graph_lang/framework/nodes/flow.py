@@ -22,7 +22,11 @@ class FlowIfNode(Node):
             self._get(self.inElse)
         self.out.set(None)
 
-        context.log(self.id, 'If', {
-            'if': inIf,
-            'then' if inIf else 'else': None,
-        })
+        context.log(
+            self.id,
+            "If",
+            {
+                "if": inIf,
+                "then" if inIf else "else": None,
+            },
+        )

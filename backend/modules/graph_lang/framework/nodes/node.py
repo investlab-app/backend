@@ -8,12 +8,13 @@ from modules.graph_lang.framework.actions import GraphActionSet
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
 
+
 @dataclass
 class NodeLog:
-    id :str
-    name :str
-    fields :dict[str, Any]
-    level :int = 0
+    id: str
+    name: str
+    fields: dict[str, Any]
+    level: int = 0
 
 
 @dataclass
@@ -25,24 +26,24 @@ class ExecutionContext:
     level: int = 0
     logs: list = field(default_factory=list)
 
-    def log(self, id, name, fields = {}):
+    def log(self, id, name, fields={}):
         log = NodeLog(id, name, fields, self.level)
         self.logs.append(log)
-    
+
     def get_logs(self) -> list[NodeLog]:
         @dataclass
         class TreeLog:
             log: NodeLog
-            children: list['TreeLog'] = field(default_factory=list)
+            children: list["TreeLog"] = field(default_factory=list)
 
         logs = list(reversed(self.logs))
 
-        def get_tree_log(logs :list[NodeLog], start :int) -> tuple[TreeLog, int]:
+        def get_tree_log(logs: list[NodeLog], start: int) -> tuple[TreeLog, int]:
             log = logs[start]
             level = logs[start].level
             children = []
 
-            start+=1
+            start += 1
             while start < len(logs) and level < logs[start].level:
                 child_log, start = get_tree_log(logs, start)
                 children.append(child_log)
@@ -51,32 +52,31 @@ class ExecutionContext:
 
         tree_log, _ = get_tree_log(logs, 0)
 
-        def traverse_pre_order(tree_log :TreeLog) -> list[NodeLog]:
+        def traverse_pre_order(tree_log: TreeLog) -> list[NodeLog]:
             result = [tree_log.log]
             for c in tree_log.children:
                 result += traverse_pre_order(c)
             return result
-                
+
         return traverse_pre_order(tree_log)
 
     def dump_logs(self):
         logs = self.get_logs()
-        print('\n')
-        print('GRAPH RUN LOGS ############################')
+        print("\n")
+        print("GRAPH RUN LOGS ############################")
         for l in logs:
-            log_string = ''
-            log_string += ' ' * l.level * 4
-            log_string += f'{l.name} ({l.id}) ['
+            log_string = ""
+            log_string += " " * l.level * 4
+            log_string += f"{l.name} ({l.id}) ["
             for key, value in l.fields.items():
                 if isinstance(value, (float, Decimal)):
-                    log_string += f'{key}: {value:.2f} '
+                    log_string += f"{key}: {value:.2f} "
                 else:
-                    log_string += f'{key}: {value} '
-            log_string += ']'
+                    log_string += f"{key}: {value} "
+            log_string += "]"
             print(log_string)
-        print('END OF GRAPH RUN LOGS #####################')
-        print('\n')
-
+        print("END OF GRAPH RUN LOGS #####################")
+        print("\n")
 
 
 class NodeOutput:
@@ -218,7 +218,7 @@ class Node(NodeUtilsMixin):
     def _execute(self, context: "ExecutionContext"):
         pass
 
-    def _get(self, edge :NodeInput, time_at :datetime = None):
+    def _get(self, edge: NodeInput, time_at: datetime = None):
         if not self._context:
             return edge(None)
 

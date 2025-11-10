@@ -27,8 +27,4 @@ class IsGreaterLesserNode(Node):
 
         self.out.set(output)
 
-        context.log(self.id, direction, {
-            'inVal': value,
-            'x': x,
-            'output': output
-        })
+        context.log(self.id, direction, {"inVal": value, "x": x, "output": output})

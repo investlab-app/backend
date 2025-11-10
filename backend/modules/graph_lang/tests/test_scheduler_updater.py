@@ -1,12 +1,20 @@
+import json
+from unittest.mock import patch
 import pytest
 import faker
+import asyncio
+from config.clients import redis_client
 from modules.graph_lang.tests.conftest import fake_graph
-from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
-from decimal import Decimal
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
-from modules.graph_lang.models import Graph
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
+from modules.transactions.tests.conftest import create_fake_transaction
+from modules.investors.tests.conftest import create_fake_investor
+from modules.instruments.tests.conftest import create_fake_instrument
+from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.tests.conftest import get_fake_ohlc
+
+from channels.layers import get_channel_layer
 
 fake = faker.Faker()
 pytestmark = pytest.mark.django_db
@@ -83,6 +91,48 @@ class TestSchedulerUpdater:
             f"add graph {uuid}",
             f"remove graph {uuid}",
         ]
+
+    def test__buy_executed__scheduler_receives_transaction_executed_event(self, uuid):
+        transaction = create_fake_transaction(
+            investor=create_fake_investor(save=True),
+            ticker=create_fake_instrument(save=True),
+            price=100,
+            is_buy=True,
+        )
+        transaction.save()
+        inv_id = transaction.investor.id
+        ins_id = transaction.ticker.id
+
+        assert self.scheduler.get_all_events() == [f"buy {inv_id} {ins_id} 100"]
+
+    def test__sell_executed__scheduler_receives_transaction_executed_event(self, uuid):
+        transaction = create_fake_transaction(
+            investor=create_fake_investor(save=True),
+            ticker=create_fake_instrument(save=True),
+            price=100,
+            is_buy=False,
+        )
+        transaction.save()
+        inv_id = transaction.investor.id
+        ins_id = transaction.ticker.id
+
+        assert self.scheduler.get_all_events() == [f"sell {inv_id} {ins_id} 100"]
+
+    def test__prices_changed__scheduler_receives_prices_changed_event(self):
+        self.stop_updater_after_iteration()
+        prices = {
+            "AAPL": get_fake_ohlc(ticker="AAPL", close=20),
+            "GOGL": get_fake_ohlc(ticker="GOGL", close=30),
+        }
+        redis_client.set("latest_prices", json.dumps(prices))
+
+        self.updater.run()
+
+        assert self.scheduler.get_all_events() == [
+            ("prices changed", {"AAPL": 20, "GOGL": 30}),
+            "step",
+        ]
+        redis_client.delete("latest_prices")
 
 
 def test__graph_exists_before_scheduler__all_graphs_added_on_init():

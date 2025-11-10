@@ -28,7 +28,7 @@ class PricePoint:
     date_at: datetime
 
 
-# TODO 
+# TODO
 # There's a problem with prefetching data for different date_at than now
 # There is no good way to get the price of an instrument given a datetime
 # OHLC bar can return empty list and ticker snapshot only works for 'now'
@@ -40,7 +40,7 @@ class PriceProvider:
 
     def __init__(
         self,
-        repository :PolygonPricesRepository = None,
+        repository: PolygonPricesRepository = None,
         samples=100,
     ):
         self.fetched_ranges = {}
@@ -54,8 +54,10 @@ class PriceProvider:
                 ticker,
                 date_at - timespan - timedelta(minutes=15),
                 date_at - timedelta(minutes=15),
-                'second',
-                max(floor(timespan.total_seconds()  / self.samples), 1) # TODO add test for max
+                "second",
+                max(
+                    floor(timespan.total_seconds() / self.samples), 1
+                ),  # TODO add test for max
             )
             data = []
             for bar in bars:

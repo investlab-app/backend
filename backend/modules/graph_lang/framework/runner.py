@@ -12,19 +12,23 @@ logging = Logger(__name__)
 
 
 class Runner:
-    def __init__(self, builder :GraphBuilder = None):
+    def __init__(self, builder: GraphBuilder = None):
         self._graph_builder = builder or GraphBuilder()
 
-    def run(self, graph_id: str, time_at: datetime | None = None, price_provider :PriceProvider = None):
+    def run(
+        self,
+        graph_id: str,
+        time_at: datetime | None = None,
+        price_provider: PriceProvider = None,
+    ):
         time_at = time_at or datetime.now()
         effect_set = set()
 
         try:
-            graph = Graph.objects.get(id = graph_id)
+            graph = Graph.objects.get(id=graph_id)
         except Exception as e:
             logging.warning(f"Tried to run graph {graph_id} that does not exist")
             return
-
 
         graph_data = GraphData.model_validate(graph.graph_data)
         root_node: Node = self._graph_builder.build(graph_data)

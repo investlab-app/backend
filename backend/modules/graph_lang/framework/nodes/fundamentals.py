@@ -16,12 +16,11 @@ class PriceOfNode(Node):
         price = context.price_provider.get_price(ticker, context.time_at)
         self.out.set(price)
 
-        context.log(self.id, 'Price of', {
-            'ticker': ticker,
-            'time_at': context.time_at,
-            'out': price
-        })
-
+        context.log(
+            self.id,
+            "Price of",
+            {"ticker": ticker, "time_at": context.time_at, "out": price},
+        )
 
     def _get_needed_prices(self) -> dict[str, timedelta]:
         return {self._get(self.ticker): timedelta()}

@@ -99,24 +99,29 @@ class GraphUpdateSerializer(serializers.ModelSerializer):
         instance.save()
         return instance
 
+
 class PriceTimestampSerializer(serializers.Serializer):
     price = serializers.DecimalField(max_digits=30, decimal_places=15)
     timestamp = serializers.DateTimeField()
+
 
 class TickerPrices(serializers.Serializer):
     ticker = serializers.CharField()
     prices = PriceTimestampSerializer(many=True)
 
+
 class RunGraphSerializer(serializers.ModelSerializer):
     time_at = serializers.DateTimeField(required=False)
-    prices = TickerPrices(many=True, required = False)
+    prices = TickerPrices(many=True, required=False)
 
     class Meta:
         model = Graph
-        fields = ['pk', 'time_at', 'prices']
+        fields = ["pk", "time_at", "prices"]
+
 
 class GraphResultSerializer(serializers.Serializer):
     action = serializers.JSONField()
+
 
 class RunGraphResultSerializer(serializers.Serializer):
     results = GraphResultSerializer(many=True)
