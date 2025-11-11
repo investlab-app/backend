@@ -6,9 +6,10 @@ from modules.core.constants import PrecisionType
 from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineOrder,
+    EngineOrderUpdate,
     EngineTransaction,
+    LimitEngineOrder,
     MarketEngineOrder,
-    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
@@ -99,8 +100,40 @@ class SingleInvestorTradeEngine:
                 continue
             if isinstance(o, MarketEngineOrder):
                 self._handle_market_order(o)
+            elif isinstance(o, LimitEngineOrder):
+                self._handle_limit_order(o)
             else:
                 raise RuntimeError("Unsupported order type")
+
+    def _handle_limit_order(self, order: LimitEngineOrder):
+        """
+        Execute a limit order only when the market price meets the limit price
+        condition. For buy orders we require market_price <= limit_price.
+        For sell orders we require market_price >= limit_price.
+        Otherwise the order stays untouched.
+        """
+        ticker = order.ticker
+        price = self._prices[ticker]
+        market_order = MarketEngineOrder(
+            id=order.id,
+            ticker=order.ticker,
+            investor_id=order.investor_id,
+            volume=order.volume,
+            is_buy=order.is_buy,
+            volume_processed=order.volume_processed,
+        )
+
+        if order.is_buy:
+            # buy only when market price is at or below limit price
+            if price > order.limit_price:
+                return
+            # then behave like market buy at current market price
+            self._handle_market_buy(market_order)
+        else:
+            # sell only when market price is at or above limit price
+            if price < order.limit_price:
+                return
+            self._handle_market_sell(market_order)
 
     def _handle_market_order(self, order: MarketEngineOrder):
         if order.is_buy:
@@ -127,9 +160,7 @@ class SingleInvestorTradeEngine:
             self._completed_orders.append(order.id)
         else:
             self._modified_orders.append(
-                MarketEngineOrderUpdate(
-                    id=order.id, volume_processed=order.volume_processed
-                )
+                EngineOrderUpdate(id=order.id, volume_processed=order.volume_processed)
             )
 
     def _handle_market_sell(self, order: MarketEngineOrder):
@@ -157,7 +188,5 @@ class SingleInvestorTradeEngine:
             self._completed_orders.append(order.id)
         else:
             self._modified_orders.append(
-                MarketEngineOrderUpdate(
-                    id=order.id, volume_processed=order.volume_processed
-                )
+                EngineOrderUpdate(id=order.id, volume_processed=order.volume_processed)
             )
