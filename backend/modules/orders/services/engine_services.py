@@ -17,11 +17,10 @@ from modules.orders.order_engine.engine import TradeEngine
 from modules.orders.order_engine.structures import (
     EngineOrderUpdate,
     EngineTransaction,
-    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
-from modules.orders.services.order_services import MarketOrderService
+from modules.orders.services.order_services import OrderService
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.transactions.schemas import TransactionParams
 from modules.transactions.services import ExecuteTransactionService
@@ -92,8 +91,8 @@ class PricesFetcher:
 
 
 class TradeEngineOutputHandler:
-    def __init__(self, order_service: MarketOrderService | None = None):
-        self.order_service = order_service or MarketOrderService()
+    def __init__(self, order_service: OrderService | None = None):
+        self.order_service = order_service or OrderService()
 
     async def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
         await database_sync_to_async(self._handle_output_sync)(output, prices)
@@ -105,7 +104,8 @@ class TradeEngineOutputHandler:
             self._handle_transactions(output.transactions, prices)
 
     def _handle_completed_orders(self, orders: list[uuid.UUID]):
-        for order in Order.objects.filter(id__in=orders):
+        # Delete orders of the correct type and release blocked funds
+        for order in Order.objects.filter(id__in=orders).prefetch_related("detail"):
             self.order_service.delete(order)
 
     def _handle_updated_orders(self, orders: list[EngineOrderUpdate]):
@@ -115,11 +115,8 @@ class TradeEngineOutputHandler:
 
         for o in real_orders:
             corresponding_engine_order = orders_dict[o.id]
-            if isinstance(corresponding_engine_order, MarketEngineOrderUpdate):
-                o.detail.volume_processed = corresponding_engine_order.volume_processed
-                o.detail.save()
-            else:
-                raise ValueError("Object not supported")
+            o.detail.volume_processed = corresponding_engine_order.volume_processed
+            o.detail.save()
 
     def _handle_transactions(
         self, transactions: list[EngineTransaction], prices: dict[str, Decimal]

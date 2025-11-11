@@ -496,6 +496,27 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/orders/limit/:
+    post:
+      operationId: orders_limit_create
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLimitOrderRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+          description: ''
   /api/orders/market/:
     post:
       operationId: orders_market_create
@@ -1137,6 +1158,31 @@ components:
       required:
       - email
       - password
+    CreateLimitOrderRequest:
+      type: object
+      properties:
+        ticker:
+          type: string
+          writeOnly: true
+          minLength: 1
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
+          writeOnly: true
+        is_buy:
+          type: boolean
+          writeOnly: true
+        limit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
+          writeOnly: true
+      required:
+      - is_buy
+      - limit_price
+      - ticker
+      - volume
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1553,6 +1599,31 @@ components:
       - todays_gain
       - total_gain
       - total_value
+    LimitOrder:
+      type: object
+      properties:
+        detail_type:
+          type: string
+          readOnly: true
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        volume_processed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        is_buy:
+          type: boolean
+        limit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
+      required:
+      - detail_type
+      - is_buy
+      - limit_price
+      - volume
     LocaleEnum:
       enum:
       - us
@@ -1850,10 +1921,12 @@ components:
     OrderDetail:
       oneOf:
       - $ref: '#/components/schemas/MarketOrder'
+      - $ref: '#/components/schemas/LimitOrder'
       discriminator:
         propertyName: detail_type
         mapping:
           market: '#/components/schemas/MarketOrder'
+          limit: '#/components/schemas/LimitOrder'
     OwnedShare:
       type: object
       properties:
