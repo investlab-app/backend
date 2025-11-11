@@ -3,13 +3,13 @@ from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 
 from modules.investors.models import Investor
-from modules.orders.models import LimitOrder, MarketOrder, Order
+from modules.orders.models import Order
 from modules.orders.serializers import (
     CreateLimitOrderSerializer,
     CreateMarketOrderSerializer,
     OrderSerializer,
 )
-from modules.orders.services.order_services import LimitOrderService, MarketOrderService
+from modules.orders.services.order_services import OrderService
 
 
 class CreateMarketOrderView(generics.CreateAPIView):
@@ -53,10 +53,4 @@ class DestroyOrderView(generics.DestroyAPIView):
         return Order.objects.filter(investor=investor)
 
     def perform_destroy(self, instance):
-        # Choose deletion service based on underlying detail type
-        if isinstance(instance.detail, MarketOrder):
-            MarketOrderService().delete(instance)
-        elif isinstance(instance.detail, LimitOrder):
-            LimitOrderService().delete(instance)
-        else:
-            raise ValueError("Object not supported")
+        OrderService().delete(instance)

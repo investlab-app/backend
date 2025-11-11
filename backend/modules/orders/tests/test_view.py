@@ -22,9 +22,7 @@ class TestCreateMarketOrderView:
         self.user = user
         self.url = reverse("create-market-order")
 
-    @patch(
-        "modules.orders.services.order_services.MarketOrderService._get_current_price"
-    )
+    @patch("modules.orders.services.order_services.OrderService._get_current_price")
     def test_happy(self, _get_current_price, api_client):
         data = {
             "ticker": self.instrument.ticker,

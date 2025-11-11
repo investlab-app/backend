@@ -5,7 +5,7 @@ from rest_framework import serializers
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import InstrumentNameSerializer
 from modules.orders.models import LimitOrder, MarketOrder, Order
-from modules.orders.services.order_services import LimitOrderService, MarketOrderService
+from modules.orders.services.order_services import OrderService
 
 
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
@@ -22,8 +22,8 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
-        service = MarketOrderService()
-        order = service.create(
+        service = OrderService()
+        order = service.create_market(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],
@@ -79,8 +79,8 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
-        service = LimitOrderService()
-        order = service.create(
+        service = OrderService()
+        order = service.create_limit(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],

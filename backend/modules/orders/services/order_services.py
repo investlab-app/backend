@@ -8,7 +8,14 @@ from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.repositories import PolygonPricesRepository
 
 
-class MarketOrderService:
+class OrderService:
+    """Unified service for creating and deleting market and limit orders.
+
+    Provides two creation helpers: `create_market` and `create_limit`, and a
+    `delete` method that handles both order detail types and releases blocked
+    funds for buy orders.
+    """
+
     def __init__(self, price_repository: PolygonPricesRepository | None = None):
         self.price_repository = price_repository or PolygonPricesRepository()
 
@@ -19,18 +26,12 @@ class MarketOrderService:
 
         return price_summary.current_price
 
-    def _has_enough_funds(
-        self,
-        investor: Investor,
-        instrument: Instrument,
-        volume: Decimal,
-    ) -> tuple[bool, Decimal]:
-        current_price = self._get_current_price(instrument.ticker)
-        total_cost = current_price * volume
-        needed_money = investor.balance - investor.blocked_funds
-        return needed_money >= total_cost, current_price * volume
+    @staticmethod
+    def _has_enough_funds(investor: Investor, total_cost: Decimal) -> bool:
+        free_funds = investor.balance - investor.blocked_funds
+        return free_funds >= total_cost
 
-    def create(
+    def create_market(
         self,
         investor: Investor,
         instrument: Instrument,
@@ -40,10 +41,9 @@ class MarketOrderService:
     ) -> Order | None:
         with transaction.atomic():
             if is_buy:
-                has_enough_funds, total_cost = self._has_enough_funds(
-                    investor, instrument, volume
-                )
-                if not has_enough_funds:
+                current_price = self._get_current_price(instrument.ticker)
+                total_cost = current_price * volume
+                if not self._has_enough_funds(investor, total_cost):
                     return None
 
                 investor.blocked_funds += total_cost
@@ -64,35 +64,7 @@ class MarketOrderService:
 
         return order
 
-    def delete(self, order: Order):
-        if not isinstance(order.detail, MarketOrder):
-            raise ValueError("Only market orders can be deleted with this service.")
-
-        with transaction.atomic():
-            if order.detail.is_buy:
-                order.investor.blocked_funds -= order.detail.blocked_funds
-                order.investor.save()
-
-            order.detail.delete()
-            order.delete()
-
-
-class LimitOrderService:
-    def __init__(self, price_repository: PolygonPricesRepository | None = None):
-        self.price_repository = price_repository or PolygonPricesRepository()
-
-    def _has_enough_funds(
-        self,
-        investor: Investor,
-        instrument: Instrument,
-        volume: Decimal,
-        limit_price: Decimal,
-    ) -> tuple[bool, Decimal]:
-        total_cost = limit_price * volume
-        needed_money = investor.balance - investor.blocked_funds
-        return needed_money >= total_cost, total_cost
-
-    def create(
+    def create_limit(
         self,
         investor: Investor,
         instrument: Instrument,
@@ -104,10 +76,8 @@ class LimitOrderService:
         with transaction.atomic():
             total_cost = Decimal(0)
             if is_buy:
-                has_enough_funds, total_cost = self._has_enough_funds(
-                    investor, instrument, volume, limit_price
-                )
-                if not has_enough_funds:
+                total_cost = limit_price * volume
+                if not self._has_enough_funds(investor, total_cost):
                     return None
 
                 investor.blocked_funds += total_cost
@@ -128,9 +98,6 @@ class LimitOrderService:
         return order
 
     def delete(self, order: Order):
-        if not isinstance(order.detail, LimitOrder):
-            raise ValueError("Only limit orders can be deleted with this service.")
-
         with transaction.atomic():
             if order.detail.is_buy:
                 order.investor.blocked_funds -= order.detail.blocked_funds
