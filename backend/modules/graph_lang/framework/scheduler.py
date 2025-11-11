@@ -1,3 +1,4 @@
+from django.db import transaction
 from decimal import Decimal
 from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.models import Graph
@@ -20,6 +21,8 @@ class SchedulerGraph:
     id: str
     investor_id: str
     trigger: Node
+    active :bool
+    repeat :bool
 
 
 class Scheduler:
@@ -48,7 +51,13 @@ class Scheduler:
     def _try_add_graph(self, id: str):
         graph = Graph.objects.get(id=id)
         node = self._builder.get_from_db(id)
-        graph = SchedulerGraph(id, graph.investor.id, node)
+        graph = SchedulerGraph(
+            id =id,
+            investor_id= graph.investor.id, 
+            trigger=node,
+            active=graph.active,
+            repeat=graph.repeat
+        )
         self.graphs.append(graph)
         self.last_run_time[id] = datetime.now()
 
@@ -137,9 +146,24 @@ class Scheduler:
 
         return max_sleep_date
 
-    def _run_graph(self, graph):
+    def _run_graph(self, graph :SchedulerGraph):
+        if not graph.active:
+            return
+        if graph.repeat is False:
+            self._deactivate_graph(graph)
+
         self.runner.run(graph.id)
         self.last_run_time[graph.id] = datetime.now()
+
+    def _deactivate_graph(self, graph :SchedulerGraph):
+        graph.active = False
+        try:
+            with transaction.atomic():
+                graph_db = Graph.objects.get(id = graph.id)
+                graph_db.active = False
+                graph_db.save()
+        except Exception as e:
+            pass
 
     def _get_graphs_with(self, type):
         return [g for g in self.graphs if isinstance(g.trigger, type)]

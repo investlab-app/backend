@@ -22,14 +22,13 @@ class GraphValidationError(BaseException):
 class GraphSerializer(serializers.ModelSerializer):
     class Meta:
         model = Graph
-        fields = ["id", "name", "raw_graph_data"]
+        fields = ["id", "name", "raw_graph_data", 'active', 'repeat']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.parser = Parser()
         self.validator = Validator()
 
-        # Idk czy to jest 'czyste'
         self.fields["id"].read_only = True
 
     def validate(self, attrs):
@@ -55,13 +54,15 @@ class GraphSerializer(serializers.ModelSerializer):
             name=validated_data["name"],
             raw_graph_data=validated_data["raw_graph_data"],
             graph_data=validated_data["graph_data"].model_dump(),
+            active=validated_data['active'],
+            repeat = validated_data['repeat']
         )
 
 
 class GraphUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Graph
-        fields = ["id", "name", "raw_graph_data"]
+        fields = ["id", "name", "raw_graph_data", 'active', 'repeat']
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -69,7 +70,6 @@ class GraphUpdateSerializer(serializers.ModelSerializer):
         self.parser = Parser()
         self.validator = Validator()
 
-        # Idk czy to jest czyste
         self.fields["id"].read_only = True
         for field in self.fields.values():
             field.required = False
@@ -93,6 +93,8 @@ class GraphUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get("name", instance.name)
+        instance.active = validated_data.get('active', instance.active)
+        instance.repeat = validated_data.get('repeat', instance.repeat)
         instance.raw_graph_data = validated_data.get(
             "raw_graph_data", instance.raw_graph_data
         )

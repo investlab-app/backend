@@ -12,6 +12,8 @@ class Graph(BaseModel):
     name = models.CharField(max_length=100, blank=False)
     raw_graph_data = models.JSONField()
     graph_data = models.JSONField()
+    active = models.BooleanField(default=True)
+    repeat = models.BooleanField(default=False)
 
 
 class GraphEffect(BaseModel):

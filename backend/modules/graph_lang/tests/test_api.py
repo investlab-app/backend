@@ -85,7 +85,7 @@ class TestGraphListCreate:
         self.validator.set_errors([])
 
         response = api_client_auth.post(
-            self.url, {"name": "name", "raw_graph_data": graph_data}, format="json"
+            self.url, {"name": "name", "raw_graph_data": graph_data, 'active': True, 'repeat':False}, format="json"
         )
 
         assert response.status_code == 201
@@ -96,6 +96,8 @@ class TestGraphListCreate:
         assert MockParserReturn.model_validate(graph.graph_data) == parser_return
         assert graph.investor == self.investor
         assert graph.name == "name"
+        assert graph.active == True
+        assert graph.repeat == False
 
     def test_get__success(self, api_client_auth):
         graph = fake_graph(investor=self.investor, save=True)
@@ -278,6 +280,7 @@ class TestGraphResultView:
             "instrument": {"ticker": "AAPL"},
             "is_buy": True,
             "amount": "40.000000000000000",
+            'effect_type': 'transaction',
         }
         assert result["success"] == True
 
@@ -296,6 +299,7 @@ class TestGraphResultView:
         assert result["effect"] == {
             "format": "push",
             "message": "hehexd",
+            'effect_type': 'notification',
         }
         assert result["success"] == True
 
