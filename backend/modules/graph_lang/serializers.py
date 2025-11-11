@@ -131,18 +131,21 @@ class RunGraphResultSerializer(serializers.Serializer):
 
 class GraphTransactionEffectSerializer(serializers.ModelSerializer):
     instrument = InstrumentNameSerializer()
+    effect_type = serializers.SerializerMethodField()
 
     class Meta:
         model = BuySellEffect
-        fields = ['instrument', 'is_buy', 'amount']
+        fields = ['instrument', 'is_buy', 'amount', 'effect_type']
 
     def get_effect_type(self, obj) -> str:
         return 'transaction'
 
 class GraphNotificationEffectSerializer(serializers.ModelSerializer):
+    effect_type = serializers.SerializerMethodField()
+
     class Meta:
         model = NotificationEffect
-        fields = ['message', 'format']
+        fields = ['message', 'format', 'effect_type']
 
     def get_effect_type(self, obj) -> str:
         return 'notification'
@@ -152,7 +155,7 @@ class GraphEffectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = GraphEffect
-        fields = ['created_at', 'effect_type', 'effect', 'success']
+        fields = ['created_at', 'effect', 'success']
 
     @extend_schema_field(
         PolymorphicProxySerializer(
