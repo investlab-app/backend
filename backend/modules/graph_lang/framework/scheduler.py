@@ -21,8 +21,8 @@ class SchedulerGraph:
     id: str
     investor_id: str
     trigger: Node
-    active :bool
-    repeat :bool
+    active: bool
+    repeat: bool
 
 
 class Scheduler:
@@ -52,11 +52,11 @@ class Scheduler:
         graph = Graph.objects.get(id=id)
         node = self._builder.get_from_db(id)
         graph = SchedulerGraph(
-            id =id,
-            investor_id= graph.investor.id, 
+            id=id,
+            investor_id=graph.investor.id,
             trigger=node,
             active=graph.active,
-            repeat=graph.repeat
+            repeat=graph.repeat,
         )
         self.graphs.append(graph)
         self.last_run_time[id] = datetime.now()
@@ -146,7 +146,7 @@ class Scheduler:
 
         return max_sleep_date
 
-    def _run_graph(self, graph :SchedulerGraph):
+    def _run_graph(self, graph: SchedulerGraph):
         if not graph.active:
             return
         if graph.repeat is False:
@@ -155,11 +155,11 @@ class Scheduler:
         self.runner.run(graph.id)
         self.last_run_time[graph.id] = datetime.now()
 
-    def _deactivate_graph(self, graph :SchedulerGraph):
+    def _deactivate_graph(self, graph: SchedulerGraph):
         graph.active = False
         try:
             with transaction.atomic():
-                graph_db = Graph.objects.get(id = graph.id)
+                graph_db = Graph.objects.get(id=graph.id)
                 graph_db.active = False
                 graph_db.save()
         except Exception as e:

@@ -21,7 +21,7 @@ from modules.graph_lang.serializers import (
     RunGraphResultSerializer,
     GraphTransactionEffectSerializer,
     GraphNotificationEffectSerializer,
-    GraphEffectSerializer
+    GraphEffectSerializer,
 )
 from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.framework.price_provider import MockPriceProvider
@@ -91,15 +91,16 @@ class RunGraphView(APIView):
         output_serializer = RunGraphResultSerializer({"results": actions})
         return Response(output_serializer.data)
 
+
 class GraphResultView(generics.ListAPIView):
-    serializer_class = GraphEffectSerializer 
+    serializer_class = GraphEffectSerializer
 
     def get_queryset(self):
-        pk = self.kwargs.get('pk')
+        pk = self.kwargs.get("pk")
         print(self.request.query_params)
         print(pk)
         investor = Investor.objects.get(clerk_id=self.request.user.id)
         print(investor)
-        graph = get_object_or_404(Graph, investor=investor, pk = pk)
+        graph = get_object_or_404(Graph, investor=investor, pk=pk)
         print(graph)
-        return GraphEffect.objects.filter(graph = graph)
+        return GraphEffect.objects.filter(graph=graph)

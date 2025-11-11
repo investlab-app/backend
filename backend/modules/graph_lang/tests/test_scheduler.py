@@ -87,18 +87,12 @@ class TestSchedulerBase:
 
         return _uuids
 
-    def create_graph(self, id: UUID, investor_id: UUID, active = True, repeat = True):
+    def create_graph(self, id: UUID, investor_id: UUID, active=True, repeat=True):
         try:
             investor = Investor.objects.get(id=investor_id)
         except:
             investor = create_fake_investor(investor_id=investor_id, save=True)
-        fake_graph(
-            id=id,
-            investor=investor,
-            save=True,
-            active=active,
-            repeat=repeat
-        )
+        fake_graph(id=id, investor=investor, save=True, active=active, repeat=repeat)
 
     def add_timer_node(self, id, td, investor_id=None, **kwargs):
         if not investor_id:
@@ -361,31 +355,29 @@ class TestSchedulerIntegration(TestSchedulerBase):
 
         self.assert_graphs_ran([graph_1, graph_2, graph_3])
 
+
 class TestSchedulerActiveRepeat(TestSchedulerBase):
     def test__active_false__graph_does_not_run(self, uuid):
-        self.add_timer_node(uuid, td=timedelta(days=1), active= False)
+        self.add_timer_node(uuid, td=timedelta(days=1), active=False)
 
         self.skip_days(1)
 
         self.assert_graphs_ran([])
 
     def test__repeat_false__graph_runs_only_once(self, uuid):
-        self.add_timer_node(uuid, td=timedelta(days=1), repeat = False)
+        self.add_timer_node(uuid, td=timedelta(days=1), repeat=False)
         self.skip_days(1)
         self.skip_days(1)
 
         self.assert_graphs_ran([uuid])
 
     def test__repeat_false__graph_active_gets_updated_in_db(self, uuid):
-        self.add_timer_node(uuid, td = timedelta(days=1), repeat = False)
+        self.add_timer_node(uuid, td=timedelta(days=1), repeat=False)
 
         self.skip_days(1)
 
-        graph = Graph.objects.get(id = uuid)
+        graph = Graph.objects.get(id=uuid)
         assert graph.active is False
-
-
-
 
 
 # TODO set price graph inactive after running

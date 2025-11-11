@@ -12,8 +12,16 @@ pytestmark = pytest.mark.django_db
 
 fake = Faker()
 
+
 def fake_graph(
-    id=None, investor=None, raw_graph_data="", graph_data="", active = None, repeat = None, *, save=False
+    id=None,
+    investor=None,
+    raw_graph_data="",
+    graph_data="",
+    active=None,
+    repeat=None,
+    *,
+    save=False,
 ) -> Graph:
     investor = investor or create_fake_investor(save=save)
     id = id or uuid.uuid4()
@@ -27,8 +35,8 @@ def fake_graph(
         investor=investor,
         raw_graph_data=raw_graph_data,
         graph_data=graph_data,
-        active = active,
-        repeat = repeat
+        active=active,
+        repeat=repeat,
     )
     if save:
         graph.save()

@@ -14,7 +14,9 @@ logging = Logger(__name__)
 
 # TODO rename to GraphRunner
 class Runner:
-    def __init__(self, builder: GraphBuilder = None, action_handler: ActionHandler = None):
+    def __init__(
+        self, builder: GraphBuilder = None, action_handler: ActionHandler = None
+    ):
         self._graph_builder = builder or GraphBuilder()
         self._action_handler = action_handler or ActionHandler()
 
@@ -44,12 +46,10 @@ class Runner:
         )
 
         root_node.execute(context)
-        graph = Graph.objects.get(id = graph_id)
+        graph = Graph.objects.get(id=graph_id)
         context.dump_logs()
         self._action_handler.handle(
-            investor_id=graph.investor.id,
-            graph_id=graph_id,
-            action_set=context.effects
+            investor_id=graph.investor.id, graph_id=graph_id, action_set=context.effects
         )
 
         return effect_set

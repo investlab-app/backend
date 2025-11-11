@@ -4,7 +4,7 @@ from modules.graph_lang.views import (
     ListCreateGraphView,
     RetrieveUpdateDestroyGraphView,
     RunGraphView,
-    GraphResultView
+    GraphResultView,
 )
 
 urlpatterns = [

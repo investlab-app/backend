@@ -107,7 +107,7 @@ class MockPriceProvider:
 
     def get_price(self, ticker: str, date_at: datetime) -> Decimal | None:
         if ticker not in self.prices:
-            raise ValueError('There is no price data')
+            raise ValueError("There is no price data")
         points = self.prices[ticker]
         before = [p for d, p in points if d <= date_at]
         if not before:

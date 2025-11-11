@@ -85,7 +85,14 @@ class TestGraphListCreate:
         self.validator.set_errors([])
 
         response = api_client_auth.post(
-            self.url, {"name": "name", "raw_graph_data": graph_data, 'active': True, 'repeat':False}, format="json"
+            self.url,
+            {
+                "name": "name",
+                "raw_graph_data": graph_data,
+                "active": True,
+                "repeat": False,
+            },
+            format="json",
         )
 
         assert response.status_code == 201
@@ -269,7 +276,7 @@ class TestGraphResultView:
             success=True,
             instrument=instrument,
             is_buy=True,
-            amount=40
+            amount=40,
         )
 
         response = api_client_auth.get(self.url()).json()
@@ -280,16 +287,16 @@ class TestGraphResultView:
             "instrument": {"ticker": "AAPL"},
             "is_buy": True,
             "amount": "40.000000000000000",
-            'effect_type': 'transaction',
+            "effect_type": "transaction",
         }
         assert result["success"] == True
 
     def test_single_notification_effect(self, api_client_auth):
         self.create_notification_effect(
-            graph = self.graph,
+            graph=self.graph,
             success=True,
             format=NotificationEffect.PUSH,
-            message='hehexd'
+            message="hehexd",
         )
 
         response = api_client_auth.get(self.url()).json()
@@ -299,28 +306,29 @@ class TestGraphResultView:
         assert result["effect"] == {
             "format": "push",
             "message": "hehexd",
-            'effect_type': 'notification',
+            "effect_type": "notification",
         }
         assert result["success"] == True
 
     def test_multiple_effects__response_length_is_correct(self, api_client_auth):
         instrument = create_fake_instrument(ticker="AAPL", save=True)
         self.create_notification_effect(
-            graph = self.graph,
+            graph=self.graph,
             success=True,
             format=NotificationEffect.PUSH,
-            message='hehexd'
+            message="hehexd",
         )
         self.create_transaction_effect(
             graph=self.graph,
             success=True,
             instrument=instrument,
             is_buy=True,
-            amount=40
+            amount=40,
         )
 
         response = api_client_auth.get(self.url()).json()
 
         assert len(response["results"]) == 2
+
 
 # TODO Move create_*_effect to conftest

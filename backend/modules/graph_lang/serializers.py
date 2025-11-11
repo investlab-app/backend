@@ -8,7 +8,12 @@ from dataclasses import asdict
 from modules.graph_lang.framework.parser import Parser
 from modules.graph_lang.framework.validator import Validator
 
-from modules.graph_lang.models import BuySellEffect, Graph, GraphEffect, NotificationEffect
+from modules.graph_lang.models import (
+    BuySellEffect,
+    Graph,
+    GraphEffect,
+    NotificationEffect,
+)
 
 
 class GraphValidationError(BaseException):
@@ -22,7 +27,7 @@ class GraphValidationError(BaseException):
 class GraphSerializer(serializers.ModelSerializer):
     class Meta:
         model = Graph
-        fields = ["id", "name", "raw_graph_data", 'active', 'repeat']
+        fields = ["id", "name", "raw_graph_data", "active", "repeat"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -54,15 +59,15 @@ class GraphSerializer(serializers.ModelSerializer):
             name=validated_data["name"],
             raw_graph_data=validated_data["raw_graph_data"],
             graph_data=validated_data["graph_data"].model_dump(),
-            active=validated_data['active'],
-            repeat = validated_data['repeat']
+            active=validated_data["active"],
+            repeat=validated_data["repeat"],
         )
 
 
 class GraphUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = Graph
-        fields = ["id", "name", "raw_graph_data", 'active', 'repeat']
+        fields = ["id", "name", "raw_graph_data", "active", "repeat"]
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -93,8 +98,8 @@ class GraphUpdateSerializer(serializers.ModelSerializer):
 
     def update(self, instance, validated_data):
         instance.name = validated_data.get("name", instance.name)
-        instance.active = validated_data.get('active', instance.active)
-        instance.repeat = validated_data.get('repeat', instance.repeat)
+        instance.active = validated_data.get("active", instance.active)
+        instance.repeat = validated_data.get("repeat", instance.repeat)
         instance.raw_graph_data = validated_data.get(
             "raw_graph_data", instance.raw_graph_data
         )
@@ -137,43 +142,46 @@ class GraphTransactionEffectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BuySellEffect
-        fields = ['instrument', 'is_buy', 'amount', 'effect_type']
+        fields = ["instrument", "is_buy", "amount", "effect_type"]
 
     def get_effect_type(self, obj) -> str:
-        return 'transaction'
+        return "transaction"
+
 
 class GraphNotificationEffectSerializer(serializers.ModelSerializer):
     effect_type = serializers.SerializerMethodField()
 
     class Meta:
         model = NotificationEffect
-        fields = ['message', 'format', 'effect_type']
+        fields = ["message", "format", "effect_type"]
 
     def get_effect_type(self, obj) -> str:
-        return 'notification'
+        return "notification"
+
 
 class GraphEffectSerializer(serializers.ModelSerializer):
     effect = serializers.SerializerMethodField()
 
     class Meta:
         model = GraphEffect
-        fields = ['created_at', 'effect', 'success']
+        fields = ["created_at", "effect", "success"]
 
     @extend_schema_field(
         PolymorphicProxySerializer(
             component_name="GraphEffectDetail",
-            serializers = {
-                'transaction': GraphTransactionEffectSerializer,
-                'notification': GraphNotificationEffectSerializer
+            serializers={
+                "transaction": GraphTransactionEffectSerializer,
+                "notification": GraphNotificationEffectSerializer,
             },
-            resource_type_field_name='effect_type'
+            resource_type_field_name="effect_type",
         )
     )
     def get_effect(self, obj):
         mapping = {
             BuySellEffect: GraphTransactionEffectSerializer,
-            NotificationEffect: GraphNotificationEffectSerializer
+            NotificationEffect: GraphNotificationEffectSerializer,
         }
         return mapping[obj.effect_type.model_class()](obj.effect).data
+
 
 # TODO why tf is effect a number
