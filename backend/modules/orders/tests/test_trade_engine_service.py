@@ -13,9 +13,9 @@ from modules.investors.models import Investor
 from modules.investors.tests.conftest import create_fake_asset, create_fake_investor
 from modules.orders.order_engine.structures import (
     EngineAsset,
+    EngineOrderUpdate,
     EngineTransaction,
     MarketEngineOrder,
-    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
@@ -141,9 +141,7 @@ async def test_trade_engine_output_handler(buy, sell, uuids):
                 investor_id=TEST_INVESTOR_ID,
             ),
         ],
-        updated_orders=[
-            MarketEngineOrderUpdate(id=uuids[1], volume_processed=Decimal(5))
-        ],
+        updated_orders=[EngineOrderUpdate(id=uuids[1], volume_processed=Decimal(5))],
         completed_orders=[uuids[2]],
     )
     prices = {"AAPL": 20}

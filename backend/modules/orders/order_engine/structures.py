@@ -25,13 +25,6 @@ class LimitEngineOrder(EngineOrder):
 
 class EngineOrderUpdate(BaseModel):
     id: uuid.UUID
-
-
-class MarketEngineOrderUpdate(EngineOrderUpdate):
-    volume_processed: Decimal
-
-
-class LimitEngineOrderUpdate(EngineOrderUpdate):
     volume_processed: Decimal
 
 

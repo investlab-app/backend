@@ -6,10 +6,10 @@ from modules.core.constants import PrecisionType
 from modules.orders.order_engine.structures import (
     EngineAsset,
     EngineOrder,
+    EngineOrderUpdate,
     EngineTransaction,
     LimitEngineOrder,
     MarketEngineOrder,
-    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
@@ -123,7 +123,6 @@ class SingleInvestorTradeEngine:
             volume_processed=order.volume_processed,
         )
 
-        # Check if limit condition is satisfied
         if order.is_buy:
             # buy only when market price is at or below limit price
             if price > order.limit_price:
@@ -161,9 +160,7 @@ class SingleInvestorTradeEngine:
             self._completed_orders.append(order.id)
         else:
             self._modified_orders.append(
-                MarketEngineOrderUpdate(
-                    id=order.id, volume_processed=order.volume_processed
-                )
+                EngineOrderUpdate(id=order.id, volume_processed=order.volume_processed)
             )
 
     def _handle_market_sell(self, order: MarketEngineOrder):
@@ -191,7 +188,5 @@ class SingleInvestorTradeEngine:
             self._completed_orders.append(order.id)
         else:
             self._modified_orders.append(
-                MarketEngineOrderUpdate(
-                    id=order.id, volume_processed=order.volume_processed
-                )
+                EngineOrderUpdate(id=order.id, volume_processed=order.volume_processed)
             )

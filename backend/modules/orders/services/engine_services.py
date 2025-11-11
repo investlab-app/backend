@@ -17,8 +17,6 @@ from modules.orders.order_engine.engine import TradeEngine
 from modules.orders.order_engine.structures import (
     EngineOrderUpdate,
     EngineTransaction,
-    LimitEngineOrderUpdate,
-    MarketEngineOrderUpdate,
     TradeEngineInput,
     TradeEngineOutput,
 )
@@ -127,14 +125,8 @@ class TradeEngineOutputHandler:
 
         for o in real_orders:
             corresponding_engine_order = orders_dict[o.id]
-            if isinstance(
-                corresponding_engine_order,
-                (MarketEngineOrderUpdate, LimitEngineOrderUpdate),
-            ):
-                o.detail.volume_processed = corresponding_engine_order.volume_processed
-                o.detail.save()
-            else:
-                raise ValueError("Object not supported")
+            o.detail.volume_processed = corresponding_engine_order.volume_processed
+            o.detail.save()
 
     def _handle_transactions(
         self, transactions: list[EngineTransaction], prices: dict[str, Decimal]
