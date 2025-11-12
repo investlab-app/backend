@@ -8,8 +8,8 @@ from modules.orders.views import (
 )
 
 urlpatterns = [
-    path("market/", MarketOrderView.as_view(), name="market-orders"),
-    path("limit/", LimitOrderView.as_view(), name="limit-orders"),
-    path("cancel/<str:id>", DestroyOrderView.as_view(), name="destroy-order"),
+    path("market/", MarketOrderView.as_view(), name="market-order"),
+    path("limit/", LimitOrderView.as_view(), name="limit-order"),
+    path("cancel/<uuid:id>/", DestroyOrderView.as_view(), name="destroy-order"),
     path("", ListOrderView.as_view(), name="list-orders"),
 ]
