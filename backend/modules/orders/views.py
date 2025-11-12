@@ -10,6 +10,8 @@ from modules.orders.serializers import (
     CreateLimitOrderSerializer,
     CreateMarketOrderSerializer,
     FilterOrdersSerializer,
+    LimitOrderSerializer,
+    MarketOrderSerializer,
     OrderSerializer,
 )
 from modules.orders.services.order_services import OrderService
@@ -21,11 +23,11 @@ class MarketOrderView(generics.GenericAPIView):
     def get_serializer_class(self):
         if self.request.method == "POST":
             return CreateMarketOrderSerializer
-        return OrderSerializer
+        return MarketOrderSerializer
 
     @extend_schema(
         request=CreateMarketOrderSerializer,
-        responses={201: OrderSerializer},
+        responses={201: MarketOrderSerializer},
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -35,7 +37,7 @@ class MarketOrderView(generics.GenericAPIView):
 
     @extend_schema(
         parameters=[FilterOrdersSerializer],
-        responses={200: OrderSerializer(many=True)},
+        responses={200: MarketOrderSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
@@ -64,11 +66,11 @@ class LimitOrderView(generics.GenericAPIView):
     def get_serializer_class(self):
         if self.request.method == "POST":
             return CreateLimitOrderSerializer
-        return OrderSerializer
+        return LimitOrderSerializer
 
     @extend_schema(
         request=CreateLimitOrderSerializer,
-        responses={201: OrderSerializer},
+        responses={201: LimitOrderSerializer},
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -78,7 +80,7 @@ class LimitOrderView(generics.GenericAPIView):
 
     @extend_schema(
         parameters=[FilterOrdersSerializer],
-        responses={200: OrderSerializer(many=True)},
+        responses={200: LimitOrderSerializer(many=True)},
     )
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()

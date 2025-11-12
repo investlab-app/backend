@@ -47,28 +47,6 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
         return OrderSerializer(instance).data
 
 
-class MarketOrderSerializer(serializers.ModelSerializer):
-    detail_type = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MarketOrder
-        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
-
-    def get_detail_type(self, obj) -> str:
-        return "market"
-
-
-class LimitOrderSerializer(serializers.ModelSerializer):
-    detail_type = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LimitOrder
-        fields = ["detail_type", "volume", "volume_processed", "is_buy", "limit_price"]
-
-    def get_detail_type(self, obj) -> str:
-        return "limit"
-
-
 class CreateLimitOrderSerializer(serializers.ModelSerializer):
     ticker = serializers.CharField(write_only=True)
     volume = serializers.DecimalField(
@@ -105,6 +83,28 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
         return OrderSerializer(instance).data
 
 
+class MarketOrderDetailsSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MarketOrder
+        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
+
+    def get_detail_type(self, obj) -> str:
+        return "market"
+
+
+class LimitOrderDetailsSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LimitOrder
+        fields = ["detail_type", "volume", "volume_processed", "is_buy", "limit_price"]
+
+    def get_detail_type(self, obj) -> str:
+        return "limit"
+
+
 class OrderSerializer(serializers.ModelSerializer):
     ticker = serializers.CharField(source="ticker.ticker", read_only=True)
     detail = serializers.SerializerMethodField()
@@ -117,12 +117,33 @@ class OrderSerializer(serializers.ModelSerializer):
         PolymorphicProxySerializer(
             component_name="OrderDetail",
             serializers={
-                "market": MarketOrderSerializer,
-                "limit": LimitOrderSerializer,
+                "market": MarketOrderDetailsSerializer,
+                "limit": LimitOrderDetailsSerializer,
             },
             resource_type_field_name="detail_type",  # field to determine serializer
         )
     )
     def get_detail(self, obj):
-        mapping = {MarketOrder: MarketOrderSerializer, LimitOrder: LimitOrderSerializer}
+        mapping = {
+            MarketOrder: MarketOrderDetailsSerializer,
+            LimitOrder: LimitOrderDetailsSerializer,
+        }
         return mapping[obj.detail_type.model_class()](obj.detail).data
+
+
+class LimitOrderSerializer(serializers.ModelSerializer):
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
+    detail = LimitOrderDetailsSerializer()
+
+    class Meta:
+        model = Order
+        fields = ["id", "ticker", "detail_type", "detail"]
+
+
+class MarketOrderSerializer(serializers.ModelSerializer):
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
+    detail = MarketOrderDetailsSerializer()
+
+    class Meta:
+        model = Order
+        fields = ["id", "ticker", "detail_type", "detail"]

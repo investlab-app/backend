@@ -7,816 +7,840 @@ paths:
   /api/auth/sign-in/:
     post:
       operationId: auth_sign_in_create
-      description:
-        Authenticates a user using their email and password through Clerk,
+      description: Authenticates a user using their email and password through Clerk,
         returning a sign-in token upon success.
       summary: Sign in a user with email and password via Clerk
       tags:
-        - auth
+      - auth
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/ClerkLoginRequest"
+              $ref: '#/components/schemas/ClerkLoginRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - {}
+      - ClerkAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           description: Sign-in successful, token returned.
-        "400":
+        '400':
           description: Invalid credentials or user not found.
-        "401":
+        '401':
           description: Password verification failed.
-        "500":
+        '500':
           description: Clerk SDK error or other internal server error.
   /api/instruments/:
     get:
       operationId: instruments_list
       parameters:
-        - name: ordering
-          required: false
-          in: query
-          description: Which field to use when ordering the results.
-          schema:
-            type: string
-        - name: page
-          required: false
-          in: query
-          description: A page number within the paginated result set.
-          schema:
-            type: integer
-        - name: page_size
-          required: false
-          in: query
-          description: Number of results to return per page.
-          schema:
-            type: integer
-        - name: search
-          required: false
-          in: query
-          description: A search term.
-          schema:
-            type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
-        - instruments
+      - instruments
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaginatedInstrumentListList"
-          description: ""
+                $ref: '#/components/schemas/PaginatedInstrumentListList'
+          description: ''
   /api/instruments/detail/:
     get:
       operationId: instruments_detail_retrieve
-      description:
-        "Retrieve an instrument by one of the following query parameters:
+      description: 'Retrieve an instrument by one of the following query parameters:
         id, ticker, cik, composite_figi, or share_class_figi. Provide exactly one
-        of these fields."
+        of these fields.'
       parameters:
-        - in: query
-          name: cik
-          schema:
-            type: string
-          description: Filter by cik.
-        - in: query
-          name: composite_figi
-          schema:
-            type: string
-          description: Filter by composite_figi.
-        - in: query
-          name: id
-          schema:
-            type: string
-          description: Filter by id.
-        - in: query
-          name: share_class_figi
-          schema:
-            type: string
-          description: Filter by share_class_figi.
-        - in: query
-          name: ticker
-          schema:
-            type: string
-          description: Filter by ticker.
+      - in: query
+        name: cik
+        schema:
+          type: string
+        description: Filter by cik.
+      - in: query
+        name: composite_figi
+        schema:
+          type: string
+        description: Filter by composite_figi.
+      - in: query
+        name: id
+        schema:
+          type: string
+        description: Filter by id.
+      - in: query
+        name: share_class_figi
+        schema:
+          type: string
+        description: Filter by share_class_figi.
+      - in: query
+        name: ticker
+        schema:
+          type: string
+        description: Filter by ticker.
       tags:
-        - instruments
+      - instruments
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InstrumentRetrieve"
-          description: ""
+                $ref: '#/components/schemas/InstrumentRetrieve'
+          description: ''
   /api/instruments/with-prices/:
     get:
       operationId: instruments_with_prices_list
       parameters:
-        - name: ordering
-          required: false
-          in: query
-          description: Which field to use when ordering the results.
-          schema:
-            type: string
-        - name: page
-          required: false
-          in: query
-          description: A page number within the paginated result set.
-          schema:
-            type: integer
-        - name: page_size
-          required: false
-          in: query
-          description: Number of results to return per page.
-          schema:
-            type: integer
-        - name: search
-          required: false
-          in: query
-          description: A search term.
-          schema:
-            type: string
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: search
+        required: false
+        in: query
+        description: A search term.
+        schema:
+          type: string
       tags:
-        - instruments
+      - instruments
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaginatedInstrumentWithPriceList"
-          description: ""
+                $ref: '#/components/schemas/PaginatedInstrumentWithPriceList'
+          description: ''
   /api/investors/{clerk_id}/:
     get:
       operationId: investors_retrieve
       parameters:
-        - in: path
-          name: clerk_id
-          schema:
-            type: string
-          required: true
+      - in: path
+        name: clerk_id
+        schema:
+          type: string
+        required: true
       tags:
-        - investors
+      - investors
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Investor"
-          description: ""
+                $ref: '#/components/schemas/Investor'
+          description: ''
     patch:
       operationId: investors_partial_update
       parameters:
-        - in: path
-          name: clerk_id
-          schema:
-            type: string
-          required: true
+      - in: path
+        name: clerk_id
+        schema:
+          type: string
+        required: true
       tags:
-        - investors
+      - investors
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchedInvestorRequest"
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Investor"
-          description: ""
+                $ref: '#/components/schemas/Investor'
+          description: ''
   /api/investors/deposit/:
     post:
       operationId: investors_deposit_create
       tags:
-        - investors
+      - investors
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/DepositMoneyRequest"
+              $ref: '#/components/schemas/DepositMoneyRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DepositMoney"
-          description: ""
+                $ref: '#/components/schemas/DepositMoney'
+          description: ''
   /api/investors/me/:
     get:
       operationId: investors_me_retrieve
       description: Get the investor profile for the currently authenticated user.
       summary: Get current investor
       tags:
-        - investors
+      - investors
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Investor"
-          description: ""
+                $ref: '#/components/schemas/Investor'
+          description: ''
     patch:
       operationId: investors_me_partial_update
       description: Update the investor profile for the currently authenticated user.
       summary: Update current investor
       tags:
-        - investors
+      - investors
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchedInvestorRequest"
+              $ref: '#/components/schemas/PatchedInvestorRequest'
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Investor"
-          description: ""
+                $ref: '#/components/schemas/Investor'
+          description: ''
   /api/investors/me/account-value/:
     get:
       operationId: investors_me_account_value_list
-      description:
-        Get account value over time data for the currently authenticated
+      description: Get account value over time data for the currently authenticated
         user.
       summary: Get account value over time
       tags:
-        - investors
+      - investors
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/AccountValueSnapshotDaily"
-          description: ""
+                  $ref: '#/components/schemas/AccountValueSnapshotDaily'
+          description: ''
   /api/investors/me/notifications/:
     get:
       operationId: investors_me_notifications_list
       tags:
-        - investors
+      - investors
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/NotificationHistory"
-          description: ""
+                  $ref: '#/components/schemas/NotificationHistory'
+          description: ''
   /api/investors/me/watched-tickers/:
     get:
       operationId: investors_me_watched_tickers_list
       tags:
-        - investors
+      - investors
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/WatchedTicker"
-          description: ""
+                  $ref: '#/components/schemas/WatchedTicker'
+          description: ''
   /api/investors/me/watched-tickers/{instrument_id}/:
     patch:
       operationId: investors_me_watched_tickers_partial_update
       parameters:
-        - in: path
-          name: instrument_id
-          schema:
-            type: string
-          required: true
+      - in: path
+        name: instrument_id
+        schema:
+          type: string
+        required: true
       tags:
-        - investors
+      - investors
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchedWatchedTickersTickerRequest"
+              $ref: '#/components/schemas/PatchedWatchedTickersTickerRequest'
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/WatchedTickersTicker"
-          description: ""
+                $ref: '#/components/schemas/WatchedTickersTicker'
+          description: ''
   /api/markets/holidays/:
     get:
       operationId: markets_holidays_list
       description: Retrieve a list of upcoming market holidays.
       tags:
-        - markets
+      - markets
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MarketHoliday"
-          description: ""
+                  $ref: '#/components/schemas/MarketHoliday'
+          description: ''
   /api/markets/status/:
     get:
       operationId: markets_status_retrieve
       description: Retrieve the current trading status of the markets and exchanges.
       tags:
-        - markets
+      - markets
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/MarketStatus"
-          description: ""
+                $ref: '#/components/schemas/MarketStatus'
+          description: ''
   /api/news/:
     get:
       operationId: news_list
       description: Retrieve a list of 30 news articles.
       parameters:
-        - in: query
-          name: number_of_news
-          schema:
-            type: integer
-            maximum: 100
-            minimum: 1
-            default: 30
-        - in: query
-          name: order
-          schema:
-            enum:
-              - asc
-              - desc
-            type: string
-            default: desc
-            minLength: 1
-          description: |-
-            * `asc` - asc
-            * `desc` - desc
-        - in: query
-          name: published_utc
-          schema:
-            type: string
-            format: date-time
-        - in: query
-          name: published_utc_gte
-          schema:
-            type: string
-            format: date-time
-        - in: query
-          name: published_utc_lte
-          schema:
-            type: string
-            format: date-time
-        - in: query
-          name: sort
-          schema:
-            type: string
-            minLength: 1
-            default: published_utc
-        - in: query
-          name: ticker
-          schema:
-            type: string
+      - in: query
+        name: number_of_news
+        schema:
+          type: integer
+          maximum: 100
+          minimum: 1
+          default: 30
+      - in: query
+        name: order
+        schema:
+          enum:
+          - asc
+          - desc
+          type: string
+          default: desc
+          minLength: 1
+        description: |-
+          * `asc` - asc
+          * `desc` - desc
+      - in: query
+        name: published_utc
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: published_utc_gte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: published_utc_lte
+        schema:
+          type: string
+          format: date-time
+      - in: query
+        name: sort
+        schema:
+          type: string
+          minLength: 1
+          default: published_utc
+      - in: query
+        name: ticker
+        schema:
+          type: string
       tags:
-        - news
+      - news
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/TickerNews"
-          description: ""
+                  $ref: '#/components/schemas/TickerNews'
+          description: ''
   /api/notifications/vapid-public-key/:
     get:
       operationId: notifications_vapid_public_key_retrieve
       tags:
-        - notifications
+      - notifications
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/VapidPublicKey"
-          description: ""
+                $ref: '#/components/schemas/VapidPublicKey'
+          description: ''
   /api/orders/:
     get:
       operationId: orders_list
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
-        - orders
+      - orders
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Order"
-          description: ""
+                  $ref: '#/components/schemas/Order'
+          description: ''
   /api/orders/cancel/{id}:
     delete:
       operationId: orders_cancel_destroy
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
       tags:
-        - orders
+      - orders
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "204":
+        '204':
           description: No response body
   /api/orders/limit/:
     get:
       operationId: orders_limit_list
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
-        - orders
+      - orders
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Order"
-          description: ""
+                  $ref: '#/components/schemas/LimitOrder'
+          description: ''
     post:
       operationId: orders_limit_create
       tags:
-        - orders
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateLimitOrderRequest"
+              $ref: '#/components/schemas/CreateLimitOrderRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "201":
+        '201':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Order"
-          description: ""
+                $ref: '#/components/schemas/LimitOrder'
+          description: ''
   /api/orders/market/:
     get:
       operationId: orders_market_list
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
-        - orders
+      - orders
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Order"
-          description: ""
+                  $ref: '#/components/schemas/MarketOrder'
+          description: ''
     post:
       operationId: orders_market_create
       tags:
-        - orders
+      - orders
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/CreateMarketOrderRequest"
+              $ref: '#/components/schemas/CreateMarketOrderRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "201":
+        '201':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Order"
-          description: ""
+                $ref: '#/components/schemas/MarketOrder'
+          description: ''
   /api/prices/:
     get:
       operationId: prices_list
       parameters:
-        - in: query
-          name: tickers
-          schema:
-            type: array
-            items:
-              type: string
-              minLength: 1
-            maxItems: 50
-          description: List of ticker symbols to fetch prices for (max 50).
-          required: true
+      - in: query
+        name: tickers
+        schema:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          maxItems: 50
+        description: List of ticker symbols to fetch prices for (max 50).
+        required: true
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PriceDailySummary"
-          description: ""
+                  $ref: '#/components/schemas/PriceDailySummary'
+          description: ''
   /api/prices/{ticker}/:
     get:
       operationId: prices_retrieve
       parameters:
-        - in: path
-          name: ticker
-          schema:
-            type: string
-          required: true
+      - in: path
+        name: ticker
+        schema:
+          type: string
+        required: true
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PriceDailySummary"
-          description: ""
+                $ref: '#/components/schemas/PriceDailySummary'
+          description: ''
   /api/prices/bars/:
     get:
       operationId: prices_bars
       parameters:
-        - in: query
-          name: end_date
-          schema:
-            type: string
-            format: date-time
-            default: "2025-09-23T00:00:00Z"
-        - in: query
-          name: interval
-          schema:
-            enum:
-              - SECOND
-              - MINUTE
-              - HOUR
-              - DAY
-              - WEEK
-              - MONTH
-              - QUARTER
-              - YEAR
-            type: string
-            minLength: 1
-          description: |-
-            * `SECOND` - SECOND
-            * `MINUTE` - MINUTE
-            * `HOUR` - HOUR
-            * `DAY` - DAY
-            * `WEEK` - WEEK
-            * `MONTH` - MONTH
-            * `QUARTER` - QUARTER
-            * `YEAR` - YEAR
-          required: true
-        - in: query
-          name: interval_multiplier
-          schema:
-            type: integer
-            minimum: 1
-            default: 1
-        - in: query
-          name: start_date
-          schema:
-            type: string
-            format: date-time
-          required: true
-        - in: query
-          name: ticker
-          schema:
-            type: string
-            minLength: 1
-            maxLength: 6
-          required: true
+      - in: query
+        name: end_date
+        schema:
+          type: string
+          format: date-time
+          default: '2025-09-23T00:00:00Z'
+      - in: query
+        name: interval
+        schema:
+          enum:
+          - SECOND
+          - MINUTE
+          - HOUR
+          - DAY
+          - WEEK
+          - MONTH
+          - QUARTER
+          - YEAR
+          type: string
+          minLength: 1
+        description: |-
+          * `SECOND` - SECOND
+          * `MINUTE` - MINUTE
+          * `HOUR` - HOUR
+          * `DAY` - DAY
+          * `WEEK` - WEEK
+          * `MONTH` - MONTH
+          * `QUARTER` - QUARTER
+          * `YEAR` - YEAR
+        required: true
+      - in: query
+        name: interval_multiplier
+        schema:
+          type: integer
+          minimum: 1
+          default: 1
+      - in: query
+        name: start_date
+        schema:
+          type: string
+          format: date-time
+        required: true
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 6
+        required: true
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/PriceBar"
-          description: ""
+                  $ref: '#/components/schemas/PriceBar'
+          description: ''
   /api/prices/price-alert/:
     get:
       operationId: prices_price_alert_list
       parameters:
-        - name: page
-          required: false
-          in: query
-          description: A page number within the paginated result set.
-          schema:
-            type: integer
-        - name: page_size
-          required: false
-          in: query
-          description: Number of results to return per page.
-          schema:
-            type: integer
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PaginatedPriceAlertList"
-          description: ""
+                $ref: '#/components/schemas/PaginatedPriceAlertList'
+          description: ''
     post:
       operationId: prices_price_alert_create
       tags:
-        - prices
+      - prices
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PriceAlertCreateRequest"
+              $ref: '#/components/schemas/PriceAlertCreateRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "201":
+        '201':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PriceAlertCreate"
-          description: ""
+                $ref: '#/components/schemas/PriceAlertCreate'
+          description: ''
   /api/prices/price-alert/{id}/:
     get:
       operationId: prices_price_alert_retrieve
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PriceAlert"
-          description: ""
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
     put:
       operationId: prices_price_alert_update
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - prices
+      - prices
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PriceAlertRequest"
+              $ref: '#/components/schemas/PriceAlertRequest'
         required: true
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PriceAlert"
-          description: ""
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
     patch:
       operationId: prices_price_alert_partial_update
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - prices
+      - prices
       requestBody:
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/PatchedPriceAlertRequest"
+              $ref: '#/components/schemas/PatchedPriceAlertRequest'
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/PriceAlert"
-          description: ""
+                $ref: '#/components/schemas/PriceAlert'
+          description: ''
     delete:
       operationId: prices_price_alert_destroy
       parameters:
-        - in: path
-          name: id
-          schema:
-            type: string
-            format: uuid
-          required: true
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
       tags:
-        - prices
+      - prices
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "204":
+        '204':
           description: No response body
   /api/statistics/asset-allocation/:
     get:
@@ -824,184 +848,180 @@ paths:
       description: Get asset allocation data for the currently authenticated user.
       summary: Get asset allocation
       parameters:
-        - in: query
-          name: instruments_number
-          schema:
-            type: integer
-            maximum: 30
-            minimum: 3
-            default: 5
-          description: Number of top instruments without `Other` position
+      - in: query
+        name: instruments_number
+        schema:
+          type: integer
+          maximum: 30
+          minimum: 3
+          default: 5
+        description: Number of top instruments without `Other` position
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AssetAllocation"
-          description: ""
+                $ref: '#/components/schemas/AssetAllocation'
+          description: ''
   /api/statistics/current-account-value/:
     get:
       operationId: statistics_current_account_value_retrieve
-      description:
-        Get the current account value as well as gain and percent gain
+      description: Get the current account value as well as gain and percent gain
         for the authenticated user.
       summary: Get current account value
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/CurrentAccountValue"
-          description: ""
+                $ref: '#/components/schemas/CurrentAccountValue'
+          description: ''
   /api/statistics/owned-shares/:
     get:
       operationId: statistics_owned_shares_list
       description: Get owned shares data for the currently authenticated user.
       summary: Get owned shares
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/OwnedShare"
-          description: ""
+                  $ref: '#/components/schemas/OwnedShare'
+          description: ''
   /api/statistics/statistics/most-traded/:
     get:
       operationId: statistics_statistics_most_traded_list
-      description:
-        Returns number of trades, number of buys/sells, avg gain/loss,
+      description: Returns number of trades, number of buys/sells, avg gain/loss,
         and total return from the most frequently traded instruments.
       summary: Get overview about the most traded instruments
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/MostTradedItem"
-          description: ""
+                  $ref: '#/components/schemas/MostTradedItem'
+          description: ''
   /api/statistics/statistics/trading-overview/:
     get:
       operationId: statistics_statistics_trading_overview_retrieve
-      description:
-        Returns total trades, number of buys/sells, average gain/loss,
+      description: Returns total trades, number of buys/sells, average gain/loss,
         and total return for the current investor.
       summary: Get trading performance overview
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/TradingOverview"
-          description: ""
+                $ref: '#/components/schemas/TradingOverview'
+          description: ''
   /api/statistics/stats/:
     get:
       operationId: statistics_stats_retrieve
       description: Get investor statistics for the currently authenticated user.
       summary: Get investor stats
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/InvestorStats"
-          description: ""
+                $ref: '#/components/schemas/InvestorStats'
+          description: ''
   /api/statistics/transactions-history/:
     get:
       operationId: statistics_transactions_history_list
-      description:
-        Get transaction history for the currently authenticated user. Can
+      description: Get transaction history for the currently authenticated user. Can
         filter by position type (open/closed/both) and ticker symbol.
       summary: Get transaction history
       parameters:
-        - in: query
-          name: tickers
-          schema:
-            type: array
-            items:
-              type: string
-              minLength: 1
-            maxItems: 50
-          description: List of ticker symbols to fetch prices for (max 50).
-        - in: query
-          name: type
-          schema:
-            enum:
-              - open
-              - closed
-              - both
+      - in: query
+        name: tickers
+        schema:
+          type: array
+          items:
             type: string
-            default: both
             minLength: 1
-          description: |-
-            Type of positions to fetch: 'open', 'closed', or 'both'
+          maxItems: 50
+        description: List of ticker symbols to fetch prices for (max 50).
+      - in: query
+        name: type
+        schema:
+          enum:
+          - open
+          - closed
+          - both
+          type: string
+          default: both
+          minLength: 1
+        description: |-
+          Type of positions to fetch: 'open', 'closed', or 'both'
 
-            * `open` - open
-            * `closed` - closed
-            * `both` - both
+          * `open` - open
+          * `closed` - closed
+          * `both` - both
       tags:
-        - statistics
+      - statistics
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
                 type: array
                 items:
-                  $ref: "#/components/schemas/Position"
-          description: ""
+                  $ref: '#/components/schemas/Position'
+          description: ''
   /api/status/:
     get:
       operationId: status_retrieve
       description: Returns a simple status message indicating the application is running.
       summary: Get application status
       tags:
-        - status
+      - status
       security:
-        - ClerkAuth: []
-        - {}
+      - ClerkAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/StatusResponse"
+                $ref: '#/components/schemas/StatusResponse'
           description: Application status
   /api/test/admin_test/:
     get:
@@ -1009,16 +1029,16 @@ paths:
       description: Test endpoint to verify admin authentication is working.
       summary: Test admin authentication
       tags:
-        - test
+      - test
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTestResponse"
+                $ref: '#/components/schemas/AuthTestResponse'
           description: Admin authentication test successful
   /api/test/all_test/:
     get:
@@ -1026,17 +1046,17 @@ paths:
       description: Test endpoint that doesn't require authentication.
       summary: Test unauthenticated endpoint
       tags:
-        - test
+      - test
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
-        - {}
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleResponse"
+                $ref: '#/components/schemas/SimpleResponse'
           description: Unauthenticated test successful
   /api/test/alpaca_test/:
     get:
@@ -1044,17 +1064,17 @@ paths:
       description: test alpaca.
       summary: Fetch last trade from Alpaca
       tags:
-        - test
+      - test
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
-        - {}
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleResponse"
+                $ref: '#/components/schemas/SimpleResponse'
           description: Last trade result from Alpaca
   /api/test/polygon_test/:
     get:
@@ -1062,17 +1082,17 @@ paths:
       description: test polygon.
       summary: Fetch last trade from Polygon.io
       tags:
-        - test
+      - test
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
-        - {}
+      - ClerkAuth: []
+      - ClerkAuth: []
+      - {}
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SimpleResponse"
+                $ref: '#/components/schemas/SimpleResponse'
           description: Last trade result from Polygon
   /api/test/users_test/:
     get:
@@ -1080,16 +1100,16 @@ paths:
       description: Test endpoint to verify user authentication is working.
       summary: Test user authentication
       tags:
-        - test
+      - test
       security:
-        - ClerkAuth: []
-        - ClerkAuth: []
+      - ClerkAuth: []
+      - ClerkAuth: []
       responses:
-        "200":
+        '200':
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/AuthTestResponse"
+                $ref: '#/components/schemas/AuthTestResponse'
           description: Authentication test successful
 components:
   schemas:
@@ -1107,8 +1127,8 @@ components:
           format: double
           description: Account value on this date
       required:
-        - date
-        - value
+      - date
+      - value
     AssetAllocation:
       type: object
       properties:
@@ -1121,11 +1141,11 @@ components:
         allocations:
           type: array
           items:
-            $ref: "#/components/schemas/AssetAllocationItem"
+            $ref: '#/components/schemas/AssetAllocationItem'
       required:
-        - allocations
-        - total_gain_this_year
-        - total_value
+      - allocations
+      - total_gain_this_year
+      - total_value
     AssetAllocationItem:
       type: object
       properties:
@@ -1150,12 +1170,12 @@ components:
           type: number
           format: double
       required:
-        - instrument_icon
-        - instrument_logo
-        - instrument_name
-        - instrument_ticker
-        - percentage
-        - value
+      - instrument_icon
+      - instrument_logo
+      - instrument_name
+      - instrument_ticker
+      - percentage
+      - value
     AuthTestResponse:
       type: object
       description: Serializer for authentication test response
@@ -1170,9 +1190,9 @@ components:
           type: integer
           description: ID of the authenticated user
       required:
-        - message
-        - user_id
-        - user_role
+      - message
+      - user_id
+      - user_role
     ClerkLoginRequest:
       type: object
       properties:
@@ -1184,8 +1204,8 @@ components:
           type: string
           minLength: 1
       required:
-        - email
-        - password
+      - email
+      - password
     CreateLimitOrderRequest:
       type: object
       properties:
@@ -1207,10 +1227,10 @@ components:
           pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
           writeOnly: true
       required:
-        - is_buy
-        - limit_price
-        - ticker
-        - volume
+      - is_buy
+      - limit_price
+      - ticker
+      - volume
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1227,9 +1247,9 @@ components:
           type: boolean
           writeOnly: true
       required:
-        - is_buy
-        - ticker
-        - volume
+      - is_buy
+      - ticker
+      - volume
     CurrentAccountValue:
       type: object
       properties:
@@ -1244,9 +1264,9 @@ components:
           format: double
           nullable: true
       required:
-        - gain
-        - gain_percentage
-        - total_account_value
+      - gain
+      - gain_percentage
+      - total_account_value
     DepositMoney:
       type: object
       properties:
@@ -1255,7 +1275,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
       required:
-        - amount
+      - amount
     DepositMoneyRequest:
       type: object
       properties:
@@ -1264,7 +1284,7 @@ components:
           format: decimal
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
       required:
-        - amount
+      - amount
     HistoryEntry:
       type: object
       properties:
@@ -1290,11 +1310,11 @@ components:
           nullable: true
           description: Acquisition price (null for SELL transactions)
       required:
-        - acquisition_price
-        - is_buy
-        - quantity
-        - share_price
-        - timestamp
+      - acquisition_price
+      - is_buy
+      - quantity
+      - share_price
+      - timestamp
     Insight:
       type: object
       properties:
@@ -1330,7 +1350,7 @@ components:
           type: string
           maxLength: 255
         market:
-          $ref: "#/components/schemas/MarketEnum"
+          $ref: '#/components/schemas/MarketEnum'
         market_cap:
           type: string
           format: decimal
@@ -1348,19 +1368,10 @@ components:
           format: uri
           nullable: true
       required:
-        - id
-        - market
-        - name
-        - ticker
-    InstrumentName:
-      type: object
-      properties:
-        ticker:
-          type: string
-          title: Ticker Symbol
-          maxLength: 20
-      required:
-        - ticker
+      - id
+      - market
+      - name
+      - ticker
     InstrumentRetrieve:
       type: object
       properties:
@@ -1389,7 +1400,7 @@ components:
           description: Central Index Key assigned by the SEC.
           maxLength: 20
         market:
-          $ref: "#/components/schemas/MarketEnum"
+          $ref: '#/components/schemas/MarketEnum'
         market_cap:
           type: string
           format: decimal
@@ -1405,7 +1416,7 @@ components:
           maxLength: 50
         locale:
           allOf:
-            - $ref: "#/components/schemas/LocaleEnum"
+          - $ref: '#/components/schemas/LocaleEnum'
           description: |-
             Locale where the ticker is traded, e.g. 'US'.
 
@@ -1494,11 +1505,11 @@ components:
               type: string
               nullable: true
           required:
-            - address1
-            - address2
-            - city
-            - postal_code
-            - state
+          - address1
+          - address2
+          - city
+          - postal_code
+          - state
           readOnly: true
         icon:
           type: string
@@ -1509,12 +1520,12 @@ components:
           format: uri
           nullable: true
       required:
-        - address
-        - id
-        - locale
-        - market
-        - name
-        - ticker
+      - address
+      - id
+      - locale
+      - market
+      - name
+      - ticker
     InstrumentWithPrice:
       type: object
       properties:
@@ -1538,7 +1549,7 @@ components:
           type: string
           maxLength: 255
         market:
-          $ref: "#/components/schemas/MarketEnum"
+          $ref: '#/components/schemas/MarketEnum'
         market_cap:
           type: string
           format: decimal
@@ -1557,18 +1568,18 @@ components:
           nullable: true
         price_info:
           allOf:
-            - $ref: "#/components/schemas/PriceDailySummary"
+          - $ref: '#/components/schemas/PriceDailySummary'
           readOnly: true
         is_watched:
           type: boolean
           readOnly: true
       required:
-        - id
-        - is_watched
-        - market
-        - name
-        - price_info
-        - ticker
+      - id
+      - is_watched
+      - market
+      - name
+      - price_info
+      - ticker
     Investor:
       type: object
       properties:
@@ -1599,9 +1610,9 @@ components:
             format: uuid
             title: Watching Instruments
       required:
-        - balance
-        - clerk_id
-        - id
+      - balance
+      - clerk_id
+      - id
     InvestorStats:
       type: object
       description: Serializer for investor statistics data.
@@ -1623,11 +1634,30 @@ components:
           format: double
           description: Total account value
       required:
-        - invested
-        - todays_gain
-        - total_gain
-        - total_value
+      - invested
+      - todays_gain
+      - total_gain
+      - total_value
     LimitOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          readOnly: true
+        detail_type:
+          type: integer
+        detail:
+          $ref: '#/components/schemas/LimitOrderDetails'
+      required:
+      - detail
+      - detail_type
+      - id
+      - ticker
+    LimitOrderDetails:
       type: object
       properties:
         detail_type:
@@ -1648,14 +1678,14 @@ components:
           format: decimal
           pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
       required:
-        - detail_type
-        - is_buy
-        - limit_price
-        - volume
+      - detail_type
+      - is_buy
+      - limit_price
+      - volume
     LocaleEnum:
       enum:
-        - us
-        - global
+      - us
+      - global
       type: string
       description: |-
         * `us` - United States
@@ -1671,11 +1701,11 @@ components:
           nullable: true
     MarketEnum:
       enum:
-        - stocks
-        - crypto
-        - fx
-        - otc
-        - indices
+      - stocks
+      - crypto
+      - fx
+      - otc
+      - indices
       type: string
       description: |-
         * `stocks` - Stocks
@@ -1752,6 +1782,25 @@ components:
     MarketOrder:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          readOnly: true
+        detail_type:
+          type: integer
+        detail:
+          $ref: '#/components/schemas/MarketOrderDetails'
+      required:
+      - detail
+      - detail_type
+      - id
+      - ticker
+    MarketOrderDetails:
+      type: object
+      properties:
         detail_type:
           type: string
           readOnly: true
@@ -1766,9 +1815,9 @@ components:
         is_buy:
           type: boolean
       required:
-        - detail_type
-        - is_buy
-        - volume
+      - detail_type
+      - is_buy
+      - volume
     MarketStatus:
       type: object
       properties:
@@ -1777,18 +1826,18 @@ components:
           nullable: true
         currencies:
           allOf:
-            - $ref: "#/components/schemas/MarketCurrencies"
+          - $ref: '#/components/schemas/MarketCurrencies'
           nullable: true
         early_hours:
           type: boolean
           nullable: true
         exchanges:
           allOf:
-            - $ref: "#/components/schemas/MarketExchanges"
+          - $ref: '#/components/schemas/MarketExchanges'
           nullable: true
         indicesGroups:
           allOf:
-            - $ref: "#/components/schemas/MarketIndices"
+          - $ref: '#/components/schemas/MarketIndices'
           nullable: true
         market:
           type: string
@@ -1816,12 +1865,12 @@ components:
           format: double
           nullable: true
       required:
-        - buys
-        - gain
-        - gain_percentage
-        - no_trades
-        - sells
-        - symbol
+      - buys
+      - gain
+      - gain_percentage
+      - no_trades
+      - sells
+      - symbol
     NotificationConfig:
       type: object
       properties:
@@ -1845,8 +1894,8 @@ components:
           format: date-time
           readOnly: true
       required:
-        - created_at
-        - id
+      - created_at
+      - id
     NotificationConfigCreate:
       type: object
       properties:
@@ -1857,9 +1906,9 @@ components:
         is_websocket:
           type: boolean
       required:
-        - is_email
-        - is_push
-        - is_websocket
+      - is_email
+      - is_push
+      - is_websocket
     NotificationConfigCreateRequest:
       type: object
       properties:
@@ -1870,11 +1919,11 @@ components:
         is_websocket:
           type: boolean
         push_subscription:
-          $ref: "#/components/schemas/PushNotificationRequest"
+          $ref: '#/components/schemas/PushNotificationRequest'
       required:
-        - is_email
-        - is_push
-        - is_websocket
+      - is_email
+      - is_push
+      - is_websocket
     NotificationConfigRequest:
       type: object
       properties:
@@ -1919,13 +1968,13 @@ components:
           format: date-time
           readOnly: true
       required:
-        - created_at
-        - id
-        - message_en
-        - message_pl
-        - sent_at
-        - type
-        - updated_at
+      - created_at
+      - id
+      - message_en
+      - message_pl
+      - sent_at
+      - type
+      - updated_at
     Order:
       type: object
       properties:
@@ -1934,27 +1983,28 @@ components:
           format: uuid
           readOnly: true
         ticker:
-          $ref: "#/components/schemas/InstrumentName"
+          type: string
+          readOnly: true
         detail_type:
           type: integer
         detail:
           allOf:
-            - $ref: "#/components/schemas/OrderDetail"
+          - $ref: '#/components/schemas/OrderDetail'
           readOnly: true
       required:
-        - detail
-        - detail_type
-        - id
-        - ticker
+      - detail
+      - detail_type
+      - id
+      - ticker
     OrderDetail:
       oneOf:
-        - $ref: "#/components/schemas/MarketOrder"
-        - $ref: "#/components/schemas/LimitOrder"
+      - $ref: '#/components/schemas/MarketOrderDetails'
+      - $ref: '#/components/schemas/LimitOrderDetails'
       discriminator:
         propertyName: detail_type
         mapping:
-          market: "#/components/schemas/MarketOrder"
-          limit: "#/components/schemas/LimitOrder"
+          market: '#/components/schemas/MarketOrderDetails'
+          limit: '#/components/schemas/LimitOrderDetails'
     OwnedShare:
       type: object
       properties:
@@ -1978,17 +2028,17 @@ components:
           format: double
           nullable: true
       required:
-        - gain
-        - gain_percentage
-        - name
-        - symbol
-        - value
-        - volume
+      - gain
+      - gain_percentage
+      - name
+      - symbol
+      - value
+      - volume
     PaginatedInstrumentListList:
       type: object
       required:
-        - count
-        - results
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -2006,12 +2056,12 @@ components:
         results:
           type: array
           items:
-            $ref: "#/components/schemas/InstrumentList"
+            $ref: '#/components/schemas/InstrumentList'
     PaginatedInstrumentWithPriceList:
       type: object
       required:
-        - count
-        - results
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -2029,12 +2079,12 @@ components:
         results:
           type: array
           items:
-            $ref: "#/components/schemas/InstrumentWithPrice"
+            $ref: '#/components/schemas/InstrumentWithPrice'
     PaginatedPriceAlertList:
       type: object
       required:
-        - count
-        - results
+      - count
+      - results
       properties:
         count:
           type: integer
@@ -2052,7 +2102,7 @@ components:
         results:
           type: array
           items:
-            $ref: "#/components/schemas/PriceAlert"
+            $ref: '#/components/schemas/PriceAlert'
     PatchedInvestorRequest:
       type: object
       properties:
@@ -2075,13 +2125,13 @@ components:
       type: object
       properties:
         threshold_type:
-          $ref: "#/components/schemas/ThresholdTypeEnum"
+          $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
-          $ref: "#/components/schemas/NotificationConfigRequest"
+          $ref: '#/components/schemas/NotificationConfigRequest'
     PatchedWatchedTickersTickerRequest:
       type: object
       properties:
@@ -2124,17 +2174,17 @@ components:
         history:
           type: array
           items:
-            $ref: "#/components/schemas/HistoryEntry"
+            $ref: '#/components/schemas/HistoryEntry'
           description: Transaction history
       required:
-        - gain
-        - gain_percentage
-        - history
-        - icon
-        - market_value
-        - name
-        - quantity
-        - symbol
+      - gain
+      - gain_percentage
+      - history
+      - icon
+      - market_value
+      - name
+      - quantity
+      - symbol
     PriceAlert:
       type: object
       properties:
@@ -2149,20 +2199,20 @@ components:
           type: string
           readOnly: true
         threshold_type:
-          $ref: "#/components/schemas/ThresholdTypeEnum"
+          $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
-          $ref: "#/components/schemas/NotificationConfig"
+          $ref: '#/components/schemas/NotificationConfig'
       required:
-        - id
-        - instrument_name
-        - instrument_ticker
-        - notification_config
-        - threshold_type
-        - threshold_value
+      - id
+      - instrument_name
+      - instrument_ticker
+      - notification_config
+      - threshold_type
+      - threshold_value
     PriceAlertCreate:
       type: object
       properties:
@@ -2171,18 +2221,18 @@ components:
           format: uuid
           readOnly: true
         threshold_type:
-          $ref: "#/components/schemas/ThresholdTypeEnum"
+          $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
-          $ref: "#/components/schemas/NotificationConfigCreate"
+          $ref: '#/components/schemas/NotificationConfigCreate'
       required:
-        - id
-        - notification_config
-        - threshold_type
-        - threshold_value
+      - id
+      - notification_config
+      - threshold_type
+      - threshold_value
     PriceAlertCreateRequest:
       type: object
       properties:
@@ -2191,33 +2241,33 @@ components:
           writeOnly: true
           minLength: 1
         threshold_type:
-          $ref: "#/components/schemas/ThresholdTypeEnum"
+          $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
-          $ref: "#/components/schemas/NotificationConfigCreateRequest"
+          $ref: '#/components/schemas/NotificationConfigCreateRequest'
       required:
-        - instrument_ticker
-        - notification_config
-        - threshold_type
-        - threshold_value
+      - instrument_ticker
+      - notification_config
+      - threshold_type
+      - threshold_value
     PriceAlertRequest:
       type: object
       properties:
         threshold_type:
-          $ref: "#/components/schemas/ThresholdTypeEnum"
+          $ref: '#/components/schemas/ThresholdTypeEnum'
         threshold_value:
           type: string
           format: decimal
           pattern: ^-?\d{0,8}(?:\.\d{0,2})?$
         notification_config:
-          $ref: "#/components/schemas/NotificationConfigRequest"
+          $ref: '#/components/schemas/NotificationConfigRequest'
       required:
-        - notification_config
-        - threshold_type
-        - threshold_value
+      - notification_config
+      - threshold_type
+      - threshold_value
     PriceBar:
       type: object
       properties:
@@ -2247,12 +2297,12 @@ components:
           format: decimal
           nullable: true
       required:
-        - close
-        - high
-        - low
-        - open
-        - timestamp
-        - volume
+      - close
+      - high
+      - low
+      - open
+      - timestamp
+      - volume
     PriceDaily:
       type: object
       properties:
@@ -2275,12 +2325,12 @@ components:
           type: string
           format: decimal
       required:
-        - close
-        - high
-        - low
-        - open
-        - volume
-        - volume_weighted_average_price
+      - close
+      - high
+      - low
+      - open
+      - volume
+      - volume_weighted_average_price
     PriceDailySummary:
       type: object
       properties:
@@ -2290,7 +2340,7 @@ components:
           type: string
           format: decimal
         daily_summary:
-          $ref: "#/components/schemas/PriceDaily"
+          $ref: '#/components/schemas/PriceDaily'
         todays_change:
           type: string
           format: decimal
@@ -2301,12 +2351,12 @@ components:
           type: string
           format: date-time
       required:
-        - current_price
-        - daily_summary
-        - last_updated
-        - ticker
-        - todays_change
-        - todays_change_percent
+      - current_price
+      - daily_summary
+      - last_updated
+      - ticker
+      - todays_change
+      - todays_change_percent
     Publisher:
       type: object
       properties:
@@ -2341,9 +2391,9 @@ components:
           minLength: 1
           maxLength: 255
       required:
-        - auth
-        - endpoint
-        - p256dh
+      - auth
+      - endpoint
+      - p256dh
     SimpleResponse:
       type: object
       description: Serializer for simple OK response
@@ -2360,11 +2410,11 @@ components:
           type: string
           description: Status message indicating the application is running
       required:
-        - message
+      - message
     ThresholdTypeEnum:
       enum:
-        - above
-        - below
+      - above
+      - below
       type: string
       description: |-
         * `above` - Above
@@ -2393,7 +2443,7 @@ components:
         insights:
           type: array
           items:
-            $ref: "#/components/schemas/Insight"
+            $ref: '#/components/schemas/Insight'
           nullable: true
         keywords:
           type: array
@@ -2405,7 +2455,7 @@ components:
           nullable: true
         publisher:
           allOf:
-            - $ref: "#/components/schemas/Publisher"
+          - $ref: '#/components/schemas/Publisher'
           nullable: true
         tickers:
           type: array
@@ -2428,17 +2478,17 @@ components:
           type: number
           format: double
       required:
-        - buys
-        - sells
-        - total_gain
-        - total_trades
+      - buys
+      - sells
+      - total_gain
+      - total_trades
     VapidPublicKey:
       type: object
       properties:
         public_key:
           type: string
       required:
-        - public_key
+      - public_key
     WatchedTicker:
       type: object
       description: Serializer for watched tickers with icon and ticker information.
@@ -2459,8 +2509,8 @@ components:
           format: uri
           nullable: true
       required:
-        - name
-        - ticker
+      - name
+      - ticker
     WatchedTickersTicker:
       type: object
       properties:
@@ -2468,10 +2518,10 @@ components:
           type: boolean
           description: Whether the instrument is now being watched
       required:
-        - is_watched
+      - is_watched
   securitySchemes:
     ClerkAuth:
       type: http
       scheme: bearer
       bearerFormat: JWT
-      description: "Clerk JWT authentication. Use format: Bearer <token>"
+      description: 'Clerk JWT authentication. Use format: Bearer <token>'
