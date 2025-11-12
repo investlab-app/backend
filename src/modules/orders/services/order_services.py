@@ -98,6 +98,9 @@ class OrderService:
         return order
 
     def delete(self, order: Order):
+        if not order.detail:
+            raise ValueError("Cannot delete order with no detail.")
+
         with transaction.atomic():
             if order.detail is None:
                 raise ValueError("Order detail cannot be None")
