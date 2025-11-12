@@ -20,7 +20,7 @@ services:
       - app_network
 
   backend:
-    build: ./backend
+    build: ./src
     environment:
       - POSTGRES_DB=${POSTGRES_DB:-stocks}
       - POSTGRES_USER=${POSTGRES_USER:-user}
@@ -42,8 +42,8 @@ services:
     depends_on:
       - postgres
     volumes:
-      - ./backend:/backend
-      - /backend/.venv
+      - ./src:/app
+      - /app/.venv
     networks:
       - app_network
 
