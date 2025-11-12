@@ -38,7 +38,7 @@ jobs:
         run: make schema-gen
       - name: Check schema changes
         run: |
-          if ! git diff --exit-code backend/schema.yml; then
+          if ! git diff --exit-code src/schema.yml; then
             echo "Schema has changed; please commit updated schema."
             exit 1
           fi
@@ -52,9 +52,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: backend
-      - name: Move backend files
-        run: "find ./backend -maxdepth 1 -mindepth 1 -exec mv {} . \\; && rm -r ./backend"
+          sparse-checkout: src
+      - name: Move src files
+        run: "find ./src -maxdepth 1 -mindepth 1 -exec mv {} . \\; && rm -r ./src"
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
       - name: Set up Docker Buildx
