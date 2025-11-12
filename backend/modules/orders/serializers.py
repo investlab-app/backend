@@ -3,9 +3,16 @@ from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_fiel
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
-from modules.instruments.serializers import InstrumentNameSerializer
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.orders.services.order_services import OrderService
+
+
+class FilterOrdersSerializer(serializers.Serializer):
+    ticker = serializers.CharField(
+        max_length=20,
+        required=False,
+        help_text="Filter orders by instrument ticker (e.g., 'AAPL'). If not provided, returns orders for all instruments.",
+    )
 
 
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
@@ -99,7 +106,7 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
 
 
 class OrderSerializer(serializers.ModelSerializer):
-    ticker = InstrumentNameSerializer()
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
     detail = serializers.SerializerMethodField()
 
     class Meta:

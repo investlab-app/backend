@@ -85,7 +85,3 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
         return investor.watching_instruments.filter(id=obj.id).exists()
 
 
-class InstrumentNameSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Instrument
-        fields = ["ticker"]
