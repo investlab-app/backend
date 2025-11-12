@@ -98,6 +98,9 @@ class OrderService:
         return order
 
     def delete(self, order: Order):
+        if not order.detail:
+            raise ValueError("Cannot delete order with no detail.")
+
         with transaction.atomic():
             if order.detail.is_buy:
                 order.investor.blocked_funds -= order.detail.blocked_funds
