@@ -42,7 +42,7 @@ class MarketOrderView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response({"results": serializer.data})
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
@@ -85,7 +85,7 @@ class LimitOrderView(generics.GenericAPIView):
     def get(self, request, *args, **kwargs):
         queryset = self.get_queryset()
         serializer = self.get_serializer(queryset, many=True)
-        return Response({"results": serializer.data})
+        return Response(serializer.data)
 
     def perform_create(self, serializer):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
