@@ -137,3 +137,7 @@ exclude = ["*/migrations/*"]
 
 [tool.django-stubs]
 django_settings_module = "config.settings"
+
+[tool.logging]
+level = "WARNING"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
