@@ -11,7 +11,10 @@ class FilterOrdersSerializer(serializers.Serializer):
     ticker = serializers.CharField(
         max_length=20,
         required=False,
-        help_text="Filter orders by instrument ticker (e.g., 'AAPL'). If not provided, returns orders for all instruments.",
+        help_text=(
+            "Filter orders by instrument ticker (e.g., 'AAPL'). "
+            "If not provided, returns orders for all instruments.",
+        ),
     )
 
 

@@ -83,5 +83,3 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
         if not investor:
             return False
         return investor.watching_instruments.filter(id=obj.id).exists()
-
-
