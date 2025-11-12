@@ -4,7 +4,7 @@ from asgiref.sync import sync_to_async
 from clerk_backend_api import AuthenticateRequestOptions, Requestish
 from django.contrib.auth.models import AnonymousUser
 
-from config.clerk import client as clerk_sdk
+from config.clients import clerk_client as clerk_sdk
 from modules.authentication.clerk_auth import parse_clerk_user_from_payload
 
 

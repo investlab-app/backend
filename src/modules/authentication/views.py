@@ -11,7 +11,7 @@ from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from config.clerk import client as clerk_sdk
+from config.clients import clerk_client as clerk_sdk
 from modules.authentication.serializers import ClerkLoginSerializer
 
 
