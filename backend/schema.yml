@@ -461,8 +461,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.
+        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.",)
       tags:
       - orders
       security:
@@ -477,7 +477,7 @@ paths:
                 items:
                   $ref: '#/components/schemas/Order'
           description: ''
-  /api/orders/cancel/{id}:
+  /api/orders/cancel/{id}/:
     delete:
       operationId: orders_cancel_destroy
       parameters:
@@ -485,6 +485,7 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
         required: true
       tags:
       - orders
@@ -504,8 +505,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.
+        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.",)
       tags:
       - orders
       security:
@@ -550,8 +551,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.
+        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.",)
       tags:
       - orders
       security:
