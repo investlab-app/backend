@@ -11,7 +11,7 @@ def load_config() -> dict:
         try:
             with pyproject_path.open("rb") as f:
                 data = tomllib.load(f)
-            logging_conf = data.get("tool", {}).get("logging")
+            logging_conf = data.get("tool", {}).get("logging", {})
             if logging_conf:
                 return logging_conf
         except Exception:
@@ -25,8 +25,10 @@ def setup_logging() -> None:
     logging_config = load_config()
 
     logging.basicConfig(
-        level=getattr(logging, logging_config.get("level", "INFO")),
-        format=logging_config.get("format"),
+        level=logging_config.get("level", "INFO"),
+        format=logging_config.get(
+            "format", "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+        ),
     )
 
 
