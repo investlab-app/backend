@@ -1,7 +1,6 @@
 import logging
-from pathlib import Path
-
 import tomllib
+from pathlib import Path
 
 
 def load_config() -> dict:
