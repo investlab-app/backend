@@ -13,7 +13,7 @@ class FilterOrdersSerializer(serializers.Serializer):
         required=False,
         help_text=(
             "Filter orders by instrument ticker (e.g., 'AAPL'). "
-            "If not provided, returns orders for all instruments.",
+            "If not provided, returns orders for all instruments."
         ),
     )
 
