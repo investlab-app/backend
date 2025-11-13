@@ -15,6 +15,14 @@ from modules.transactions.models import Transaction
 
 
 class Command(CommandMessagesMixin, BaseCommand):
+    def add_arguments(self, parser):
+        parser.add_argument(
+            "--investor-id",
+            type=str,
+            default="user_2zvMzqYgWGJKhmnKL0mS4L4oFsP",  # my@wp.pl
+            help="Clerk ID for the investor to create/seed",
+        )
+
     def create_superuser(
         self,
         username="admin",
@@ -122,7 +130,8 @@ class Command(CommandMessagesMixin, BaseCommand):
         self.create_superuser()
 
         call_command("seed_popular_instruments")
-        investor = self.create_investor("user_2zvMzqYgWGJKhmnKL0mS4L4oFsP")  # my@wp.pl
+        investor_id = options["investor_id"]
+        investor = self.create_investor(investor_id)
 
         now = timezone.now()
         for days_ago in range(30, 0, -1):
