@@ -99,6 +99,9 @@ class OrderService:
 
     def delete(self, order: Order):
         with transaction.atomic():
+            if order.detail is None:
+                raise ValueError("Order detail cannot be None")
+
             if order.detail.is_buy:
                 order.investor.blocked_funds -= order.detail.blocked_funds
                 order.investor.save()

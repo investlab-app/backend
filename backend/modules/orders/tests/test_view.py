@@ -20,7 +20,7 @@ class TestCreateMarketOrderView:
         self.instrument = instruments_factory()
         self.investor = create_fake_investor(clerk_id=user.id, save=True)
         self.user = user
-        self.url = reverse("create-market-order")
+        self.url = reverse("market-order")
 
     @patch("modules.orders.services.order_services.OrderService._get_current_price")
     def test_happy(self, _get_current_price, api_client):
@@ -51,7 +51,7 @@ class TestListOrderView:
         api_client.force_authenticate(user=self.user)
         response = api_client.get(self.url)
         assert response.status_code == 200
-        assert len(response.data["results"]) == 5
+        assert len(response.data) == 5
         api_client.logout()
 
     def test_other_user_orders_not_listed(self, api_client):
@@ -62,7 +62,7 @@ class TestListOrderView:
         api_client.force_authenticate(user=self.user)
         response = api_client.get(self.url)
         assert response.status_code == 200
-        assert len(response.data["results"]) == 5
+        assert len(response.data) == 5
         api_client.logout()
 
 

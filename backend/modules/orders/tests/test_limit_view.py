@@ -22,7 +22,7 @@ class TestCreateLimitOrderView:
             clerk_id=user.id, balance=Decimal("100.00"), save=True
         )
         self.user = user
-        self.url = reverse("create-limit-order")
+        self.url = reverse("limit-order")
 
     def test_happy(self, api_client):
         data = {

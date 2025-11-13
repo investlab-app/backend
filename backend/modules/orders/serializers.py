@@ -3,9 +3,19 @@ from drf_spectacular.utils import PolymorphicProxySerializer, extend_schema_fiel
 from rest_framework import serializers
 
 from modules.instruments.models import Instrument
-from modules.instruments.serializers import InstrumentNameSerializer
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.orders.services.order_services import OrderService
+
+
+class FilterOrdersSerializer(serializers.Serializer):
+    ticker = serializers.CharField(
+        max_length=20,
+        required=False,
+        help_text=(
+            "Filter orders by instrument ticker (e.g., 'AAPL'). "
+            "If not provided, returns orders for all instruments.",
+        ),
+    )
 
 
 class CreateMarketOrderSerializer(serializers.ModelSerializer):
@@ -38,28 +48,6 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return OrderSerializer(instance).data
-
-
-class MarketOrderSerializer(serializers.ModelSerializer):
-    detail_type = serializers.SerializerMethodField()
-
-    class Meta:
-        model = MarketOrder
-        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
-
-    def get_detail_type(self, obj) -> str:
-        return "market"
-
-
-class LimitOrderSerializer(serializers.ModelSerializer):
-    detail_type = serializers.SerializerMethodField()
-
-    class Meta:
-        model = LimitOrder
-        fields = ["detail_type", "volume", "volume_processed", "is_buy", "limit_price"]
-
-    def get_detail_type(self, obj) -> str:
-        return "limit"
 
 
 class CreateLimitOrderSerializer(serializers.ModelSerializer):
@@ -98,8 +86,30 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
         return OrderSerializer(instance).data
 
 
+class MarketOrderDetailsSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = MarketOrder
+        fields = ["detail_type", "volume", "volume_processed", "is_buy"]
+
+    def get_detail_type(self, obj) -> str:
+        return "market"
+
+
+class LimitOrderDetailsSerializer(serializers.ModelSerializer):
+    detail_type = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LimitOrder
+        fields = ["detail_type", "volume", "volume_processed", "is_buy", "limit_price"]
+
+    def get_detail_type(self, obj) -> str:
+        return "limit"
+
+
 class OrderSerializer(serializers.ModelSerializer):
-    ticker = InstrumentNameSerializer()
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
     detail = serializers.SerializerMethodField()
 
     class Meta:
@@ -110,12 +120,33 @@ class OrderSerializer(serializers.ModelSerializer):
         PolymorphicProxySerializer(
             component_name="OrderDetail",
             serializers={
-                "market": MarketOrderSerializer,
-                "limit": LimitOrderSerializer,
+                "market": MarketOrderDetailsSerializer,
+                "limit": LimitOrderDetailsSerializer,
             },
             resource_type_field_name="detail_type",  # field to determine serializer
         )
     )
     def get_detail(self, obj):
-        mapping = {MarketOrder: MarketOrderSerializer, LimitOrder: LimitOrderSerializer}
+        mapping = {
+            MarketOrder: MarketOrderDetailsSerializer,
+            LimitOrder: LimitOrderDetailsSerializer,
+        }
         return mapping[obj.detail_type.model_class()](obj.detail).data
+
+
+class LimitOrderSerializer(serializers.ModelSerializer):
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
+    detail = LimitOrderDetailsSerializer()
+
+    class Meta:
+        model = Order
+        fields = ["id", "ticker", "detail_type", "detail"]
+
+
+class MarketOrderSerializer(serializers.ModelSerializer):
+    ticker = serializers.CharField(source="ticker.ticker", read_only=True)
+    detail = MarketOrderDetailsSerializer()
+
+    class Meta:
+        model = Order
+        fields = ["id", "ticker", "detail_type", "detail"]
