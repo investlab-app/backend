@@ -461,8 +461,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.",)
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
       - orders
       security:
@@ -505,8 +505,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.",)
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
       - orders
       security:
@@ -551,8 +551,8 @@ paths:
           type: string
           minLength: 1
           maxLength: 20
-        description: ("Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
-          returns orders for all instruments.",)
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
       - orders
       security:
