@@ -158,7 +158,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
         total_gain_this_year = sum(stat.gain for stat in stats_last_year)
 
         is_service = InvestorStatsService()
-        total_value = is_service.get_total_value(investor=investor)
+        total_value = is_service.get_total_assets_value(investor=investor)
         asset_allocations = is_service.get_asset_allocation(investor=investor)
         asset_allocations = sorted(
             asset_allocations, key=lambda x: x.percentage, reverse=True

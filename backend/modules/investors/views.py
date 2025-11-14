@@ -106,7 +106,7 @@ class AccountValueOverTimeView(generics.ListAPIView):
         qs = (
             AccountValueSnapshot.objects.annotate(day=TruncDate("timestamp"))
             .filter(id__in=Subquery(earliest_snapshots))
-            .order_by("-timestamp")
+            .order_by("timestamp")
         )
 
         return qs

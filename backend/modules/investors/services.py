@@ -22,15 +22,19 @@ class InvestorStatsService:
         self.prices = price_repository or PolygonPricesRepository()
 
     def get_total_value(self, investor: Investor) -> Decimal:
+        total_assets_value = self.get_total_assets_value(investor)
+        return total_assets_value + investor.balance
+
+    def get_total_assets_value(self, investor: Investor) -> Decimal:
         assets = Asset.objects.filter(investor=investor)
         tickers = [a.ticker.ticker.upper() for a in assets]
         prices = self.prices.get_prices_map(tickers)
 
-        asset_value = 0
+        asset_value = Decimal(0)
         for a in assets:
             asset_value += prices[a.ticker.ticker.upper()].current_price * a.volume
 
-        return investor.balance + asset_value
+        return asset_value
 
     def get_asset_allocation(self, investor: Investor) -> list[AssetAllocation]:
         assets = Asset.objects.filter(investor=investor)
