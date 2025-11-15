@@ -1,0 +1,26 @@
+from datetime import timedelta
+
+from modules.graph_lang.framework import edges
+from modules.graph_lang.framework.nodes.node import ExecutionContext, Node
+
+
+class PriceOfNode(Node):
+    TYPE_NAME = "priceOf"
+
+    ticker = edges.InstrumentType(direction=edges.INPUT)
+
+    out = edges.NumberType(direction=edges.OUTPUT)
+
+    def _execute(self, context: ExecutionContext):
+        ticker = self._get(self.ticker)
+        price = context.price_provider.get_price(ticker, context.time_at)
+        self.out.set(price)
+
+        context.log(
+            self.id,
+            "Price of",
+            {"ticker": ticker, "time_at": context.time_at, "out": price},
+        )
+
+    def _get_needed_prices(self) -> dict[str, timedelta]:
+        return {self._get(self.ticker): timedelta()}

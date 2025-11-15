@@ -137,6 +137,15 @@ class NotificationService:
             to=addresses, subject=email_payload.subject, body=email_payload.body
         )
 
+    def sync_send_email_notification(
+        self, investor: Investor, email_payload: EmailPayload
+    ) -> bool:
+        clerk_id = investor.clerk_id
+        addresses = self.clerk_user_service.get_user_email_addresses(clerk_id)
+        return self.email_service.sync_send_email(
+            to=addresses, subject=email_payload.subject, body=email_payload.body
+        )
+
     async def send_push_notifications(
         self, investor: Investor, push_payload: PushPayload
     ) -> None:
@@ -149,6 +158,22 @@ class NotificationService:
                 title=push_payload.title,
                 body=push_payload.body,
             )
+
+    def sync_send_push_notifications(
+        self, investor: Investor, push_payload: PushPayload
+    ) -> bool:
+        push_subscriptions = PushSubscription.objects.filter(investor=investor)
+
+        all_success = True
+        for subscription in push_subscriptions:
+            success = self.push_service.sync_send_push(
+                subscription=subscription,
+                title=push_payload.title,
+                body=push_payload.body,
+            )
+            if not success:
+                all_success = False
+        return all_success
 
     async def send_websocket_notifications(
         self, investor: Investor, websocket_payload: WebSocketPayload

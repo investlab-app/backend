@@ -1,0 +1,314 @@
+from dataclasses import dataclass, field
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import TYPE_CHECKING, Any
+
+from modules.graph_lang.framework import edges
+
+if TYPE_CHECKING:
+    from modules.graph_lang.framework.price_provider import PrefetchRange
+
+
+@dataclass
+class NodeLog:
+    id: str
+    name: str
+    fields: dict[str, Any]
+    level: int = 0
+
+
+@dataclass
+class ExecutionContext:
+    price_provider: Any
+    effects: set
+    time_at: datetime
+
+    level: int = 0
+    logs: list = field(default_factory=list)
+
+    def log(self, id_, name, fields=None):
+        if fields is None:
+            fields = {}
+        log = NodeLog(id_, name, fields, self.level)
+        self.logs.append(log)
+
+    def get_logs(self) -> list[NodeLog]:
+        @dataclass
+        class TreeLog:
+            log: NodeLog
+            children: list["TreeLog"] = field(default_factory=list)
+
+        logs = list(reversed(self.logs))
+
+        def get_tree_log(logs: list[NodeLog], start: int) -> tuple[TreeLog, int]:
+            log = logs[start]
+            level = logs[start].level
+            children = []
+
+            start += 1
+            while start < len(logs) and level < logs[start].level:
+                child_log, start = get_tree_log(logs, start)
+                children.append(child_log)
+
+            return TreeLog(log, list(reversed(children))), start
+
+        tree_log, _ = get_tree_log(logs, 0)
+
+        def traverse_pre_order(tree_log: TreeLog) -> list[NodeLog]:
+            result = [tree_log.log]
+            for c in tree_log.children:
+                result += traverse_pre_order(c)
+            return result
+
+        return traverse_pre_order(tree_log)
+
+    def dump_logs(self):
+        logs = self.get_logs()
+        print("\n")
+        print("GRAPH RUN LOGS ############################")
+        for log in logs:
+            log_string = ""
+            log_string += " " * log.level * 4
+            log_string += f"{log.name} ({log.id}) ["
+            for key, value in log.fields.items():
+                if isinstance(value, (float, Decimal)):
+                    log_string += f"{key}: {value:.2f} "
+                else:
+                    log_string += f"{key}: {value} "
+            log_string += "]"
+            print(log_string)
+        print("END OF GRAPH RUN LOGS #####################")
+        print("\n")
+
+
+class NodeOutput:
+    node: "Node"
+    name: str
+    value: Any
+
+    def __init__(self, node):
+        self.node = node
+
+    def get(self, context):
+        self.node.execute(context)
+        return self.value
+
+    def set(self, value):
+        self.value = value
+
+
+class NodeInput:
+    node: "Node"
+
+    output: NodeOutput | None = None
+    validated_value: Any | None = None
+    raw_value: Any | None = None
+
+    def __init__(self, node: "Node", og_edge: edges.EdgeType):
+        self.node = node
+        self.edge = og_edge
+
+    def __call__(self, context: ExecutionContext | None):
+        if self.output is not None:
+            return self.output.get(context)
+        else:
+            return self.edge.parse(self.validated_value)
+
+    def set(self, value):
+        self.validated_value = value
+
+    def connect(self, output: NodeOutput):
+        self.output = output
+
+    def get_raw_value(self):
+        return self.raw_value
+
+    def set_raw_value(self, value):
+        self.raw_value = value
+
+
+class NodeUtilsMixin:
+    def get_first_output(self) -> NodeOutput:
+        edge_list = type(self).get_all_edges()
+        for e in edge_list:
+            if e.direction == edges.OUTPUT:
+                return getattr(self, e.field_name)
+        raise ValueError("node has no outputs")
+
+    def get_io_by_source_name(self, source_name) -> NodeInput | NodeOutput:
+        edge = type(self).get_edge_by_source_name(source_name)
+        return getattr(self, edge.field_name)
+
+    @classmethod
+    def get_incoming_edges(cls) -> list[edges.EdgeType]:
+        return [
+            getattr(cls, name)
+            for name in dir(cls)
+            if isinstance(getattr(cls, name), edges.EdgeType)
+            and getattr(cls, name).direction == edges.INPUT
+        ]
+
+    @classmethod
+    def get_all_edges(cls) -> list[edges.EdgeType]:
+        return [
+            getattr(cls, name)
+            for name in dir(cls)
+            if isinstance(getattr(cls, name), edges.EdgeType)
+        ]
+
+    @classmethod
+    def get_edge_by_source_name(cls, source_name) -> edges.EdgeType | None:
+        return next(
+            (e for e in cls.get_all_edges() if e.source_name == source_name), None
+        )
+
+
+class Node(NodeUtilsMixin):
+    all_edges: list
+    id: str | None = None
+    TRIGGER = False
+    TYPE_NAME = None
+
+    def __init__(self, inputs=None):
+        if inputs is None:
+            inputs = {}
+        self._initialize_input_outputs()
+        self._pass_data_to_inputs(inputs)
+        self._context = None
+
+    def _initialize_input_outputs(self):
+        for name, field_ in self.__class__.__dict__.items():
+            if isinstance(field_, edges.EdgeType):
+                if field_.direction == edges.INPUT:
+                    value = NodeInput(self, field_)
+                else:
+                    value = NodeOutput(self)
+                setattr(self, name, value)
+
+    def _pass_data_to_inputs(self, inputs):
+        edges = type(self).get_incoming_edges()
+        for name, value in inputs.items():
+            edge = next((e for e in edges if e.source_name == name), None)
+            if not edge:
+                continue
+
+            field: NodeInput = getattr(self, edge.field_name)
+            if self._is_output_name_and_node_pair(value):
+                output_name = value[0]
+                node: Node = value[1]
+                output = node.get_io_by_source_name(output_name)
+
+                field.connect(output)
+            elif isinstance(value, Node):
+                field.connect(value.get_first_output())
+            else:
+                field.set(value)
+
+    def _is_output_name_and_node_pair(self, value):
+        return (
+            isinstance(value, tuple)
+            and len(value) == 2
+            and isinstance(value[0], str)
+            and isinstance(value[1], Node)
+        )
+
+    def execute(self, context: "ExecutionContext"):
+        self._context = context
+        self._execute(context)
+        self._context = None
+
+        if context.level == 0:
+            pass
+
+    def _execute(self, context: "ExecutionContext"):
+        pass
+
+    def _get(self, edge: NodeInput, time_at: datetime | None = None):
+        if not self._context:
+            return edge(None)
+
+        original_time = self._context.time_at
+        time_at = time_at or original_time
+        self._context.time_at = time_at
+        self._context.level += 1
+
+        value = edge(self._context)
+
+        self._context.level -= 1
+        self._context.time_at = original_time
+
+        return value
+
+    def calculate_needed_historical_prices(self):
+        children_ranges: dict[str, PrefetchRange] = {}
+        edges = self.get_incoming_edges()
+        for e in edges:
+            edge = getattr(self, e.field_name)
+
+            if edge.output:
+                child_range = edge.output.node.calculate_needed_historical_prices()
+                children_ranges = self._combine_price_ranges(
+                    children_ranges, child_range
+                )
+
+        self_prices = self._get_needed_prices()
+        children_ranges = self._combine_price_ranges(children_ranges, self_prices)
+        for key in children_ranges:
+            children_ranges[key] = children_ranges[key] + self._get_working_timespan()
+        return children_ranges
+
+    def _combine_price_ranges(
+        self,
+        d1: dict[str, timedelta],
+        d2: dict[str, timedelta],
+    ):
+        result = {}
+        common_tickers = set(d1.keys()).intersection(set(d2.keys()))
+
+        for ticker in common_tickers:
+            result[ticker] = max(d1[ticker], d2[ticker])
+
+        result.update(
+            {
+                ticker: timespan
+                for ticker, timespan in d1.items()
+                if ticker not in common_tickers
+            }
+        )
+        result.update(
+            {
+                ticker: timespan
+                for ticker, timespan in d2.items()
+                if ticker not in common_tickers
+            }
+        )
+
+        return result
+
+    # Can be overridden
+    def _get_working_timespan(self) -> timedelta:
+        return timedelta()
+
+    # Can be overridden
+    def _get_needed_prices(self) -> dict[str, timedelta]:
+        return {}
+
+
+class MockNodeFactory:
+    def __init__(self):
+        self._types = {
+            cls.TYPE_NAME.lower(): cls
+            for cls in Node.__subclasses__()
+            if cls.TYPE_NAME is not None
+        }
+
+    def name_to_type(self, name):
+        return self._types.get(name.lower())
+
+    def from_type(self, node_type):
+        if not issubclass(node_type, Node):
+            raise ValueError(f"{node_type} is not a subclass of Node")
+        return node_type()
+
+    def type_exists(self, name):
+        return name.lower() in self._types
