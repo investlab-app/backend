@@ -7,7 +7,7 @@ from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
 
-from config.clerk import client as clerk_sdk
+from config.clients import clerk_client as clerk_sdk
 from modules.investors.models import Investor
 
 

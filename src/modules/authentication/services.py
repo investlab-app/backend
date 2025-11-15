@@ -1,6 +1,6 @@
 import logging
 
-from config.clerk import client as clerk_sdk
+from config.clients import clerk_client as clerk_sdk
 
 logger = logging.getLogger(__name__)
 

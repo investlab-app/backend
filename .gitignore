@@ -21,8 +21,8 @@
 .postgres_data/
 
 # Storage
-/backend/media
-/backend/staticfiles
+/src/media
+/src/staticfiles
 
 # Environment Variables
 .env

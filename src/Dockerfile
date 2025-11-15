@@ -4,10 +4,10 @@ RUN pip install uv \
   && apt-get install -y --no-install-recommends netcat-traditional git \
   && rm -rf /var/lib/apt/lists/* /usr/share/doc /usr/share/man \
   && apt-get clean \
-  && mkdir /backend
+  && mkdir /app
 
 # Set the working directory inside the container
-WORKDIR /backend
+WORKDIR /app
 
 # Set environment variables
 # Prevents Python from writing pyc files to disk
@@ -25,7 +25,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 
 # Then, add the rest of the project source code and install it
 # Installing separately from its dependencies allows optimal layer caching
-COPY . /backend
+COPY . /app
 RUN --mount=type=cache,target=/root/.cache/uv \
   uv sync --locked
 
@@ -36,7 +36,7 @@ EXPOSE 8000
 ENTRYPOINT []
 
 # Add permissions to the entrypoint script
-RUN chmod +x /backend/entrypoint.sh
+RUN chmod +x /app/entrypoint.sh
 
 # Add a healthcheck to verify the app responds on /api/status
 HEALTHCHECK --start-period=20s \
@@ -46,4 +46,4 @@ HEALTHCHECK --start-period=20s \
   sys.exit(0 if 200 <= resp.getcode() < 300 else 1)" || exit 1
 
 # Run Django's development server
-CMD ["/bin/bash", "/backend/entrypoint.sh"]
+CMD ["/bin/bash", "/app/entrypoint.sh"]
