@@ -1,3 +1,5 @@
+import random
+import time
 from datetime import datetime
 from decimal import Decimal
 
@@ -85,3 +87,47 @@ class PriceRepositoryMock:
         if prices_list is None:
             return {}
         return {price.ticker: price for price in prices_list}
+
+
+def get_fake_ohlc(
+    ticker: str,
+    volume: Decimal | None = None,
+    accumulated_volume: Decimal | None = None,
+    official_open_price: Decimal | None = None,
+    vwap: Decimal | None = None,
+    open_: Decimal | None = None,
+    close: Decimal | None = None,
+    high: Decimal | None = None,
+    low: Decimal | None = None,
+    aggregate_vwap: Decimal | None = None,
+    average_size: Decimal | None = None,
+    start_timestamp: Decimal | None = None,
+    end_timestamp: Decimal | None = None,
+) -> dict:
+    now_ms = int(time.time() * 1000)
+
+    op = official_open_price or round(Decimal(random.uniform(0.4, 1.0)), 4)
+    vw = vwap or round(op + Decimal(random.uniform(-0.01, 0.01)), 4)
+    o = open_ or round(vw + Decimal(random.uniform(-0.002, 0.002)), 4)
+    c = close or round(vw + Decimal(random.uniform(-0.002, 0.002)), 4)
+
+    h = high or round(max(o, c) + Decimal(random.uniform(0, 0.002)), 4)
+    low = low or round(min(o, c) - Decimal(random.uniform(0, 0.002)), 4)
+
+    return {
+        "symbol": ticker,
+        "volume": volume or random.randint(1000, 10000),
+        "accumulated_volume": accumulated_volume
+        or random.randint(1_000_000, 10_000_000),
+        "official_open_price": op,
+        "vwap": vw,
+        "open": o,
+        "close": c,
+        "high": h,
+        "low": low,
+        "aggregate_vwap": aggregate_vwap
+        or round(op + Decimal(random.uniform(-0.02, 0.02)), 4),
+        "average_size": average_size or random.randint(100, 1000),
+        "start_timestamp": start_timestamp or now_ms - 1000,
+        "end_timestamp": end_timestamp or now_ms,
+    }

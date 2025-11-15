@@ -30,6 +30,200 @@ paths:
           description: Password verification failed.
         '500':
           description: Clerk SDK error or other internal server error.
+  /api/graph_lang/:
+    get:
+      operationId: graph_lang_list
+      parameters:
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - graph_lang
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGraphList'
+          description: ''
+    post:
+      operationId: graph_lang_create
+      tags:
+      - graph_lang
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Graph'
+          description: ''
+  /api/graph_lang/{id}/:
+    get:
+      operationId: graph_lang_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - graph_lang
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Graph'
+          description: ''
+    put:
+      operationId: graph_lang_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - graph_lang
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GraphUpdateRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Graph'
+          description: ''
+    patch:
+      operationId: graph_lang_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - graph_lang
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedGraphUpdateRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Graph'
+          description: ''
+    delete:
+      operationId: graph_lang_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - graph_lang
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/graph_lang/{id}/results/:
+    get:
+      operationId: graph_lang_results_list
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      - name: page
+        required: false
+        in: query
+        description: A page number within the paginated result set.
+        schema:
+          type: integer
+      - name: page_size
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      tags:
+      - graph_lang
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedGraphEffectList'
+          description: ''
+  /api/graph_lang/{id}/run/:
+    post:
+      operationId: graph_lang_run_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+        required: true
+      tags:
+      - graph_lang
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RunGraphRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RunGraphResult'
+          description: ''
   /api/instruments/:
     get:
       operationId: instruments_list
@@ -1286,6 +1480,125 @@ components:
           pattern: ^-?\d{0,10}(?:\.\d{0,2})?$
       required:
       - amount
+    FormatEnum:
+      enum:
+      - push
+      - mail
+      type: string
+      description: |-
+        * `push` - push
+        * `mail` - mail
+    Graph:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        name:
+          type: string
+          maxLength: 100
+        raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
+      required:
+      - id
+      - name
+      - raw_graph_data
+    GraphEffect:
+      type: object
+      properties:
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        effect:
+          allOf:
+          - $ref: '#/components/schemas/GraphEffectDetail'
+          readOnly: true
+        success:
+          type: boolean
+      required:
+      - created_at
+      - effect
+      - success
+    GraphEffectDetail:
+      oneOf:
+      - $ref: '#/components/schemas/GraphTransactionEffect'
+      - $ref: '#/components/schemas/GraphNotificationEffect'
+      discriminator:
+        propertyName: effect_type
+        mapping:
+          transaction: '#/components/schemas/GraphTransactionEffect'
+          notification: '#/components/schemas/GraphNotificationEffect'
+    GraphNotificationEffect:
+      type: object
+      properties:
+        message:
+          type: string
+        format:
+          $ref: '#/components/schemas/FormatEnum'
+        effect_type:
+          type: string
+          readOnly: true
+      required:
+      - effect_type
+      - format
+      - message
+    GraphRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
+      required:
+      - name
+      - raw_graph_data
+    GraphResult:
+      type: object
+      properties:
+        action: {}
+      required:
+      - action
+    GraphTransactionEffect:
+      type: object
+      properties:
+        instrument:
+          $ref: '#/components/schemas/InstrumentName'
+        is_buy:
+          type: boolean
+        amount:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
+        effect_type:
+          type: string
+          readOnly: true
+      required:
+      - amount
+      - effect_type
+      - instrument
+      - is_buy
+    GraphUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
     HistoryEntry:
       type: object
       properties:
@@ -1372,6 +1685,15 @@ components:
       - id
       - market
       - name
+      - ticker
+    InstrumentName:
+      type: object
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+      required:
       - ticker
     InstrumentRetrieve:
       type: object
@@ -2035,6 +2357,52 @@ components:
       - symbol
       - value
       - volume
+    PaginatedGraphEffectList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphEffect'
+    PaginatedGraphList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=4
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?page=2
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Graph'
     PaginatedInstrumentListList:
       type: object
       required:
@@ -2104,6 +2472,18 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PriceAlert'
+    PatchedGraphUpdateRequest:
+      type: object
+      properties:
+        name:
+          type: string
+          minLength: 1
+          maxLength: 100
+        raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
     PatchedInvestorRequest:
       type: object
       properties:
@@ -2358,6 +2738,19 @@ components:
       - ticker
       - todays_change
       - todays_change_percent
+    PriceTimestampRequest:
+      type: object
+      properties:
+        price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
+        timestamp:
+          type: string
+          format: date-time
+      required:
+      - price
+      - timestamp
     Publisher:
       type: object
       properties:
@@ -2395,6 +2788,25 @@ components:
       - auth
       - endpoint
       - p256dh
+    RunGraphRequest:
+      type: object
+      properties:
+        time_at:
+          type: string
+          format: date-time
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/TickerPricesRequest'
+    RunGraphResult:
+      type: object
+      properties:
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/GraphResult'
+      required:
+      - results
     SimpleResponse:
       type: object
       description: Serializer for simple OK response
@@ -2466,6 +2878,19 @@ components:
         title:
           type: string
           nullable: true
+    TickerPricesRequest:
+      type: object
+      properties:
+        ticker:
+          type: string
+          minLength: 1
+        prices:
+          type: array
+          items:
+            $ref: '#/components/schemas/PriceTimestampRequest'
+      required:
+      - prices
+      - ticker
     TradingOverview:
       type: object
       properties:
