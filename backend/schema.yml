@@ -1499,6 +1499,10 @@ components:
           type: string
           maxLength: 100
         raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
       required:
       - id
       - name
@@ -1551,6 +1555,10 @@ components:
           minLength: 1
           maxLength: 100
         raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
       required:
       - name
       - raw_graph_data
@@ -1587,6 +1595,10 @@ components:
           minLength: 1
           maxLength: 100
         raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
     HistoryEntry:
       type: object
       properties:
@@ -1673,6 +1685,15 @@ components:
       - id
       - market
       - name
+      - ticker
+    InstrumentName:
+      type: object
+      properties:
+        ticker:
+          type: string
+          title: Ticker Symbol
+          maxLength: 20
+      required:
       - ticker
     InstrumentRetrieve:
       type: object
@@ -2459,6 +2480,10 @@ components:
           minLength: 1
           maxLength: 100
         raw_graph_data: {}
+        active:
+          type: boolean
+        repeat:
+          type: boolean
     PatchedInvestorRequest:
       type: object
       properties:
