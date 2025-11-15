@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from modules.instruments.models import Instrument
-from modules.investors.models import Investor, Asset
+from modules.investors.models import Asset, Investor
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.repositories import PolygonPricesRepository
 
