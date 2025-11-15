@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     # Local modules
     "modules.authentication",
     "modules.core",
+    "modules.graph_lang",
     "modules.instruments",
     "modules.investors",
     "modules.markets",
@@ -58,7 +59,6 @@ INSTALLED_APPS = [
     "modules.prices",
     "modules.statistics",
     "modules.transactions",
-    "modules.graph_lang",
 ]
 
 if DEBUG:
