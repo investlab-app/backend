@@ -3,7 +3,7 @@ from decimal import Decimal
 from django.db import transaction
 
 from modules.instruments.models import Instrument
-from modules.investors.models import Investor
+from modules.investors.models import Asset, Investor
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.repositories import PolygonPricesRepository
 
@@ -31,6 +31,31 @@ class OrderService:
         free_funds = investor.balance - investor.blocked_funds
         return free_funds >= total_cost
 
+    @staticmethod
+    def _has_enough_assets(
+        investor: Investor, instrument: Instrument, requested_volume: Decimal
+    ) -> bool:
+        """Return True if investor has at least requested_volume of instrument"""
+
+        asset = Asset.objects.filter(investor=investor, ticker=instrument).first()
+        if not asset:
+            return False
+
+        # Compute already-blocked volume by counting existing sell orders
+        blocked = Decimal(0)
+        orders = Order.objects.filter(investor=investor, ticker=instrument)
+        for o in orders:
+            detail = o.detail
+            if detail is None:
+                continue
+            if not detail.is_buy:
+                remaining = detail.volume - detail.volume_processed
+                if remaining > 0:
+                    blocked += remaining
+
+        available = asset.volume - blocked
+        return available >= requested_volume
+
     def create_market(
         self,
         investor: Investor,
@@ -49,6 +74,9 @@ class OrderService:
                 investor.blocked_funds += total_cost
                 investor.save()
             else:
+                if not self._has_enough_assets(investor, instrument, volume):
+                    return None
+
                 total_cost = Decimal(0)
 
             detail = MarketOrder.objects.create(
@@ -82,6 +110,9 @@ class OrderService:
 
                 investor.blocked_funds += total_cost
                 investor.save()
+            else:
+                if not self._has_enough_assets(investor, instrument, volume):
+                    return None
 
             detail = LimitOrder.objects.create(
                 volume=volume,
