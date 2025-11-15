@@ -28,7 +28,7 @@ class PriceStream:
         data = [asdict(m) for m in msgs]
         data = {d["symbol"] for d in data}
         await self.channel_layer.group_send(
-            PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
+            PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
         )
 
 

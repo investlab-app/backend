@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     "corsheaders",
     # Local modules
     "modules.authentication",
+    "modules.chats",
     "modules.core",
     "modules.instruments",
     "modules.investors",
@@ -438,3 +439,6 @@ OPENAI_TRANSLATING_MODEL = os.environ["OPENAI_TRANSLATING_MODEL"]
 TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
     os.environ.get("TRANSLATE_INSTRUMENT_DESCRIPTION", "false")
 )
+
+GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
+MCP_MASSIVE_URL = os.environ.get("MCP_MASSIVE_URL", "http://mcp-massive:8000/mcp")

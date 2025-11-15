@@ -19,7 +19,7 @@ class PriceStreamMock:
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
             await channel_layer.group_send(
-                PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
+                PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
             )
 
             await asyncio.sleep(1)
