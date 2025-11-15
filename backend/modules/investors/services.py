@@ -52,7 +52,7 @@ class InvestorStatsService:
             allocations.append(
                 AssetAllocation(
                     asset=a,
-                    percentage=value / total_value * 100,
+                    percentage=(value / total_value * 100) if total_value > 0 else 0,
                     price_per_action=prices[ticker].current_price,
                     total_value=a.volume * prices[ticker].current_price,
                 )
