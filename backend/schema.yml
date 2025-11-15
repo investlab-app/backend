@@ -649,18 +649,14 @@ paths:
     get:
       operationId: orders_list
       parameters:
-      - name: page
-        required: false
-        in: query
-        description: A page number within the paginated result set.
+      - in: query
+        name: ticker
         schema:
-          type: integer
-      - name: page_size
-        required: false
-        in: query
-        description: Number of results to return per page.
-        schema:
-          type: integer
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
       tags:
       - orders
       security:
@@ -671,9 +667,11 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/PaginatedOrderList'
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
           description: ''
-  /api/orders/cancel/{id}:
+  /api/orders/cancel/{id}/:
     delete:
       operationId: orders_cancel_destroy
       parameters:
@@ -681,6 +679,7 @@ paths:
         name: id
         schema:
           type: string
+          format: uuid
         required: true
       tags:
       - orders
@@ -690,7 +689,78 @@ paths:
       responses:
         '204':
           description: No response body
+  /api/orders/limit/:
+    get:
+      operationId: orders_limit_list
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/LimitOrder'
+          description: ''
+    post:
+      operationId: orders_limit_create
+      tags:
+      - orders
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateLimitOrderRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LimitOrder'
+          description: ''
   /api/orders/market/:
+    get:
+      operationId: orders_market_list
+      parameters:
+      - in: query
+        name: ticker
+        schema:
+          type: string
+          minLength: 1
+          maxLength: 20
+        description: Filter orders by instrument ticker (e.g., 'AAPL'). If not provided,
+          returns orders for all instruments.
+      tags:
+      - orders
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/MarketOrder'
+          description: ''
     post:
       operationId: orders_market_create
       tags:
@@ -709,7 +779,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/Order'
+                $ref: '#/components/schemas/MarketOrder'
           description: ''
   /api/prices/:
     get:
@@ -1331,6 +1401,31 @@ components:
       required:
       - email
       - password
+    CreateLimitOrderRequest:
+      type: object
+      properties:
+        ticker:
+          type: string
+          writeOnly: true
+          minLength: 1
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,10}(?:\.\d{0,5})?$
+          writeOnly: true
+        is_buy:
+          type: boolean
+          writeOnly: true
+        limit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
+          writeOnly: true
+      required:
+      - is_buy
+      - limit_price
+      - ticker
+      - volume
     CreateMarketOrderRequest:
       type: object
       properties:
@@ -1578,15 +1673,6 @@ components:
       - id
       - market
       - name
-      - ticker
-    InstrumentName:
-      type: object
-      properties:
-        ticker:
-          type: string
-          title: Ticker Symbol
-          maxLength: 20
-      required:
       - ticker
     InstrumentRetrieve:
       type: object
@@ -1854,6 +1940,50 @@ components:
       - todays_gain
       - total_gain
       - total_value
+    LimitOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          readOnly: true
+        detail_type:
+          type: integer
+        detail:
+          $ref: '#/components/schemas/LimitOrderDetails'
+      required:
+      - detail
+      - detail_type
+      - id
+      - ticker
+    LimitOrderDetails:
+      type: object
+      properties:
+        detail_type:
+          type: string
+          readOnly: true
+        volume:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        volume_processed:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,13}(?:\.\d{0,2})?$
+        is_buy:
+          type: boolean
+        limit_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,22}(?:\.\d{0,8})?$
+      required:
+      - detail_type
+      - is_buy
+      - limit_price
+      - volume
     LocaleEnum:
       enum:
       - us
@@ -1952,6 +2082,25 @@ components:
           type: string
           nullable: true
     MarketOrder:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        ticker:
+          type: string
+          readOnly: true
+        detail_type:
+          type: integer
+        detail:
+          $ref: '#/components/schemas/MarketOrderDetails'
+      required:
+      - detail
+      - detail_type
+      - id
+      - ticker
+    MarketOrderDetails:
       type: object
       properties:
         detail_type:
@@ -2136,7 +2285,8 @@ components:
           format: uuid
           readOnly: true
         ticker:
-          $ref: '#/components/schemas/InstrumentName'
+          type: string
+          readOnly: true
         detail_type:
           type: integer
         detail:
@@ -2150,11 +2300,13 @@ components:
       - ticker
     OrderDetail:
       oneOf:
-      - $ref: '#/components/schemas/MarketOrder'
+      - $ref: '#/components/schemas/MarketOrderDetails'
+      - $ref: '#/components/schemas/LimitOrderDetails'
       discriminator:
         propertyName: detail_type
         mapping:
-          market: '#/components/schemas/MarketOrder'
+          market: '#/components/schemas/MarketOrderDetails'
+          limit: '#/components/schemas/LimitOrderDetails'
     OwnedShare:
       type: object
       properties:
@@ -2276,29 +2428,6 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/InstrumentWithPrice'
-    PaginatedOrderList:
-      type: object
-      required:
-      - count
-      - results
-      properties:
-        count:
-          type: integer
-          example: 123
-        next:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=4
-        previous:
-          type: string
-          nullable: true
-          format: uri
-          example: http://api.example.org/accounts/?page=2
-        results:
-          type: array
-          items:
-            $ref: '#/components/schemas/Order'
     PaginatedPriceAlertList:
       type: object
       required:

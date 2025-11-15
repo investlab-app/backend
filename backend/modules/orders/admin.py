@@ -2,7 +2,7 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from modules.orders.models import MarketOrder, Order
+from modules.orders.models import LimitOrder, MarketOrder, Order
 
 
 @admin.register(Order)
@@ -42,6 +42,35 @@ class MarketOrderAdmin(ModelAdmin):
         (
             None,
             {"fields": ("id", "volume", "volume_processed", "is_buy", "blocked_funds")},
+        ),
+        (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(LimitOrder)
+class LimitOrderAdmin(ModelAdmin):
+    list_display = ["id", "volume", "volume_processed", "is_buy", "limit_price"]
+    list_filter = ["is_buy"]
+    search_fields = ("id",)
+    ordering = ("-created_at",)
+    readonly_fields = (
+        "id",
+        "created_at",
+        "updated_at",
+    )
+    fieldsets = (
+        (
+            None,
+            {
+                "fields": (
+                    "id",
+                    "volume",
+                    "volume_processed",
+                    "is_buy",
+                    "limit_price",
+                    "blocked_funds",
+                )
+            },
         ),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )
