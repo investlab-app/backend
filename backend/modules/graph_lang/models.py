@@ -1,10 +1,10 @@
-from django.db import models
 from django.contrib.contenttypes.fields import GenericForeignKey
 from django.contrib.contenttypes.models import ContentType
+from django.db import models
 
 from modules.core.models import BaseModel
-from modules.investors.models import Investor
 from modules.instruments.models import Instrument
+from modules.investors.models import Investor
 
 
 class Graph(BaseModel):

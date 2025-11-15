@@ -1,17 +1,18 @@
 import json
+
 import pytest
+
 from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.builder import GraphBuilder
 from modules.graph_lang.framework.nodes import Node
 from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
-from modules.graph_lang.models import Graph
 from modules.graph_lang.tests.conftest import fake_graph
 
 
 class MockTrigger(Node):
     TRIGGER = True
 
-    inVal = edges.VoidType(direction=edges.INPUT, source="input")
+    in_val = edges.VoidType(direction=edges.INPUT, source="input")
 
 
 class MockNode(Node):
@@ -41,15 +42,15 @@ class MockNodeFactory:
         self.types = {}
         self.names = {}
 
-    def from_type(self, type: type[Node]) -> Node:
-        return self.types[type]
+    def from_type(self, type_: type[Node]) -> Node:
+        return self.types[type_]
 
     def name_to_type(self, name: str) -> type:
         return self.names[name]
 
-    def set_node(self, type_name: str, type: type[Node], node: Node):
-        self.names[type_name] = type
-        self.types[type] = node
+    def set_node(self, type_name: str, type_: type[Node], node: Node):
+        self.names[type_name] = type_
+        self.types[type_] = node
 
 
 @pytest.mark.django_db
@@ -82,7 +83,7 @@ def test_graph_builder():
     result = GraphBuilder(factory).build(data)
 
     assert result == node_1
-    assert node_1.inVal.output.node == node_2
+    assert node_1.in_val.output.node == node_2
     assert node_2.in_a.output.node == node_3
     assert node_2.in_b.output.node == node_4
 

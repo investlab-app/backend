@@ -1,8 +1,7 @@
-import json
-from modules.graph_lang.models import Graph
 from modules.graph_lang.framework.nodes import Node, NodeFactory
 from modules.graph_lang.framework.nodes.node import NodeInput
 from modules.graph_lang.framework.parser import GraphData
+from modules.graph_lang.models import Graph
 
 
 class GraphBuilder:

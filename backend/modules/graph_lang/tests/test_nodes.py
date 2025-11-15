@@ -1,6 +1,5 @@
 from decimal import Decimal
 
-
 import pytest
 from faker import Faker
 

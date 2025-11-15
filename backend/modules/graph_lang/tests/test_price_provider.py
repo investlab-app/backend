@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import MagicMock, call
-from modules.prices.schemas import PriceBar, PriceDailySummary
+
 import pytest
 from faker import Faker
 
 from modules.graph_lang.framework.price_provider import PriceProvider
-
+from modules.prices.schemas import PriceBar, PriceDailySummary
 
 fake = Faker()
 

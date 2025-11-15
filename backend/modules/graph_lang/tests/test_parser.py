@@ -1,13 +1,12 @@
 from typing import Optional
+
 import pytest
 
 from modules.graph_lang.framework.parser import (
-    Parser,
+    EdgeData,
     GraphData,
     NodeData,
-    EdgeData,
-    NodeFactory,
-    Node,
+    Parser,
 )
 
 

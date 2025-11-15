@@ -6,8 +6,8 @@ from modules.graph_lang.framework.nodes.logic import AndNode, NotNode, OrNode
 from modules.graph_lang.framework.nodes.node import Node, NodeFactory
 from modules.graph_lang.framework.nodes.predicates import IsGreaterLesserNode
 from modules.graph_lang.framework.nodes.triggers import (
-    CheckEveryNode,
     BoughtSoldNode,
+    CheckEveryNode,
     PriceTriggerNode,
 )
 

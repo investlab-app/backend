@@ -1,11 +1,11 @@
+from datetime import datetime, timedelta
+
 import pytest
-from datetime import datetime
-from modules.graph_lang.framework.price_provider import PrefetchRange
-from modules.graph_lang.framework.nodes import Node
-from modules.graph_lang.framework import edges
-from datetime import timedelta
 from faker import Faker
 
+from modules.graph_lang.framework import edges
+from modules.graph_lang.framework.nodes import Node
+from modules.graph_lang.framework.price_provider import PrefetchRange
 
 fake = Faker()
 
@@ -38,18 +38,18 @@ class TickerNode(Node):
 
 
 class PassByNode(Node):
-    inVal = edges.BoolType(direction=edges.INPUT)
+    in_val = edges.BoolType(direction=edges.INPUT)
     out = edges.BoolType(direction=edges.OUTPUT)
 
 
 class BranchNode(Node):
-    inA = edges.BoolType(direction=edges.INPUT)
-    inB = edges.BoolType(direction=edges.INPUT)
+    in_a = edges.BoolType(direction=edges.INPUT)
+    in_b = edges.BoolType(direction=edges.INPUT)
     out = edges.BoolType(direction=edges.OUTPUT)
 
 
 class TimeAwareNode(Node):
-    inVal = edges.BoolType(direction=edges.INPUT)
+    in_val = edges.BoolType(direction=edges.INPUT)
     out = edges.BoolType(direction=edges.OUTPUT)
 
     def __init__(self, timespan):
@@ -85,7 +85,7 @@ class TestNode:
     def test__time_aware_node__prefetch_data__passes_down_to_children(self):
         time_node = TimeAwareNode(timespan=timedelta(days=1))
         node = TickerNode("AAPL")
-        time_node.inVal.connect(node.out)
+        time_node.in_val.connect(node.out)
 
         data = time_node.calculate_needed_historical_prices()
 
@@ -96,12 +96,12 @@ class TestNode:
         pass_by_node = PassByNode()
         time_aware_node = TimeAwareNode(timespan=timedelta(days=4))
 
-        pass_by_node.inVal.connect(ticker_node.out)
-        time_aware_node.inVal.connect(pass_by_node.out)
+        pass_by_node.in_val.connect(ticker_node.out)
+        time_aware_node.in_val.connect(pass_by_node.out)
 
         data = time_aware_node.calculate_needed_historical_prices()
 
-        data == {"AAPL": timedelta(days=4)}
+        assert data == {"AAPL": timedelta(days=4)}
 
     def test__integration(self):
         root = TimeAwareNode(timespan=timedelta(days=1))
@@ -111,12 +111,12 @@ class TestNode:
         time_aware = TimeAwareNode(timespan=timedelta(days=2))
         ticker_2 = TickerNode("MSQ")
 
-        root.inVal.connect(pass_by.out)
-        pass_by.inVal.connect(branch.out)
-        branch.inA.connect(ticker_1.out)
-        branch.inB.connect(time_aware.out)
-        time_aware.inVal.connect(ticker_2.out)
+        root.in_val.connect(pass_by.out)
+        pass_by.in_val.connect(branch.out)
+        branch.in_a.connect(ticker_1.out)
+        branch.in_b.connect(time_aware.out)
+        time_aware.in_val.connect(ticker_2.out)
 
         data = root.calculate_needed_historical_prices()
 
-        data == {"AAPL": timedelta(days=1), "MSQ": timedelta(days=3)}
+        assert data == {"AAPL": timedelta(days=1), "MSQ": timedelta(days=3)}

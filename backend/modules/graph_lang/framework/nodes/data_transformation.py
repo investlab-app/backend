@@ -1,5 +1,5 @@
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes.node import Node, ExecutionContext, NodeLog
+from modules.graph_lang.framework.nodes.node import ExecutionContext, Node
 
 
 class ChangeOverTimeNode(Node):

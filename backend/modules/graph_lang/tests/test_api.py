@@ -1,25 +1,27 @@
 import uuid
-import pytest
-from pydantic import BaseModel
-from dataclasses import dataclass, asdict
-from django.urls import reverse
+from dataclasses import asdict, dataclass
 from json import dumps, loads
-from modules.core.tests.conftest import api_client_auth, api_client, user
-from modules.investors.tests.conftest import create_fake_investor
-from modules.instruments.tests.conftest import create_fake_instrument
+
+import faker
+import pytest
+from django.urls import reverse
+from pydantic import BaseModel
+
+from modules.core.tests.conftest import api_client, api_client_auth, user
+from modules.graph_lang.models import (
+    BuySellEffect,
+    Graph,
+    GraphEffect,
+    NotificationEffect,
+)
 from modules.graph_lang.tests.conftest import fake_graph
 from modules.graph_lang.tests.conftest_mocks import (
     MockParser,
     MockValidator,
     MockValidatorError,
 )
-from modules.graph_lang.models import (
-    Graph,
-    GraphEffect,
-    BuySellEffect,
-    NotificationEffect,
-)
-import faker
+from modules.instruments.tests.conftest import create_fake_instrument
+from modules.investors.tests.conftest import create_fake_investor
 
 fake = faker.Faker()
 
@@ -103,8 +105,8 @@ class TestGraphListCreate:
         assert MockParserReturn.model_validate(graph.graph_data) == parser_return
         assert graph.investor == self.investor
         assert graph.name == "name"
-        assert graph.active == True
-        assert graph.repeat == False
+        assert graph.active is True
+        assert graph.repeat is False
 
     def test_get__success(self, api_client_auth):
         graph = fake_graph(investor=self.investor, save=True)
@@ -223,9 +225,9 @@ class TestGraphResultView:
         self.other_investor = create_fake_investor(clerk_id="ima fake", save=True)
         self.graph = fake_graph(investor=self.investor, save=True)
 
-    def url(self, id=None):
-        id = id or self.graph.id
-        return reverse("graph-result", args=[id])
+    def url(self, id_=None):
+        id_ = id_ or self.graph.id
+        return reverse("graph-result", args=[id_])
 
     def test_unauthorized(self, api_client):
         response = api_client.get(self.url())
@@ -261,9 +263,9 @@ class TestGraphResultView:
             graph=graph, success=success, effect=transaction_effect
         )
 
-    def create_notification_effect(self, graph, success, format, message):
+    def create_notification_effect(self, graph, success, format_, message):
         transaction_effect = NotificationEffect.objects.create(
-            format=format, message=message
+            format=format_, message=message
         )
         GraphEffect.objects.create(
             graph=graph, success=success, effect=transaction_effect
@@ -289,13 +291,13 @@ class TestGraphResultView:
             "amount": "40.000000000000000",
             "effect_type": "transaction",
         }
-        assert result["success"] == True
+        assert result["success"] is True
 
     def test_single_notification_effect(self, api_client_auth):
         self.create_notification_effect(
             graph=self.graph,
             success=True,
-            format=NotificationEffect.PUSH,
+            format_=NotificationEffect.PUSH,
             message="hehexd",
         )
 
@@ -308,14 +310,14 @@ class TestGraphResultView:
             "message": "hehexd",
             "effect_type": "notification",
         }
-        assert result["success"] == True
+        assert result["success"] is True
 
     def test_multiple_effects__response_length_is_correct(self, api_client_auth):
         instrument = create_fake_instrument(ticker="AAPL", save=True)
         self.create_notification_effect(
             graph=self.graph,
             success=True,
-            format=NotificationEffect.PUSH,
+            format_=NotificationEffect.PUSH,
             message="hehexd",
         )
         self.create_transaction_effect(

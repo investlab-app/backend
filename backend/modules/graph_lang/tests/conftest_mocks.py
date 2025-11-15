@@ -1,14 +1,14 @@
-from typing import Any, Optional
 from dataclasses import dataclass, field
 from datetime import datetime
 from decimal import Decimal
+from typing import Any, Optional
 
 from modules.graph_lang.framework.nodes.node import Node
-from modules.graph_lang.framework.parser import GraphData, NodeData, EdgeData
+from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
 
 
 class MockParser:
-    def parse(self, json: dict) -> Optional[Any]:
+    def parse(self, json: dict) -> Any | None:
         self.called_with = json
         return self.data
 
@@ -81,7 +81,7 @@ class MockFactory:
     def __init__(self):
         self.types = {}
 
-    def name_to_type(self, name: str) -> Optional[type[Node]]:
+    def name_to_type(self, name: str) -> type[Node] | None:
         return self.types.get(name, None)
 
     def register_type(self, name: str, type: type):

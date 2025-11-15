@@ -1,10 +1,9 @@
-from modules.prices.schemas import PriceBar
-from math import ceil, floor
-from modules.prices.repositories import PolygonPricesRepository
-from collections import defaultdict
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from decimal import Decimal
+from math import floor
+
+from modules.prices.repositories import PolygonPricesRepository
 
 
 @dataclass
@@ -70,7 +69,7 @@ class PriceProvider:
             self.fetched_ranges[ticker] = (date_at - timespan, date_at)
 
     def get_price(self, ticker: str, date_at: datetime):
-        if not ticker in self.fetched_ranges:
+        if ticker not in self.fetched_ranges:
             raise ValueError(f"Prefetch was not called for {ticker}")
 
         date_range = self.fetched_ranges[ticker]

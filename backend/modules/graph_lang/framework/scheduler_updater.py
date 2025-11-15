@@ -1,16 +1,13 @@
-from datetime import datetime
 import json
-from config.clients import redis_client
-import threading
-from django.db.models.signals import post_save, post_delete
-from django.dispatch import receiver
+from datetime import datetime
 from time import sleep
+
+from django.db.models.signals import post_delete, post_save
+
+from config.clients import redis_client
+from modules.graph_lang.framework.scheduler import Scheduler
 from modules.graph_lang.models import Graph
 from modules.transactions.models import Transaction
-from modules.graph_lang.framework.scheduler import Scheduler
-from modules.prices.constants import PRICES_CHANNEL_LAYER
-from channels.layers import get_channel_layer
-import asyncio
 
 
 class SchedulerUpdater:

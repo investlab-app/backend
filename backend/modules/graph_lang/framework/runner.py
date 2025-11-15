@@ -1,13 +1,12 @@
-from logging import Logger
 from datetime import datetime
-from modules.graph_lang.models import Graph
-from modules.graph_lang.framework.parser import GraphData
+from logging import Logger
 
-from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
-from modules.graph_lang.framework.price_provider import PriceProvider
-from modules.graph_lang.framework.builder import GraphBuilder
 from modules.graph_lang.framework.action_handler import ActionHandler
-
+from modules.graph_lang.framework.builder import GraphBuilder
+from modules.graph_lang.framework.nodes.node import ExecutionContext, Node
+from modules.graph_lang.framework.parser import GraphData
+from modules.graph_lang.framework.price_provider import PriceProvider
+from modules.graph_lang.models import Graph
 
 logging = Logger(__name__)
 
@@ -31,7 +30,7 @@ class Runner:
 
         try:
             graph = Graph.objects.get(id=graph_id)
-        except Exception as e:
+        except Exception:
             logging.warning(f"Tried to run graph {graph_id} that does not exist")
             return
 

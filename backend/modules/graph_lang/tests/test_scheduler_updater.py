@@ -1,20 +1,21 @@
-import json
-from unittest.mock import patch
-import pytest
-import faker
 import asyncio
-from config.clients import redis_client
-from modules.graph_lang.tests.conftest import fake_graph
+import json
 from datetime import datetime, timedelta
+from unittest.mock import patch
+
+import faker
+import pytest
+from channels.layers import get_channel_layer
+
+from config.clients import redis_client
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
+from modules.graph_lang.tests.conftest import fake_graph
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
-from modules.transactions.tests.conftest import create_fake_transaction
-from modules.investors.tests.conftest import create_fake_investor
 from modules.instruments.tests.conftest import create_fake_instrument
+from modules.investors.tests.conftest import create_fake_investor
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.prices.tests.conftest import get_fake_ohlc
-
-from channels.layers import get_channel_layer
+from modules.transactions.tests.conftest import create_fake_transaction
 
 fake = faker.Faker()
 pytestmark = pytest.mark.django_db
@@ -70,7 +71,7 @@ class TestSchedulerUpdater:
     def test__graph_created__scheduler__has_graph_created_event(self, uuid):
         fake_graph(id=uuid, save=True)
 
-        self.scheduler.get_all_events() == [
+        assert self.scheduler.get_all_events() == [
             f"add graph {uuid}",
         ]
 

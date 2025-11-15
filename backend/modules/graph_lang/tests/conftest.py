@@ -1,9 +1,11 @@
-import pytest
-from faker import Faker
 import uuid
-from unittest.mock import patch, MagicMock
 from datetime import datetime, timedelta
 from decimal import Decimal
+from unittest.mock import MagicMock, patch
+
+import pytest
+from faker import Faker
+
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
 from modules.graph_lang.models import Graph
 from modules.investors.tests.conftest import create_fake_investor

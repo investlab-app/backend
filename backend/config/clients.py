@@ -1,8 +1,8 @@
+import redis
 from django.conf import settings
 from openai import OpenAI
 from polygon import RESTClient, WebSocketClient
 from polygon.websocket.models import Feed, Market
-import redis
 
 polygon_client = RESTClient(settings.POLYGON_SECRET_KEY)
 

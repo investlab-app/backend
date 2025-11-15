@@ -1,11 +1,10 @@
-from decimal import Decimal
-from datetime import datetime, timedelta
-from typing import Any, Optional
 from dataclasses import dataclass, field
-from modules.graph_lang.framework.price_provider import PrefetchRange
+from datetime import datetime, timedelta
+from decimal import Decimal
+from typing import Any
 
-from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.framework import edges
+from modules.graph_lang.framework.price_provider import PrefetchRange
 
 
 @dataclass
@@ -263,11 +262,11 @@ class Node(NodeUtilsMixin):
             result[ticker] = max(d1[ticker], d2[ticker])
 
         for ticker in d1:
-            if not ticker in common_tickers:
+            if ticker not in common_tickers:
                 result[ticker] = d1[ticker]
 
         for ticker in d2:
-            if not ticker in common_tickers:
+            if ticker not in common_tickers:
                 result[ticker] = d2[ticker]
 
         return result

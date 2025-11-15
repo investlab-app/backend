@@ -1,17 +1,19 @@
-from django.db import transaction
-from decimal import Decimal
-from modules.graph_lang.framework.runner import Runner
-from modules.graph_lang.models import Graph
-from modules.graph_lang.framework.builder import GraphBuilder
-from modules.graph_lang.framework.nodes import (
-    CheckEveryNode,
-    BoughtSoldNode,
-    PriceTriggerNode,
-    Node,
-)
+import logging
 from dataclasses import dataclass
 from datetime import datetime, timedelta
-import logging
+from decimal import Decimal
+
+from django.db import transaction
+
+from modules.graph_lang.framework.builder import GraphBuilder
+from modules.graph_lang.framework.nodes import (
+    BoughtSoldNode,
+    CheckEveryNode,
+    Node,
+    PriceTriggerNode,
+)
+from modules.graph_lang.framework.runner import Runner
+from modules.graph_lang.models import Graph
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +45,7 @@ class Scheduler:
     def add_graph(self, id: str):
         try:
             self._try_add_graph(id)
-        except Exception as e:
+        except Exception:
             logging.error(
                 f"Tried to add graph that does not exist to scheduler. Graph id: {id}"
             )
@@ -86,7 +88,7 @@ class Scheduler:
             ticker, price, direction = self._get_price_trigger_args(graph.trigger)
             ticker = ticker.lower()
 
-            if not ticker in prices:
+            if ticker not in prices:
                 continue
 
             current_price = prices[ticker]
@@ -162,7 +164,7 @@ class Scheduler:
                 graph_db = Graph.objects.get(id=graph.id)
                 graph_db.active = False
                 graph_db.save()
-        except Exception as e:
+        except Exception:
             pass
 
     def _get_graphs_with(self, type):

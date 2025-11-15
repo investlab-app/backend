@@ -1,5 +1,6 @@
 import pytest
-from modules.graph_lang.framework.nodes.node import NodeFactory, Node
+
+from modules.graph_lang.framework.nodes.node import Node, NodeFactory
 
 
 class MockNodeA(Node):
@@ -26,15 +27,15 @@ class TestFactory:
         self.factory = NodeFactory()
 
     def test_get_type__node_does_not_exist__returns_none(self):
-        assert self.factory.name_to_type("this_does_not_exist") == None
+        assert self.factory.name_to_type("this_does_not_exist") is None
 
     def test_get_type__node_exists__returns_valid_type(self):
-        type = self.factory.name_to_type("mockA")
-        assert type == MockNodeA
+        type_ = self.factory.name_to_type("mockA")
+        assert type_ == MockNodeA
 
     def test_get_type__type_case_mismatch__returns_valid_type(self):
-        type = self.factory.name_to_type("MoCka")
-        assert type == MockNodeA
+        type_ = self.factory.name_to_type("MoCka")
+        assert type_ == MockNodeA
 
     def test_from_type__invalid_type__raises_value_error(self):
         with pytest.raises(ValueError):
@@ -43,4 +44,4 @@ class TestFactory:
     def test_from_type__valid_type__returns_valid_object(self):
         obj = self.factory.from_type(MockNodeB)
 
-        assert type(obj) == MockNodeB
+        assert isinstance(obj, MockNodeB)

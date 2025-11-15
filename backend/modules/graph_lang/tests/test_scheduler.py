@@ -1,22 +1,24 @@
-from decimal import Decimal
 import uuid
-from uuid import UUID
-import faker
-from modules.graph_lang.tests.conftest import fake_graph
 from collections import Counter
-import pytest
+from datetime import datetime, timedelta
+from decimal import Decimal
 from unittest.mock import patch
-from modules.investors.tests.conftest import create_fake_investor
-from modules.investors.models import Investor
-from modules.graph_lang.models import Graph
-from modules.graph_lang.framework.nodes.node import Node
-from modules.graph_lang.framework.scheduler import Scheduler, SchedulerGraph
+from uuid import UUID
+
+import faker
+import pytest
+
 from modules.graph_lang.framework.nodes import (
-    CheckEveryNode,
     BoughtSoldNode,
+    CheckEveryNode,
     PriceTriggerNode,
 )
-from datetime import timedelta, datetime
+from modules.graph_lang.framework.nodes.node import Node
+from modules.graph_lang.framework.scheduler import Scheduler, SchedulerGraph
+from modules.graph_lang.models import Graph
+from modules.graph_lang.tests.conftest import fake_graph
+from modules.investors.models import Investor
+from modules.investors.tests.conftest import create_fake_investor
 
 pytestmark = pytest.mark.django_db
 
@@ -27,8 +29,8 @@ class MockRunner:
     def __init__(self):
         self.ran_graphs = Counter()
 
-    def run(self, id: UUID):
-        self.ran_graphs.update([id])
+    def run(self, id_: UUID):
+        self.ran_graphs.update([id_])
 
     def get_ran_graphs_counter(self) -> Counter:
         return self.ran_graphs
@@ -38,14 +40,14 @@ class MockBuilder:
     def __init__(self):
         self.graphs = {}
 
-    def get_from_db(self, id: UUID) -> Node:
-        return self.graphs[id]
+    def get_from_db(self, id_: UUID) -> Node:
+        return self.graphs[id_]
 
-    def set_graph(self, id: UUID, graph: Node):
-        self.graphs[id] = graph
+    def set_graph(self, id_: UUID, graph: Node):
+        self.graphs[id_] = graph
 
-    def remove_graph(self, id: UUID):
-        self.graphs.pop(id)
+    def remove_graph(self, id_: UUID):
+        self.graphs.pop(id_)
 
 
 class MockDateTime:
@@ -87,29 +89,30 @@ class TestSchedulerBase:
 
         return _uuids
 
-    def create_graph(self, id: UUID, investor_id: UUID, active=True, repeat=True):
+    def create_graph(self, id_: UUID, investor_id: UUID, *, active=True, repeat=True):
         try:
             investor = Investor.objects.get(id=investor_id)
-        except:
+        except Exception:
             investor = create_fake_investor(investor_id=investor_id, save=True)
-        fake_graph(id=id, investor=investor, save=True, active=active, repeat=repeat)
+        fake_graph(id=id_, investor=investor, save=True, active=active, repeat=repeat)
 
-    def add_timer_node(self, id, td, investor_id=None, **kwargs):
+    def add_timer_node(self, id_, td, investor_id=None, **kwargs):
         if not investor_id:
             investor_id = fake.uuid4()
         node = CheckEveryNode()
         node.timespan.set(td)
-        self.create_graph(id, investor_id, **kwargs)
-        self.builder.set_graph(id=id, graph=node)
-        self.scheduler.add_graph(id)
+        self.create_graph(id_, investor_id, **kwargs)
+        self.builder.set_graph(id_=id_, graph=node)
+        self.scheduler.add_graph(id_)
 
     def add_price_trigger_node(
         self,
         graph_id: str,
         ticker: str,
         price_threshold: Decimal,
-        price_over: bool,
         investor_id=None,
+        *,
+        price_over: bool,
     ):
         if investor_id is None:
             investor_id = fake.uuid4()
@@ -124,7 +127,7 @@ class TestSchedulerBase:
         self.scheduler.add_graph(graph_id)
 
     def add_transaction_trigger_node(
-        self, graph_id: str, ticker: str, is_buy: bool, investor_id=None
+        self, graph_id: str, ticker: str, investor_id=None, *, is_buy: bool
     ):
         node = BoughtSoldNode()
         node.ticker.set(ticker)
@@ -170,9 +173,9 @@ class TestMultipleTimersScheduler(TestSchedulerBase):
     @pytest.fixture(autouse=True)
     def setup_multiple_timer(self, uuid_factory):
         self.uuid_1, self.uuid_2, self.uuid_3 = uuid_factory(3)
-        self.add_timer_node(id=self.uuid_1, td=timedelta(days=3))
-        self.add_timer_node(id=self.uuid_2, td=timedelta(days=4))
-        self.add_timer_node(id=self.uuid_3, td=timedelta(days=2))
+        self.add_timer_node(id_=self.uuid_1, td=timedelta(days=3))
+        self.add_timer_node(id_=self.uuid_2, td=timedelta(days=4))
+        self.add_timer_node(id_=self.uuid_3, td=timedelta(days=2))
 
     def test_multiple_timer_graphs__max_sleep_is_earliest_timedelta(self):
         max_sleep = self.scheduler.get_max_idle_datetime()
@@ -190,7 +193,7 @@ class TestSingleTimerScheduler(TestSchedulerBase):
     @pytest.fixture(autouse=True)
     def setup_single_timer(self, uuid):
         self.id = uuid
-        self.add_timer_node(id=uuid, td=timedelta(days=1))
+        self.add_timer_node(id_=uuid, td=timedelta(days=1))
 
     def test_single_timer_graph__no_step__no_graph_ran(self):
         self.scheduler.step()

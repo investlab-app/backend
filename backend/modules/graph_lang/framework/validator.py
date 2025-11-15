@@ -3,8 +3,8 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
 from modules.graph_lang.framework.nodes import NodeFactory
+from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
 
 
 class Validator:

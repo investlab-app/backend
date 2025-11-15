@@ -27,8 +27,8 @@ class NodeFactory:
     def type_exists(self, name) -> bool:
         return name in self.types
 
-    def set_type(self, name, type):
-        self.types[name] = type
+    def set_type(self, name, type_):
+        self.types[name] = type_
 
 
 class TestValidator:

@@ -1,30 +1,23 @@
 from dataclasses import asdict
-from decimal import Decimal
 from datetime import datetime
-from rest_framework import generics
+
 from django.shortcuts import get_object_or_404
-from rest_framework.views import APIView
-from rest_framework import exceptions
-from rest_framework import status
-from rest_framework.response import Response
-from django.http import JsonResponse
-import json
 from drf_spectacular.utils import extend_schema
+from rest_framework import generics
+from rest_framework.response import Response
+from rest_framework.views import APIView
 
-
+from modules.graph_lang.framework.price_provider import MockPriceProvider
+from modules.graph_lang.framework.runner import Runner
 from modules.graph_lang.models import Graph, GraphEffect
-from modules.investors.models import Investor
 from modules.graph_lang.serializers import (
+    GraphEffectSerializer,
     GraphSerializer,
     GraphUpdateSerializer,
-    RunGraphSerializer,
     RunGraphResultSerializer,
-    GraphTransactionEffectSerializer,
-    GraphNotificationEffectSerializer,
-    GraphEffectSerializer,
+    RunGraphSerializer,
 )
-from modules.graph_lang.framework.runner import Runner
-from modules.graph_lang.framework.price_provider import MockPriceProvider
+from modules.investors.models import Investor
 
 
 @extend_schema(request=GraphSerializer, responses=GraphSerializer)
@@ -76,17 +69,16 @@ class RunGraphView(APIView):
             time_at = data["time_at"]
             for ticker_prices in data["prices"]:
                 ticker = ticker_prices["ticker"]
-                prices = []
-                for price_point in ticker_prices["prices"]:
-                    prices.append((price_point["timestamp"], price_point["price"]))
+                prices = [
+                    (price_point["timestamp"], price_point["price"])
+                    for price_point in ticker_prices["prices"]
+                ]
                 price_provider.set_prices(ticker, prices)
 
         runner = Runner()
         effects = runner.run(pk, time_at=time_at, price_provider=price_provider)
 
-        actions = []
-        for effect in effects:
-            actions.append({"action": asdict(effect)})
+        actions = [{"action": asdict(effect)} for effect in effects]
 
         output_serializer = RunGraphResultSerializer({"results": actions})
         return Response(output_serializer.data)

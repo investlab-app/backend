@@ -1,11 +1,9 @@
 from dataclasses import dataclass, field
-from decimal import Decimal
-from typing import Any, TYPE_CHECKING
 from datetime import timedelta
-from modules.instruments.models import Instrument
+from decimal import Decimal
+from typing import Any
 
-if TYPE_CHECKING:
-    from modules.graph_lang.framework.nodes.node import NodeOutput, NodeInput
+from modules.instruments.models import Instrument
 
 INPUT = 0
 OUTPUT = 1
@@ -64,7 +62,7 @@ class EnumType(EdgeType):
     allowed_values: list[str] = field(default_factory=list)
 
     def validate_connected_output(self, other):
-        raise NotImplementedError()
+        raise NotImplementedError
 
     def validate_value(self, value) -> bool:
         return value in self.allowed_values
@@ -98,7 +96,7 @@ class TimespanType(EdgeType):
             assert unit in ["day", "hour", "week", "month"]
             int(interval)
             return True
-        except Exception as e:
+        except Exception:
             return False
 
     def parse(self, value: str) -> timedelta:

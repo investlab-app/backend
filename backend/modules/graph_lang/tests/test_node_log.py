@@ -1,13 +1,15 @@
-import pytest
 from datetime import datetime
-from modules.graph_lang.framework.nodes.node import Node, ExecutionContext, NodeLog
+
+import pytest
+
 from modules.graph_lang.framework import edges
+from modules.graph_lang.framework.nodes.node import ExecutionContext, Node, NodeLog
 
 
 class EmptyLogNode(Node):
-    def __init__(self, id):
+    def __init__(self, id_):
         super().__init__()
-        self.id = id
+        self.id = id_
 
 
 class PassNode(EmptyLogNode):
@@ -66,7 +68,7 @@ class TestLog:
 
     def get_log_levels_and_ids(self):
         logs = self.context.get_logs()
-        return [(l.level, l.id) for l in logs]
+        return [(log.level, log.id) for log in logs]
 
     def test__exec_single_node__log_execution_contains_the_node(self):
         node = VoidNode("1")

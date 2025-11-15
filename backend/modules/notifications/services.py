@@ -163,7 +163,7 @@ class NotificationService:
         self, investor: Investor, push_payload: PushPayload
     ) -> None:
         push_subscriptions = PushSubscription.objects.filter(investor=investor)
-        
+
         all_success = True
         for subscription in push_subscriptions:
             success = self.push_service.sync_send_push(

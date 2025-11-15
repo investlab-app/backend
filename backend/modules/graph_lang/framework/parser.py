@@ -1,8 +1,6 @@
-from typing import Optional
-from pydantic import BaseModel
-
-from modules.graph_lang.framework.nodes import Node, NodeFactory
 import logging
+
+from pydantic import BaseModel
 
 logger = logging.Logger(__name__)
 
@@ -26,11 +24,11 @@ class GraphData(BaseModel):
 
 
 class Parser:
-    def parse(self, json: dict) -> Optional[GraphData]:
+    def parse(self, json: dict) -> GraphData | None:
         try:
             return self._try_parse(json)
         except Exception as e:
-            logger.warning(f"Failed to parse graph. Exception: %s", e)
+            logger.warning("Failed to parse graph. Exception: %s", e)
             return None
 
     def _try_parse(self, json: dict) -> GraphData:

@@ -1,22 +1,24 @@
-import pytest
-from decimal import Decimal
 import json
+from decimal import Decimal
+from unittest.mock import MagicMock, call, patch
+
+import pytest
+
 from config.clients import redis_client
-from unittest.mock import MagicMock, patch, call
+from modules.graph_lang.framework.action_handler import ActionHandler
 from modules.graph_lang.framework.actions import (
+    Action,
     BuySellAmountAction,
     BuySellForPriceAction,
     BuySellPercentAction,
     NotificationAction,
-    Action,
 )
-from modules.graph_lang.framework.action_handler import ActionHandler
-from modules.investors.tests.conftest import create_fake_investor
-from modules.instruments.tests.conftest import create_fake_instrument
-from modules.instruments.models import Instrument
-from modules.investors.models import Asset, Investor
-from modules.graph_lang.models import GraphEffect, BuySellEffect, NotificationEffect
+from modules.graph_lang.models import BuySellEffect, GraphEffect, NotificationEffect
 from modules.graph_lang.tests.conftest import fake_graph
+from modules.instruments.models import Instrument
+from modules.instruments.tests.conftest import create_fake_instrument
+from modules.investors.models import Asset, Investor
+from modules.investors.tests.conftest import create_fake_investor
 from modules.notifications.services import EmailPayload, PushPayload
 from modules.prices.tests.conftest import get_fake_ohlc
 
@@ -56,7 +58,14 @@ class TestActionHandlerBase:
         redis_client.delete("latest_prices")
 
     def buy_sell_effect_equals(
-        self, effect, is_buy, amount, success=True, graph=None, instrument=None
+        self,
+        effect,
+        is_buy,
+        amount,
+        instrument=None,
+        graph=None,
+        *,
+        success=True,
     ):
         graph = graph or self.graph
         instrument = instrument or self.instrument
@@ -135,8 +144,8 @@ class TestBuySellAmount(TestActionHandlerBase):
 
         effect = GraphEffect.objects.all()
         assert len(effect) == 2
-        assert effect[0].success == False
-        assert effect[1].success == False
+        assert effect[0].success is False
+        assert effect[1].success is False
 
     def test__volume_is_zero__create_is_not_called(self):
         self.handle_default({self.buy_amount("AAPL", 0)})
@@ -296,7 +305,7 @@ class TestNotificationEffect(TestActionHandlerBase):
 
         effect = GraphEffect.objects.all()[0]
         assert effect.graph == self.graph
-        assert effect.success == True
+        assert effect.success is True
         assert effect.effect.format == NotificationEffect.MAIL
         assert effect.effect.message == "hehexd"
 
@@ -305,7 +314,7 @@ class TestNotificationEffect(TestActionHandlerBase):
 
         effect = GraphEffect.objects.all()[0]
         assert effect.graph == self.graph
-        assert effect.success == True
+        assert effect.success is True
         assert effect.effect.format == NotificationEffect.PUSH
         assert effect.effect.message == "hehexd"
 
@@ -322,8 +331,8 @@ class TestNotificationEffect(TestActionHandlerBase):
 
         effects = GraphEffect.objects.all()
         assert len(effects) == 2
-        assert effects[0].success == False
-        assert effects[1].success == False
+        assert effects[0].success is False
+        assert effects[1].success is False
 
 
 # TODO make 'latest_prices' from redis client constant

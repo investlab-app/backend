@@ -1,26 +1,31 @@
-from decimal import Decimal
 import json
+from decimal import Decimal
 from uuid import UUID
-from config.clients import redis_client
+
 from django.db import transaction
+
+from config.clients import redis_client
 from modules.graph_lang.framework.actions import (
+    Action,
     BuySellAmountAction,
     BuySellForPriceAction,
     BuySellPercentAction,
     NotificationAction,
-    Action,
 )
-from modules.orders.services.order_services import MarketOrderService
-from modules.notifications.services import NotificationService
-from modules.investors.models import Investor, Asset
-from modules.instruments.models import Instrument
 from modules.graph_lang.models import (
+    BuySellEffect,
     Graph,
     GraphEffect,
-    BuySellEffect,
     NotificationEffect,
 )
-from modules.notifications.services import EmailPayload, PushPayload
+from modules.instruments.models import Instrument
+from modules.investors.models import Asset, Investor
+from modules.notifications.services import (
+    EmailPayload,
+    NotificationService,
+    PushPayload,
+)
+from modules.orders.services.order_services import MarketOrderService
 
 
 class ActionHandler:
@@ -94,7 +99,7 @@ class ActionHandler:
                     investor=investor, ticker__ticker__iexact=action.ticker
                 )
                 volume = asset.volume * action.percent
-            except Exception as e:
+            except Exception:
                 volume = 0
 
         self._try_create_market_order(

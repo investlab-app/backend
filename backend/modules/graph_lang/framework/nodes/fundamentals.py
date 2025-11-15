@@ -1,7 +1,7 @@
 from datetime import timedelta
+
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes.node import Node, ExecutionContext
-from modules.graph_lang.framework.prices import PriceProvider
+from modules.graph_lang.framework.nodes.node import ExecutionContext, Node
 
 
 class PriceOfNode(Node):

@@ -1,10 +1,10 @@
 from django.urls import path
 
 from modules.graph_lang.views import (
+    GraphResultView,
     ListCreateGraphView,
     RetrieveUpdateDestroyGraphView,
     RunGraphView,
-    GraphResultView,
 )
 
 urlpatterns = [
