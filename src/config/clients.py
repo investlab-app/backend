@@ -1,9 +1,9 @@
 import redis
+from clerk_backend_api import Clerk
 from django.conf import settings
 from openai import OpenAI
 from polygon import RESTClient, WebSocketClient
 from polygon.websocket.models import Feed, Market
-from clerk_backend_api import Clerk
 
 clerk_client = Clerk(bearer_auth=settings.CLERK_SECRET_KEY)
 
