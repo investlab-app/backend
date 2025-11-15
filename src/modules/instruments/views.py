@@ -3,13 +3,16 @@ from contextlib import suppress
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
 from rest_framework import filters, generics
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import serializers
 
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     InstrumentListSerializer,
     InstrumentRetrieveSerializer,
     InstrumentWithPriceSerializer,
+    AllTickersSerializer,
 )
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
@@ -104,3 +107,24 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         if page is not None:
             return self.get_paginated_response(serializer.data)
         return Response(serializer.data)
+
+
+class AllInstrumentsTickers(APIView):
+    """
+    Retrieve all instrument tickers.
+    """
+    
+    serializer_class = AllTickersSerializer
+
+    @extend_schema(
+        responses=AllTickersSerializer,
+        description="Retrieve all instrument tickers as an object with a list of strings.",
+    )
+    def get(self, request, *args, **kwargs):
+        tickers = list(
+            Instrument.objects.values_list("ticker", flat=True).order_by("ticker")
+        )
+        serializer = self.serializer_class({"tickers": tickers})
+        return Response(serializer.data)
+
+ 

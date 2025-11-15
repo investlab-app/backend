@@ -89,3 +89,7 @@ class InstrumentNameSerializer(serializers.ModelSerializer):
     class Meta:
         model = Instrument
         fields = ["ticker"]
+
+
+class AllTickersSerializer(serializers.Serializer):
+        tickers = serializers.ListField(child=serializers.CharField())
