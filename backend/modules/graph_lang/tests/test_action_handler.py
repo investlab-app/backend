@@ -96,14 +96,14 @@ class TestBuySellAmount(TestActionHandlerBase):
             action_set={self.buy_amount("AAPL", 1)},
         )
 
-        self.order_service.create.assert_called_once_with(
+        self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=1, is_buy=True
         )
 
     def test__sell_amount_action__calls_order_create_service(self):
         self.handle_default(action_set={self.sell_amount("AAPL", 1)})
 
-        self.order_service.create.assert_called_once_with(
+        self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=1, is_buy=False
         )
 
@@ -115,7 +115,7 @@ class TestBuySellAmount(TestActionHandlerBase):
             },
         )
 
-        assert self.order_service.create.call_count == 2
+        assert self.order_service.create_market.call_count == 2
 
     def test__buy_order_create_success__graph_result_entry_is_created(self):
         self.handle_default(
@@ -136,7 +136,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         assert self.buy_sell_effect_equals(effect=effect, is_buy=False, amount=10)
 
     def test__buy_sell_order_create_failure__result_success_is_false(self):
-        self.order_service.create.return_value = None
+        self.order_service.create_market.return_value = None
 
         self.handle_default(
             action_set={
@@ -153,7 +153,7 @@ class TestBuySellAmount(TestActionHandlerBase):
     def test__volume_is_zero__create_is_not_called(self):
         self.handle_default({self.buy_amount("AAPL", 0)})
 
-        assert self.order_service.create.call_count == 0
+        assert self.order_service.create_market.call_count == 0
 
     def test__volume_is_zero__failed_effect_is_added(self):
         self.handle_default({self.buy_amount("AAPL", 0)})
@@ -177,7 +177,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         self.set_assets(50)
         self.handle_default({self.buy_percentage("AAPL", 0.50)})
 
-        self.order_service.create.assert_called_once_with(
+        self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=25, is_buy=True
         )
 
@@ -185,7 +185,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         self.set_assets(50)
         self.handle_default({self.sell_percentage("AAPL", 0.50)})
 
-        self.order_service.create.assert_called_once_with(
+        self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=25, is_buy=False
         )
 
@@ -204,11 +204,11 @@ class TestBuyPercentage(TestActionHandlerBase):
             }
         )
 
-        assert self.order_service.create.call_count == 2
+        assert self.order_service.create_market.call_count == 2
         assert len(GraphEffect.objects.all()) == 2
 
     def test__buy_sell_percentage_fail__failed_effect_is_created(self):
-        self.order_service.create.return_value = None
+        self.order_service.create_market.return_value = None
         self.set_assets(50)
 
         self.handle_default({self.buy_percentage("AAPL", 1.00)})
@@ -221,7 +221,7 @@ class TestBuyPercentage(TestActionHandlerBase):
             {self.buy_percentage("AAPL", -0.1), self.buy_percentage("AAPL", 1.1)}
         )
 
-        assert self.order_service.create.call_count == 0
+        assert self.order_service.create_market.call_count == 0
 
     def test__percentage_is_outside_range__failed_effect_is_added(self):
         self.set_assets(100)
@@ -242,7 +242,7 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.set_prices({"AAPL": 50})
         self.handle_default({self.buy_price("AAPL", 100)})
 
-        self.order_service.create.assert_called_once_with(
+        self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=2, is_buy=True
         )
         self.clear_prices()
@@ -259,12 +259,12 @@ class TestBuySellPrice(TestActionHandlerBase):
 
         self.handle_default({self.buy_price("AAPL", 100), self.sell_price("AAPL", 100)})
 
-        assert self.order_service.create.call_count == 2
+        assert self.order_service.create_market.call_count == 2
         assert len(GraphEffect.objects.all()) == 2
         self.clear_prices()
 
     def test__buy_sell_price_fail__failed_effect_is_created(self):
-        self.order_service.create.return_value = None
+        self.order_service.create_market.return_value = None
         self.set_prices({"AAPL": 50})
 
         self.handle_default({self.buy_price("AAPL", 100)})

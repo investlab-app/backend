@@ -25,16 +25,16 @@ from modules.notifications.services import (
     NotificationService,
     PushPayload,
 )
-from modules.orders.services.order_services import MarketOrderService
+from modules.orders.services.order_services import OrderService
 
 
 class ActionHandler:
     def __init__(
         self,
-        order_service: MarketOrderService | None = None,
+        order_service: OrderService | None = None,
         notification_service: NotificationService | None = None,
     ):
-        self._order_service = order_service or MarketOrderService()
+        self._order_service = order_service or OrderService()
         self._notification_service = notification_service or NotificationService()
 
     def handle(
@@ -123,7 +123,7 @@ class ActionHandler:
             instrument = Instrument.objects.get(ticker__iexact=ticker)
 
             if volume > 0:
-                result = self._order_service.create(
+                result = self._order_service.create_market(
                     investor=investor,
                     instrument=instrument,
                     volume=volume,
