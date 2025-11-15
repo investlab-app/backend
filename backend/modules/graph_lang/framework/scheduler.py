@@ -42,43 +42,45 @@ class Scheduler:
         self.max_sleep_timespan = max_sleep_timespan
         self.last_run_time = {}
 
-    def add_graph(self, id: str):
+    def add_graph(self, id_: str):
         try:
-            self._try_add_graph(id)
+            self._try_add_graph(id_)
         except Exception:
-            logging.error(
-                f"Tried to add graph that does not exist to scheduler. Graph id: {id}"
+            logger.error(
+                "Tried to add graph that does not exist to scheduler. Graph id: %s",
+                id_,
             )
 
-    def _try_add_graph(self, id: str):
-        graph = Graph.objects.get(id=id)
-        node = self._builder.get_from_db(id)
+    def _try_add_graph(self, id_: str):
+        graph = Graph.objects.get(id=id_)
+        node = self._builder.get_from_db(id_)
         graph = SchedulerGraph(
-            id=id,
+            id=id_,
             investor_id=graph.investor.id,
             trigger=node,
             active=graph.active,
             repeat=graph.repeat,
         )
         self.graphs.append(graph)
-        self.last_run_time[id] = datetime.now()
+        self.last_run_time[id_] = datetime.now()
 
-    def remove_graph(self, id: str):
+    def remove_graph(self, id_: str):
         try:
-            self._try_remove_graph(id)
+            self._try_remove_graph(id_)
         except Exception:
-            logging.error(
-                f"Tried to remove graph that does not exist from scheduler. Graph id: {id}"
+            logger.error(
+                "Removed a graph that does not exist from scheduler. Graph id: %s",
+                id_,
             )
 
-    def _try_remove_graph(self, id: str):
-        graph = next(g for g in self.graphs if g.id == id)
+    def _try_remove_graph(self, id_: str):
+        graph = next(g for g in self.graphs if g.id == id_)
         self.graphs.remove(graph)
-        self.last_run_time.pop(id)
+        self.last_run_time.pop(id_)
 
-    def update_graph(self, id: str):
-        self.remove_graph(id)
-        self.add_graph(id)
+    def update_graph(self, id_: str):
+        self.remove_graph(id_)
+        self.add_graph(id_)
 
     def price_changed(self, prices: dict[str, Decimal]):
         price_graphs = self._get_graphs_with(PriceTriggerNode)
@@ -167,8 +169,8 @@ class Scheduler:
         except Exception:
             pass
 
-    def _get_graphs_with(self, type):
-        return [g for g in self.graphs if isinstance(g.trigger, type)]
+    def _get_graphs_with(self, type_):
+        return [g for g in self.graphs if isinstance(g.trigger, type_)]
 
 
 # TODO normalize how node inputs are get, is it node._get(input) or node.input(None)

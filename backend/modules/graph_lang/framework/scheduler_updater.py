@@ -1,3 +1,4 @@
+import decimal
 import json
 from datetime import datetime
 from time import sleep
@@ -24,10 +25,10 @@ class SchedulerUpdater:
         self.last_prices = {}
         self.received_prices = {}
 
-    def get_all_graphs(self) -> list[Graph]:
+    def get_all_graphs(self):
         ids = Graph.objects.values_list("id", flat=True)
-        for id in ids:
-            self.scheduler.add_graph(id)
+        for id_ in ids:
+            self.scheduler.add_graph(id_)
 
     def run(self):
         while not self.stop:
@@ -49,7 +50,7 @@ class SchedulerUpdater:
             prices = json.loads(prices)
             if self.last_prices != prices:
                 self.last_prices = prices
-                prices = {p: prices[p]["close"] for p in prices}
+                prices = {p: decimal.Decimal(prices[p]["close"]) for p in prices}
                 self.scheduler.price_changed(prices)
 
     def handle_graph_save(self, sender, instance, created, **kwargs):

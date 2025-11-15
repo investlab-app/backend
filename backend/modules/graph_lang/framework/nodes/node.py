@@ -1,10 +1,12 @@
 from dataclasses import dataclass, field
 from datetime import datetime, timedelta
 from decimal import Decimal
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.price_provider import PrefetchRange
+
+if TYPE_CHECKING:
+    from modules.graph_lang.framework.price_provider import PrefetchRange
 
 
 @dataclass
@@ -24,8 +26,10 @@ class ExecutionContext:
     level: int = 0
     logs: list = field(default_factory=list)
 
-    def log(self, id, name, fields={}):
-        log = NodeLog(id, name, fields, self.level)
+    def log(self, id_, name, fields=None):
+        if fields is None:
+            fields = {}
+        log = NodeLog(id_, name, fields, self.level)
         self.logs.append(log)
 
     def get_logs(self) -> list[NodeLog]:
@@ -62,11 +66,11 @@ class ExecutionContext:
         logs = self.get_logs()
         print("\n")
         print("GRAPH RUN LOGS ############################")
-        for l in logs:
+        for log in logs:
             log_string = ""
-            log_string += " " * l.level * 4
-            log_string += f"{l.name} ({l.id}) ["
-            for key, value in l.fields.items():
+            log_string += " " * log.level * 4
+            log_string += f"{log.name} ({log.id}) ["
+            for key, value in log.fields.items():
                 if isinstance(value, (float, Decimal)):
                     log_string += f"{key}: {value:.2f} "
                 else:
@@ -104,7 +108,7 @@ class NodeInput:
         self.node = node
         self.edge = og_edge
 
-    def __call__(self, context: ExecutionContext):
+    def __call__(self, context: ExecutionContext | None):
         if self.output is not None:
             return self.output.get(context)
         else:
@@ -129,6 +133,7 @@ class NodeUtilsMixin:
         for e in edge_list:
             if e.direction == edges.OUTPUT:
                 return getattr(self, e.field_name)
+        raise ValueError("node has no outputs")
 
     def get_io_by_source_name(self, source_name) -> NodeInput | NodeOutput:
         edge = type(self).get_edge_by_source_name(source_name)
@@ -164,16 +169,18 @@ class Node(NodeUtilsMixin):
     TRIGGER = False
     TYPE_NAME = None
 
-    def __init__(self, inputs={}):
+    def __init__(self, inputs=None):
+        if inputs is None:
+            inputs = {}
         self._initialize_input_outputs()
         self._pass_data_to_inputs(inputs)
         self._context = None
 
     def _initialize_input_outputs(self):
-        for name, field in self.__class__.__dict__.items():
-            if isinstance(field, edges.EdgeType):
-                if field.direction == edges.INPUT:
-                    value = NodeInput(self, field)
+        for name, field_ in self.__class__.__dict__.items():
+            if isinstance(field_, edges.EdgeType):
+                if field_.direction == edges.INPUT:
+                    value = NodeInput(self, field_)
                 else:
                     value = NodeOutput(self)
                 setattr(self, name, value)
@@ -216,7 +223,7 @@ class Node(NodeUtilsMixin):
     def _execute(self, context: "ExecutionContext"):
         pass
 
-    def _get(self, edge: NodeInput, time_at: datetime = None):
+    def _get(self, edge: NodeInput, time_at: datetime | None = None):
         if not self._context:
             return edge(None)
 
@@ -261,13 +268,20 @@ class Node(NodeUtilsMixin):
         for ticker in common_tickers:
             result[ticker] = max(d1[ticker], d2[ticker])
 
-        for ticker in d1:
-            if ticker not in common_tickers:
-                result[ticker] = d1[ticker]
-
-        for ticker in d2:
-            if ticker not in common_tickers:
-                result[ticker] = d2[ticker]
+        result.update(
+            {
+                ticker: timespan
+                for ticker, timespan in d1.items()
+                if ticker not in common_tickers
+            }
+        )
+        result.update(
+            {
+                ticker: timespan
+                for ticker, timespan in d2.items()
+                if ticker not in common_tickers
+            }
+        )
 
         return result
 
@@ -280,7 +294,7 @@ class Node(NodeUtilsMixin):
         return {}
 
 
-class NodeFactory:
+class MockNodeFactory:
     def __init__(self):
         self._types = {
             cls.TYPE_NAME.lower(): cls

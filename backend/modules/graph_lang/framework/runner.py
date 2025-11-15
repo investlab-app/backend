@@ -1,5 +1,5 @@
+import logging
 from datetime import datetime
-from logging import Logger
 
 from modules.graph_lang.framework.action_handler import ActionHandler
 from modules.graph_lang.framework.builder import GraphBuilder
@@ -8,13 +8,15 @@ from modules.graph_lang.framework.parser import GraphData
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.graph_lang.models import Graph
 
-logging = Logger(__name__)
+logger = logging.getLogger(__name__)
 
 
 # TODO rename to GraphRunner
 class Runner:
     def __init__(
-        self, builder: GraphBuilder = None, action_handler: ActionHandler = None
+        self,
+        builder: GraphBuilder | None = None,
+        action_handler: ActionHandler | None = None,
     ):
         self._graph_builder = builder or GraphBuilder()
         self._action_handler = action_handler or ActionHandler()
@@ -23,7 +25,7 @@ class Runner:
         self,
         graph_id: str,
         time_at: datetime | None = None,
-        price_provider: PriceProvider = None,
+        price_provider: PriceProvider | None = None,
     ):
         time_at = time_at or datetime.now()
         effect_set = set()
@@ -31,7 +33,7 @@ class Runner:
         try:
             graph = Graph.objects.get(id=graph_id)
         except Exception:
-            logging.warning(f"Tried to run graph {graph_id} that does not exist")
+            logger.warning("Tried to run graph %s that does not exist", graph_id)
             return
 
         graph_data = GraphData.model_validate(graph.graph_data)

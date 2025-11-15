@@ -84,7 +84,7 @@ class TestSchedulerBase:
 
     @pytest.fixture()
     def uuid_factory(self):
-        def _uuids(n) -> UUID:
+        def _uuids(n) -> list[UUID]:
             return [uuid.uuid4() for _ in range(n)]
 
         return _uuids
@@ -94,7 +94,7 @@ class TestSchedulerBase:
             investor = Investor.objects.get(id=investor_id)
         except Exception:
             investor = create_fake_investor(investor_id=investor_id, save=True)
-        fake_graph(id=id_, investor=investor, save=True, active=active, repeat=repeat)
+        fake_graph(id_=id_, investor=investor, save=True, active=active, repeat=repeat)
 
     def add_timer_node(self, id_, td, investor_id=None, **kwargs):
         if not investor_id:

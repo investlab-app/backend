@@ -3,6 +3,7 @@ from decimal import Decimal
 from unittest.mock import MagicMock, call, patch
 
 import pytest
+from django.core.serializers.json import DjangoJSONEncoder
 
 from config.clients import redis_client
 from modules.graph_lang.framework.action_handler import ActionHandler
@@ -47,7 +48,9 @@ class TestActionHandlerBase:
         ohlc_prices = {}
         for key, value in prices.items():
             ohlc_prices[key] = get_fake_ohlc(ticker=key, close=value)
-        redis_client.set("latest_prices", json.dumps(ohlc_prices))
+        redis_client.set(
+            "latest_prices", json.dumps(ohlc_prices, cls=DjangoJSONEncoder)
+        )
 
     def set_assets(self, volume):
         Asset.objects.create(

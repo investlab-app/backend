@@ -17,7 +17,7 @@ from modules.graph_lang.tests.conftest_nodes import (
 )
 
 
-class NodeFactory:
+class MockNodeFactory:
     def __init__(self):
         self.types = {}
 
@@ -34,7 +34,7 @@ class NodeFactory:
 class TestValidator:
     @pytest.fixture(autouse=True)
     def setup(self):
-        factory = NodeFactory()
+        factory = MockNodeFactory()
         factory.set_type("EmptyNode", EmptyNode)
         factory.set_type("EnumInputNode", EnumInputNode)
         factory.set_type("NumberInputChangeSourceNode", NumberInputChangeSourceNode)
@@ -44,7 +44,7 @@ class TestValidator:
         factory.set_type("TriggerNode", TriggerNode)
         factory.set_type("TwoBoolInputNode", TwoBoolInputNode)
         factory.set_type("TypeMismatchNode", TypeMismatchNode)
-        self.validator = Validator(factory)
+        self.validator = Validator(factory)  # ty: ignore[invalid-argument-type]
 
     def run(self, data):
         return self.validator.validate(data)
@@ -110,11 +110,11 @@ class TestValidator:
 
     def test__not_all_inputs_connected(self):
         data = GraphData(
-            nodes=[NodeData(id="0", type="TwoBoolInputNode", fields={"inA": "False"})]
+            nodes=[NodeData(id="0", type="TwoBoolInputNode", fields={"in_a": "False"})]
         )
         errors = self.run(data)
 
-        assert NodeNotAllInputsConnected("0", ["inB"]) in errors
+        assert NodeNotAllInputsConnected("0", ["in_b"]) in errors
 
     def test__edge_invalid_handle(self):
         data = GraphData(
@@ -207,10 +207,10 @@ class TestValidator:
                 NodeData(id="3", type="NumberInputOutputNode"),
             ],
             edges=[
-                EdgeData(id_a="0", handle_a="inVal", id_b="1", handle_b="outVal"),
-                EdgeData(id_a="1", handle_a="inVal", id_b="2", handle_b="outVal"),
-                EdgeData(id_a="2", handle_a="inVal", id_b="3", handle_b="outVal"),
-                EdgeData(id_a="3", handle_a="inVal", id_b="0", handle_b="outVal"),
+                EdgeData(id_a="0", handle_a="in_val", id_b="1", handle_b="out_val"),
+                EdgeData(id_a="1", handle_a="in_val", id_b="2", handle_b="out_val"),
+                EdgeData(id_a="2", handle_a="in_val", id_b="3", handle_b="out_val"),
+                EdgeData(id_a="3", handle_a="in_val", id_b="0", handle_b="out_val"),
             ],
         )
         errors = self.run(data)

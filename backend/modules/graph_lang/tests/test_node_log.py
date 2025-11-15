@@ -64,7 +64,7 @@ class TriggerNode(EmptyLogNode):
 class TestLog:
     @pytest.fixture(autouse=True)
     def setup(self):
-        self.context = ExecutionContext(None, None, datetime.now())
+        self.context = ExecutionContext(None, set(), datetime.now())
 
     def get_log_levels_and_ids(self):
         logs = self.context.get_logs()

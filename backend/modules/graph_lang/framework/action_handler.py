@@ -31,8 +31,8 @@ from modules.orders.services.order_services import MarketOrderService
 class ActionHandler:
     def __init__(
         self,
-        order_service: MarketOrderService = None,
-        notification_service: NotificationService = None,
+        order_service: MarketOrderService | None = None,
+        notification_service: NotificationService | None = None,
     ):
         self._order_service = order_service or MarketOrderService()
         self._notification_service = notification_service or NotificationService()
@@ -115,8 +115,9 @@ class ActionHandler:
         investor: Investor,
         graph: Graph,
         volume: Decimal,
-        is_buy: bool,
         ticker: str,
+        *,
+        is_buy: bool,
     ):
         with transaction.atomic():
             instrument = Instrument.objects.get(ticker__iexact=ticker)
@@ -130,7 +131,7 @@ class ActionHandler:
                 )
                 success = result is not None
             else:
-                volume = 0
+                volume = Decimal(0)
                 success = False
 
             effect_detail = BuySellEffect.objects.create(
@@ -152,17 +153,17 @@ class ActionHandler:
             success = self._notification_service.sync_send_email_notification(
                 investor=investor, email_payload=payload
             )
-            format = NotificationEffect.MAIL
+            format_ = NotificationEffect.MAIL
         else:
             payload = PushPayload(title="Notification from graph", body=action.message)
             success = self._notification_service.sync_send_push_notifications(
                 investor=investor, push_payload=payload
             )
-            format = NotificationEffect.PUSH
+            format_ = NotificationEffect.PUSH
 
         with transaction.atomic():
             effect_detail = NotificationEffect.objects.create(
-                format=format, message=action.message
+                format=format_, message=action.message
             )
             GraphEffect.objects.create(
                 graph=graph, success=success, effect=effect_detail

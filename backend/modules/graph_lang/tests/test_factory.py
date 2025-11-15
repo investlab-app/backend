@@ -1,6 +1,6 @@
 import pytest
 
-from modules.graph_lang.framework.nodes.node import Node, NodeFactory
+from modules.graph_lang.framework.nodes.node import MockNodeFactory, Node
 
 
 class MockNodeA(Node):
@@ -24,7 +24,7 @@ class TestFactory:
     def setup(self):
         self._mock_price_provider = Mock()
         self._mock_action_set = Mock()
-        self.factory = NodeFactory()
+        self.factory = MockNodeFactory()
 
     def test_get_type__node_does_not_exist__returns_none(self):
         assert self.factory.name_to_type("this_does_not_exist") is None

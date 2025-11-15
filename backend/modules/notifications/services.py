@@ -161,7 +161,7 @@ class NotificationService:
 
     def sync_send_push_notifications(
         self, investor: Investor, push_payload: PushPayload
-    ) -> None:
+    ) -> bool:
         push_subscriptions = PushSubscription.objects.filter(investor=investor)
 
         all_success = True

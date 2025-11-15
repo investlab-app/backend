@@ -3,13 +3,13 @@ from copy import deepcopy
 from dataclasses import dataclass, field
 
 from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes import NodeFactory
+from modules.graph_lang.framework.nodes import MockNodeFactory
 from modules.graph_lang.framework.parser import EdgeData, GraphData, NodeData
 
 
 class Validator:
-    def __init__(self, node_factory: NodeFactory = None):
-        self._node_factory = node_factory or NodeFactory()
+    def __init__(self, node_factory: MockNodeFactory | None = None):
+        self._node_factory = node_factory or MockNodeFactory()
 
     # TODO: catch any unknown error, return unknown validation error
     # TODO: try to build the graph at the end
@@ -72,21 +72,21 @@ class Validator:
         for node in nodes:
             edges = node.type.get_incoming_edges()
 
-            for field in node.fields:
-                if not any(field == e.source_name for e in edges):
-                    self.errors.append(InvalidNodeField(id=node.id, field=field))
+            for field_ in node.fields:
+                if not any(field_ == e.source_name for e in edges):
+                    self.errors.append(InvalidNodeField(id=node.id, field=field_))
 
     def _validate_node_field_values(self, nodes: list[NodeData]):
         for node in nodes:
             edges = node.type.get_incoming_edges()
 
-            for field, value in node.fields.items():
-                edge = next((e for e in edges if field == e.source_name), None)
+            for field_, value in node.fields.items():
+                edge = next((e for e in edges if field_ == e.source_name), None)
                 if not edge:
                     return
                 if not edge.validate_value(value):
                     self.errors.append(
-                        InvalidNodeFieldValue(id=node.id, field=field, value=value)
+                        InvalidNodeFieldValue(id=node.id, field=field_, value=value)
                     )
 
     def _validate_node_all_inputs_connected(self, graph: GraphData):
@@ -96,9 +96,8 @@ class Validator:
         for node in nodes:
             names = {e.source_name for e in node.type.get_incoming_edges()}
 
-            for field in node.fields:
-                if field in names:
-                    names.remove(field)
+            for field_ in node.fields:
+                names.discard(field_)
 
             for edge in edges:
                 if edge.id_a == node.id and edge.handle_a in names:
@@ -180,9 +179,8 @@ class Validator:
         for id_a, id_b in errors:
             self.errors.append(ConnectionDuplicate(id_a, id_b))
 
-    def _validate_cycles(self, graph: GraphData):
+    def _adjacency_list(self, graph: GraphData):
         nodes = {n.id: n for n in graph.nodes}
-        # Build adjacency list
         adj = defaultdict(list)
         for e in graph.edges:
             edge = nodes[e.id_a].type.get_edge_by_source_name(e.handle_a)
@@ -190,6 +188,11 @@ class Validator:
                 adj[e.id_a].append(e.id_b)
             else:
                 adj[e.id_b].append(e.id_a)
+        return adj
+
+    def _validate_cycles(self, graph: GraphData):
+        nodes = {n.id: n for n in graph.nodes}
+        adj = self._adjacency_list(graph)
 
         # Find top level node (no incoming edges)
         all_nodes = set(nodes.keys())

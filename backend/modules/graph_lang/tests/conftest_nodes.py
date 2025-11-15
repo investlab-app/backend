@@ -67,8 +67,8 @@ class BoolInputNode(Node):
 
 
 class TwoBoolInputNode(Node):
-    inA = edges.BoolType(direction=edges.INPUT)
-    inB = edges.BoolType(direction=edges.INPUT)
+    in_a = edges.BoolType(direction=edges.INPUT)
+    in_b = edges.BoolType(direction=edges.INPUT)
 
 
 class NumberOutputNode(Node):
@@ -84,8 +84,8 @@ class NumberInputChangeSourceNode(Node):
 
 
 class NumberInputOutputNode(Node):
-    inVal = edges.NumberType(direction=edges.INPUT)
-    outVal = edges.NumberType(direction=edges.OUTPUT)
+    in_val = edges.NumberType(direction=edges.INPUT)
+    out_val = edges.NumberType(direction=edges.OUTPUT)
 
 
 class TriggerNode(Node):

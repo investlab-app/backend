@@ -80,7 +80,7 @@ def test_graph_builder():
         ],
     )
 
-    result = GraphBuilder(factory).build(data)
+    result = GraphBuilder(factory).build(data)  # ty: ignore[invalid-argument-type]
 
     assert result == node_1
     assert node_1.in_val.output.node == node_2
@@ -97,7 +97,7 @@ def test_graph_builder__from_db():
 
     graph = fake_graph(graph_data=data.model_dump(), save=True)
 
-    result = GraphBuilder(factory).get_from_db(graph.id)
+    result = GraphBuilder(factory).get_from_db(graph.id)  # ty: ignore[invalid-argument-type]
 
     assert result == node
 
@@ -107,4 +107,4 @@ def test_graph_builder__from_db__graph_not_in_db__raises_value_error():
     factory = MockNodeFactory()
 
     with pytest.raises(ValueError):
-        GraphBuilder(factory).get_from_db("doesn`t exist")
+        GraphBuilder(factory).get_from_db("doesn`t exist")  # ty: ignore[invalid-argument-type]

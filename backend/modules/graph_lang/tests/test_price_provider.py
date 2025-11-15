@@ -6,7 +6,7 @@ import pytest
 from faker import Faker
 
 from modules.graph_lang.framework.price_provider import PriceProvider
-from modules.prices.schemas import PriceBar, PriceDailySummary
+from modules.prices.schemas import PriceBar, PriceDaily, PriceDailySummary
 
 fake = Faker()
 
@@ -47,20 +47,27 @@ class TestPriceProvider:
     def price_bar(self, dt, price):
         return PriceBar(
             dt,
-            open=0,
-            high=0,
-            low=0,
+            open=Decimal(0),
+            high=Decimal(0),
+            low=Decimal(0),
             close=price,
-            volume=0,
+            volume=Decimal(0),
         )
 
     def price_daily_summary(self, ticker, price):
         return PriceDailySummary(
             ticker=ticker,
             current_price=Decimal(price),
-            daily_summary=None,
-            todays_change=0,
-            todays_change_percent=0,
+            daily_summary=PriceDaily(
+                open=Decimal(0),
+                high=Decimal(0),
+                low=Decimal(0),
+                close=Decimal(0),
+                volume=Decimal(0),
+                volume_weighted_average_price=Decimal(0),
+            ),
+            todays_change=Decimal(0),
+            todays_change_percent=Decimal(0),
             last_updated=fake.date_time(),
         )
 

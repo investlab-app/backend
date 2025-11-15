@@ -20,10 +20,7 @@ class IsGreaterLesserNode(Node):
         value = self._get(self.inValue)
         x = self._get(self.inX)
 
-        if direction == "less":
-            output = value < x
-        else:
-            output = value > x
+        output = value < x if direction == "less" else value > x
 
         self.out.set(output)
 

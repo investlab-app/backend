@@ -1,11 +1,13 @@
 import asyncio
 import json
 from datetime import datetime, timedelta
+from decimal import Decimal
 from unittest.mock import patch
 
 import faker
 import pytest
 from channels.layers import get_channel_layer
+from django.core.serializers.json import DjangoJSONEncoder
 
 from config.clients import redis_client
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
@@ -69,14 +71,14 @@ class TestSchedulerUpdater:
         self.sleep.assert_called_once_with(5)
 
     def test__graph_created__scheduler__has_graph_created_event(self, uuid):
-        fake_graph(id=uuid, save=True)
+        fake_graph(id_=uuid, save=True)
 
         assert self.scheduler.get_all_events() == [
             f"add graph {uuid}",
         ]
 
     def test__graph_updated__scheduler_recieves_graph_updated_event(self, uuid):
-        graph = fake_graph(id=uuid, raw_graph_data="1", save=True)
+        graph = fake_graph(id_=uuid, raw_graph_data="1", save=True)
         graph.save(force_update=True)
 
         assert self.scheduler.get_all_events() == [
@@ -85,7 +87,7 @@ class TestSchedulerUpdater:
         ]
 
     def test__graph_removed__scheduler_receives_graph_removed_event(self, uuid):
-        graph = fake_graph(id=uuid, raw_graph_data="1", save=True)
+        graph = fake_graph(id_=uuid, raw_graph_data="1", save=True)
         graph.delete()
 
         assert self.scheduler.get_all_events() == [
@@ -122,10 +124,10 @@ class TestSchedulerUpdater:
     def test__prices_changed__scheduler_receives_prices_changed_event(self):
         self.stop_updater_after_iteration()
         prices = {
-            "AAPL": get_fake_ohlc(ticker="AAPL", close=20),
-            "GOGL": get_fake_ohlc(ticker="GOGL", close=30),
+            "AAPL": get_fake_ohlc(ticker="AAPL", close=Decimal(20)),
+            "GOGL": get_fake_ohlc(ticker="GOGL", close=Decimal(30)),
         }
-        redis_client.set("latest_prices", json.dumps(prices))
+        redis_client.set("latest_prices", json.dumps(prices, cls=DjangoJSONEncoder))
 
         self.updater.run()
 

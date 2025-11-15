@@ -16,7 +16,7 @@ fake = Faker()
 
 
 def fake_graph(
-    id=None,
+    id_=None,
     investor=None,
     raw_graph_data="",
     graph_data="",
@@ -26,14 +26,14 @@ def fake_graph(
     save=False,
 ) -> Graph:
     investor = investor or create_fake_investor(save=save)
-    id = id or uuid.uuid4()
+    id_ = id_ or uuid.uuid4()
     if active is None:
         active = fake.pybool()
     if repeat is None:
         repeat = fake.pybool()
 
     graph = Graph(
-        id=id,
+        id=id_,
         investor=investor,
         raw_graph_data=raw_graph_data,
         graph_data=graph_data,

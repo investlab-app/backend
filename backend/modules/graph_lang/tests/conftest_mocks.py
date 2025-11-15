@@ -45,14 +45,14 @@ class MockScheduler:
         self.events = []
         self.max_idle_datetime = datetime.now()
 
-    def add_graph(self, id: str):
-        self.events += [f"add graph {id}"]
+    def add_graph(self, id_: str):
+        self.events += [f"add graph {id_}"]
 
-    def remove_graph(self, id: str):
-        self.events += [f"remove graph {id}"]
+    def remove_graph(self, id_: str):
+        self.events += [f"remove graph {id_}"]
 
-    def update_graph(self, id: str):
-        self.events += [f"update graph {id}"]
+    def update_graph(self, id_: str):
+        self.events += [f"update graph {id_}"]
 
     def price_changed(self, prices: dict[str, Decimal]):
         print(prices)
@@ -84,5 +84,5 @@ class MockFactory:
     def name_to_type(self, name: str) -> type[Node] | None:
         return self.types.get(name, None)
 
-    def register_type(self, name: str, type: type):
-        self.types[name] = type
+    def register_type(self, name: str, type_: type):
+        self.types[name] = type_

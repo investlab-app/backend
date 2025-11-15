@@ -40,7 +40,7 @@ def test_and_node(in_a, in_b, expected):
     node.inA.set(in_a)
     node.inB.set(in_b)
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) == expected
 
@@ -59,7 +59,7 @@ def test_or_node(in_a, in_b, expected):
     node.inA.set(in_a)
     node.inB.set(in_b)
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) == expected
 
@@ -75,7 +75,7 @@ def test_not_node(in_val, expected):
     node = NotNode()
     node.inVal.set(in_val)
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) == expected
 
@@ -94,7 +94,7 @@ def test_greater_lesser_node__greater(in_value, in_x, expected):
     node.inX.set(in_x)
     node.direction.set("greater")
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) == expected
 
@@ -113,7 +113,7 @@ def test_greater_lesser_node_lesser(in_value, in_x, expected):
     node.inX.set(in_x)
     node.direction.set("less")
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) == expected
 
@@ -133,7 +133,7 @@ def test_flow_if_node(if_value, then_executed, else_executed):
     node.inThen.connect(then_node.out)
     node.inElse.connect(else_node.out)
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
 
     assert node.out.get(context) is None
     assert then_node.executed == then_executed
@@ -151,7 +151,7 @@ def test_change_over_time_node():
     node.timespan.set(dt_2 - dt_1)
     node.in_.connect(number_node.out)
 
-    context = ExecutionContext(None, {}, dt_2)
+    context = ExecutionContext(None, set(), dt_2)
 
     assert node.out.get(context) == 10 - 3
 
@@ -161,7 +161,7 @@ def test_check_every_node():
     void_sensor_node = VoidSensorNode()
     node.in_.connect(void_sensor_node.out)
 
-    context = ExecutionContext(None, {}, fake.date_time())
+    context = ExecutionContext(None, set(), fake.date_time())
     node.execute(context)
 
     assert void_sensor_node.executed is True
@@ -190,7 +190,7 @@ def test_price_of_node():
     node = PriceOfNode()
     node.ticker.set("AAPL")
 
-    context = ExecutionContext(price_provider, {}, dt)
+    context = ExecutionContext(price_provider, set(), dt)
 
     assert node.out.get(context) == 10
 
@@ -211,6 +211,6 @@ def test_node__execution_time_gets_auto_propagated():
     node_4.set_val(1, dt_1)
     node_4.set_val(2, dt_2)
 
-    context = ExecutionContext(None, {}, dt_2)
+    context = ExecutionContext(None, set(), dt_2)
 
     assert node_1.out.get(context) == 2

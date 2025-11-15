@@ -113,6 +113,7 @@ class TimespanType(EdgeType):
             return timedelta(weeks=interval)
         if unit == "hour":
             return timedelta(hours=interval)
+        raise AttributeError("Invalid value")
 
 
 @dataclass

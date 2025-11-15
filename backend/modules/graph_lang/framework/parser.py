@@ -2,12 +2,14 @@ import logging
 
 from pydantic import BaseModel
 
-logger = logging.Logger(__name__)
+from modules.graph_lang.framework.nodes import Node
+
+logger = logging.getLogger(__name__)
 
 
 class NodeData(BaseModel):
     id: str
-    type: str | type
+    type: str | type[Node]
     fields: dict[str, str] = {}
 
 
@@ -52,14 +54,14 @@ class Parser:
             )
 
         if "edges" in json:
-            for edge_json in json["edges"]:
-                edges.append(
-                    EdgeData(
-                        id_a=edge_json["source"],
-                        handle_a=edge_json["sourceHandle"],
-                        id_b=edge_json["target"],
-                        handle_b=edge_json["targetHandle"],
-                    )
+            edges.extend(
+                EdgeData(
+                    id_a=edge_json["source"],
+                    handle_a=edge_json["sourceHandle"],
+                    id_b=edge_json["target"],
+                    handle_b=edge_json["targetHandle"],
                 )
+                for edge_json in json["edges"]
+            )
 
         return GraphData(nodes=nodes, edges=edges)

@@ -34,12 +34,12 @@ class PricePoint:
 # Possible solution would be to try bigger and bigger OHLC bars, until one
 # of them returns non-empty list. For now it won't work well when date_at != now()
 class PriceProvider:
-    fetched_ranges: dict[str, (datetime, datetime)]
-    prices: dict[str, list[Decimal, datetime]]
+    fetched_ranges: dict[str, tuple[datetime, datetime]]
+    prices: dict[str, list[tuple[Decimal, datetime]]]
 
     def __init__(
         self,
-        repository: PolygonPricesRepository = None,
+        repository: PolygonPricesRepository | None = None,
         samples=100,
     ):
         self.fetched_ranges = {}
@@ -58,14 +58,13 @@ class PriceProvider:
                     floor(timespan.total_seconds() / self.samples), 1
                 ),  # TODO add test for max
             )
-            data = []
-            for bar in bars:
-                data.append((bar.close, bar.timestamp))
-            if not data:
+            ticker_prices = []
+            ticker_prices = [(bar.close, bar.timestamp) for bar in bars]
+            if not ticker_prices:
                 snapshot = self.repository.get_price(ticker)
-                data.append((snapshot.current_price, date_at))
+                ticker_prices.append((snapshot.current_price, date_at))
 
-            self.prices[ticker] = data
+            self.prices[ticker] = ticker_prices
             self.fetched_ranges[ticker] = (date_at - timespan, date_at)
 
     def get_price(self, ticker: str, date_at: datetime):

@@ -1,12 +1,12 @@
-from modules.graph_lang.framework.nodes import Node, NodeFactory
+from modules.graph_lang.framework.nodes import MockNodeFactory, Node
 from modules.graph_lang.framework.nodes.node import NodeInput
 from modules.graph_lang.framework.parser import GraphData
 from modules.graph_lang.models import Graph
 
 
 class GraphBuilder:
-    def __init__(self, node_factory: NodeFactory = None):
-        self.factory = node_factory or NodeFactory()
+    def __init__(self, node_factory: MockNodeFactory | None = None):
+        self.factory = node_factory or MockNodeFactory()
 
     def build(self, validated_data: GraphData) -> Node:
         nodes: dict[str, Node] = {}
@@ -39,8 +39,8 @@ class GraphBuilder:
     def get_from_db(self, graph_id):
         try:
             graph = Graph.objects.get(id=graph_id)
-        except:
-            raise ValueError("Specified graph does not exist")
+        except Exception:
+            raise ValueError("Specified graph does not exist") from None
 
         graph_data = GraphData.model_validate(graph.graph_data)
         return self.build(graph_data)

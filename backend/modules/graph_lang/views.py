@@ -76,7 +76,11 @@ class RunGraphView(APIView):
                 price_provider.set_prices(ticker, prices)
 
         runner = Runner()
-        effects = runner.run(pk, time_at=time_at, price_provider=price_provider)
+        effects = runner.run(
+            pk,
+            time_at=time_at,
+            price_provider=price_provider,  # ty: ignore[invalid-argument-type]
+        )
 
         actions = [{"action": asdict(effect)} for effect in effects]
 
