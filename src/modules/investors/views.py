@@ -171,7 +171,7 @@ class DepositMoneyView(generics.GenericAPIView):
         if amount <= 0 or amount > max_amount_per_deposit:
             return Response(
                 {
-                    "status": "error",
+                    "status": "max_amount_per_deposit_exceeded",
                     "message": (
                         f"Deposit amount must be between "
                         f"0.01 and {max_amount_per_deposit}."
@@ -191,7 +191,7 @@ class DepositMoneyView(generics.GenericAPIView):
         if deposit_last_24h and deposit_last_24h + amount > max_amount_per_24h:
             return Response(
                 {
-                    "status": "error",
+                    "status": "max_amount_per_24h_exceeded",
                     "message": (
                         f"You can deposit max {max_amount_per_24h} in last 24h. "
                         f"Available amount: {max_amount_per_24h - deposit_last_24h}"
