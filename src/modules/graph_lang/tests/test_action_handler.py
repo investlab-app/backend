@@ -21,6 +21,7 @@ from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.models import Asset, Investor
 from modules.investors.tests.conftest import create_fake_investor
 from modules.notifications.services import EmailPayload, PushPayload
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY
 from modules.prices.tests.conftest import get_fake_ohlc
 
 pytestmark = pytest.mark.django_db
@@ -49,7 +50,7 @@ class TestActionHandlerBase:
         for key, value in prices.items():
             ohlc_prices[key] = get_fake_ohlc(ticker=key, close=value)
         redis_client.set(
-            "latest_prices", json.dumps(ohlc_prices, cls=DjangoJSONEncoder)
+            LATEST_PRICES_REDIS_KEY, json.dumps(ohlc_prices, cls=DjangoJSONEncoder)
         )
 
     def set_assets(self, volume):
@@ -58,7 +59,7 @@ class TestActionHandlerBase:
         )
 
     def clear_prices(self):
-        redis_client.delete("latest_prices")
+        redis_client.delete(LATEST_PRICES_REDIS_KEY)
 
     def buy_sell_effect_equals(
         self,

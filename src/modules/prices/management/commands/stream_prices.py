@@ -6,9 +6,9 @@ from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 from polygon.websocket.models import WebSocketMessage
 
-from config.clients import polygon_websocket_client
+from config.clients import polygon_websocket_client, redis_client
 from modules.instruments.models import Instrument
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY, PRICES_CHANNEL_LAYER
 
 logger = logging.getLogger(__name__)
 
@@ -27,6 +27,7 @@ class PriceStream:
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
         data = {d["symbol"] for d in data}
+        redis_client.set(LATEST_PRICES_REDIS_KEY, data)
         await self.channel_layer.group_send(
             PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
         )

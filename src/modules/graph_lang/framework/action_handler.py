@@ -26,6 +26,7 @@ from modules.notifications.services import (
     PushPayload,
 )
 from modules.orders.services.order_services import OrderService
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY
 
 
 class ActionHandler:
@@ -78,7 +79,7 @@ class ActionHandler:
     def _handle_buy_sell_price(
         self, investor: Investor, graph: Graph, action: BuySellForPriceAction
     ):
-        prices = json.loads(redis_client.get("latest_prices"))
+        prices = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY))
         volume = action.price / prices[action.ticker]["close"]
         self._try_create_market_order(
             investor=investor,

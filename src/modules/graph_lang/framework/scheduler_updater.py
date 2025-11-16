@@ -8,6 +8,7 @@ from django.db.models.signals import post_delete, post_save
 from config.clients import redis_client
 from modules.graph_lang.framework.scheduler import Scheduler
 from modules.graph_lang.models import Graph
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY
 from modules.transactions.models import Transaction
 
 
@@ -45,7 +46,7 @@ class SchedulerUpdater:
                 self._post_step_callback()
 
     def _check_prices(self):
-        prices = redis_client.get("latest_prices")
+        prices = redis_client.get(LATEST_PRICES_REDIS_KEY)
         if prices is not None:
             prices = json.loads(prices)
             if self.last_prices != prices:

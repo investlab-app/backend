@@ -13,7 +13,11 @@ polygon_websocket_client = WebSocketClient(
     api_key=settings.POLYGON_SECRET_KEY, feed=Feed.Delayed, market=Market.Stocks
 )
 
-redis_client = redis.Redis(host="redis", port=6379)
+redis_client = redis.Redis(
+    host=settings.REDIS_HOST,
+    port=settings.REDIS_PORT,
+    password=settings.REDIS_PASSWORD,
+)
 openai_client = OpenAI(
     api_key=settings.OPENAI_API_KEY, base_url=settings.OPENAI_API_URL
 )

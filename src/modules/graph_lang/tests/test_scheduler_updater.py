@@ -15,7 +15,7 @@ from modules.graph_lang.tests.conftest import fake_graph
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
 from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.tests.conftest import create_fake_investor
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY
 from modules.prices.tests.conftest import get_fake_ohlc
 from modules.transactions.tests.conftest import create_fake_transaction
 
@@ -127,7 +127,9 @@ class TestSchedulerUpdater:
             "AAPL": get_fake_ohlc(ticker="AAPL", close=Decimal(20)),
             "GOGL": get_fake_ohlc(ticker="GOGL", close=Decimal(30)),
         }
-        redis_client.set("latest_prices", json.dumps(prices, cls=DjangoJSONEncoder))
+        redis_client.set(
+            LATEST_PRICES_REDIS_KEY, json.dumps(prices, cls=DjangoJSONEncoder)
+        )
 
         self.updater.run()
 
@@ -135,7 +137,7 @@ class TestSchedulerUpdater:
             ("prices changed", {"AAPL": 20, "GOGL": 30}),
             "step",
         ]
-        redis_client.delete("latest_prices")
+        redis_client.delete(LATEST_PRICES_REDIS_KEY)
 
 
 def test__graph_exists_before_scheduler__all_graphs_added_on_init():

@@ -6,8 +6,9 @@ import time
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 
+from config.clients import redis_client
 from modules.instruments.models import Instrument
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY, PRICES_CHANNEL_LAYER
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,7 @@ class PriceStreamMock:
         await channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
+            redis_client.set(LATEST_PRICES_REDIS_KEY, data)
             await channel_layer.group_send(
                 PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
             )

@@ -10,3 +10,5 @@ POLYGON_INTERVALS = [
 ]
 
 PRICES_CHANNEL_LAYER = "ticker_price_broadcast"
+
+LATEST_PRICES_REDIS_KEY = "latest_prices"
