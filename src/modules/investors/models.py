@@ -23,6 +23,9 @@ class Investor(BaseModel):
     blocked_funds = models.DecimalField(
         max_digits=30, decimal_places=2, default="0", verbose_name=_("Blocked Funds")
     )
+    last_deposited_at = models.DateTimeField(
+        null=True, blank=True, verbose_name=_("Last Deposit At")
+    )
 
     class Meta:
         verbose_name = _("Investor")
