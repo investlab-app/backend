@@ -192,7 +192,10 @@ class DepositMoneyView(generics.GenericAPIView):
             return Response(
                 {
                     "status": "error",
-                    "message": f"You can deposit max {max_amount_per_24h} in last 24h.",
+                    "message": (
+                        f"You can deposit max {max_amount_per_24h} in last 24h. "
+                        f"Available amount: {max_amount_per_24h - deposit_last_24h}"
+                    )
                 },
                 status=400,
             )
