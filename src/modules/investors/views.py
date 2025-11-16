@@ -20,6 +20,7 @@ from modules.investors.models import (
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
+    DepositHistorySerializer,
     DepositMoneySerializer,
     InvestorSerializer,
     NotificationHistorySerializer,
@@ -211,6 +212,14 @@ class DepositMoneyView(generics.GenericAPIView):
         logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
         return Response({"status": "success", "amount": str(amount)}, status=200)
+
+
+class DepositHistoryView(generics.ListAPIView):
+    serializer_class = DepositHistorySerializer
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.deposits.order_by("-deposited_at")
 
 
 class NotificationHistoryView(generics.ListAPIView):

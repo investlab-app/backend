@@ -3,6 +3,7 @@ from django.urls import path
 from modules.investors.views import (
     AccountValueOverTimeView,
     CurrentInvestorView,
+    DepositHistoryView,
     DepositMoneyView,
     InvestorDetailView,
     NotificationHistoryView,
@@ -35,5 +36,6 @@ urlpatterns = [
         name="watched-ticker",
     ),
     path("deposit/", DepositMoneyView.as_view(), name="deposit"),
+    path("deposit-history/", DepositHistoryView.as_view(), name="deposit-history"),
     path("<str:clerk_id>/", InvestorDetailView.as_view(), name="investor-detail"),
 ]
