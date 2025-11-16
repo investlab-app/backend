@@ -132,3 +132,12 @@ class InstrumentType(EdgeType):
 
     def parse(self, value):
         return value
+
+
+@dataclass
+class StringType(EdgeType):
+    def validate_value(self, value: str):
+        return True
+
+    def parse(self, value):
+        return value
