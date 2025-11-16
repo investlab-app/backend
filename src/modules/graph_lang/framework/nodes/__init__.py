@@ -6,7 +6,12 @@ from modules.graph_lang.framework.nodes.actions import (
 )
 from modules.graph_lang.framework.nodes.data_transformation import ChangeOverTimeNode
 from modules.graph_lang.framework.nodes.flow import FlowIfNode
-from modules.graph_lang.framework.nodes.fundamentals import PriceOfNode, MoneyAvailableNode, NumberOfAssetsNode, ValueOfAssetsNode
+from modules.graph_lang.framework.nodes.fundamentals import (
+    MoneyAvailableNode,
+    NumberOfAssetsNode,
+    PriceOfNode,
+    ValueOfAssetsNode,
+)
 from modules.graph_lang.framework.nodes.logic import AndNode, NotNode, OrNode
 from modules.graph_lang.framework.nodes.math import (
     AddNode,
@@ -53,4 +58,7 @@ __all__ = [
     "ValueStaysTheSameNode",
     "ValueStaysAboveBelowNode",
     "ValueRisenFallenNode",
+    "MoneyAvailableNode",
+    "NumberOfAssetsNode",
+    "ValueOfAssetsNode",
 ]
