@@ -2,7 +2,13 @@ from django.contrib import admin
 from django.utils.translation import gettext_lazy as _
 from unfold.admin import ModelAdmin
 
-from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.models import (
+    AccountValueSnapshot,
+    Asset,
+    DepositHistory,
+    Investor,
+    NotificationHistory,
+)
 
 
 @admin.register(Investor)
@@ -58,4 +64,33 @@ class AccountValueSnapshotAdmin(ModelAdmin):
     fieldsets = (
         (None, {"fields": ("id", "investor", "value", "timestamp")}),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
+    )
+
+
+@admin.register(NotificationHistory)
+class NotificationHistoryAdmin(ModelAdmin):
+    list_display = ["investor", "type", "sent_at"]
+    list_filter = ["type", "investor"]
+    search_fields = ("investor__clerk_id", "type", "message_en", "message_pl")
+    ordering = ("-sent_at",)
+    readonly_fields = ("id", "sent_at", "created_at", "updated_at")
+
+    fieldsets = (
+        (None, {"fields": ("id", "investor", "type")}),
+        (_("Messages"), {"fields": ("message_en", "message_pl")}),
+        (_("Timestamps"), {"fields": ("sent_at", "created_at", "updated_at")}),
+    )
+
+
+@admin.register(DepositHistory)
+class DepositHistoryAdmin(ModelAdmin):
+    list_display = ["investor", "amount", "deposited_at"]
+    list_filter = ["investor"]
+    search_fields = ("investor__clerk_id",)
+    ordering = ("-deposited_at",)
+    readonly_fields = ("id", "deposited_at", "created_at", "updated_at")
+
+    fieldsets = (
+        (None, {"fields": ("id", "investor", "amount")}),
+        (_("Timestamps"), {"fields": ("deposited_at", "created_at", "updated_at")}),
     )
