@@ -53,3 +53,17 @@ class NotNode(Node):
         self.out.set(output)
 
         context.log(self.id, "not", {"in": val, "out": output})
+
+
+# class OccuredXTimesNode(Node):
+#     TYPE_NAME = 'occuredXTimes'
+#     SAMPLES = 25
+
+#     inVal = edges.BoolType(direction=edges.INPUT, source = 'in')
+#     times = edges.NumberType(direction=edges.INPUT)
+
+
+#     out = edges.BoolType(direction=edges.OUTPUT)
+
+#     def _execute(self, context):
+#         return super()._execute(context)

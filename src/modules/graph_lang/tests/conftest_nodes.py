@@ -108,3 +108,37 @@ class MockNodeFactory:
         if name not in self.nodes:
             raise ValueError
         return self.nodes[name]
+
+
+class MockBoolNode(Node):
+    values: dict[datetime, bool]
+
+    out = edges.BoolType(direction=edges.OUTPUT)
+
+    def __init__(self, inputs=None):
+        super().__init__(inputs)
+        self.values = {}
+
+    def _execute(self, context: ExecutionContext):
+        val = self.values[context.time_at]
+        self.out.set(val)
+
+    def set_value(self, value, date_at: datetime):
+        self.values[date_at] = value
+
+
+class MockNumberNode(Node):
+    values: dict[datetime, Decimal]
+
+    out = edges.BoolType(direction=edges.OUTPUT)
+
+    def __init__(self, inputs=None):
+        super().__init__(inputs)
+        self.values = {}
+
+    def _execute(self, context: ExecutionContext):
+        val = self.values[context.time_at]
+        self.out.set(val)
+
+    def set_value(self, value: Decimal, date_at: datetime):
+        self.values[date_at] = value

@@ -23,6 +23,7 @@ class ExecutionContext:
     effects: set
     time_at: datetime
 
+    investor_id: str = ""
     level: int = 0
     logs: list = field(default_factory=list)
 
