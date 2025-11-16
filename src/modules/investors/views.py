@@ -11,7 +11,12 @@ from rest_framework.response import Response
 
 from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
-from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.models import (
+    AccountValueSnapshot,
+    Asset,
+    DepositHistory,
+    Investor,
+)
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
@@ -160,31 +165,45 @@ class DepositMoneyView(generics.GenericAPIView):
             return Response(serializer.errors, status=400)
 
         amount = serializer.validated_data["amount"]
-        if amount <= 0 or amount > 1000:
+        max_amount_per_deposit = 1000
+        max_amount_per_24h = 1000
+
+        if amount <= 0 or amount > max_amount_per_deposit:
             return Response(
                 {
                     "status": "error",
-                    "message": "Deposit amount must be between 0.01 and 1000.",
+                    "message": (
+                        f"Deposit amount must be between "
+                        f"0.01 and {max_amount_per_deposit}."
+                    ),
                 },
                 status=400,
             )
 
         user_clerk_id = request.user.id
         investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
-        if investor.last_deposited_at:
-            time_since_last_deposit = get_local_datetime() - investor.last_deposited_at
-            if time_since_last_deposit.total_seconds() < 24 * 3600:
-                return Response(
-                    {
-                        "status": "error",
-                        "message": "You can only deposit once every 24 hours.",
-                    },
-                    status=400,
-                )
+        deposit_last_24h = (
+            DepositHistory.objects.filter(investor=investor)
+            .deposited_last_24h()
+            .sum_amount()
+        )
+
+        if deposit_last_24h and deposit_last_24h + amount > max_amount_per_24h:
+            return Response(
+                {
+                    "status": "error",
+                    "message": f"You can deposit max {max_amount_per_24h} in last 24h.",
+                },
+                status=400,
+            )
 
         investor.balance += amount
         investor.last_deposited_at = get_local_datetime()
-        investor.save()
+        deposit_history = DepositHistory(investor=investor, amount=amount)
+
+        with transaction.atomic():
+            investor.save()
+            deposit_history.save()
 
         logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
