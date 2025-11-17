@@ -17,6 +17,7 @@ logger = logging.getLogger(__name__)
 class PriceStream:
     def __init__(self):
         self.channel_layer = get_channel_layer()
+        self.latest_price_service = LatestPriceService()
 
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
@@ -27,8 +28,8 @@ class PriceStream:
 
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
-        data = {d["symbol"] for d in data}
-        LatestPriceService.update_prices(data)
+        data = {d["symbol"]: d for d in data}
+        self.latest_price_service.update_prices(data)
         await self.channel_layer.group_send(
             PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
         )

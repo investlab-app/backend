@@ -17,10 +17,10 @@ class PriceStreamMock:
     async def start(self, tickers: list[str]):
         channel_layer = get_channel_layer()
         await channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
+        service = LatestPriceService()
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
-            LatestPriceService.update_prices(data)
-            print(data)
+            service.update_prices(data)
             await channel_layer.group_send(
                 PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
             )

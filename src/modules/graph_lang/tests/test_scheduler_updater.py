@@ -2,14 +2,13 @@ import asyncio
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import faker
 import pytest
 from channels.layers import get_channel_layer
 from django.core.serializers.json import DjangoJSONEncoder
 
-from config.clients import redis_client
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
 from modules.graph_lang.tests.conftest import fake_graph
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
@@ -27,7 +26,9 @@ class TestSchedulerUpdater:
     @pytest.fixture(autouse=True)
     def setup(self, datetime_mock, sleep_mock):
         self.scheduler = MockScheduler()
-        self.updater = SchedulerUpdater(self.scheduler)
+        self.latest_price_service = MagicMock()
+        self.latest_price_service.get_prices.return_value = {}
+        self.updater = SchedulerUpdater(self.scheduler, self.latest_price_service)
         self.datetime = datetime_mock
         self.sleep = sleep_mock
 
@@ -127,7 +128,7 @@ class TestSchedulerUpdater:
             "AAPL": get_fake_ohlc(ticker="AAPL", close=Decimal(20)),
             "GOGL": get_fake_ohlc(ticker="GOGL", close=Decimal(30)),
         }
-        redis_client.set("latest_prices", json.dumps(prices, cls=DjangoJSONEncoder))
+        self.latest_price_service.get_prices.return_value = prices
 
         self.updater.run()
 
@@ -135,7 +136,6 @@ class TestSchedulerUpdater:
             ("prices changed", {"AAPL": 20, "GOGL": 30}),
             "step",
         ]
-        redis_client.delete("latest_prices")
 
 
 def test__graph_exists_before_scheduler__all_graphs_added_on_init():

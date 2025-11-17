@@ -1,14 +1,10 @@
-import json
 from decimal import Decimal
-from unittest.mock import MagicMock, call, patch
+from unittest.mock import MagicMock
 
 import pytest
-from django.core.serializers.json import DjangoJSONEncoder
 
-from config.clients import redis_client
 from modules.graph_lang.framework.action_handler import ActionHandler
 from modules.graph_lang.framework.actions import (
-    Action,
     BuySellAmountAction,
     BuySellForPriceAction,
     BuySellPercentAction,
@@ -34,9 +30,11 @@ class TestActionHandlerBase:
         self.instrument = create_fake_instrument(ticker="AAPL", save=True)
         self.order_service = MagicMock()
         self.notification_service = MagicMock()
+        self.latest_price_service = MagicMock()
         self.handler = ActionHandler(
             order_service=self.order_service,
             notification_service=self.notification_service,
+            latest_price_service=self.latest_price_service,
         )
 
     def handle_default(self, action_set):
@@ -48,17 +46,12 @@ class TestActionHandlerBase:
         ohlc_prices = {}
         for key, value in prices.items():
             ohlc_prices[key] = get_fake_ohlc(ticker=key, close=value)
-        redis_client.set(
-            "latest_prices", json.dumps(ohlc_prices, cls=DjangoJSONEncoder)
-        )
+        self.latest_price_service.get_prices.return_value = ohlc_prices
 
     def set_assets(self, volume):
         Asset.objects.create(
             investor=self.investor, ticker=self.instrument, volume=volume
         )
-
-    def clear_prices(self):
-        redis_client.delete("latest_prices")
 
     def buy_sell_effect_equals(
         self,
@@ -245,14 +238,12 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=2, is_buy=True
         )
-        self.clear_prices()
 
     def test__buy_sell_price__success_effect_is_created(self):
         self.set_prices({"AAPL": 50})
         self.handle_default({self.buy_price("AAPL", 100)})
 
         assert GraphEffect.objects.all()[0].success
-        self.clear_prices()
 
     def test__buy_sell_price__multiple_effects__all_handled(self):
         self.set_prices({"AAPL": 50})
@@ -261,7 +252,6 @@ class TestBuySellPrice(TestActionHandlerBase):
 
         assert self.order_service.create_market.call_count == 2
         assert len(GraphEffect.objects.all()) == 2
-        self.clear_prices()
 
     def test__buy_sell_price_fail__failed_effect_is_created(self):
         self.order_service.create_market.return_value = None
@@ -270,7 +260,6 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.handle_default({self.buy_price("AAPL", 100)})
 
         assert not GraphEffect.objects.all()[0].success
-        self.clear_prices()
 
 
 class TestNotificationEffect(TestActionHandlerBase):
@@ -338,7 +327,4 @@ class TestNotificationEffect(TestActionHandlerBase):
         assert effects[1].success is False
 
 
-# TODO make 'latest_prices' from redis client constant
-# TODO make fixture for redis_client prices
 # TODO check ticker case sensitivity
-# TODO extract set_prices into prices conftest

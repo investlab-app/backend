@@ -1,14 +1,12 @@
 import asyncio
 import json
 import logging
-from typing import Any
 from decimal import Decimal
-import simplejson
+from typing import Any
 
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
-from django.core.serializers.json import DjangoJSONEncoder
 
 from config.clients import redis_client
 from modules.investors.services import NotificationHistoryService
@@ -292,19 +290,44 @@ class PriceNotificationService:
 
 
 class LatestPriceService:
-    @staticmethod
-    def update_prices(prices :dict[str, Any]):
-        current_prices = LatestPriceService.get_prices()
+    decimal_fields = [
+        "volume",
+        "accumulated_volume",
+        "official_open_price",
+        "vwap",
+        "open",
+        "close",
+        "high",
+        "low",
+        "aggregate_vwap",
+        "average_size",
+    ]
+
+    def update_prices(self, prices: dict[str, Any]):
+        current_prices = self.get_prices()
         current_prices.update(prices)
+        self._serialize_decimals(current_prices)
 
-        data = simplejson.dumps(current_prices)
-        data = json.dumps(current_prices, cls = DjangoJSONEncoder)
-        redis_client.set('latest_prices', data)
+        data = json.dumps(current_prices)
+        redis_client.set("latest_prices", data)
 
-    @staticmethod
-    def get_prices() -> dict[str, Any]:
-        data = redis_client.get('latest_prices')
+    def _serialize_decimals(self, prices: dict):
+        for ticker_prices in prices.values():
+            for key, value in ticker_prices.items():
+                if key in self.decimal_fields:
+                    ticker_prices[key] = str(value)
+
+    def get_prices(self) -> dict[str, Any]:
+        data = redis_client.get("latest_prices")
         if data is None:
             return {}
 
-        return json.loads(data, parse_int=Decimal, parse_float=Decimal)
+        prices = json.loads(data)
+        self._deserialize_decimals(prices)
+        return prices
+
+    def _deserialize_decimals(self, prices):
+        for ticker_prices in prices.values():
+            for key, value in ticker_prices.items():
+                if key in self.decimal_fields and value != "None":
+                    ticker_prices[key] = Decimal(value)

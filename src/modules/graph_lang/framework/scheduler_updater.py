@@ -1,21 +1,23 @@
 import decimal
-import json
 from datetime import datetime
 from time import sleep
 
 from django.db.models.signals import post_delete, post_save
 
-from config.clients import redis_client
 from modules.graph_lang.framework.scheduler import Scheduler
 from modules.graph_lang.models import Graph
+from modules.prices.services import LatestPriceService
 from modules.transactions.models import Transaction
 
 
 class SchedulerUpdater:
     stop = False
 
-    def __init__(self, scheduler):
+    def __init__(
+        self, scheduler, latest_price_service: LatestPriceService | None = None
+    ):
         self.scheduler = scheduler or Scheduler()
+        self._latest_price_service = latest_price_service or LatestPriceService()
         self._pre_step_callback = None
         self._post_step_callback = None
         self.get_all_graphs()
@@ -45,13 +47,11 @@ class SchedulerUpdater:
                 self._post_step_callback()
 
     def _check_prices(self):
-        prices = redis_client.get("latest_prices")
-        if prices is not None:
-            prices = json.loads(prices)
-            if self.last_prices != prices:
-                self.last_prices = prices
-                prices = {p: decimal.Decimal(prices[p]["close"]) for p in prices}
-                self.scheduler.price_changed(prices)
+        prices = self._latest_price_service.get_prices()
+        if self.last_prices != prices:
+            self.last_prices = prices
+            prices = {p: decimal.Decimal(prices[p]["close"]) for p in prices}
+            self.scheduler.price_changed(prices)
 
     def handle_graph_save(self, sender, instance, created, **kwargs):
         if created:
