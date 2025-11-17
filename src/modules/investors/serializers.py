@@ -7,6 +7,7 @@ from modules.instruments.models import Instrument
 from modules.investors.models import (
     AccountValueSnapshot,
     Asset,
+    DepositHistory,
     Investor,
     NotificationHistory,
 )
@@ -78,6 +79,13 @@ class DepositMoneySerializer(serializers.Serializer):
     amount = serializers.DecimalField(
         max_digits=12, decimal_places=2, min_value=Decimal("0.01")
     )
+
+
+class DepositHistorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = DepositHistory
+        fields = ["id", "amount", "deposited_at"]
+        read_only_fields = fields
 
 
 class NotificationHistorySerializer(serializers.ModelSerializer):

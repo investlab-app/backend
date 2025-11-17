@@ -9,11 +9,18 @@ from rest_framework import generics, status
 from rest_framework.request import Request
 from rest_framework.response import Response
 
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
-from modules.investors.models import AccountValueSnapshot, Asset, Investor
+from modules.investors.models import (
+    AccountValueSnapshot,
+    Asset,
+    DepositHistory,
+    Investor,
+)
 from modules.investors.serializers import (
     AccountValueSnapshotDailySerializer,
     AssetSerializer,
+    DepositHistorySerializer,
     DepositMoneySerializer,
     InvestorSerializer,
     NotificationHistorySerializer,
@@ -159,15 +166,60 @@ class DepositMoneyView(generics.GenericAPIView):
             return Response(serializer.errors, status=400)
 
         amount = serializer.validated_data["amount"]
+        max_amount_per_deposit = 1000
+        max_amount_per_24h = 1000
+
+        if amount <= 0 or amount > max_amount_per_deposit:
+            return Response(
+                {
+                    "status": "max_amount_per_deposit_exceeded",
+                    "message": (
+                        f"Deposit amount must be between "
+                        f"0.01 and {max_amount_per_deposit}."
+                    ),
+                },
+                status=400,
+            )
 
         user_clerk_id = request.user.id
         investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
+        deposit_last_24h = (
+            DepositHistory.objects.filter(investor=investor)
+            .deposited_last_24h()
+            .sum_amount()
+        )
+
+        if deposit_last_24h and deposit_last_24h + amount > max_amount_per_24h:
+            return Response(
+                {
+                    "status": "max_amount_per_24h_exceeded",
+                    "message": (
+                        f"You can deposit max {max_amount_per_24h} in last 24h. "
+                        f"Available amount: {max_amount_per_24h - deposit_last_24h}"
+                    ),
+                },
+                status=400,
+            )
+
         investor.balance += amount
-        investor.save()
+        investor.last_deposited_at = get_local_datetime()
+        deposit_history = DepositHistory(investor=investor, amount=amount)
+
+        with transaction.atomic():
+            investor.save()
+            deposit_history.save()
 
         logger.info("Deposited %s to investor with clerk_id %s", amount, user_clerk_id)
 
         return Response({"status": "success", "amount": str(amount)}, status=200)
+
+
+class DepositHistoryView(generics.ListAPIView):
+    serializer_class = DepositHistorySerializer
+
+    def get_queryset(self):
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        return investor.deposits.order_by("-deposited_at")
 
 
 class NotificationHistoryView(generics.ListAPIView):
