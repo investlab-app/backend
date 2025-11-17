@@ -1,3 +1,4 @@
+from datetime import timedelta
 from decimal import Decimal
 
 import pytest
@@ -6,7 +7,9 @@ from faker import Faker
 from modules.graph_lang.framework.nodes import (
     MoneyAvailableNode,
     NumberOfAssetsNode,
+    PriceChangeOfNode,
     PriceOfNode,
+    RollingAverageNode,
     ValueOfAssetsNode,
 )
 from modules.graph_lang.framework.nodes.node import ExecutionContext
@@ -107,3 +110,37 @@ def test_number_of_assets_node__no_assets__returns_0():
     context = ExecutionContext(price_provider, set(), dt, investor_id=investor.id)
 
     assert node.out.get(context) == 0
+
+
+def test_rolling_average_node():
+    dt = fake.date_time()
+    price_provider = PriceProviderMock()
+
+    node = RollingAverageNode()
+    node.SAMPLES = 4
+    node.ticker.set("AAPL")
+    node.timespan.set(timedelta(hours=3))
+
+    price_provider.set("AAPL", dt - timedelta(hours=3), Decimal(10))
+    price_provider.set("AAPL", dt - timedelta(hours=2), Decimal(20))
+    price_provider.set("AAPL", dt - timedelta(hours=1), Decimal(30))
+    price_provider.set("AAPL", dt - timedelta(hours=0), Decimal(40))
+
+    context = ExecutionContext(price_provider, set(), dt)
+    assert node.out.get(context) == Decimal(25)
+
+
+def test_price_change_of_node():
+    dt = fake.date_time()
+
+    node = PriceChangeOfNode()
+    node.ticker.set("AAPL")
+    node.timespan.set(timedelta(hours=1))
+
+    price_provider = PriceProviderMock()
+    price_provider.set("AAPL", dt - timedelta(hours=1), Decimal(5))
+    price_provider.set("AAPL", dt - timedelta(hours=0), Decimal(10))
+
+    context = ExecutionContext(price_provider, set(), dt)
+
+    assert node.out.get(context) == Decimal(5)

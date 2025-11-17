@@ -87,3 +87,67 @@ class ValueOfAssetsNode(Node):
 
     def _get_needed_prices(self):
         return {self.ticker(None): timedelta()}
+
+
+class RollingAverageNode(Node):
+    TYPE_NAME = "indicator"
+    SAMPLES = 100
+
+    ticker = edges.InstrumentType(direction=edges.INPUT)
+    timespan = edges.TimespanType(direction=edges.INPUT)
+    indicator = edges.EnumType(direction=edges.INPUT, allowed_values=["rolling_avg"])
+
+    out = edges.NumberType(direction=edges.OUTPUT)
+
+    def _execute(self, context):
+        ticker = self._get(self.ticker)
+        timespan = self._get(self.timespan)
+        time_at = context.time_at
+        time_step = timespan / (self.SAMPLES - 1)
+
+        total_price = 0
+        for i in range(self.SAMPLES):
+            time = time_at - time_step * i
+            price = context.price_provider.get_price(ticker, time)
+            total_price += price
+
+        output = total_price / self.SAMPLES
+
+        self.out.set(output)
+        context.log(
+            self.id,
+            "Rolling average",
+            {"ticker": ticker, "timespan": timespan, "output": output},
+        )
+
+    def _get_needed_prices(self):
+        return {self.ticker(None): self.timespan(None)}
+
+
+class PriceChangeOfNode(Node):
+    TYPE_NAME = "priceChange"
+
+    ticker = edges.InstrumentType(direction=edges.INPUT)
+    timespan = edges.TimespanType(direction=edges.INPUT)
+
+    out = edges.NumberType(direction=edges.OUTPUT)
+
+    def _execute(self, context):
+        ticker = self._get(self.ticker)
+        timespan = self._get(self.timespan)
+        time_at = context.time_at
+
+        initial_price = context.price_provider.get_price(ticker, time_at - timespan)
+        last_price = context.price_provider.get_price(ticker, time_at)
+
+        output = last_price - initial_price
+
+        self.out.set(output)
+        context.log(
+            self.id,
+            "Price change",
+            {"ticker": ticker, "timespan": timespan, "output": output},
+        )
+
+    def _get_needed_prices(self):
+        return {self.ticker(None): self.timespan(None)}
