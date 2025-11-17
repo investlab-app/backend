@@ -8,6 +8,7 @@ from django.core.management.base import BaseCommand
 
 from modules.instruments.models import Instrument
 from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.services import LatestPriceService
 
 logger = logging.getLogger(__name__)
 
@@ -18,6 +19,8 @@ class PriceStreamMock:
         await channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
         while True:
             data = {t: self.get_random_ohlc(t) for t in tickers}
+            LatestPriceService.update_prices(data)
+            print(data)
             await channel_layer.group_send(
                 PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
             )

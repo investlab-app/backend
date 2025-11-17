@@ -1,11 +1,16 @@
 import asyncio
+import json
 import logging
 from typing import Any
+from decimal import Decimal
+import simplejson
 
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
+from django.core.serializers.json import DjangoJSONEncoder
 
+from config.clients import redis_client
 from modules.investors.services import NotificationHistoryService
 from modules.notifications.services import (
     EmailPayload,
@@ -284,3 +289,22 @@ class PriceNotificationService:
         finally:
             await layer.group_discard(PRICES_CHANNEL_LAYER, channel_name)
             logger.info("notify_prices worker left group %s", PRICES_CHANNEL_LAYER)
+
+
+class LatestPriceService:
+    @staticmethod
+    def update_prices(prices :dict[str, Any]):
+        current_prices = LatestPriceService.get_prices()
+        current_prices.update(prices)
+
+        data = simplejson.dumps(current_prices)
+        data = json.dumps(current_prices, cls = DjangoJSONEncoder)
+        redis_client.set('latest_prices', data)
+
+    @staticmethod
+    def get_prices() -> dict[str, Any]:
+        data = redis_client.get('latest_prices')
+        if data is None:
+            return {}
+
+        return json.loads(data, parse_int=Decimal, parse_float=Decimal)
