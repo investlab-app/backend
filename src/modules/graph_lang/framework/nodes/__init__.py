@@ -11,6 +11,8 @@ from modules.graph_lang.framework.nodes.fundamentals import (
     NumberOfAssetsNode,
     PriceOfNode,
     ValueOfAssetsNode,
+    RollingAverageNode,
+    PriceChangeOfNode
 )
 from modules.graph_lang.framework.nodes.logic import AndNode, NotNode, OrNode
 from modules.graph_lang.framework.nodes.math import (
@@ -61,4 +63,6 @@ __all__ = [
     "MoneyAvailableNode",
     "NumberOfAssetsNode",
     "ValueOfAssetsNode",
+    "RollingAverageNode",
+    "PriceChangeOfNode"
 ]
