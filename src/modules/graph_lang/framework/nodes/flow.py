@@ -17,9 +17,11 @@ class FlowIfNode(Node):
         in_if = self._get(self.inIf)
 
         if in_if:
-            self._get(self.inThen)
+            if self.inThen.is_set():
+                self._get(self.inThen)
         else:
-            self._get(self.inElse)
+            if self.inElse.is_set():
+                self._get(self.inElse)
         self.out.set(None)
 
         context.log(

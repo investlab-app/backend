@@ -121,6 +121,9 @@ class NodeInput:
     def connect(self, output: NodeOutput):
         self.output = output
 
+    def is_set(self):
+        return self.validated_value is not None or self.output is not None
+
     def get_raw_value(self):
         return self.raw_value
 
