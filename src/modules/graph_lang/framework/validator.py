@@ -94,13 +94,11 @@ class Validator:
         edge_data = graph.edges
 
         for node in node_data:
-            connected_edge_names = []
-
             names = {e.source_name for e in node.type.get_incoming_edges()}
 
-            for field_name in node.fields:
-                if field_name in names:
-                    connected_edge_names.append(field_name)
+            connected_edge_names = [
+                field_name for field_name in node.fields if field_name in names
+            ]
 
             for edge in edge_data:
                 if edge.id_a == node.id and edge.handle_a in names:
@@ -108,8 +106,9 @@ class Validator:
                 if edge.id_b == node.id and edge.handle_b in names:
                     connected_edge_names.append(edge.handle_b)
 
-            edges = [node.type.get_edge_by_source_name(name) for name in connected_edge_names]
-
+            edges = [
+                node.type.get_edge_by_source_name(name) for name in connected_edge_names
+            ]
 
             if not node.type.validate_all_needed_edges(edges):
                 self.errors.append(NodeIncorrectlyConnected(node.id))

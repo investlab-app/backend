@@ -105,4 +105,5 @@ class NumericIfNode(Node):
             return cls.inThen in edges or cls.inElse in edges
         return False
 
+
 # TODO add exception handling

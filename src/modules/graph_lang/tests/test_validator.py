@@ -9,10 +9,10 @@ from modules.graph_lang.tests.conftest_nodes import (
     NumberInputNode,
     NumberInputOutputNode,
     NumberOutputNode,
+    SingleInputNeededNode,
     TriggerNode,
     TwoBoolInputNode,
     TypeMismatchNode,
-    SingleInputNeededNode
 )
 
 
@@ -116,26 +116,30 @@ class TestValidator:
 
         assert NodeIncorrectlyConnected("0") in errors
 
-    @pytest.mark.parametrize('include_a,include_b,expect_error', [
-        (True, True, False),
-        (False, True, False),
-        (True, False, False),
-        (False, False, True),
-    ])
-    def test__single_input_connected__passes_incorrectly_connected_check(self, include_a, include_b, expect_error):
+    @pytest.mark.parametrize(
+        "include_a,include_b,expect_error",
+        [
+            (True, True, False),
+            (False, True, False),
+            (True, False, False),
+            (False, False, True),
+        ],
+    )
+    def test__single_input_connected__passes_incorrectly_connected_check(
+        self, include_a, include_b, expect_error
+    ):
         fields = {}
         if include_a:
-            fields['in_a'] = ''
+            fields["in_a"] = ""
         if include_b:
-            fields['in_b'] = ''
+            fields["in_b"] = ""
         data = GraphData(
-            nodes = [NodeData(id='0', type='SingleInputNeededNode', fields=fields)]
+            nodes=[NodeData(id="0", type="SingleInputNeededNode", fields=fields)]
         )
         errors = self.run(data)
 
-        validation_error = NodeIncorrectlyConnected('0') in errors
+        validation_error = NodeIncorrectlyConnected("0") in errors
         assert validation_error == expect_error
-
 
     def test__edge_invalid_handle(self):
         data = GraphData(

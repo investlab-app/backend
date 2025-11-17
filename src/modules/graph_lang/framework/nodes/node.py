@@ -296,15 +296,12 @@ class Node(NodeUtilsMixin):
 
     # Can be overriden
     @classmethod
-    def validate_all_needed_edges(cls, edges :list[edges.EdgeType]):
+    def validate_all_needed_edges(cls, edges: list[edges.EdgeType]):
         incoming_edges = cls.get_incoming_edges()
         if len(incoming_edges) != len(edges):
             return False
 
-        for edge in edges:
-            if not edge in incoming_edges:
-                return False
-        return True
+        return all(edge in incoming_edges for edge in edges)
 
 
 class MockNodeFactory:
