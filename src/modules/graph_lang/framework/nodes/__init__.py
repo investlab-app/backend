@@ -9,10 +9,10 @@ from modules.graph_lang.framework.nodes.flow import FlowIfNode
 from modules.graph_lang.framework.nodes.fundamentals import (
     MoneyAvailableNode,
     NumberOfAssetsNode,
+    PriceChangeOfNode,
     PriceOfNode,
-    ValueOfAssetsNode,
     RollingAverageNode,
-    PriceChangeOfNode
+    ValueOfAssetsNode,
 )
 from modules.graph_lang.framework.nodes.logic import AndNode, NotNode, OrNode
 from modules.graph_lang.framework.nodes.math import (
@@ -64,5 +64,5 @@ __all__ = [
     "NumberOfAssetsNode",
     "ValueOfAssetsNode",
     "RollingAverageNode",
-    "PriceChangeOfNode"
+    "PriceChangeOfNode",
 ]

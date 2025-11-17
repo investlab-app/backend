@@ -45,7 +45,7 @@ class Parser:
                 unit = data.pop("unit")
                 period = data.pop("interval")
                 data["timespan"] = f"{period} {unit}"
-            if 'unit2' in data and 'interval2' in data:
+            if "unit2" in data and "interval2" in data:
                 unit2 = data.pop("unit2")
                 period2 = data.pop("interval2")
                 data["timespan2"] = f"{period2} {unit2}"

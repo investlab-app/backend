@@ -88,13 +88,14 @@ class ValueOfAssetsNode(Node):
     def _get_needed_prices(self):
         return {self.ticker(None): timedelta()}
 
+
 class RollingAverageNode(Node):
-    TYPE_NAME = 'indicator'
+    TYPE_NAME = "indicator"
     SAMPLES = 100
 
     ticker = edges.InstrumentType(direction=edges.INPUT)
     timespan = edges.TimespanType(direction=edges.INPUT)
-    indicator = edges.EnumType(direction=edges.INPUT, allowed_values=['rolling_avg'])
+    indicator = edges.EnumType(direction=edges.INPUT, allowed_values=["rolling_avg"])
 
     out = edges.NumberType(direction=edges.OUTPUT)
 
@@ -115,19 +116,16 @@ class RollingAverageNode(Node):
         self.out.set(output)
         context.log(
             self.id,
-            'Rolling average',
-            {
-                'ticker': ticker,
-                'timespan': timespan,
-                'output': output
-            }
+            "Rolling average",
+            {"ticker": ticker, "timespan": timespan, "output": output},
         )
 
     def _get_needed_prices(self):
         return {self.ticker(None): self.timespan(None)}
 
+
 class PriceChangeOfNode(Node):
-    TYPE_NAME = 'priceChange'
+    TYPE_NAME = "priceChange"
 
     ticker = edges.InstrumentType(direction=edges.INPUT)
     timespan = edges.TimespanType(direction=edges.INPUT)
@@ -147,12 +145,8 @@ class PriceChangeOfNode(Node):
         self.out.set(output)
         context.log(
             self.id,
-            'Price change',
-            {
-                'ticker': ticker,
-                'timespan': timespan,
-                'output': output
-            }
+            "Price change",
+            {"ticker": ticker, "timespan": timespan, "output": output},
         )
 
     def _get_needed_prices(self):
