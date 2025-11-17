@@ -92,4 +92,4 @@ class InstrumentNameSerializer(serializers.ModelSerializer):
 
 
 class AllTickersSerializer(serializers.Serializer):
-        tickers = serializers.ListField(child=serializers.CharField())
+    tickers = serializers.ListField(child=serializers.CharField())

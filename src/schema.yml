@@ -311,7 +311,7 @@ paths:
   /api/instruments/tickers/:
     get:
       operationId: instruments_tickers_retrieve
-      description: Retrieve all instrument tickers as an object with a list of strings.
+      description: Retrieve all tickers as an object with a list of strings.
       tags:
       - instruments
       security:

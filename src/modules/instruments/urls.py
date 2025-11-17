@@ -1,10 +1,10 @@
 from django.urls import path
 
 from modules.instruments.views import (
+    AllInstrumentsTickers,
     InstrumentsListView,
     InstrumentsRetrieveView,
     InstrumentsWithPricesListView,
-    AllInstrumentsTickers
 )
 
 urlpatterns = [
