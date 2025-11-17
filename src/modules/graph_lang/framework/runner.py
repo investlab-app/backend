@@ -52,10 +52,12 @@ class Runner:
             logger.exception("Graph executed with errors")
             context.dump_logs()
             return {}
-        finally:
-            graph = Graph.objects.get(id=graph_id)
-            self._action_handler.handle(
-                investor_id=graph.investor.id, graph_id=graph_id, action_set=context.effects
-            )
 
-            return effect_set
+        graph = Graph.objects.get(id=graph_id)
+        self._action_handler.handle(
+            investor_id=graph.investor.id,
+            graph_id=graph_id,
+            action_set=context.effects,
+        )
+
+        return effect_set
