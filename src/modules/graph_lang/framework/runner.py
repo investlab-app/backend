@@ -46,11 +46,16 @@ class Runner:
             price_provider=price_provider, effects=effect_set, time_at=time_at
         )
 
-        root_node.execute(context)
-        graph = Graph.objects.get(id=graph_id)
-        context.dump_logs()
-        self._action_handler.handle(
-            investor_id=graph.investor.id, graph_id=graph_id, action_set=context.effects
-        )
+        try:
+            root_node.execute(context)
+        except Exception:
+            logger.exception("Graph executed with errors")
+            context.dump_logs()
+            return {}
+        finally:
+            graph = Graph.objects.get(id=graph_id)
+            self._action_handler.handle(
+                investor_id=graph.investor.id, graph_id=graph_id, action_set=context.effects
+            )
 
-        return effect_set
+            return effect_set
