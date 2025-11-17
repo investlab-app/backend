@@ -1,7 +1,5 @@
 import pytest
 
-from modules.graph_lang.framework import edges
-from modules.graph_lang.framework.nodes import Node
 from modules.graph_lang.framework.validator import *
 from modules.graph_lang.framework.validator import EdgeData, GraphData, NodeData
 from modules.graph_lang.tests.conftest_nodes import (
@@ -14,6 +12,7 @@ from modules.graph_lang.tests.conftest_nodes import (
     TriggerNode,
     TwoBoolInputNode,
     TypeMismatchNode,
+    SingleInputNeededNode
 )
 
 
@@ -44,6 +43,7 @@ class TestValidator:
         factory.set_type("TriggerNode", TriggerNode)
         factory.set_type("TwoBoolInputNode", TwoBoolInputNode)
         factory.set_type("TypeMismatchNode", TypeMismatchNode)
+        factory.set_type("SingleInputNeededNode", SingleInputNeededNode)
         self.validator = Validator(factory)  # ty: ignore[invalid-argument-type]
 
     def run(self, data):
@@ -114,7 +114,28 @@ class TestValidator:
         )
         errors = self.run(data)
 
-        assert NodeNotAllInputsConnected("0", ["in_b"]) in errors
+        assert NodeIncorrectlyConnected("0") in errors
+
+    @pytest.mark.parametrize('include_a,include_b,expect_error', [
+        (True, True, False),
+        (False, True, False),
+        (True, False, False),
+        (False, False, True),
+    ])
+    def test__single_input_connected__passes_incorrectly_connected_check(self, include_a, include_b, expect_error):
+        fields = {}
+        if include_a:
+            fields['in_a'] = ''
+        if include_b:
+            fields['in_b'] = ''
+        data = GraphData(
+            nodes = [NodeData(id='0', type='SingleInputNeededNode', fields=fields)]
+        )
+        errors = self.run(data)
+
+        validation_error = NodeIncorrectlyConnected('0') in errors
+        assert validation_error == expect_error
+
 
     def test__edge_invalid_handle(self):
         data = GraphData(

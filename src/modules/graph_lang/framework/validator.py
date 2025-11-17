@@ -90,23 +90,29 @@ class Validator:
                     )
 
     def _validate_node_all_inputs_connected(self, graph: GraphData):
-        nodes = graph.nodes
-        edges = graph.edges
+        node_data = graph.nodes
+        edge_data = graph.edges
 
-        for node in nodes:
+        for node in node_data:
+            connected_edge_names = []
+
             names = {e.source_name for e in node.type.get_incoming_edges()}
 
-            for field_ in node.fields:
-                names.discard(field_)
+            for field_name in node.fields:
+                if field_name in names:
+                    connected_edge_names.append(field_name)
 
-            for edge in edges:
+            for edge in edge_data:
                 if edge.id_a == node.id and edge.handle_a in names:
-                    names.remove(edge.handle_a)
+                    connected_edge_names.append(edge.handle_a)
                 if edge.id_b == node.id and edge.handle_b in names:
-                    names.remove(edge.handle_b)
+                    connected_edge_names.append(edge.handle_b)
 
-            if names:
-                self.errors.append(NodeNotAllInputsConnected(node.id, list(names)))
+            edges = [node.type.get_edge_by_source_name(name) for name in connected_edge_names]
+
+
+            if not node.type.validate_all_needed_edges(edges):
+                self.errors.append(NodeIncorrectlyConnected(node.id))
 
     def _validate_edge_handle_names(self, graph: GraphData):
         edges = graph.edges
@@ -290,9 +296,8 @@ class InvalidNodeFieldValue(GraphValidationError):
 
 
 @dataclass
-class NodeNotAllInputsConnected(GraphValidationError):
+class NodeIncorrectlyConnected(GraphValidationError):
     id: str
-    inputs: list[str]
     msg: str = field(
         default="Node needs to have all of its inputs connected", init=False
     )

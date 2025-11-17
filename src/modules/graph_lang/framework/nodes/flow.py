@@ -30,3 +30,9 @@ class FlowIfNode(Node):
                 "then" if in_if else "else": None,
             },
         )
+
+    @classmethod
+    def validate_all_needed_edges(cls, edges):
+        if cls.inIf in edges:
+            return cls.inThen in edges or cls.inElse in edges
+        return False

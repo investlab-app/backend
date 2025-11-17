@@ -99,5 +99,10 @@ class NumericIfNode(Node):
             {"if": in_if, "then" if in_if else "else": output, "output": output},
         )
 
+    @classmethod
+    def validate_all_needed_edges(cls, edges):
+        if cls.inIf in edges:
+            return cls.inThen in edges or cls.inElse in edges
+        return False
 
 # TODO add exception handling

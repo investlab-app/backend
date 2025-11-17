@@ -156,7 +156,10 @@ class Scheduler:
         if graph.repeat is False:
             self._deactivate_graph(graph)
 
-        self.runner.run(graph.id)
+        try:
+            self.runner.run(graph.id)
+        finally:
+            pass
         self.last_run_time[graph.id] = datetime.now()
 
     def _deactivate_graph(self, graph: SchedulerGraph):
