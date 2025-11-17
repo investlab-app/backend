@@ -308,6 +308,22 @@ paths:
               schema:
                 $ref: '#/components/schemas/InstrumentRetrieve'
           description: ''
+  /api/instruments/tickers/:
+    get:
+      operationId: instruments_tickers_retrieve
+      description: Retrieve all tickers as an object with a list of strings.
+      tags:
+      - instruments
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AllTickers'
+          description: ''
   /api/instruments/with-prices/:
     get:
       operationId: instruments_with_prices_list
@@ -1324,6 +1340,15 @@ components:
       required:
       - date
       - value
+    AllTickers:
+      type: object
+      properties:
+        tickers:
+          type: array
+          items:
+            type: string
+      required:
+      - tickers
     AssetAllocation:
       type: object
       properties:

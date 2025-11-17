@@ -1,6 +1,7 @@
 from django.urls import path
 
 from modules.instruments.views import (
+    AllInstrumentsTickers,
     InstrumentsListView,
     InstrumentsRetrieveView,
     InstrumentsWithPricesListView,
@@ -8,6 +9,7 @@ from modules.instruments.views import (
 
 urlpatterns = [
     path("", InstrumentsListView.as_view(), name="instruments-list"),
+    path("tickers/", AllInstrumentsTickers.as_view(), name="instruments-tickers"),
     path("detail/", InstrumentsRetrieveView.as_view(), name="instrument-detail"),
     path(
         "with-prices/",
