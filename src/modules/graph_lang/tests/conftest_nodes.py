@@ -46,6 +46,15 @@ class PriceProviderMock(Node):
         self._prices[(ticker, time_at)] = price
 
 
+class SingleInputNeededNode(Node):
+    in_a = edges.VoidType(direction=edges.INPUT)
+    in_b = edges.VoidType(direction=edges.INPUT)
+
+    @classmethod
+    def validate_all_needed_edges(cls, edges):
+        return cls.in_a in edges or cls.in_b in edges
+
+
 @dataclass
 class MockEdgeType(edges.EdgeType):
     validate: bool = False
