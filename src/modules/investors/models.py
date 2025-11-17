@@ -4,6 +4,7 @@ from django.utils.translation import gettext_lazy as _
 from modules.core.models import BaseModel
 from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
+from modules.investors.querysets import DepositHistoryQuerySet
 
 
 class Investor(BaseModel):
@@ -94,3 +95,31 @@ class NotificationHistory(BaseModel):
 
     def __str__(self):
         return f"Notification to Investor {self.investor.id} at {self.sent_at}"
+
+
+class DepositHistory(BaseModel):
+    investor = models.ForeignKey(
+        Investor,
+        on_delete=models.CASCADE,
+        related_name="deposits",
+        verbose_name=_("Investor"),
+    )
+    amount = models.DecimalField(
+        max_digits=30, decimal_places=2, verbose_name=_("Deposit Amount")
+    )
+    deposited_at = models.DateTimeField(
+        auto_now_add=True, verbose_name=_("Deposited At")
+    )
+
+    objects = DepositHistoryQuerySet.as_manager()
+
+    class Meta:
+        verbose_name = _("Deposit History")
+        verbose_name_plural = _("Deposit Histories")
+        ordering = ["-deposited_at"]
+
+    def __str__(self):
+        return (
+            f"Deposit of {self.amount} to Investor {self.investor.id} "
+            f"at {self.deposited_at}"
+        )
