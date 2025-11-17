@@ -5,12 +5,13 @@ from faker import Faker
 
 from modules.graph_lang.framework.nodes import (
     IsGreaterLesserNode,
+    OccurredXTimesNode,
     ValueRisenFallenNode,
     ValueStaysAboveBelowNode,
     ValueStaysTheSameNode,
 )
 from modules.graph_lang.framework.nodes.node import ExecutionContext
-from modules.graph_lang.tests.conftest_nodes import MockNumberNode
+from modules.graph_lang.tests.conftest_nodes import MockBoolNode, MockNumberNode
 
 fake = Faker()
 
@@ -168,6 +169,50 @@ class TestValueRisenFallen:
         self.mock.set_value(values[0], dt - timedelta(days=2))
         self.mock.set_value(values[1], dt - timedelta(days=1))
         self.mock.set_value(values[2], dt - timedelta(days=0))
+
+        context = ExecutionContext(None, set(), dt)
+
+        assert self.node.out.get(context) is expected_output
+
+
+def days(val: int):
+    return timedelta(days=val)
+
+
+class TestOccurredXTimes:
+    @pytest.fixture(autouse=True)
+    def setup(self):
+        self.mock = MockBoolNode()
+        self.mock.set_default(False)
+        self.node = OccurredXTimesNode()
+        self.node.interval.set(timedelta(days=2))
+        self.node.timespan.set(timedelta(days=9))
+        self.node.SAMPLES = 10
+        self.node.inValue.connect(self.mock.out)
+
+    @pytest.fixture()
+    def dt(self):
+        return fake.date_time()
+
+    @pytest.mark.parametrize(
+        "times, occurrences, expected_output",
+        [
+            (1, [], False),
+            (1, [days(0)], True),
+            (1, [days(-9)], True),
+            (1, [days(-9), days(0)], True),
+            (2, [days(0)], False),
+            (2, [days(-5), days(0)], True),
+            (2, [days(-1), days(0)], False),
+            (2, [days(-2), days(0)], True),
+            (3, [days(-9), days(-5), days(0)], True),
+            (3, [days(-9), days(-8), days(0)], False),
+        ],
+    )
+    def test_node(self, dt, times, occurrences, expected_output):
+        self.node.times.set(times)
+        for timespan in occurrences:
+            self.mock.set_value(value=True, date_at=dt + timespan)
 
         context = ExecutionContext(None, set(), dt)
 

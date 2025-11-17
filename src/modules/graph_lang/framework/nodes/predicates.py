@@ -183,3 +183,49 @@ class ValueRisenFallenNode(Node):
 
     def _get_working_timespan(self):
         return self.timespan(None)
+
+
+class OccurredXTimesNode(Node):
+    SAMPLES = 50
+
+    times = edges.NumberType(direction=edges.INPUT)
+    timespan = edges.TimespanType(direction=edges.INPUT)
+    interval = edges.TimespanType(direction=edges.INPUT, source="timespan2")
+    inValue = edges.BoolType(direction=edges.INPUT, source="in")
+
+    out = edges.BoolType(direction=edges.OUTPUT)
+
+    def _execute(self, context):
+        timespan = self._get(self.timespan)
+        interval = self._get(self.interval)
+        time_step = timespan / (self.SAMPLES - 1)
+        times = self._get(self.times)
+
+        min_time = context.time_at - timespan
+        max_time = context.time_at
+        occurrences = 0
+
+        current_time = min_time
+        output = False
+        while current_time <= max_time:
+            in_val = self._get(self.inValue, current_time)
+            if in_val:
+                occurrences += 1
+                current_time += interval
+            else:
+                current_time += time_step
+
+            if occurrences >= times:
+                output = True
+                break
+
+        self.out.set(output)
+
+        context.log(
+            self.id,
+            "Occurred X times",
+            {"timespan": timespan, "interval": interval, "times": times},
+        )
+
+    def _get_working_timespan(self):
+        return self.timespan(None)

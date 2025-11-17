@@ -25,6 +25,7 @@ from modules.graph_lang.framework.nodes.math import (
 from modules.graph_lang.framework.nodes.node import MockNodeFactory, Node
 from modules.graph_lang.framework.nodes.predicates import (
     IsGreaterLesserNode,
+    OccurredXTimesNode,
     ValueRisenFallenNode,
     ValueStaysAboveBelowNode,
     ValueStaysTheSameNode,
@@ -65,4 +66,5 @@ __all__ = [
     "ValueOfAssetsNode",
     "RollingAverageNode",
     "PriceChangeOfNode",
+    "OccurredXTimesNode",
 ]

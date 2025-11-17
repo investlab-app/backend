@@ -129,11 +129,17 @@ class MockBoolNode(Node):
         self.values = {}
 
     def _execute(self, context: ExecutionContext):
-        val = self.values[context.time_at]
+        if context.time_at in self.values:
+            val = self.values[context.time_at]
+        else:
+            val = self.default
         self.out.set(val)
 
     def set_value(self, value, date_at: datetime):
         self.values[date_at] = value
+
+    def set_default(self, value):
+        self.default = value
 
 
 class MockNumberNode(Node):
