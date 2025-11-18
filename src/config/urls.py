@@ -15,7 +15,6 @@ PREFIX = "api"
 
 websocket_urlpatterns = [
     path("ws/", Websocket.as_asgi()),
-    path("ws/<str:names>/", Websocket.as_asgi()),
 ]
 
 urlpatterns = [
@@ -45,6 +44,7 @@ urlpatterns = [
     ),
     # Modules
     path(f"{PREFIX}/auth/", include("modules.authentication.urls")),
+    path(f"{PREFIX}/chats/", include("modules.chats.urls")),
     path(f"{PREFIX}/instruments/", include("modules.instruments.urls")),
     path(f"{PREFIX}/investors/", include("modules.investors.urls")),
     path(f"{PREFIX}/markets/", include("modules.markets.urls")),

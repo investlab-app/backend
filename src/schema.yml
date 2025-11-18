@@ -30,6 +30,166 @@ paths:
           description: Password verification failed.
         '500':
           description: Clerk SDK error or other internal server error.
+  /api/chats/:
+    get:
+      operationId: chats_list
+      tags:
+      - chats
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Chat'
+          description: ''
+    post:
+      operationId: chats_create
+      tags:
+      - chats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Chat'
+          description: ''
+  /api/chats/{id}/:
+    get:
+      operationId: chats_retrieve
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chats
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatDetail'
+          description: ''
+    put:
+      operationId: chats_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ChatDetailRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatDetail'
+          description: ''
+    patch:
+      operationId: chats_partial_update
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedChatDetailRequest'
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ChatDetail'
+          description: ''
+    delete:
+      operationId: chats_destroy
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chats
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '204':
+          description: No response body
+  /api/chats/{id}/messages/:
+    post:
+      operationId: chats_messages_create
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          format: uuid
+        required: true
+      tags:
+      - chats
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateChatMessageRequest'
+        required: true
+      security:
+      - ClerkAuth: []
+      - ClerkAuth: []
+      responses:
+        '201':
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+          description: ''
   /api/graph_lang/:
     get:
       operationId: graph_lang_list
@@ -1441,6 +1601,71 @@ components:
       - message
       - user_id
       - user_role
+    Chat:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        message_count:
+          type: integer
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - message_count
+      - title
+      - updated_at
+    ChatDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          readOnly: true
+        title:
+          type: string
+          maxLength: 255
+        created_at:
+          type: string
+          format: date-time
+          readOnly: true
+        updated_at:
+          type: string
+          format: date-time
+          readOnly: true
+        messages:
+          type: array
+          items:
+            $ref: '#/components/schemas/Message'
+          readOnly: true
+      required:
+      - created_at
+      - id
+      - messages
+      - title
+      - updated_at
+    ChatDetailRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+      required:
+      - title
     ClerkLoginRequest:
       type: object
       properties:
@@ -1454,6 +1679,32 @@ components:
       required:
       - email
       - password
+    CreateChatMessageRequest:
+      type: object
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 10000
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          default: user
+      required:
+      - content
+    CreateChatRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
+        first_message:
+          type: string
+          minLength: 1
+          maxLength: 10000
+      required:
+      - first_message
     CreateLimitOrderRequest:
       type: object
       properties:
@@ -2242,6 +2493,31 @@ components:
         server_time:
           type: string
           nullable: true
+    Message:
+      type: object
+      properties:
+        id:
+          type: string
+        role:
+          type: string
+        content:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        experimental_attachments:
+          type: array
+          items: {}
+        tool_invocations:
+          type: array
+          items: {}
+        parts:
+          type: array
+          items: {}
+      required:
+      - content
+      - id
+      - role
     MostTradedItem:
       type: object
       properties:
@@ -2569,6 +2845,13 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/PriceAlert'
+    PatchedChatDetailRequest:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 1
+          maxLength: 255
     PatchedGraphUpdateRequest:
       type: object
       properties:
@@ -2885,6 +3168,14 @@ components:
       - auth
       - endpoint
       - p256dh
+    RoleEnum:
+      enum:
+      - user
+      - assistant
+      type: string
+      description: |-
+        * `user` - user
+        * `assistant` - assistant
     RunGraphRequest:
       type: object
       properties:
