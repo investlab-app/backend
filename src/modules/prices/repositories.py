@@ -11,7 +11,7 @@ from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE
 from modules.instruments.models import Instrument
 from modules.prices.exceptions import PayloadTooLarge
-from modules.prices.schemas import PriceBar, PriceDailySummary
+from modules.prices.schemas import PriceBar, PriceDaily, PriceDailySummary
 
 
 class PolygonPricesRepository:
@@ -122,3 +122,12 @@ class PolygonPricesRepository:
             return None
 
         return {price.ticker: price for price in prices}
+
+
+    def get_daily_market_summary(self, date = None) -> dict[str, PriceBar] | None:
+        try:
+            aggs = self.polygon_client.get_grouped_daily_aggs(date.strftime('%Y-%m-%d'))
+            bars = {agg.ticker: PriceBar.from_agg(agg) for agg in aggs}
+            return bars
+        except:
+            return None

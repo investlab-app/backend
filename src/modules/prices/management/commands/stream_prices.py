@@ -9,13 +9,16 @@ from polygon.websocket.models import WebSocketMessage
 from config.clients import polygon_websocket_client
 from modules.instruments.models import Instrument
 from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.schemas import PriceBar
+from modules.prices.services import LatestPriceService
 
 logger = logging.getLogger(__name__)
 
 
 class PriceStream:
-    def __init__(self):
+    def __init__(self, latest_price_service :LatestPriceService | None = None):
         self.channel_layer = get_channel_layer()
+        self.latest_price_service = latest_price_service or LatestPriceService()
 
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
@@ -26,9 +29,13 @@ class PriceStream:
 
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
-        data = {d["symbol"] for d in data}
+
+        price_bars = {d["symbol"]: PriceBar.from_ws(d) for d in data}
+        prices = {d["symbol"]: d for d in data}
+
+        self.latest_price_service.update_prices(price_bars)
         await self.channel_layer.group_send(
-            PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
+            PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": prices}
         )
 
 
