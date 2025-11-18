@@ -211,9 +211,6 @@ class TestListCreateView:
 
         response = self.client.post(self.url, data=payload, format="json")
 
-        if response.status_code != 201:
-            print(f"Response status: {response.status_code}")
-            print(f"Response data: {response.data}")
         assert response.status_code == status.HTTP_201_CREATED
         assert response.data["threshold_value"] == "150.50"
 

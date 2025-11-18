@@ -1,5 +1,5 @@
 import contextlib
-from datetime import datetime
+from datetime import datetime, timedelta
 from decimal import Decimal
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -14,7 +14,12 @@ from modules.notifications.services import (
     WebSocketPayload,
 )
 from modules.prices.models import PriceAlert
-from modules.prices.services import PriceAlertHandler, PriceNotificationService
+from modules.prices.services import (
+    PriceAlertHandler,
+    PriceNotificationService,
+    PriceService,
+)
+from modules.prices.tests.conftest import get_fake_price_bar
 
 
 @pytest.fixture
@@ -312,3 +317,71 @@ class TestPriceNotificationService:
                 await self.service.listen_prices()
 
             mock_layer_instance.group_discard.assert_called_once()
+
+
+class TestPriceService:
+    @pytest.fixture(autouse=True)
+    def setup(self, mock_datetime):
+        self.repo_mock = MagicMock()
+        self.mock_prices = {}
+        self.repo_mock.get_daily_market_summary = lambda date: self.mock_prices[date]
+        self.price_service = PriceService(self.repo_mock)
+        self.now = datetime.now()
+        mock_datetime.now.return_value = self.now
+
+    @pytest.fixture
+    def mock_datetime(self):
+        with patch("modules.prices.services.datetime") as dt:
+            yield dt
+
+    def test_days_equals_zero__empty_dict_is_returned(self):
+        assert self.price_service.get_latest_daily_bars_from_last_n_days(0) == {}
+
+    def test_days_less_than_zero__raises_value_error(self):
+        with pytest.raises(ValueError):
+            self.price_service.get_latest_daily_bars_from_last_n_days(-1)
+
+    def test_repo_returns_none__raises_value_error(self):
+        self.mock_prices[self.now] = None
+
+        with pytest.raises(ValueError):
+            self.price_service.get_latest_daily_bars_from_last_n_days(1)
+
+    def test_single_day__prices_are_returned_back(self):
+        prices = {"AAPL": get_fake_price_bar(), "GOGL": get_fake_price_bar()}
+        self.mock_prices[self.now] = prices
+
+        result = self.price_service.get_latest_daily_bars_from_last_n_days(1)
+        assert result == prices
+
+    def test_two_days__older_price_is_discarded(self):
+        prices_1 = {"AAPL": get_fake_price_bar()}
+        prices_2 = {"AAPL": get_fake_price_bar()}
+
+        self.mock_prices[self.now - timedelta(days=1)] = prices_1
+        self.mock_prices[self.now] = prices_2
+
+        result = self.price_service.get_latest_daily_bars_from_last_n_days(2)
+        assert result == prices_2
+
+    def test_two_days__missing_price_is_not_overridden(self):
+        prices_1 = {"AAPL": get_fake_price_bar()}
+        prices_2 = {}
+
+        self.mock_prices[self.now - timedelta(days=1)] = prices_1
+        self.mock_prices[self.now - timedelta(days=0)] = prices_2
+
+        result = self.price_service.get_latest_daily_bars_from_last_n_days(2)
+        assert result == prices_1
+
+    def test_two_days__one_price_discarded_one_kept(self):
+        bars = [get_fake_price_bar() for _ in range(3)]
+
+        self.mock_prices[self.now - timedelta(days=1)] = {
+            "AAPL": bars[0],
+            "GOGL": bars[1],
+        }
+        self.mock_prices[self.now - timedelta(days=0)] = {"GOGL": bars[2]}
+
+        result = self.price_service.get_latest_daily_bars_from_last_n_days(2)
+        assert result == {"AAPL": bars[0], "GOGL": bars[2]}

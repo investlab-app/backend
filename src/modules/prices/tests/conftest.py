@@ -3,6 +3,7 @@ import time
 from datetime import datetime
 from decimal import Decimal
 
+import faker
 import pytest
 
 from modules.authentication.tests.conftest import user  # noqa: F401
@@ -15,7 +16,9 @@ from modules.investors.tests.conftest import (
     create_fake_investor,
     investor_factory,
 )
-from modules.prices.schemas import PriceDaily, PriceDailySummary
+from modules.prices.schemas import PriceBar, PriceDaily, PriceDailySummary
+
+fake = faker.Faker()
 
 
 class PriceRepositoryMock:
@@ -131,3 +134,42 @@ def get_fake_ohlc(
         "start_timestamp": start_timestamp or now_ms - 1000,
         "end_timestamp": end_timestamp or now_ms,
     }
+
+
+def get_fake_price_bar(
+    timestamp: datetime | None = None,
+    open_: Decimal | None = None,
+    high: Decimal | None = None,
+    low: Decimal | None = None,
+    close: Decimal | None = None,
+    volume: Decimal | None = None,
+    transactions: int | None = None,
+    volume_weighted_average_price: Decimal | None = None,
+) -> PriceBar:
+    if timestamp is None:
+        timestamp = fake.past_datetime()
+    if open_ is None:
+        open_ = fake.pydecimal()
+    if high is None:
+        high = fake.pydecimal()
+    if low is None:
+        low = fake.pydecimal()
+    if close is None:
+        close = fake.pydecimal()
+    if volume is None:
+        volume = fake.pydecimal()
+    if transactions is None:
+        transactions = fake.pyint(min_value=0)
+    if volume_weighted_average_price is None:
+        volume_weighted_average_price = fake.pydecimal()
+
+    return PriceBar(
+        timestamp=timestamp,
+        open=open_,
+        high=high,
+        low=low,
+        close=close,
+        volume=volume,
+        transactions=transactions,
+        volume_weighted_average_price=volume_weighted_average_price,
+    )
