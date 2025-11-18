@@ -44,7 +44,7 @@ class PriceStream:
 
         self.latest_price_service.update_prices(price_bars)
         await self.channel_layer.group_send(
-            PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": prices}
+            PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
         )
 
 

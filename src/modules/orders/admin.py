@@ -13,12 +13,13 @@ class OrderAdmin(ModelAdmin):
     ordering = ("-created_at",)
     readonly_fields = (
         "id",
+        "detail_repr",
         "created_at",
         "updated_at",
     )
     fieldsets = (
         (None, {"fields": ("id", "ticker", "investor")}),
-        (_("Detail"), {"fields": ("detail_type", "detail_id")}),
+        (_("Detail"), {"fields": ("detail_type", "detail_id", "detail_repr")}),
         (_("Timestamps"), {"fields": ("created_at", "updated_at")}),
     )
 

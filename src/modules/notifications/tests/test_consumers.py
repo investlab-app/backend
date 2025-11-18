@@ -40,9 +40,7 @@ def _create_ticker_data(*tickers: str) -> dict:
 
 
 async def _send_ticker_data(layer, msg):
-    await layer.group_send(
-        PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": msg}
-    )
+    await layer.group_send(PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": msg})
 
 
 async def _get_communicator_output(communicator):
@@ -82,7 +80,7 @@ async def test_no_subscriptions(communicator, layer):
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_empty_subscription(communicator, layer):
-    await communicator.send_to(text_data=json.dumps({"set_subscription": []}))
+    await communicator.send_json_to({"type": "set_subscription", "subscriptions": []})
 
     await _send_ticker_data(layer, _create_ticker_data("AAPL", "XYZ", "ABC"))
 
@@ -92,55 +90,56 @@ async def test_empty_subscription(communicator, layer):
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_single_subscription(communicator, layer):
-    await communicator.send_to(text_data=json.dumps({"set_subscription": ["AAPL"]}))
+    await communicator.send_json_to(
+        {"type": "set_subscription", "subscriptions": ["AAPL"]}
+    )
 
     ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
     await _send_ticker_data(layer, ticker_data)
 
     output = await _get_communicator_output(communicator)
-    assert output["prices"][0] == ticker_data["AAPL"]
+    assert output["data"][0] == ticker_data["AAPL"]
 
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_multi_subscription(communicator, layer):
-    await communicator.send_to(
-        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    await communicator.send_json_to(
+        {"type": "set_subscription", "subscriptions": ["AAPL", "ABC"]}
     )
 
     ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
     await _send_ticker_data(layer, ticker_data)
 
     output = await _get_communicator_output(communicator)
-    assert len(output["prices"]) == 2
-    assert output["prices"][0] == ticker_data["AAPL"]
-    assert output["prices"][1] == ticker_data["ABC"]
+    assert len(output["data"]) == 2
+    assert output["data"][0] == ticker_data["AAPL"]
+    assert output["data"][1] == ticker_data["ABC"]
 
 
 @pytest.mark.asyncio
 @pytest.mark.django_db(transaction=True)
 async def test_resubscription(communicator, layer):
-    await communicator.send_to(
-        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    await communicator.send_json_to(
+        {"type": "set_subscription", "subscriptions": ["AAPL", "ABC"]}
     )
-    await communicator.send_to(
-        text_data=json.dumps({"set_subscription": ["XYZ", "ABC"]})
+    await communicator.send_json_to(
+        {"type": "set_subscription", "subscriptions": ["XYZ", "ABC"]}
     )
-
     ticker_data = _create_ticker_data("AAPL", "XYZ", "ABC")
     await _send_ticker_data(layer, ticker_data)
 
     output = await _get_communicator_output(communicator)
-    assert len(output["prices"]) == 2
-    assert output["prices"][0] == ticker_data["XYZ"]
-    assert output["prices"][1] == ticker_data["ABC"]
+    assert len(output["data"]) == 2
+    assert output["data"][0] == ticker_data["XYZ"]
+    assert output["data"][1] == ticker_data["ABC"]
 
 
 @pytest.mark.asyncio
 @pytest.mark.django_db
 async def test_does_not_send_empty_msgs(communicator, layer):
-    await communicator.send_to(
-        text_data=json.dumps({"set_subscription": ["AAPL", "ABC"]})
+    await communicator.send_json_to(
+        {"type": "set_subscription", "subscriptions": ["AAPL", "ABC"]}
     )
 
     await _send_ticker_data(layer, _create_ticker_data("XYZ"))
@@ -160,7 +159,7 @@ async def test_tickers_in_query_params(layer):
     await _send_ticker_data(layer, ticker_data)
 
     output = await _get_communicator_output(communicator)
-    assert len(output["prices"]) == 2
-    assert output["prices"][0] == ticker_data["AAPL"]
-    assert output["prices"][1] == ticker_data["ABC"]
+    assert len(output["data"]) == 2
+    assert output["data"][0] == ticker_data["AAPL"]
+    assert output["data"][1] == ticker_data["ABC"]
     await communicator.disconnect()

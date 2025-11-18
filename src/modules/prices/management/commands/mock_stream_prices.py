@@ -65,7 +65,7 @@ class PriceStreamMock:
 
             self.latest_price_service.update_prices(price_bars)
             await channel_layer.group_send(
-                PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
+                PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
             )
 
             await asyncio.sleep(1)
