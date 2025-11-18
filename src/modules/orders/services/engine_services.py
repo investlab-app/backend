@@ -8,6 +8,7 @@ from django.db import transaction
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
+from modules.markets.repositories import PolygonMarketsRepository
 from modules.orders.models import Order
 from modules.orders.order_engine.converters import (
     asset_to_engine_asset,
@@ -32,15 +33,19 @@ class RunOrderEngineService:
         self.price_listener = PricesFetcher()
         self.output_handler = TradeEngineOutputHandler()
         self.engine = TradeEngine()
+        self.markets_repository = PolygonMarketsRepository()
 
     async def run(self):
         asyncio.ensure_future(self.price_listener.run())
         while True:
-            data = await self.data_fetcher.fetch()
-            prices = self.price_listener.get_prices()
-            data.prices = prices
-            output = self.engine.run(data)
-            await self.output_handler.handle(output, prices)
+            if self.markets_repository.is_nasdaq_open():
+                data = await self.data_fetcher.fetch()
+                prices = self.price_listener.get_prices()
+                data.prices = prices
+                output = self.engine.run(data)
+                await self.output_handler.handle(output, prices)
+            else:
+                await asyncio.sleep(60)
 
 
 class TradeEngineDataFetcher:
