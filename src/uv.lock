@@ -574,6 +574,15 @@ wheels = [
 ]
 
 [[package]]
+name = "django-cache-memoize"
+version = "0.2.1"
+source = { registry = "https://pypi.org/simple" }
+sdist = { url = "https://files.pythonhosted.org/packages/8a/81/8e07e815118a5afbb9a10e766d9338751cc11ca462dea7f8a509a8fa22c5/django_cache_memoize-0.2.1.tar.gz", hash = "sha256:025ff5d941420247b83452bb183bde172dde7def95501fca829adf8ea01b2b7b", size = 21865, upload-time = "2024-12-18T18:08:52.929Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/e8/b4/81550fd4e8ae9e2dd017b761d73fa4aa22dccab13076622ea5a3ec76e7d4/django_cache_memoize-0.2.1-py3-none-any.whl", hash = "sha256:07929d063a03557013875d453a13edc8e3359d3ba8a568b64ac3288578ed8be3", size = 14797, upload-time = "2024-12-18T18:08:51.199Z" },
+]
+
+[[package]]
 name = "django-celery-beat"
 version = "2.8.1"
 source = { registry = "https://pypi.org/simple" }
@@ -1851,6 +1860,7 @@ dependencies = [
     { name = "clerk-backend-api" },
     { name = "dependency-injector" },
     { name = "django" },
+    { name = "django-cache-memoize" },
     { name = "django-celery-beat" },
     { name = "django-celery-results" },
     { name = "django-cors-headers" },
@@ -1902,6 +1912,7 @@ requires-dist = [
     { name = "clerk-backend-api", specifier = ">=3.3.1" },
     { name = "dependency-injector", specifier = ">=4.47.1" },
     { name = "django", specifier = ">=5.2.3" },
+    { name = "django-cache-memoize", specifier = ">=0.2.1" },
     { name = "django-celery-beat", specifier = ">=2.8.1" },
     { name = "django-celery-results", specifier = ">=2.6.0" },
     { name = "django-cors-headers", specifier = ">=4.7.0" },

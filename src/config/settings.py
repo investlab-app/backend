@@ -358,6 +358,7 @@ UNFOLD = {
     # ],
 }
 
+# Redis
 REDIS_HOST = os.environ["REDIS_HOST"]
 REDIS_PORT = os.environ["REDIS_PORT"]
 REDIS_PASSWORD = os.environ.get("REDIS_PASSWORD", "")
@@ -371,6 +372,16 @@ CHANNEL_LAYERS = {
         },
     },
 }
+
+
+# Cache
+CACHES = {
+    "default": {
+        "BACKEND": "django.core.cache.backends.redis.RedisCache",
+        "LOCATION": REDIS_URL,
+    }
+}
+
 
 # Celery settings
 CELERY_BROKER_URL = os.environ.get("CELERY_BROKER_URL", f"{REDIS_URL}/0")
