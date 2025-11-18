@@ -10,15 +10,21 @@ from config.clients import polygon_websocket_client
 from modules.instruments.models import Instrument
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.prices.schemas import PriceBar
-from modules.prices.services import LatestPriceService
+from modules.prices.services import LatestPriceService, PriceService
 
 logger = logging.getLogger(__name__)
 
 
 class PriceStream:
-    def __init__(self, latest_price_service :LatestPriceService | None = None):
+    def __init__(self, prices_service: PriceService | None = None,
+                 latest_price_service: LatestPriceService | None = None):
         self.channel_layer = get_channel_layer()
+
+        self.price_service = prices_service or PriceService()
         self.latest_price_service = latest_price_service or LatestPriceService()
+
+        initial_prices = prices_service.get_latest_daily_bars_from_last_n_days(7)
+        self.latest_price_service.update_prices(initial_prices)
 
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")

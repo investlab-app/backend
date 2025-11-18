@@ -14,7 +14,11 @@ from modules.notifications.services import (
     WebSocketPayload,
 )
 from modules.prices.models import PriceAlert
-from modules.prices.services import PriceAlertHandler, PriceNotificationService, PriceService
+from modules.prices.services import (
+    PriceAlertHandler,
+    PriceNotificationService,
+    PriceService,
+)
 from modules.prices.tests.conftest import get_fake_price_bar
 
 
@@ -314,6 +318,7 @@ class TestPriceNotificationService:
 
             mock_layer_instance.group_discard.assert_called_once()
 
+
 class TestPriceService:
     @pytest.fixture(autouse=True)
     def setup(self, mock_datetime):
@@ -326,9 +331,8 @@ class TestPriceService:
 
     @pytest.fixture
     def mock_datetime(self):
-        with patch('modules.prices.services.datetime') as dt:
+        with patch("modules.prices.services.datetime") as dt:
             yield dt
-
 
     def test_days_equals_zero__empty_dict_is_returned(self):
         assert self.price_service.get_latest_daily_bars_from_last_n_days(0) == {}
@@ -344,18 +348,15 @@ class TestPriceService:
             self.price_service.get_latest_daily_bars_from_last_n_days(1)
 
     def test_single_day__prices_are_returned_back(self):
-        prices = {
-            'AAPL': get_fake_price_bar(),
-            'GOGL': get_fake_price_bar()
-        }
+        prices = {"AAPL": get_fake_price_bar(), "GOGL": get_fake_price_bar()}
         self.mock_prices[self.now] = prices
 
         result = self.price_service.get_latest_daily_bars_from_last_n_days(1)
         assert result == prices
 
     def test_two_days__older_price_is_discarded(self):
-        prices_1 = {'AAPL': get_fake_price_bar()}
-        prices_2 = {'AAPL': get_fake_price_bar()}
+        prices_1 = {"AAPL": get_fake_price_bar()}
+        prices_2 = {"AAPL": get_fake_price_bar()}
 
         self.mock_prices[self.now - timedelta(days=1)] = prices_1
         self.mock_prices[self.now] = prices_2
@@ -364,7 +365,7 @@ class TestPriceService:
         assert result == prices_2
 
     def test_two_days__missing_price_is_not_overridden(self):
-        prices_1 = {'AAPL': get_fake_price_bar()}
+        prices_1 = {"AAPL": get_fake_price_bar()}
         prices_2 = {}
 
         self.mock_prices[self.now - timedelta(days=1)] = prices_1
@@ -377,17 +378,10 @@ class TestPriceService:
         bars = [get_fake_price_bar() for _ in range(3)]
 
         self.mock_prices[self.now - timedelta(days=1)] = {
-            'AAPL': bars[0],
-            'GOGL': bars[1],
+            "AAPL": bars[0],
+            "GOGL": bars[1],
         }
-        self.mock_prices[self.now - timedelta(days=0)] = {
-            'GOGL': bars[2]
-        }
+        self.mock_prices[self.now - timedelta(days=0)] = {"GOGL": bars[2]}
 
         result = self.price_service.get_latest_daily_bars_from_last_n_days(2)
-        assert result == {
-            'AAPL': bars[0],
-            'GOGL': bars[2]
-        }
-
-
+        assert result == {"AAPL": bars[0], "GOGL": bars[2]}

@@ -20,41 +20,43 @@ class PriceBar:
 
     def serialize(self) -> dict:
         data = {
-            'timestamp': self.timestamp.timestamp(),
-            'open': str(self.open),
-            'high': str(self.high),
-            'low': str(self.low),
-            'close': str(self.close),
-            'volume': str(self.volume),
+            "timestamp": self.timestamp.timestamp(),
+            "open": str(self.open),
+            "high": str(self.high),
+            "low": str(self.low),
+            "close": str(self.close),
+            "volume": str(self.volume),
         }
         if self.transactions is not None:
-            data['transactions'] = self.transactions
+            data["transactions"] = self.transactions
         if self.volume_weighted_average_price is not None:
-            data['volume_weighted_average_price'] = str(self.volume_weighted_average_price)
+            data["volume_weighted_average_price"] = str(
+                self.volume_weighted_average_price
+            )
 
         return data
 
     @classmethod
-    def deserialize(cls, data :dict):
-        transactions = None
-        volume_weighted_average_price = None
-        if 'transactions' in data:
-            transactions = data['transactions']
-        if 'volume_weighted_average_price' in data:
-            volume_weighted_average_price = Decimal(data['volume_weighted_average_price'])
+    def deserialize(cls, data: dict):
+        transactions = 0
+        volume_weighted_average_price = 0
+        if "transactions" in data:
+            transactions = data["transactions"]
+        if "volume_weighted_average_price" in data:
+            volume_weighted_average_price = Decimal(
+                data["volume_weighted_average_price"]
+            )
 
         return cls(
-            timestamp = datetime.fromtimestamp(data['timestamp']),
-            open = Decimal(data['open']),
-            high = Decimal(data['high']),
-            low = Decimal(data['low']),
-            close = Decimal(data['close']),
-            volume = Decimal(data['volume']),
-            transactions = transactions,
-            volume_weighted_average_price = Decimal(volume_weighted_average_price)
+            timestamp=datetime.fromtimestamp(data["timestamp"]),
+            open=Decimal(data["open"]),
+            high=Decimal(data["high"]),
+            low=Decimal(data["low"]),
+            close=Decimal(data["close"]),
+            volume=Decimal(data["volume"]),
+            transactions=transactions,
+            volume_weighted_average_price=Decimal(volume_weighted_average_price),
         )
-
-
 
     @classmethod
     def from_agg(cls, agg: Agg) -> "PriceBar":
@@ -82,28 +84,28 @@ class PriceBar:
         )
 
     @classmethod
-    def from_ws(cls, data :dict) -> "PriceBar":
+    def from_ws(cls, data: dict) -> "PriceBar":
         try:
-            open_ = to_quantized_decimal(data['open'])
-            high = to_quantized_decimal(data['high'])
-            low = to_quantized_decimal(data['low'])
-            close = to_quantized_decimal(data['close'])
-            volume = to_quantized_decimal(data['volume'])
-            timestamp = datetime.fromtimestamp(data['end_timestamp'] // 1000)
-            if data['aggregate_vwap'] is not None:
-                aggregate_vwap = to_quantized_decimal(data['aggregate_vwap'])
+            open_ = to_quantized_decimal(data["open"])
+            high = to_quantized_decimal(data["high"])
+            low = to_quantized_decimal(data["low"])
+            close = to_quantized_decimal(data["close"])
+            volume = to_quantized_decimal(data["volume"])
+            timestamp = datetime.fromtimestamp(data["end_timestamp"] // 1000)
+            if data["aggregate_vwap"] is not None:
+                aggregate_vwap = to_quantized_decimal(data["aggregate_vwap"])
             else:
                 aggregate_vwap = None
 
             return cls(
-                timestamp = timestamp,
-                open = open_,
-                high = high,
-                low = low,
-                close = close,
-                volume = volume,
-                volume_weighted_average_price = aggregate_vwap,
-                transactions = None
+                timestamp=timestamp,
+                open=open_,
+                high=high,
+                low=low,
+                close=close,
+                volume=volume,
+                volume_weighted_average_price=aggregate_vwap,
+                transactions=None,
             )
         except Exception as e:
             raise ValueError("Failed to create price bar from ws data") from e
