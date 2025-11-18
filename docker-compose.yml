@@ -1,12 +1,12 @@
 x-backend-common: &backend-common
   image: investlab-backend:latest
   build:
-    context: ./backend
+    context: ./src
   env_file: .env
   restart: unless-stopped
   volumes:
-    - ./backend:/backend:delegated
-    - /backend/.venv
+    - ./src:/app:delegated
+    - /app/.venv
   networks:
     - app_network
 

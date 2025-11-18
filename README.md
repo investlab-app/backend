@@ -26,7 +26,7 @@ pip install uv
 
 2. Install dependencies:
 ```bash
-cd backend
+cd src
 uv pip install ".[dev]"
 ```
 
@@ -65,7 +65,7 @@ make typecheck         # Run mypy type checking
 make test              # Run pytest
 make bash              # Open a bash shell in the container
 make pip <command>     # Run pip commands in the container
-make schema-gen        # Regenerate backend/schema.yml OpenAPI spec
+make schema-gen        # Regenerate src/schema.yml OpenAPI spec
 ```
 
 ## Code Quality

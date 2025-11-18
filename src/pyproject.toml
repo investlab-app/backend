@@ -1,0 +1,145 @@
+[project]
+name = "stocks-backend"
+version = "0.1.0"
+description = "Stocks Backend"
+requires-python = ">=3.13"
+dependencies = [
+    "alpaca-py>=0.42.0",
+    "celery[redis]>=5.5.3",
+    "channels-redis>=4.3.0",
+    "channels>=4.2.2",
+    "clerk-backend-api>=3.3.1",
+    "dependency-injector>=4.47.1",
+    "django-celery-beat>=2.8.1",
+    "django-celery-results>=2.6.0",
+    "django-cors-headers>=4.7.0",
+    "django-extensions>=4.1",
+    "django-filter>=25.1",
+    "django-unfold>=0.59.0",
+    "django>=5.2.3",
+    "djangorestframework-dataclasses>=1.4.0",
+    "djangorestframework-simplejwt>=5.5.0",
+    "djangorestframework>=3.16.0",
+    "drf-spectacular>=0.28.0",
+    "faker>=37.6.0",
+    "fastmcp>=2.12.5",
+    "jwcrypto>=1.5.6",
+    "openai>=1.0.0",
+    "pandas>=2.3.0",
+    "pillow>=11.3.0",
+    "polygon-api-client>=1.15.3",
+    "psycopg>=3.2.9",
+    "pydantic-ai==1.18.0",
+    "pydantic>=2.11.6",
+    "pywebpush>=2.0.3",
+    "uvicorn-worker>=0.3.0",
+    "uvicorn>=0.34.3",
+    "whitenoise>=6.9.0",
+    "yfinance>=0.2.63",
+]
+
+[dependency-groups]
+dev = [
+    "daphne>=4.2.0",
+    "django-stubs>=5.2.0",
+    "djangorestframework-stubs>=3.16.0",
+    "pandas-stubs>=2.2.3.250527",
+    "pytest-asyncio>=1.0.0",
+    "pytest-cov>=6.2.1",
+    "pytest-django>=4.11.1",
+    "pytest-mock>=3.14.1",
+    "pytest>=8.4.0",
+    "ruff>=0.11.13",
+    "ty>=0.0.1a10",
+    "types-jwcrypto>=1.5.0.20250516",
+    "uv>=0.7.13",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["tests.py", "test_*.py", "*_tests.py"]
+addopts = "--cov=modules --cov-report=term-missing"
+asyncio_mode = "auto"
+asyncio_default_fixture_loop_scope = "function"
+filterwarnings = [
+    "ignore:websockets.legacy is deprecated.*:DeprecationWarning",
+    "ignore:websockets.client.connect is deprecated:DeprecationWarning",
+    "ignore:websockets.client.WebSocketClientProtocol is deprecated:DeprecationWarning",
+]
+
+[tool.coverage.run]
+omit = ["*/management/*", "*/migrations/*", "*/tests/*", "*/__init__.py"]
+
+[tool.ruff]
+line-length = 88
+target-version = "py313"
+exclude = [
+    "manage.py",
+    "migrations",
+    "export",
+    "media",
+    "requirements.txt",
+    "venv",
+    ".venv",
+    "*.egg-info",
+    ".ruff_cache",
+]
+
+[tool.ruff.lint]
+select = ["ALL"]
+ignore = [
+    "D",      # docstring issues
+    "ANN",    # type annotation issues
+    "ARG",    # argument issues
+    "BLE",    # blind exception issues
+    "COM812", # missing-trailing-comma issues
+    "DTZ",    # datetime issues
+    "EM",     # exception message issues
+    "INP",    # implicit namespace package issues
+    "PGH",    # type ignore issues
+    "PLR",    # magic number issues
+    "RET",    # return issues
+    "RUF",    # ruff specific issues
+    "S",      # security issues
+    "TRY",    # try/except issues
+    "T",      # print issues
+    "N818",   # exception naming issues
+    "DJ001",  # Django specific issues
+    "ERA001", # commented out code
+    "EXE",    # executable issues
+    "FIX",    # fixme issues
+    "TD",     # todo issues
+    "UP017", # bad suggestion timezone.utc to datetime.UTC
+]
+
+[tool.ruff.lint.per-file-ignores]
+"**/tests/**/*.py" = [
+    "D",       # docstring issues
+    "ANN",     # type annotation issues
+    "ARG",     # argument issues
+    "BLE",     # blind exception issues
+    "DTZ",     # datetime issues
+    "EM",      # exception message issues
+    "INP",     # implicit namespace package issues
+    "PGH",     # type ignore issues
+    "PLR",     # magic number issues
+    "RET",     # return issues
+    "RUF",     # ruff specific issues
+    "S",       # security issues
+    "TRY",     # try/except issues
+    "T",       # print issues
+    "SLF001",  # self reference issues
+    "F",       # pyflakes issues
+    "PT",      # pytest issues
+    "PLC0415", # top-level import issues
+]
+
+[tool.ty.src]
+exclude = ["*/migrations/*"]
+
+[tool.django-stubs]
+django_settings_module = "config.settings"
+
+[tool.logging]
+level = "WARNING"
+format = "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
