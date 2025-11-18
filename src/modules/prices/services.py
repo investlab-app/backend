@@ -338,6 +338,7 @@ class LatestPriceService:
             ticker: PriceBar.deserialize(ticker_data)
             for ticker, ticker_data in data.items()
         }
+        return data
 
     def clear_prices(self):
         redis_client.delete(LATEST_PRICES_REDIS_KEY)

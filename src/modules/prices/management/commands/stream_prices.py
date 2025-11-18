@@ -16,8 +16,11 @@ logger = logging.getLogger(__name__)
 
 
 class PriceStream:
-    def __init__(self, prices_service: PriceService | None = None,
-                 latest_price_service: LatestPriceService | None = None):
+    def __init__(
+        self,
+        prices_service: PriceService | None = None,
+        latest_price_service: LatestPriceService | None = None,
+    ):
         self.channel_layer = get_channel_layer()
 
         self.price_service = prices_service or PriceService()

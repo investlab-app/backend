@@ -7,7 +7,6 @@ from decimal import Decimal
 from channels.layers import get_channel_layer
 from django.core.management.base import BaseCommand
 
-from modules.instruments.models import Instrument
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 from modules.prices.schemas import PriceBar
 from modules.prices.services import LatestPriceService, PriceService
@@ -28,9 +27,9 @@ class PriceStreamMock:
         self.latest_price_service = latest_price_service or LatestPriceService()
 
     def _randomize_value(self, value: Decimal | None):
-        value = float(value or 0)
-        val_range = min(value * 0.01, 0.25)
-        return max(value + random.uniform(-val_range, val_range), 1)
+        float_value = float(value or 0)
+        val_range = min(float_value * 0.01, 0.25)
+        return max(float_value + random.uniform(-val_range, val_range), 1)
 
     def _generate_prices(self):
         new_data = {}
