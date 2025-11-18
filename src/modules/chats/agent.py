@@ -5,7 +5,7 @@ from decimal import Decimal
 from asgiref.sync import sync_to_async
 from pydantic_ai import Agent, RunContext
 
-from config.clerk import client as clerk_client
+from config.clients import clerk_client
 from modules.chats.mcps import MassiveMCP
 from modules.investors.models import Asset, Investor
 from modules.prices.repositories import PolygonPricesRepository
