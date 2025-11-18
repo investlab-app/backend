@@ -67,6 +67,11 @@ class AccountValueSnapshotDailySerializer(serializers.ModelSerializer):
         return obj.timestamp.date()
 
 
+class AccountValueOverTimeResponseSerializer(serializers.Serializer):
+    history = AccountValueSnapshotDailySerializer(many=True)
+    current_value = serializers.DecimalField(max_digits=30, decimal_places=2)
+
+
 class WatchedTickerSerializer(serializers.ModelSerializer):
     """Serializer for watched tickers with icon and ticker information."""
 
