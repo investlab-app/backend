@@ -122,3 +122,11 @@ class PolygonPricesRepository:
             return None
 
         return {price.ticker: price for price in prices}
+
+    def get_daily_market_summary(self, date=None) -> dict[str, PriceBar] | None:
+        try:
+            aggs = self.polygon_client.get_grouped_daily_aggs(date.strftime("%Y-%m-%d"))
+            bars = {agg.ticker: PriceBar.from_agg(agg) for agg in aggs}
+            return bars
+        except Exception:
+            return None

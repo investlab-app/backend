@@ -1,11 +1,14 @@
 import asyncio
+import json
 import logging
+from datetime import datetime, timedelta
 from typing import Any
 
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
 
+from config.clients import redis_client
 from modules.investors.services import NotificationHistoryService
 from modules.notifications.services import (
     EmailPayload,
@@ -13,8 +16,10 @@ from modules.notifications.services import (
     PushPayload,
     WebSocketPayload,
 )
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.constants import LATEST_PRICES_REDIS_KEY, PRICES_CHANNEL_LAYER
 from modules.prices.models import PriceAlert
+from modules.prices.repositories import PolygonPricesRepository
+from modules.prices.schemas import PriceBar
 
 logger = logging.getLogger(__name__)
 
@@ -284,3 +289,56 @@ class PriceNotificationService:
         finally:
             await layer.group_discard(PRICES_CHANNEL_LAYER, channel_name)
             logger.info("notify_prices worker left group %s", PRICES_CHANNEL_LAYER)
+
+
+class PriceService:
+    def __init__(self, price_repo: PolygonPricesRepository | None = None):
+        self.price_repository = price_repo or PolygonPricesRepository()
+
+    def get_latest_daily_bars_from_last_n_days(self, days) -> dict[str, PriceBar]:
+        if days < 0:
+            raise ValueError("Invalid number of days")
+        if days == 0:
+            return {}
+
+        bars = {}
+        now = datetime.now()
+        for n in reversed(range(days)):
+            daily_bars = self.price_repository.get_daily_market_summary(
+                now - timedelta(days=n)
+            )
+            if daily_bars is None:
+                raise ValueError("Failed to fetch daily market summary")
+
+            bars.update(daily_bars)
+
+        return bars
+
+
+class LatestPriceService:
+    def update_prices(self, prices: dict[str, PriceBar]):
+        serialized_prices = {ticker: bar.serialize() for ticker, bar in prices.items()}
+        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY))
+
+        if data:
+            data.update(serialized_prices)
+        else:
+            data = serialized_prices
+
+        redis_client.set(LATEST_PRICES_REDIS_KEY, json.dumps(data))
+
+        self.get_prices()
+
+    def get_prices(self) -> dict[str, PriceBar]:
+        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY))
+        if data is None:
+            return {}
+
+        data = {
+            ticker: PriceBar.deserialize(ticker_data)
+            for ticker, ticker_data in data.items()
+        }
+        return data
+
+    def clear_prices(self):
+        redis_client.delete(LATEST_PRICES_REDIS_KEY)
