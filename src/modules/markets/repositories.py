@@ -25,3 +25,10 @@ class PolygonMarketsRepository:
             return self.polygon_client.get_market_status()
         except BadResponse:
             return None
+
+    def is_nasdaq_open(self) -> bool | None:
+        """Check if NASDAQ market is currently open."""
+        status = self.get_market_status()
+        if status is None:
+            return None
+        return status.exchanges.nasdaq == "open"
