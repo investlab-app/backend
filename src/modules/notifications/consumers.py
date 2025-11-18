@@ -1,14 +1,16 @@
-import json
+import logging
 
 from asgiref.sync import sync_to_async
-from channels.generic.websocket import AsyncWebsocketConsumer
+from channels.generic.websocket import AsyncJsonWebsocketConsumer
 from channels.layers import get_channel_layer
 
 from modules.investors.models import Investor
 from modules.prices.constants import PRICES_CHANNEL_LAYER
 
+logger = logging.getLogger(__name__)
 
-class Websocket(AsyncWebsocketConsumer):
+
+class Websocket(AsyncJsonWebsocketConsumer):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.layer = None
@@ -38,41 +40,20 @@ class Websocket(AsyncWebsocketConsumer):
 
         await self.accept()
 
-    async def broadcast_receive(self, event):
-        data = event["data"]
-
-        selected_tickers = [data[ticker] for ticker in self.names if ticker in data]
-        if selected_tickers:
-            await self.send(text_data=json.dumps({"prices": selected_tickers}))
-
-    async def notification_receive(self, event):
-        """
-        Handle price alert notifications for this specific investor.
-        Only sends notifications to the user's own WebSocket connections.
-        """
-        data = event["data"]
-
-        # Only send to the specific investor's connections (only if investor exists)
-        if self.investor and str(data["investor_id"]) == str(self.investor.id):
-            await self.send(text_data=json.dumps({"notification": data["message"]}))
-
-    async def receive(self, text_data=None, _=None):
-        if text_data is None:
+    async def receive_json(self, content=None, **kwargs):
+        if content is None:
             return
 
-        if isinstance(text_data, (bytes, bytearray)):
-            text_data = text_data.decode("utf-8")
-
-        if text_data == "ping":
-            await self.send(text_data="pong")
+        if "type" not in content:
+            logger.warning("Received invalid message without type: %s", content)
             return
 
-        try:
-            json_data = json.loads(text_data)
-        except Exception:
+        if content["type"] == "ping":
+            await self.send_json({"type": "pong"})
             return
 
-        self.names = json_data.get("set_subscription", [])
+        if content["type"] == "set_subscription":
+            self.names = content.get("subscriptions", [])
 
     async def disconnect(self, code):
         if not self.layer:
@@ -82,3 +63,20 @@ class Websocket(AsyncWebsocketConsumer):
             await self.layer.group_discard(
                 f"investor_{self.investor.id}", self.channel_name
             )
+
+    # TODO: Add validation for outgoing messages
+
+    async def send_prices(self, event):
+        data = event["data"]
+
+        selected_tickers = [data[ticker] for ticker in self.names if ticker in data]
+        if selected_tickers:
+            await self.send_json({"type": "prices", "data": selected_tickers})
+
+    async def send_notification(self, event):
+        data = event["data"]
+        await self.send_json({"type": "notification", "data": data["message"]})
+
+    async def send_llm(self, event):
+        data = event["data"]
+        await self.send_json({"type": "llm", "data": data})

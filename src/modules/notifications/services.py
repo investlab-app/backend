@@ -98,9 +98,8 @@ class WebSocketService:
             await self.channel_layer.group_send(
                 group_name,
                 {
-                    "type": "notification_receive",
+                    "type": "send.notification",
                     "data": {
-                        "investor_id": investor_id,
                         "message": message,
                     },
                 },
