@@ -1,4 +1,6 @@
 import json
+import random
+import time
 from unittest.mock import MagicMock
 
 import pytest
@@ -34,9 +36,27 @@ def _get_websocket_communicator(user, tickers=""):
     return communicator
 
 
+def get_random_ohlc(ticker: str) -> dict:
+    now_ms = int(time.time() * 1000)
+    return {
+        "symbol": ticker,
+        "volume": random.randint(1000, 10000),
+        "accumulated_volume": random.randint(1_000_000, 10_000_000),
+        "official_open_price": round(op := random.uniform(0.4, 1.0), 4),
+        "vwap": round(vw := (op + random.uniform(-0.01, 0.01)), 4),
+        "open": round(o := (vw + random.uniform(-0.002, 0.002)), 4),
+        "close": round(c := (vw + random.uniform(-0.002, 0.002)), 4),
+        "high": round(max(o, c) + random.uniform(0, 0.002), 4),
+        "low": round(min(o, c) - random.uniform(0, 0.002), 4),
+        "aggregate_vwap": round(op + random.uniform(-0.02, 0.02), 4),
+        "average_size": random.randint(100, 1000),
+        "start_timestamp": now_ms - 1000,
+        "end_timestamp": now_ms,
+    }
+
+
 def _create_ticker_data(*tickers: str) -> dict:
-    price_stream = PriceStreamMock()
-    return {ticker: price_stream.get_random_ohlc(ticker) for ticker in tickers}
+    return {ticker: get_random_ohlc(ticker) for ticker in tickers}
 
 
 async def _send_ticker_data(layer, msg):
