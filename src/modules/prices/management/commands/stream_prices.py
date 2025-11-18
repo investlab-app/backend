@@ -26,7 +26,7 @@ class PriceStream:
 
     async def _handle_msg(self, msgs: list[WebSocketMessage]):
         data = [asdict(m) for m in msgs]
-        data = {d["symbol"] for d in data}
+        data = {d["symbol"]: d for d in data}
         await self.channel_layer.group_send(
             PRICES_CHANNEL_LAYER, {"type": "broadcast.receive", "data": data}
         )

@@ -32,7 +32,7 @@ class BoughtSoldNode(Node):
 
 
 class PriceTriggerNode(Node):
-    TYPE_NAME = "boughtSold"
+    TYPE_NAME = "priceOverUnder"
     TRIGGER = True
 
     ticker = edges.InstrumentType(direction=edges.INPUT)
