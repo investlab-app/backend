@@ -1,10 +1,8 @@
-import json
 from decimal import Decimal
 from uuid import UUID
 
 from django.db import transaction
 
-from config.clients import redis_client
 from modules.graph_lang.framework.actions import (
     Action,
     BuySellAmountAction,
@@ -26,6 +24,7 @@ from modules.notifications.services import (
     PushPayload,
 )
 from modules.orders.services.order_services import OrderService
+from modules.prices.services import LatestPriceService
 
 
 class ActionHandler:
@@ -33,9 +32,11 @@ class ActionHandler:
         self,
         order_service: OrderService | None = None,
         notification_service: NotificationService | None = None,
+        latest_price_service: LatestPriceService | None = None,
     ):
         self._order_service = order_service or OrderService()
         self._notification_service = notification_service or NotificationService()
+        self._latest_price_service = latest_price_service or LatestPriceService()
 
     def handle(
         self,
@@ -78,8 +79,8 @@ class ActionHandler:
     def _handle_buy_sell_price(
         self, investor: Investor, graph: Graph, action: BuySellForPriceAction
     ):
-        prices = json.loads(redis_client.get("latest_prices"))
-        volume = action.price / prices[action.ticker]["close"]
+        prices = self._latest_price_service.get_prices()
+        volume = action.price / prices[action.ticker].close
         self._try_create_market_order(
             investor=investor,
             graph=graph,
