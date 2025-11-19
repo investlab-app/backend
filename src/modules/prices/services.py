@@ -350,5 +350,11 @@ class LatestPriceService:
         price_bars = self.get_price_bars()
         return {ticker: bar.close for ticker, bar in price_bars.items()}
 
+    def get_prices_default_dict(self, factory=lambda: Decimal("1")) -> defaultdict[str, Decimal]:
+        price_bars = self.get_prices()
+        prices_dict = defaultdict(factory)
+        prices_dict.update(price_bars)
+        return prices_dict
+
     def clear_prices(self):
         self.redis_client.delete(LATEST_PRICES_REDIS_KEY)
