@@ -37,7 +37,7 @@ class TestCreateMarketOrderView:
         return_order = fake_market_order(
             investor=self.investor, ticker=self.instrument, save=True
         )
-        order_service.create_market.return_value = return_order
+        order_service.create_market.return_value = return_order, None
         api_client.force_authenticate(user=self.user)
         response = api_client.post(self.url, data, content_type="application/json")
         assert response.status_code == 201

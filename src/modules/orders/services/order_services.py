@@ -11,6 +11,7 @@ from modules.prices.services import LatestPriceService
 class OrderFailureReason:
     FUNDS = "funds"
     ASSETS = "assets"
+    UNKNOWN = "unknown"
 
 
 class OrderService:
@@ -74,7 +75,7 @@ class OrderService:
                 investor.blocked_funds = Decimal(investor.blocked_funds)
                 current_price = self._get_current_price(instrument.ticker)
                 if not current_price:
-                    return None
+                    return None, OrderFailureReason.UNKNOWN
                 total_cost = current_price * volume
                 if not self._has_enough_funds(investor, total_cost):
                     return None, OrderFailureReason.FUNDS
