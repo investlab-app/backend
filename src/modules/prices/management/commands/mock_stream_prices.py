@@ -63,7 +63,7 @@ class PriceStreamMock:
                 ticker: PriceBar.from_ws(ohlc) for ticker, ohlc in data.items()
             }
 
-            self.latest_price_service.update_prices(price_bars)
+            self.latest_price_service.update_price_bars(price_bars)
             await channel_layer.group_send(
                 PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
             )

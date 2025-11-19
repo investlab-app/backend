@@ -1,12 +1,15 @@
 import asyncio
 import json
 import logging
+from collections import defaultdict
 from datetime import datetime, timedelta
+from decimal import Decimal
 from typing import Any
 
 from asgiref.sync import sync_to_async
 from channels.layers import get_channel_layer
 from django.db.models import Q
+from redis import Redis
 
 from config.clients import redis_client
 from modules.investors.services import NotificationHistoryService
@@ -316,21 +319,24 @@ class PriceService:
 
 
 class LatestPriceService:
-    def update_prices(self, prices: dict[str, PriceBar]):
+    def __init__(self, client: Redis | None = None):
+        self.redis_client = client or redis_client
+
+    def update_price_bars(self, prices: dict[str, PriceBar]):
         serialized_prices = {ticker: bar.serialize() for ticker, bar in prices.items()}
-        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
+        data = json.loads(self.redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
 
         if data:
             data.update(serialized_prices)
         else:
             data = serialized_prices
 
-        redis_client.set(LATEST_PRICES_REDIS_KEY, json.dumps(data))
+        self.redis_client.set(LATEST_PRICES_REDIS_KEY, json.dumps(data))
 
-        self.get_prices()
+        self.get_price_bars()
 
-    def get_prices(self) -> dict[str, PriceBar]:
-        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
+    def get_price_bars(self) -> dict[str, PriceBar]:
+        data = json.loads(self.redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
         if data is None:
             return {}
 
@@ -340,5 +346,9 @@ class LatestPriceService:
         }
         return data
 
+    def get_prices(self) -> dict[str, Decimal]:
+        price_bars = self.get_price_bars()
+        return {ticker: bar.close for ticker, bar in price_bars.items()}
+
     def clear_prices(self):
-        redis_client.delete(LATEST_PRICES_REDIS_KEY)
+        self.redis_client.delete(LATEST_PRICES_REDIS_KEY)

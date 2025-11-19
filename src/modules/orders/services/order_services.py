@@ -22,7 +22,7 @@ class OrderService:
     def _get_current_price(self, ticker: str) -> Decimal | None:
         prices = self.latest_price_service.get_prices()
         if ticker in prices:
-            return prices[ticker].close
+            return prices[ticker]
         else:
             return None
 

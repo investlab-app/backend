@@ -75,8 +75,7 @@ class PricesFetcher:
         self.latest_price_service = latest_price_service or LatestPriceService()
 
     def get_prices(self):
-        price_bars = self.latest_price_service.get_prices()
-        return {ticker: bar.close for ticker, bar in price_bars.items()}
+        return self.latest_price_service.get_prices()
 
 
 class TradeEngineOutputHandler:
