@@ -72,7 +72,7 @@ class TradeEngineDataFetcher:
 
 class PricesFetcher:
     def __init__(self, latest_price_service: LatestPriceService | None = None):
-        self.latest_price_service = latest_price_service
+        self.latest_price_service = latest_price_service or LatestPriceService()
 
     def get_prices(self):
         price_bars = self.latest_price_service.get_prices()

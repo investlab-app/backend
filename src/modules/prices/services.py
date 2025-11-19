@@ -318,7 +318,7 @@ class PriceService:
 class LatestPriceService:
     def update_prices(self, prices: dict[str, PriceBar]):
         serialized_prices = {ticker: bar.serialize() for ticker, bar in prices.items()}
-        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY))
+        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
 
         if data:
             data.update(serialized_prices)
@@ -330,7 +330,7 @@ class LatestPriceService:
         self.get_prices()
 
     def get_prices(self) -> dict[str, PriceBar]:
-        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY))
+        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
         if data is None:
             return {}
 
