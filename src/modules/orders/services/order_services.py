@@ -7,6 +7,9 @@ from modules.investors.models import Asset, Investor
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.services import LatestPriceService
 
+class OrderFailureReason:
+    FUNDS = "funds"
+    ASSETS = "assets"
 
 class OrderService:
     """Unified service for creating and deleting market and limit orders.
@@ -63,7 +66,7 @@ class OrderService:
         volume: Decimal,
         *,
         is_buy: bool,
-    ) -> Order | None:
+    ) -> tuple[Order | None,  OrderFailureReason | None]:
         with transaction.atomic():
             if is_buy:
                 investor.blocked_funds = Decimal(investor.blocked_funds)
@@ -72,13 +75,13 @@ class OrderService:
                     return None
                 total_cost = current_price * volume
                 if not self._has_enough_funds(investor, total_cost):
-                    return None
+                    return None,  OrderFailureReason.FUNDS
 
                 investor.blocked_funds += total_cost
                 investor.save()
             else:
                 if not self._has_enough_assets(investor, instrument, volume):
-                    return None
+                    return None, OrderFailureReason.ASSETS
 
                 total_cost = Decimal(0)
 
@@ -93,7 +96,7 @@ class OrderService:
                 ticker=instrument, investor=investor, detail=detail
             )
 
-        return order
+        return order, None
 
     def create_limit(
         self,
@@ -103,19 +106,19 @@ class OrderService:
         *,
         is_buy: bool,
         limit_price: Decimal,
-    ) -> Order | None:
+    ) -> tuple[Order | None,  OrderFailureReason | None]:
         with transaction.atomic():
             total_cost = Decimal(0)
             if is_buy:
                 total_cost = limit_price * volume
                 if not self._has_enough_funds(investor, total_cost):
-                    return None
+                    return None,  OrderFailureReason.FUNDS
 
                 investor.blocked_funds += total_cost
                 investor.save()
             else:
                 if not self._has_enough_assets(investor, instrument, volume):
-                    return None
+                    return None, OrderFailureReason.ASSETS
 
             detail = LimitOrder.objects.create(
                 volume=volume,
@@ -129,7 +132,7 @@ class OrderService:
                 ticker=instrument, investor=investor, detail=detail
             )
 
-        return order
+        return order, None
 
     def delete(self, order: Order):
         if not order.detail:

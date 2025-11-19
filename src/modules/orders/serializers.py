@@ -4,7 +4,7 @@ from rest_framework import serializers
 
 from modules.instruments.models import Instrument
 from modules.orders.models import LimitOrder, MarketOrder, Order
-from modules.orders.services.order_services import OrderService
+from modules.orders.services.order_services import OrderFailureReason, OrderService
 
 
 class FilterOrdersSerializer(serializers.Serializer):
@@ -33,16 +33,21 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
         service = OrderService()
-        order = service.create_market(
+        order, err = service.create_market(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],
             is_buy=validated_data["is_buy"],
         )
         if not order:
-            raise serializers.ValidationError(
-                "Cannot create market order due to blocked funds"
-            )
+            if err == "funsd":
+                raise serializers.ValidationError(
+                    "Cannot create market order due to blocked funds"
+                )
+            if err == "assets":
+                raise serializers.ValidationError(
+                    "Cannot create market order due to insufficient assets"
+                )
 
         return order
 
@@ -68,7 +73,7 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
         service = OrderService()
-        order = service.create_limit(
+        order, err = service.create_limit(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],
@@ -76,9 +81,14 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
             limit_price=validated_data["limit_price"],
         )
         if not order:
-            raise serializers.ValidationError(
-                "Cannot create limit order due to blocked funds"
-            )
+            if err ==  OrderFailureReason.FUNDS:
+                raise serializers.ValidationError(
+                    "Cannot create limit order due to blocked funds"
+                )
+            if err ==  OrderFailureReason.ASSETS:
+                raise serializers.ValidationError(
+                    "Cannot create limit order due to insufficient assets"
+                )
 
         return order
 
