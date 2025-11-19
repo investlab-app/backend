@@ -76,7 +76,9 @@ class TestOrderService:
         if price is None:
             fake_prices = {}
         else:
-            fake_prices = {self.asset.ticker.ticker: get_fake_price_bar(close=price).close}
+            fake_prices = {
+                self.asset.ticker.ticker: get_fake_price_bar(close=price).close
+            }
 
         self.latest_price_service_mock.get_prices.return_value = fake_prices
 

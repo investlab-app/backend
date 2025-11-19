@@ -18,7 +18,8 @@ logger = logging.getLogger(__name__)
 
 class InvestorStatsService:
     def __init__(self, price_service=None):
-        from modules.prices.services import LatestPriceService
+        from modules.prices.services import LatestPriceService  # noqa
+
         self.price_service = price_service or LatestPriceService()
 
     def get_total_value(self, investor: Investor) -> Decimal:

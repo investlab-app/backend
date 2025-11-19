@@ -16,7 +16,9 @@ class LatestPriceServiceMock(PriceRepositoryMock):
         super().__init__()
         self.investor = investor
 
-    def get_prices_default_dict(self, factory=lambda: Decimal("1")) -> defaultdict[str, Decimal]:
+    def get_prices_default_dict(
+        self, factory=lambda: Decimal(1)
+    ) -> defaultdict[str, Decimal]:
         assets = Asset.objects.filter(investor=self.investor)
         tickers = [a.ticker.ticker.upper() for a in assets]
         price_bars = self.get_prices_map(tickers)
