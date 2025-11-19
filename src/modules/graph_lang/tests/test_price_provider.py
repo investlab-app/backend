@@ -7,6 +7,7 @@ from faker import Faker
 
 from modules.graph_lang.framework.price_provider import PriceProvider
 from modules.prices.schemas import PriceBar, PriceDaily, PriceDailySummary
+from modules.prices.tests.conftest import get_fake_price_bar
 
 fake = Faker()
 
@@ -17,7 +18,12 @@ class TestPriceProvider:
     @pytest.fixture(autouse=True)
     def setup(self):
         self.repo = MagicMock()
-        self.provider = PriceProvider(self.repo, samples=self.SAMPLES)
+        self.latest_price_service = MagicMock()
+        self.provider = PriceProvider(
+            self.repo,
+            latest_price_service=self.latest_price_service,
+            samples=self.SAMPLES,
+        )
 
     @pytest.fixture()
     def dt(self):
@@ -41,8 +47,8 @@ class TestPriceProvider:
                 interval_multiplier: price_bars[ticker]
             )
 
-    def set_price_repository_snapshot_response(self, price_daily_summary):
-        self.repo.get_price.side_effect = lambda ticker: price_daily_summary
+    def set_latest_price_service_response(self, prices):
+        self.latest_price_service.get_prices.return_value = prices
 
     def price_bar(self, dt, price):
         return PriceBar(
@@ -168,11 +174,9 @@ class TestPriceProvider:
 
     def test__get_prices_returned_empty_list__price_is_from_snapshot(self, dt):
         self.set_price_repository_response([])
-        self.set_price_repository_snapshot_response(
-            self.price_daily_summary("AAPL", 100)
-        )
+        self.set_latest_price_service_response({"AAPL": self.price_bar(dt, 100)})
 
         self.provider.prefetch_data({"AAPL": timedelta()}, dt)
 
         assert self.provider.get_price("AAPL", dt) == 100
-        self.repo.get_price.assert_called_once_with("AAPL")
+        self.latest_price_service.get_prices.assert_called_once()
