@@ -14,6 +14,12 @@ from modules.orders.tests.conftest import fake_market_order
 pytestmark = pytest.mark.django_db
 
 
+@pytest.fixture
+def order_service():
+    with patch("modules.orders.serializers.OrderService") as order_service:
+        yield order_service.return_value
+
+
 class TestCreateMarketOrderView:
     @pytest.fixture(autouse=True)
     def setup(self, instruments_factory, user):
@@ -22,14 +28,16 @@ class TestCreateMarketOrderView:
         self.user = user
         self.url = reverse("market-order")
 
-    @patch("modules.orders.services.order_services.OrderService._get_current_price")
-    def test_happy(self, _get_current_price, api_client):
+    def test_happy(self, order_service, api_client):
         data = {
             "ticker": self.instrument.ticker,
             "volume": "10.00",
             "is_buy": True,
         }
-        _get_current_price.return_value = Decimal(0)
+        return_order = fake_market_order(
+            investor=self.investor, ticker=self.instrument, save=True
+        )
+        order_service.create_market.return_value = return_order
         api_client.force_authenticate(user=self.user)
         response = api_client.post(self.url, data, content_type="application/json")
         assert response.status_code == 201

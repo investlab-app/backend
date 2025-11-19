@@ -5,7 +5,7 @@ from django.db import transaction
 from modules.instruments.models import Instrument
 from modules.investors.models import Asset, Investor
 from modules.orders.models import LimitOrder, MarketOrder, Order
-from modules.prices.repositories import PolygonPricesRepository
+from modules.prices.services import LatestPriceService
 
 
 class OrderService:
@@ -16,15 +16,15 @@ class OrderService:
     funds for buy orders.
     """
 
-    def __init__(self, price_repository: PolygonPricesRepository | None = None):
-        self.price_repository = price_repository or PolygonPricesRepository()
+    def __init__(self, latest_price_service: LatestPriceService | None = None):
+        self.latest_price_service = latest_price_service or LatestPriceService()
 
-    def _get_current_price(self, ticker: str) -> Decimal:
-        price_summary = self.price_repository.get_price(ticker)
-        if not price_summary:
-            raise ValueError("Cannot fetch price for the given instrument.")
-
-        return price_summary.current_price
+    def _get_current_price(self, ticker: str) -> Decimal | None:
+        prices = self.latest_price_service.get_prices()
+        if ticker in prices:
+            return prices[ticker].close
+        else:
+            return None
 
     @staticmethod
     def _has_enough_funds(investor: Investor, total_cost: Decimal) -> bool:
@@ -66,7 +66,10 @@ class OrderService:
     ) -> Order | None:
         with transaction.atomic():
             if is_buy:
+                investor.blocked_funds = Decimal(investor.blocked_funds)
                 current_price = self._get_current_price(instrument.ticker)
+                if not current_price:
+                    return None
                 total_cost = current_price * volume
                 if not self._has_enough_funds(investor, total_cost):
                     return None
