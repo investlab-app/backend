@@ -425,9 +425,6 @@ POLYGON_ASSET_TYPE = "stocks"
 ALPACA_PUBLIC_KEY = os.environ["ALPACA_PUBLIC_KEY"]
 ALPACA_SECRET_KEY = os.environ["ALPACA_SECRET_KEY"]
 
-# Datetime formats
-ACCEPTABLE_DATETIME_FORMATS = ["%Y-%m-%dT%H:%M:%S.%fZ", "%Y-%m-%dT%H:%M:%SZ"]
-
 # Email
 ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
 FROM_EMAIL = os.environ["FROM_EMAIL"]
