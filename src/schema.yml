@@ -937,6 +937,12 @@ paths:
               schema:
                 $ref: '#/components/schemas/LimitOrder'
           description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreationError'
+          description: ''
   /api/orders/market/:
     get:
       operationId: orders_market_list
@@ -982,6 +988,12 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/MarketOrder'
+          description: ''
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OrderCreationError'
           description: ''
   /api/prices/:
     get:
@@ -2681,6 +2693,16 @@ components:
       - detail_type
       - id
       - ticker
+    OrderCreationError:
+      type: object
+      properties:
+        reason:
+          $ref: '#/components/schemas/ReasonEnum'
+        detail:
+          type: string
+      required:
+      - detail
+      - reason
     OrderDetail:
       oneOf:
       - $ref: '#/components/schemas/MarketOrderDetails'
@@ -3180,6 +3202,16 @@ components:
       - auth
       - endpoint
       - p256dh
+    ReasonEnum:
+      enum:
+      - funds
+      - assets
+      - unknown
+      type: string
+      description: |-
+        * `funds` - funds
+        * `assets` - assets
+        * `unknown` - unknown
     RoleEnum:
       enum:
       - user
