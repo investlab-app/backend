@@ -4,7 +4,12 @@ from rest_framework import serializers
 
 from modules.instruments.models import Instrument
 from modules.orders.models import LimitOrder, MarketOrder, Order
-from modules.orders.services.order_services import OrderService
+from modules.orders.services.order_services import OrderFailureReason, OrderService
+
+
+class OrderCreationErrorSerializer(serializers.Serializer):
+    reason = serializers.ChoiceField(choices=["funds", "assets", "unknown"])
+    detail = serializers.CharField()
 
 
 class FilterOrdersSerializer(serializers.Serializer):
@@ -33,16 +38,23 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
         service = OrderService()
-        order = service.create_market(
+        order, err = service.create_market(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],
             is_buy=validated_data["is_buy"],
         )
         if not order:
-            raise serializers.ValidationError(
-                "Cannot create market order due to blocked funds"
-            )
+            reason = "unknown"
+            detail = "Cannot create market order."
+            if err == OrderFailureReason.FUNDS:
+                reason = "funds"
+                detail = "Cannot create market order due to insufficient funds."
+            elif err == OrderFailureReason.ASSETS:
+                reason = "assets"
+                detail = "Cannot create market order due to insufficient assets."
+
+            raise serializers.ValidationError({"reason": reason, "detail": detail})
 
         return order
 
@@ -68,7 +80,7 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         instrument = get_object_or_404(Instrument, ticker=validated_data["ticker"])
         service = OrderService()
-        order = service.create_limit(
+        order, err = service.create_limit(
             instrument=instrument,
             investor=validated_data["investor"],
             volume=validated_data["volume"],
@@ -76,9 +88,16 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
             limit_price=validated_data["limit_price"],
         )
         if not order:
-            raise serializers.ValidationError(
-                "Cannot create limit order due to blocked funds"
-            )
+            reason = "unknown"
+            detail = "Cannot create limit order."
+            if err == OrderFailureReason.FUNDS:
+                reason = "funds"
+                detail = "Cannot create limit order due to insufficient funds."
+            elif err == OrderFailureReason.ASSETS:
+                reason = "assets"
+                detail = "Cannot create limit order due to insufficient assets."
+
+            raise serializers.ValidationError({"reason": reason, "detail": detail})
 
         return order
 

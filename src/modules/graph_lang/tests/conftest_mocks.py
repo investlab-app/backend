@@ -55,7 +55,6 @@ class MockScheduler:
         self.events += [f"update graph {id_}"]
 
     def price_changed(self, prices: dict[str, Decimal]):
-        print(prices)
         self.events += [("prices changed", prices)]
 
     def buy_executed(self, investor_id: str, ticker: str, amount: Decimal):
