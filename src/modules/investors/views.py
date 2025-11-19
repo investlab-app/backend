@@ -18,7 +18,7 @@ from modules.investors.models import (
     Investor,
 )
 from modules.investors.serializers import (
-    AccountValueSnapshotDailySerializer,
+    AccountValueOverTimeResponseSerializer,
     AssetSerializer,
     DepositHistorySerializer,
     DepositMoneySerializer,
@@ -27,6 +27,7 @@ from modules.investors.serializers import (
     WatchedTickerSerializer,
     WatchedTickersTickerSerializer,
 )
+from modules.investors.services import InvestorStatsService
 
 logger = logging.getLogger(__name__)
 
@@ -87,12 +88,12 @@ class WatchedTickersListView(generics.ListAPIView):
         return investor.watching_instruments.all()
 
 
-class AccountValueOverTimeView(generics.ListAPIView):
+class AccountValueOverTimeView(generics.GenericAPIView):
     """
     Get account value over time data for the current authenticated user.
     """
 
-    serializer_class = AccountValueSnapshotDailySerializer
+    serializer_class = AccountValueOverTimeResponseSerializer
     pagination_class = None
 
     def get_queryset(self):
@@ -119,14 +120,23 @@ class AccountValueOverTimeView(generics.ListAPIView):
         return qs
 
     @extend_schema(
-        responses={200: AccountValueSnapshotDailySerializer(many=True)},
+        responses={200: AccountValueOverTimeResponseSerializer},
         summary="Get account value over time",
         description=(
             "Get account value over time data for the currently authenticated user."
         ),
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
-        return super().get(request, *args, **kwargs)
+        queryset = self.get_queryset()
+
+        investor = Investor.objects.get(clerk_id=self.request.user.id)
+        stats_service = InvestorStatsService()
+        current_value = stats_service.get_total_value(investor)
+
+        serializer = self.get_serializer(
+            {"history": queryset, "current_value": current_value}
+        )
+        return Response(serializer.data)
 
 
 class WatchedTickersTickerView(generics.GenericAPIView):
