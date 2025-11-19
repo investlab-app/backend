@@ -7,6 +7,11 @@ from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.orders.services.order_services import OrderFailureReason, OrderService
 
 
+class OrderCreationErrorSerializer(serializers.Serializer):
+    reason = serializers.ChoiceField(choices=["funds", "assets" ,"unknown"])
+    detail = serializers.CharField()
+
+
 class FilterOrdersSerializer(serializers.Serializer):
     ticker = serializers.CharField(
         max_length=20,
@@ -40,14 +45,16 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
             is_buy=validated_data["is_buy"],
         )
         if not order:
-            if err == "funsd":
-                raise serializers.ValidationError(
-                    "Cannot create market order due to blocked funds"
-                )
-            if err == "assets":
-                raise serializers.ValidationError(
-                    "Cannot create market order due to insufficient assets"
-                )
+            reason = "unknown"
+            detail = "Cannot create market order."
+            if err == OrderFailureReason.FUNDS:
+                reason = "funds"
+                detail = "Cannot create market order due to insufficient funds."
+            elif err == OrderFailureReason.ASSETS:
+                reason = "assets"
+                detail = "Cannot create market order due to insufficient assets."
+            
+            raise serializers.ValidationError({"reason": reason, "detail": detail})
 
         return order
 
@@ -81,14 +88,16 @@ class CreateLimitOrderSerializer(serializers.ModelSerializer):
             limit_price=validated_data["limit_price"],
         )
         if not order:
-            if err ==  OrderFailureReason.FUNDS:
-                raise serializers.ValidationError(
-                    "Cannot create limit order due to blocked funds"
-                )
-            if err ==  OrderFailureReason.ASSETS:
-                raise serializers.ValidationError(
-                    "Cannot create limit order due to insufficient assets"
-                )
+            reason = "unknown"
+            detail = "Cannot create limit order."
+            if err == OrderFailureReason.FUNDS:
+                reason = "funds"
+                detail = "Cannot create limit order due to insufficient funds."
+            elif err == OrderFailureReason.ASSETS:
+                reason = "assets"
+                detail = "Cannot create limit order due to insufficient assets."
+
+            raise serializers.ValidationError({"reason": reason, "detail": detail})
 
         return order
 

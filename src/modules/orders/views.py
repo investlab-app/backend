@@ -13,6 +13,7 @@ from modules.orders.serializers import (
     LimitOrderSerializer,
     MarketOrderSerializer,
     OrderSerializer,
+    OrderCreationErrorSerializer,
 )
 from modules.orders.services.order_services import OrderService
 
@@ -27,7 +28,10 @@ class MarketOrderView(generics.GenericAPIView):
 
     @extend_schema(
         request=CreateMarketOrderSerializer,
-        responses={201: MarketOrderSerializer},
+        responses={
+            201: MarketOrderSerializer,
+            400: OrderCreationErrorSerializer,
+        },
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -70,7 +74,10 @@ class LimitOrderView(generics.GenericAPIView):
 
     @extend_schema(
         request=CreateLimitOrderSerializer,
-        responses={201: LimitOrderSerializer},
+        responses={
+            201: LimitOrderSerializer,
+            400: OrderCreationErrorSerializer,
+        },
     )
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
