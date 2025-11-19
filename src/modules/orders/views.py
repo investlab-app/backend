@@ -12,8 +12,8 @@ from modules.orders.serializers import (
     FilterOrdersSerializer,
     LimitOrderSerializer,
     MarketOrderSerializer,
-    OrderSerializer,
     OrderCreationErrorSerializer,
+    OrderSerializer,
 )
 from modules.orders.services.order_services import OrderService
 

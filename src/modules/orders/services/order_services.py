@@ -7,9 +7,11 @@ from modules.investors.models import Asset, Investor
 from modules.orders.models import LimitOrder, MarketOrder, Order
 from modules.prices.services import LatestPriceService
 
+
 class OrderFailureReason:
     FUNDS = "funds"
     ASSETS = "assets"
+
 
 class OrderService:
     """Unified service for creating and deleting market and limit orders.
@@ -66,7 +68,7 @@ class OrderService:
         volume: Decimal,
         *,
         is_buy: bool,
-    ) -> tuple[Order | None,  OrderFailureReason | None]:
+    ) -> tuple[Order | None, str | None]:
         with transaction.atomic():
             if is_buy:
                 investor.blocked_funds = Decimal(investor.blocked_funds)
@@ -75,7 +77,7 @@ class OrderService:
                     return None
                 total_cost = current_price * volume
                 if not self._has_enough_funds(investor, total_cost):
-                    return None,  OrderFailureReason.FUNDS
+                    return None, OrderFailureReason.FUNDS
 
                 investor.blocked_funds += total_cost
                 investor.save()
@@ -106,13 +108,13 @@ class OrderService:
         *,
         is_buy: bool,
         limit_price: Decimal,
-    ) -> tuple[Order | None,  OrderFailureReason | None]:
+    ) -> tuple[Order | None, str | None]:
         with transaction.atomic():
             total_cost = Decimal(0)
             if is_buy:
                 total_cost = limit_price * volume
                 if not self._has_enough_funds(investor, total_cost):
-                    return None,  OrderFailureReason.FUNDS
+                    return None, OrderFailureReason.FUNDS
 
                 investor.blocked_funds += total_cost
                 investor.save()

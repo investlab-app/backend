@@ -8,7 +8,7 @@ from modules.orders.services.order_services import OrderFailureReason, OrderServ
 
 
 class OrderCreationErrorSerializer(serializers.Serializer):
-    reason = serializers.ChoiceField(choices=["funds", "assets" ,"unknown"])
+    reason = serializers.ChoiceField(choices=["funds", "assets", "unknown"])
     detail = serializers.CharField()
 
 
@@ -53,7 +53,7 @@ class CreateMarketOrderSerializer(serializers.ModelSerializer):
             elif err == OrderFailureReason.ASSETS:
                 reason = "assets"
                 detail = "Cannot create market order due to insufficient assets."
-            
+
             raise serializers.ValidationError({"reason": reason, "detail": detail})
 
         return order

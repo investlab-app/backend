@@ -2,7 +2,6 @@ import json
 from decimal import Decimal
 from unittest.mock import MagicMock, call, patch
 
-from modules.orders.services.order_services import OrderFailureReason
 import pytest
 from django.core.serializers.json import DjangoJSONEncoder
 
@@ -22,6 +21,7 @@ from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.models import Asset, Investor
 from modules.investors.tests.conftest import create_fake_investor
 from modules.notifications.services import EmailPayload, PushPayload
+from modules.orders.services.order_services import OrderFailureReason
 from modules.prices.tests.conftest import get_fake_ohlc
 
 pytestmark = pytest.mark.django_db
@@ -142,7 +142,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         assert self.buy_sell_effect_equals(effect=effect, is_buy=False, amount=10)
 
     def test__buy_sell_order_create_failure__result_success_is_false(self):
-        self.order_service.create_market.return_value = None,  OrderFailureReason.FUNDS
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
 
         self.handle_default(
             action_set={
@@ -218,7 +218,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         assert len(GraphEffect.objects.all()) == 2
 
     def test__buy_sell_percentage_fail__failed_effect_is_created(self):
-        self.order_service.create_market.return_value = None,  OrderFailureReason.FUNDS
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
         self.set_assets(50)
 
         self.handle_default({self.buy_percentage("AAPL", 1.00)})
@@ -277,7 +277,7 @@ class TestBuySellPrice(TestActionHandlerBase):
         self.clear_prices()
 
     def test__buy_sell_price_fail__failed_effect_is_created(self):
-        self.order_service.create_market.return_value = None,  OrderFailureReason.FUNDS
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
         self.set_prices({"AAPL": 50})
 
         self.handle_default({self.buy_price("AAPL", 100)})
