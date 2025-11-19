@@ -76,7 +76,8 @@ class TestOrderService:
         if price is None:
             fake_prices = {}
         else:
-            fake_prices = {self.asset.ticker.ticker: get_fake_price_bar(close=price)}
+            fake_prices = {self.asset.ticker.ticker: get_fake_price_bar(close=price).close}
+
         self.latest_price_service_mock.get_prices.return_value = fake_prices
 
     def set_investor_balance(self, balance):
