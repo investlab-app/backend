@@ -330,7 +330,7 @@ class LatestPriceService:
         self.get_prices()
 
     def get_prices(self) -> dict[str, PriceBar]:
-        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or '{}')
+        data = json.loads(redis_client.get(LATEST_PRICES_REDIS_KEY) or "{}")
         if data is None:
             return {}
 
@@ -339,7 +339,6 @@ class LatestPriceService:
             for ticker, ticker_data in data.items()
         }
         return data
-
 
     def clear_prices(self):
         redis_client.delete(LATEST_PRICES_REDIS_KEY)
