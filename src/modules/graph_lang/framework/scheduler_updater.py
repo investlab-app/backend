@@ -13,7 +13,9 @@ from modules.transactions.models import Transaction
 class SchedulerUpdater:
     stop = False
 
-    def __init__(self, scheduler, latest_price_service: LatestPriceService | None = None):
+    def __init__(
+        self, scheduler, latest_price_service: LatestPriceService | None = None
+    ):
         self._latest_price_service = latest_price_service
         self.scheduler = scheduler or Scheduler()
 

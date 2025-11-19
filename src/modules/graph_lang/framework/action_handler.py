@@ -124,13 +124,13 @@ class ActionHandler:
             instrument = Instrument.objects.get(ticker__iexact=ticker)
 
             if volume > 0:
-                result = self._order_service.create_market(
+                result_order, _err = self._order_service.create_market(
                     investor=investor,
                     instrument=instrument,
                     volume=volume,
                     is_buy=is_buy,
                 )
-                success = result is not None
+                success = result_order is not None
             else:
                 volume = Decimal(0)
                 success = False
