@@ -2,21 +2,18 @@ import asyncio
 import json
 from datetime import datetime, timedelta
 from decimal import Decimal
-from unittest.mock import patch
+from unittest.mock import MagicMock, patch
 
 import faker
 import pytest
-from channels.layers import get_channel_layer
 from django.core.serializers.json import DjangoJSONEncoder
 
-from config.clients import redis_client
 from modules.graph_lang.framework.scheduler_updater import SchedulerUpdater
 from modules.graph_lang.tests.conftest import fake_graph
 from modules.graph_lang.tests.conftest_mocks import MockScheduler
 from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.tests.conftest import create_fake_investor
-from modules.prices.constants import PRICES_CHANNEL_LAYER
-from modules.prices.tests.conftest import get_fake_ohlc
+from modules.prices.tests.conftest import get_fake_ohlc, get_fake_price_bar
 from modules.transactions.tests.conftest import create_fake_transaction
 
 fake = faker.Faker()
@@ -27,9 +24,11 @@ class TestSchedulerUpdater:
     @pytest.fixture(autouse=True)
     def setup(self, datetime_mock, sleep_mock):
         self.scheduler = MockScheduler()
-        self.updater = SchedulerUpdater(self.scheduler)
+        self.price_service = MagicMock()
+        self.updater = SchedulerUpdater(self.scheduler, self.price_service)
         self.datetime = datetime_mock
         self.sleep = sleep_mock
+        self.price_service.get_prices.return_value = {}
 
     @pytest.fixture(autouse=True)
     def sleep_mock(self):
@@ -124,10 +123,10 @@ class TestSchedulerUpdater:
     def test__prices_changed__scheduler_receives_prices_changed_event(self):
         self.stop_updater_after_iteration()
         prices = {
-            "AAPL": get_fake_ohlc(ticker="AAPL", close=Decimal(20)),
-            "GOGL": get_fake_ohlc(ticker="GOGL", close=Decimal(30)),
+            "AAPL": get_fake_price_bar(close=Decimal(20)),
+            "GOGL": get_fake_price_bar(close=Decimal(30)),
         }
-        redis_client.set("latest_prices", json.dumps(prices, cls=DjangoJSONEncoder))
+        self.price_service.get_prices.return_value = prices
 
         self.updater.run()
 
@@ -135,7 +134,6 @@ class TestSchedulerUpdater:
             ("prices changed", {"AAPL": 20, "GOGL": 30}),
             "step",
         ]
-        redis_client.delete("latest_prices")
 
 
 def test__graph_exists_before_scheduler__all_graphs_added_on_init():
