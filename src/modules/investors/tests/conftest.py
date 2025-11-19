@@ -14,14 +14,21 @@ fake = Faker()
 
 
 def create_fake_investor(
-    investor_id=None, clerk_id=None, balance=Decimal(0), *, save=False
+    investor_id=None,
+    clerk_id=None,
+    balance=Decimal(0),
+    blocked_funds=Decimal(0),
+    *,
+    save=False,
 ):
     if investor_id is None:
         investor_id = uuid.uuid4()
     if clerk_id is None:
         clerk_id = fake.pystr()
 
-    investor = Investor(id=investor_id, clerk_id=clerk_id, balance=balance)
+    investor = Investor(
+        id=investor_id, clerk_id=clerk_id, balance=balance, blocked_funds=blocked_funds
+    )
     if save:
         investor.save()
     return investor

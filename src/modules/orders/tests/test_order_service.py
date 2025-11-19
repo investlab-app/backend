@@ -1,103 +1,201 @@
 from decimal import Decimal
+from unittest.mock import MagicMock
 
 import pytest
 
 from modules.investors.tests.conftest import (
     asset_factory,
-    create_fake_asset,
-    create_fake_investor,
 )
-from modules.orders.models import Order
 from modules.orders.services.order_services import OrderService
 from modules.orders.tests.conftest import fake_limit_order, fake_market_order
+from modules.prices.tests.conftest import get_fake_price_bar
 
 pytestmark = pytest.mark.django_db
 
 
-def test_create_market_sell_insufficient_due_to_blocked(asset_factory):
-    asset = asset_factory(volume=Decimal(5))
-    investor = asset.investor
-    instrument = asset.ticker
+# Missing tests
+# - Is the order actually saved to the db
+# - Is blocked_funds correctly updated
+# - Entire delete function
+class TestOrderService:
+    @pytest.fixture(autouse=True)
+    def setup(self, asset_factory):
+        self.latest_price_service_mock = MagicMock()
+        self.order_service = OrderService(self.latest_price_service_mock)
+        self.asset = asset_factory(volume=Decimal(5))
+        self.investor = self.asset.investor
+        self.instrument = self.asset.ticker
 
-    # existing sell order blocking 3 units
-    fake_market_order(
-        investor=investor,
-        ticker=instrument,
-        is_buy=False,
-        volume=Decimal(3),
-        save=True,
-    )
+    def market_order(self, *, is_buy: bool, volume: Decimal):
+        fake_market_order(
+            investor=self.investor,
+            ticker=self.instrument,
+            is_buy=is_buy,
+            volume=Decimal(volume),
+            save=True,
+        )
 
-    svc = OrderService()
-    order = svc.create_market(
-        investor=investor, instrument=instrument, volume=Decimal(3), is_buy=False
-    )
-    assert order is None
-    # only the existing order should be present
-    assert Order.objects.filter(investor=investor).count() == 1
+    def limit_order(self, *, is_buy: bool, volume: Decimal, limit_price: Decimal):
+        fake_limit_order(
+            investor=self.investor,
+            ticker=self.instrument,
+            is_buy=is_buy,
+            volume=Decimal(volume),
+            limit_price=Decimal(limit_price),
+            save=True,
+        )
 
+    def order_service_create_market(self, *, is_buy: bool, volume: Decimal):
+        return self.order_service.create_market(
+            investor=self.investor,
+            instrument=self.instrument,
+            volume=Decimal(volume),
+            is_buy=is_buy,
+        )
 
-def test_create_market_sell_success_when_enough_available(asset_factory):
-    asset = asset_factory(volume=Decimal(5))
-    investor = asset.investor
-    instrument = asset.ticker
+    def order_service_create_limit(
+        self, *, is_buy: bool, volume: Decimal, limit_price: Decimal
+    ):
+        return self.order_service.create_limit(
+            investor=self.investor,
+            instrument=self.instrument,
+            volume=Decimal(volume),
+            is_buy=is_buy,
+            limit_price=Decimal(limit_price),
+        )
 
-    # existing sell order blocking 3 units
-    fake_market_order(
-        investor=investor,
-        ticker=instrument,
-        is_buy=False,
-        volume=Decimal(3),
-        save=True,
-    )
+    def set_asset_volume(self, volume: Decimal):
+        self.asset.volume = volume
+        self.asset.save()
 
-    svc = OrderService()
-    order = svc.create_market(
-        investor=investor, instrument=instrument, volume=Decimal(2), is_buy=False
-    )
-    assert order is not None
-    # existing + newly created
-    assert Order.objects.filter(investor=investor).count() == 2
+    def set_blocked_funds(self, blocked_funds: Decimal):
+        self.investor.blocked_funds = Decimal(blocked_funds)
+        self.investor.save()
 
+    def set_asset_price(self, price):
+        if price is None:
+            fake_prices = {}
+        else:
+            fake_prices = {self.asset.ticker.ticker: get_fake_price_bar(close=price)}
+        self.latest_price_service_mock.get_prices.return_value = fake_prices
 
-def test_create_limit_sell_respects_blocked_from_other_orders(asset_factory):
-    asset = asset_factory(volume=Decimal(10))
-    investor = asset.investor
-    instrument = asset.ticker
+    def set_investor_balance(self, balance):
+        self.investor.balance = balance
+        self.investor.save()
 
-    # Block 8 with two existing sell orders (5 + 3)
-    fake_market_order(
-        investor=investor,
-        ticker=instrument,
-        is_buy=False,
-        volume=Decimal(5),
-        save=True,
-    )
-    fake_limit_order(
-        investor=investor,
-        ticker=instrument,
-        is_buy=False,
-        volume=Decimal(3),
-        save=True,
-    )
+    def test__create_market_sell__enough_assets__passes(self):
+        self.set_asset_volume(volume=5)
 
-    svc = OrderService()
-    # trying to sell 3 more should fail (available = 10 - 8 = 2)
-    order = svc.create_limit(
-        investor=investor,
-        instrument=instrument,
-        volume=Decimal(3),
-        is_buy=False,
-        limit_price=Decimal(1),
-    )
-    assert order is None
+        order = self.order_service_create_market(is_buy=False, volume=3)
 
-    # selling 2 should succeed
-    order2 = svc.create_limit(
-        investor=investor,
-        instrument=instrument,
-        volume=Decimal(2),
-        is_buy=False,
-        limit_price=Decimal(1),
-    )
-    assert order2 is not None
+        assert order is not None
+
+    def test__create_market_sell__not_enough_assets__fails(self):
+        self.set_asset_volume(volume=5)
+
+        order = self.order_service_create_market(is_buy=False, volume=6)
+
+        assert order is None
+
+    def test__create_market_sell__some_assets_blocked__passes(self):
+        self.set_asset_volume(volume=10)
+        self.market_order(is_buy=False, volume=5)
+
+        order = self.order_service_create_market(is_buy=False, volume=5)
+
+        assert order is not None
+
+    def test__create_market_sell__too_many_assets_blocked__fails(self):
+        self.set_asset_volume(volume=10)
+        self.market_order(is_buy=False, volume=5)
+
+        order = self.order_service_create_market(is_buy=False, volume=6)
+
+        assert order is None
+
+    def test__create_market_sell__respects_blocked_assets_from_other_orders(self):
+        self.set_asset_volume(volume=10)
+        self.limit_order(is_buy=False, volume=10, limit_price=0)
+
+        order = self.order_service_create_market(is_buy=False, volume=1)
+
+        assert order is None
+
+    def test__create_market_buy__enough_funds__passes(self):
+        self.set_asset_price(price=1)
+        self.set_investor_balance(5)
+
+        order = self.order_service_create_market(is_buy=True, volume=5)
+
+        assert order is not None
+
+    def test__create_market_buy__price_is_missing__fails(self):
+        self.set_asset_price(None)
+        self.set_investor_balance(5)
+
+        order = self.order_service_create_market(is_buy=True, volume=5)
+
+        assert order is None
+
+    def test__create_market_buy__not_enough_funds__fails(self):
+        self.set_asset_price(price=1)
+        self.set_investor_balance(5)
+
+        order = self.order_service_create_market(is_buy=True, volume=10)
+
+        assert order is None
+
+    def test__create_market_buy__funds_partially_blocked__passes(self):
+        self.set_asset_price(1)
+        self.set_investor_balance(10)
+        self.set_blocked_funds(5)
+
+        order = self.order_service_create_market(is_buy=True, volume=5)
+
+        assert order is not None
+
+    def test__create_market_buy__funds_partially_blocked__fails(self):
+        self.set_asset_price(1)
+        self.set_investor_balance(10)
+        self.set_blocked_funds(10)
+
+        order = self.order_service_create_market(is_buy=True, volume=6)
+
+        assert order is None
+
+    def test__create_limit_buy__enough_money__passes(self):
+        self.set_investor_balance(10)
+        self.set_blocked_funds(5)
+
+        order = self.order_service_create_limit(is_buy=True, volume=5, limit_price=1)
+
+        assert order is not None
+
+    def test__create_limit_buy__not_enough_money__fails(self):
+        self.set_investor_balance(10)
+        self.set_blocked_funds(5)
+
+        order = self.order_service_create_limit(is_buy=True, volume=6, limit_price=1)
+
+        assert order is None
+
+    def test_create_limit_sell_respects_blocked_from_other_orders(self):
+        self.asset.volume = 10
+        self.asset.save()
+
+        self.market_order(is_buy=False, volume=5)
+        self.market_order(is_buy=False, volume=3)
+
+        order = self.order_service_create_limit(
+            volume=Decimal(3),
+            is_buy=False,
+            limit_price=Decimal(1),
+        )
+        order2 = self.order_service_create_limit(
+            volume=Decimal(2),
+            is_buy=False,
+            limit_price=Decimal(1),
+        )
+
+        assert order is None
+        assert order2 is not None

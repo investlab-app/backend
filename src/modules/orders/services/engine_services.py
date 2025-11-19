@@ -1,9 +1,7 @@
-import asyncio
 import uuid
 from decimal import Decimal
+from time import sleep
 
-from channels.db import database_sync_to_async
-from channels.layers import get_channel_layer
 from django.db import transaction
 
 from modules.instruments.models import Instrument
@@ -22,7 +20,7 @@ from modules.orders.order_engine.structures import (
     TradeEngineOutput,
 )
 from modules.orders.services.order_services import OrderService
-from modules.prices.constants import PRICES_CHANNEL_LAYER
+from modules.prices.services import LatestPriceService
 from modules.transactions.schemas import TransactionParams
 from modules.transactions.services import ExecuteTransactionService
 
@@ -35,29 +33,29 @@ class RunOrderEngineService:
         self.engine = TradeEngine()
         self.markets_repository = PolygonMarketsRepository()
 
-    async def run(self):
-        asyncio.ensure_future(self.price_listener.run())
+    def run(self):
         while True:
             if self.markets_repository.is_nasdaq_open():
-                data = await self.data_fetcher.fetch()
+                data = self.data_fetcher.fetch()
                 prices = self.price_listener.get_prices()
                 data.prices = prices
                 output = self.engine.run(data)
-                await self.output_handler.handle(output, prices)
+                self.output_handler.handle(output, prices)
             else:
-                await asyncio.sleep(60)
+                sleep(60)
 
 
 class TradeEngineDataFetcher:
-    async def fetch(self) -> TradeEngineInput:
-        (orders, assets, balances) = await database_sync_to_async(
-            self._prefetch_data_sync
-        )()
+    def fetch(self) -> TradeEngineInput:
+        (orders, assets, balances) = self._fetch_data()
         return TradeEngineInput(
-            orders=orders, assets=assets, prices={}, balances=balances
+            orders=orders,
+            assets=assets,
+            prices={},
+            balances=balances,
         )
 
-    def _prefetch_data_sync(self):
+    def _fetch_data(self):
         with transaction.atomic():
             assets: list[Asset] = list(Asset.objects.all())  # ty: ignore
             orders: list[Order] = list(  # ty: ignore[invalid-assignment]
@@ -73,43 +71,25 @@ class TradeEngineDataFetcher:
 
 
 class PricesFetcher:
-    def __init__(self):
-        self._prices = {}
-
-    async def run(self):
-        self.layer = get_channel_layer()
-        await asyncio.ensure_future(self._update_input_prices(self.layer))
-
-    async def _update_input_prices(self, layer):
-        channel = await layer.new_channel()
-        await layer.group_add(PRICES_CHANNEL_LAYER, channel)
-
-        while True:
-            ticker_data = await layer.receive(channel)
-            for ticker, data in ticker_data["data"].items():
-                self._prices[ticker] = (
-                    Decimal(data["high"]) + Decimal(data["low"])
-                ) / 2
+    def __init__(self, latest_price_service: LatestPriceService | None = None):
+        self.latest_price_service = latest_price_service or LatestPriceService()
 
     def get_prices(self):
-        return self._prices
+        price_bars = self.latest_price_service.get_prices()
+        return {ticker: bar.close for ticker, bar in price_bars.items()}
 
 
 class TradeEngineOutputHandler:
     def __init__(self, order_service: OrderService | None = None):
         self.order_service = order_service or OrderService()
 
-    async def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
-        await database_sync_to_async(self._handle_output_sync)(output, prices)
-
-    def _handle_output_sync(self, output: TradeEngineOutput, prices: dict[str, float]):
+    def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
         with transaction.atomic():
             self._handle_completed_orders(output.completed_orders)
             self._handle_updated_orders(output.updated_orders)
             self._handle_transactions(output.transactions, prices)
 
     def _handle_completed_orders(self, orders: list[uuid.UUID]):
-        # Delete orders of the correct type and release blocked funds
         for order in Order.objects.filter(id__in=orders).prefetch_related("detail"):
             self.order_service.delete(order)
 

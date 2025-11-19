@@ -19,10 +19,10 @@ class Investor(BaseModel):
         Instrument, blank=True, verbose_name=_("Watching Instruments")
     )
     balance = models.DecimalField(
-        max_digits=30, decimal_places=2, default="0", verbose_name=_("Balance")
+        max_digits=30, decimal_places=2, default=0, verbose_name=_("Balance")
     )
     blocked_funds = models.DecimalField(
-        max_digits=30, decimal_places=2, default="0", verbose_name=_("Blocked Funds")
+        max_digits=30, decimal_places=2, default=0, verbose_name=_("Blocked Funds")
     )
 
     class Meta:
