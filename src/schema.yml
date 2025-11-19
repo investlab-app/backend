@@ -659,7 +659,7 @@ paths:
           description: ''
   /api/investors/me/account-value/:
     get:
-      operationId: investors_me_account_value_list
+      operationId: investors_me_account_value_retrieve
       description: Get account value over time data for the currently authenticated
         user.
       summary: Get account value over time
@@ -673,9 +673,7 @@ paths:
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: '#/components/schemas/AccountValueSnapshotDaily'
+                $ref: '#/components/schemas/AccountValueOverTimeResponse'
           description: ''
   /api/investors/me/notifications/:
     get:
@@ -1512,6 +1510,20 @@ paths:
           description: Authentication test successful
 components:
   schemas:
+    AccountValueOverTimeResponse:
+      type: object
+      properties:
+        history:
+          type: array
+          items:
+            $ref: '#/components/schemas/AccountValueSnapshotDaily'
+        current_value:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,28}(?:\.\d{0,2})?$
+      required:
+      - current_value
+      - history
     AccountValueSnapshotDaily:
       type: object
       description: Serializer for AccountValueSnapshot model.
