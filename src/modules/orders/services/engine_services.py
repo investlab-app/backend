@@ -1,7 +1,10 @@
 import uuid
+from collections import defaultdict
 from decimal import Decimal
 from time import sleep
 
+from asgiref.sync import async_to_sync
+from channels.layers import get_channel_layer
 from django.db import transaction
 
 from modules.instruments.models import Instrument
@@ -85,9 +88,41 @@ class TradeEngineOutputHandler:
 
     def handle(self, output: TradeEngineOutput, prices: dict[str, float]):
         with transaction.atomic():
+            updates = self._collect_affected_data(output)
+
             self._handle_completed_orders(output.completed_orders)
             self._handle_updated_orders(output.updated_orders)
             self._handle_transactions(output.transactions, prices)
+
+            if updates:
+                self._send_order_update(updates)
+
+    def _collect_affected_data(self, output: TradeEngineOutput) -> dict[str, set[str]]:
+        updates = defaultdict(set)
+
+        if output.completed_orders:
+            completed_orders_qs = (
+                Order.objects.filter(id__in=output.completed_orders)
+                .select_related("ticker")
+                .only("investor_id", "ticker__ticker")
+            )
+            for o in completed_orders_qs:
+                updates[str(o.investor_id)].add(o.ticker.ticker)
+
+        if output.updated_orders:
+            updated_ids = [o.id for o in output.updated_orders]
+            updated_orders_qs = (
+                Order.objects.filter(id__in=updated_ids)
+                .select_related("ticker")
+                .only("investor_id", "ticker__ticker")
+            )
+            for o in updated_orders_qs:
+                updates[str(o.investor_id)].add(o.ticker.ticker)
+
+        for t in output.transactions:
+            updates[str(t.investor_id)].add(t.ticker)
+
+        return updates
 
     def _handle_completed_orders(self, orders: list[uuid.UUID]):
         for order in Order.objects.filter(id__in=orders).prefetch_related("detail"):
@@ -126,3 +161,17 @@ class TradeEngineOutputHandler:
                 transaction_service.buy(transaction_params)
             else:
                 transaction_service.sell(transaction_params)
+
+    def _send_order_update(
+        self,
+        updates: dict[str, set[str]],
+    ):
+        channel_layer = get_channel_layer()
+        for investor_id, tickers in updates.items():
+            async_to_sync(channel_layer.group_send)(
+                f"investor_{investor_id}",
+                {
+                    "type": "send_order_update",
+                    "data": {"tickers": list(tickers)},
+                },
+            )

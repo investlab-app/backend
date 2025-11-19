@@ -80,3 +80,7 @@ class Websocket(AsyncJsonWebsocketConsumer):
     async def send_llm(self, event):
         data = event["data"]
         await self.send_json({"type": "llm", "data": data})
+
+    async def send_order_update(self, event):
+        data = event["data"]
+        await self.send_json({"type": "order_update", "data": data})
