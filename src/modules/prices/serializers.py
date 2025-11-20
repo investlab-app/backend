@@ -1,10 +1,6 @@
-from decimal import Decimal
-
 from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
-from config.settings import ACCEPTABLE_DATETIME_FORMATS
-from modules.core.utils import quantize_decimal
 from modules.instruments.models import Instrument
 from modules.notifications.models import NotificationConfig, PushSubscription
 from modules.notifications.serializers import (
@@ -19,12 +15,8 @@ from modules.prices.schemas import PriceBar, PriceDailySummary
 
 class PriceBarsQueryParams(serializers.Serializer):
     ticker = serializers.CharField(required=True, max_length=6)
-    start_date = serializers.DateTimeField(
-        required=True, input_formats=ACCEPTABLE_DATETIME_FORMATS
-    )
-    end_date = serializers.DateTimeField(
-        input_formats=ACCEPTABLE_DATETIME_FORMATS, default="2025-09-23T00:00:00Z"
-    )
+    start_date = serializers.DateTimeField(required=True)
+    end_date = serializers.DateTimeField(default="2025-09-23T00:00:00Z")
     interval = serializers.ChoiceField(choices=POLYGON_INTERVALS)
     interval_multiplier = serializers.IntegerField(default=1, min_value=1)
 

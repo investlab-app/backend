@@ -44,14 +44,15 @@ class PriceProvider:
         latest_price_service: LatestPriceService | None = None,
         samples=100,
     ):
-        self.fetched_ranges = {}
-        self.prices = {}
         self.repository = repository or PolygonPricesRepository()
         self.latest_price_service = latest_price_service or LatestPriceService()
+        self.fetched_ranges = {}
+        self.prices = {}
         self.samples = samples
 
     def prefetch_data(self, data: dict[str, timedelta], date_at: datetime):
         latest_prices = self.latest_price_service.get_prices()
+
         for ticker, timespan in data.items():
             bars = self.repository.get_ohlc(
                 ticker,
@@ -64,7 +65,8 @@ class PriceProvider:
             )
             ticker_prices = [(bar.close, bar.timestamp) for bar in bars]
             if not ticker_prices:
-                ticker_prices.append((latest_prices[ticker], date_at))
+                price = latest_prices[ticker].close
+                ticker_prices.append((price, date_at))
 
             self.prices[ticker] = ticker_prices
             self.fetched_ranges[ticker] = (date_at - timespan, date_at)

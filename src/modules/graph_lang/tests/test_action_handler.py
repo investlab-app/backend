@@ -5,23 +5,21 @@ from unittest.mock import MagicMock, call, patch
 import pytest
 from django.core.serializers.json import DjangoJSONEncoder
 
-from config.clients import redis_client
 from modules.graph_lang.framework.action_handler import ActionHandler
 from modules.graph_lang.framework.actions import (
-    Action,
     BuySellAmountAction,
     BuySellForPriceAction,
     BuySellPercentAction,
     NotificationAction,
 )
-from modules.graph_lang.models import BuySellEffect, GraphEffect, NotificationEffect
+from modules.graph_lang.models import GraphEffect, NotificationEffect
 from modules.graph_lang.tests.conftest import fake_graph
-from modules.instruments.models import Instrument
 from modules.instruments.tests.conftest import create_fake_instrument
-from modules.investors.models import Asset, Investor
+from modules.investors.models import Asset
 from modules.investors.tests.conftest import create_fake_investor
 from modules.notifications.services import EmailPayload, PushPayload
-from modules.prices.tests.conftest import get_fake_ohlc
+from modules.orders.services.order_services import OrderFailureReason
+from modules.prices.tests.conftest import get_fake_ohlc, get_fake_price_bar
 
 pytestmark = pytest.mark.django_db
 
@@ -29,6 +27,7 @@ pytestmark = pytest.mark.django_db
 class TestActionHandlerBase:
     @pytest.fixture(autouse=True)
     def setup(self):
+        self.latest_price_mock = MagicMock()
         self.investor = create_fake_investor(save=True)
         self.graph = fake_graph(investor=self.investor, save=True)
         self.instrument = create_fake_instrument(ticker="AAPL", save=True)
@@ -37,6 +36,7 @@ class TestActionHandlerBase:
         self.handler = ActionHandler(
             order_service=self.order_service,
             notification_service=self.notification_service,
+            latest_price_service=self.latest_price_mock,
         )
 
     def handle_default(self, action_set):
@@ -47,18 +47,13 @@ class TestActionHandlerBase:
     def set_prices(self, prices):
         ohlc_prices = {}
         for key, value in prices.items():
-            ohlc_prices[key] = get_fake_ohlc(ticker=key, close=value)
-        redis_client.set(
-            "latest_prices", json.dumps(ohlc_prices, cls=DjangoJSONEncoder)
-        )
+            ohlc_prices[key] = get_fake_price_bar(close=value)
+        self.latest_price_mock.get_prices.return_value = ohlc_prices
 
     def set_assets(self, volume):
         Asset.objects.create(
             investor=self.investor, ticker=self.instrument, volume=volume
         )
-
-    def clear_prices(self):
-        redis_client.delete("latest_prices")
 
     def buy_sell_effect_equals(
         self,
@@ -92,6 +87,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         return BuySellAmountAction(action="sell", amount=Decimal(amount), ticker=ticker)
 
     def test__buy_amount_action__calls_buy_service(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.handle_default(
             action_set={self.buy_amount("AAPL", 1)},
         )
@@ -101,6 +97,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         )
 
     def test__sell_amount_action__calls_order_create_service(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.handle_default(action_set={self.sell_amount("AAPL", 1)})
 
         self.order_service.create_market.assert_called_once_with(
@@ -108,6 +105,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         )
 
     def test__buy_sell_multiple_actions__create_multiple_orders(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.handle_default(
             action_set={
                 self.buy_amount(amount=1, ticker="AAPL"),
@@ -118,6 +116,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         assert self.order_service.create_market.call_count == 2
 
     def test__buy_order_create_success__graph_result_entry_is_created(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.handle_default(
             action_set={self.buy_amount(amount=1, ticker="AAPL")},
         )
@@ -127,6 +126,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         assert self.buy_sell_effect_equals(effect=effect, is_buy=True, amount=1)
 
     def test__sell_order_create_success__graph_result_entry_is_created(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.handle_default(
             action_set={self.sell_amount(amount=10, ticker="AAPL")},
         )
@@ -136,7 +136,7 @@ class TestBuySellAmount(TestActionHandlerBase):
         assert self.buy_sell_effect_equals(effect=effect, is_buy=False, amount=10)
 
     def test__buy_sell_order_create_failure__result_success_is_false(self):
-        self.order_service.create_market.return_value = None
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
 
         self.handle_default(
             action_set={
@@ -174,6 +174,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         )
 
     def test__buy_percentage__service_gets_called(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_assets(50)
         self.handle_default({self.buy_percentage("AAPL", 0.50)})
 
@@ -182,6 +183,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         )
 
     def test__sell_percentage__service_gets_called(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_assets(50)
         self.handle_default({self.sell_percentage("AAPL", 0.50)})
 
@@ -190,12 +192,14 @@ class TestBuyPercentage(TestActionHandlerBase):
         )
 
     def test__buy_sell_percentage__success_effect_is_created(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_assets(50)
         self.handle_default({self.buy_percentage("AAPL", 0.50)})
 
         assert GraphEffect.objects.all()[0].success
 
     def test__buy_sell_percentage__multiple_effects__all_handled(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_assets(50)
         self.handle_default(
             {
@@ -208,7 +212,7 @@ class TestBuyPercentage(TestActionHandlerBase):
         assert len(GraphEffect.objects.all()) == 2
 
     def test__buy_sell_percentage_fail__failed_effect_is_created(self):
-        self.order_service.create_market.return_value = None
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
         self.set_assets(50)
 
         self.handle_default({self.buy_percentage("AAPL", 1.00)})
@@ -239,38 +243,37 @@ class TestBuySellPrice(TestActionHandlerBase):
         return BuySellForPriceAction(action="sell", price=Decimal(price), ticker=ticker)
 
     def test__buy_sell_price__service_gets_called(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_prices({"AAPL": 50})
         self.handle_default({self.buy_price("AAPL", 100)})
 
         self.order_service.create_market.assert_called_once_with(
             investor=self.investor, instrument=self.instrument, volume=2, is_buy=True
         )
-        self.clear_prices()
 
     def test__buy_sell_price__success_effect_is_created(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_prices({"AAPL": 50})
         self.handle_default({self.buy_price("AAPL", 100)})
 
         assert GraphEffect.objects.all()[0].success
-        self.clear_prices()
 
     def test__buy_sell_price__multiple_effects__all_handled(self):
+        self.order_service.create_market.return_value = (MagicMock(), None)
         self.set_prices({"AAPL": 50})
 
         self.handle_default({self.buy_price("AAPL", 100), self.sell_price("AAPL", 100)})
 
         assert self.order_service.create_market.call_count == 2
         assert len(GraphEffect.objects.all()) == 2
-        self.clear_prices()
 
     def test__buy_sell_price_fail__failed_effect_is_created(self):
-        self.order_service.create_market.return_value = None
+        self.order_service.create_market.return_value = None, OrderFailureReason.FUNDS
         self.set_prices({"AAPL": 50})
 
         self.handle_default({self.buy_price("AAPL", 100)})
 
         assert not GraphEffect.objects.all()[0].success
-        self.clear_prices()
 
 
 class TestNotificationEffect(TestActionHandlerBase):
@@ -338,7 +341,4 @@ class TestNotificationEffect(TestActionHandlerBase):
         assert effects[1].success is False
 
 
-# TODO make 'latest_prices' from redis client constant
-# TODO make fixture for redis_client prices
 # TODO check ticker case sensitivity
-# TODO extract set_prices into prices conftest

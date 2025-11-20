@@ -6,7 +6,7 @@ import pytest
 from modules.investors.tests.conftest import (
     asset_factory,
 )
-from modules.orders.services.order_services import OrderService
+from modules.orders.services.order_services import OrderFailureReason, OrderService
 from modules.orders.tests.conftest import fake_limit_order, fake_market_order
 from modules.prices.tests.conftest import get_fake_price_bar
 
@@ -89,22 +89,23 @@ class TestOrderService:
     def test__create_market_sell__enough_assets__passes(self):
         self.set_asset_volume(volume=5)
 
-        order = self.order_service_create_market(is_buy=False, volume=3)
+        order, _err = self.order_service_create_market(is_buy=False, volume=3)
 
         assert order is not None
 
     def test__create_market_sell__not_enough_assets__fails(self):
         self.set_asset_volume(volume=5)
 
-        order = self.order_service_create_market(is_buy=False, volume=6)
+        order, err = self.order_service_create_market(is_buy=False, volume=6)
 
         assert order is None
+        assert err == OrderFailureReason.ASSETS
 
     def test__create_market_sell__some_assets_blocked__passes(self):
         self.set_asset_volume(volume=10)
         self.market_order(is_buy=False, volume=5)
 
-        order = self.order_service_create_market(is_buy=False, volume=5)
+        order, _err = self.order_service_create_market(is_buy=False, volume=5)
 
         assert order is not None
 
@@ -112,23 +113,25 @@ class TestOrderService:
         self.set_asset_volume(volume=10)
         self.market_order(is_buy=False, volume=5)
 
-        order = self.order_service_create_market(is_buy=False, volume=6)
+        order, err = self.order_service_create_market(is_buy=False, volume=6)
 
         assert order is None
+        assert err == OrderFailureReason.ASSETS
 
     def test__create_market_sell__respects_blocked_assets_from_other_orders(self):
         self.set_asset_volume(volume=10)
         self.limit_order(is_buy=False, volume=10, limit_price=0)
 
-        order = self.order_service_create_market(is_buy=False, volume=1)
+        order, err = self.order_service_create_market(is_buy=False, volume=1)
 
         assert order is None
+        assert err == OrderFailureReason.ASSETS
 
     def test__create_market_buy__enough_funds__passes(self):
         self.set_asset_price(price=1)
         self.set_investor_balance(5)
 
-        order = self.order_service_create_market(is_buy=True, volume=5)
+        order, _err = self.order_service_create_market(is_buy=True, volume=5)
 
         assert order is not None
 
@@ -136,24 +139,26 @@ class TestOrderService:
         self.set_asset_price(None)
         self.set_investor_balance(5)
 
-        order = self.order_service_create_market(is_buy=True, volume=5)
+        order, err = self.order_service_create_market(is_buy=True, volume=5)
 
         assert order is None
+        assert err == OrderFailureReason.UNKNOWN
 
     def test__create_market_buy__not_enough_funds__fails(self):
         self.set_asset_price(price=1)
         self.set_investor_balance(5)
 
-        order = self.order_service_create_market(is_buy=True, volume=10)
+        order, err = self.order_service_create_market(is_buy=True, volume=10)
 
         assert order is None
+        assert err == OrderFailureReason.FUNDS
 
     def test__create_market_buy__funds_partially_blocked__passes(self):
         self.set_asset_price(1)
         self.set_investor_balance(10)
         self.set_blocked_funds(5)
 
-        order = self.order_service_create_market(is_buy=True, volume=5)
+        order, _err = self.order_service_create_market(is_buy=True, volume=5)
 
         assert order is not None
 
@@ -162,15 +167,18 @@ class TestOrderService:
         self.set_investor_balance(10)
         self.set_blocked_funds(10)
 
-        order = self.order_service_create_market(is_buy=True, volume=6)
+        order, err = self.order_service_create_market(is_buy=True, volume=6)
 
         assert order is None
+        assert err == OrderFailureReason.FUNDS
 
     def test__create_limit_buy__enough_money__passes(self):
         self.set_investor_balance(10)
         self.set_blocked_funds(5)
 
-        order = self.order_service_create_limit(is_buy=True, volume=5, limit_price=1)
+        order, _err = self.order_service_create_limit(
+            is_buy=True, volume=5, limit_price=1
+        )
 
         assert order is not None
 
@@ -178,9 +186,12 @@ class TestOrderService:
         self.set_investor_balance(10)
         self.set_blocked_funds(5)
 
-        order = self.order_service_create_limit(is_buy=True, volume=6, limit_price=1)
+        order, err = self.order_service_create_limit(
+            is_buy=True, volume=6, limit_price=1
+        )
 
         assert order is None
+        assert err == OrderFailureReason.FUNDS
 
     def test_create_limit_sell_respects_blocked_from_other_orders(self):
         self.asset.volume = 10
@@ -189,16 +200,17 @@ class TestOrderService:
         self.market_order(is_buy=False, volume=5)
         self.market_order(is_buy=False, volume=3)
 
-        order = self.order_service_create_limit(
+        order, err1 = self.order_service_create_limit(
             volume=Decimal(3),
             is_buy=False,
             limit_price=Decimal(1),
         )
-        order2 = self.order_service_create_limit(
+        order2, _err2 = self.order_service_create_limit(
             volume=Decimal(2),
             is_buy=False,
             limit_price=Decimal(1),
         )
 
         assert order is None
+        assert err1 == OrderFailureReason.ASSETS
         assert order2 is not None
