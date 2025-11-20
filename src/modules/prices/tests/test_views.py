@@ -58,7 +58,9 @@ def test_price_bar_view(ohlc_mock, api_client_auth):
 
 @patch("modules.prices.views.PolygonPricesRepository.get_prices")
 @patch("modules.prices.serializers.LatestPriceService.get_prices_default_dict")
-def test_price_list_view(get_prices_default_dict_mock, get_prices_mock, api_client_auth):
+def test_price_list_view(
+    get_prices_default_dict_mock, get_prices_mock, api_client_auth
+):
     url = reverse("prices-list")
 
     get_prices_mock.return_value = [
@@ -77,9 +79,7 @@ def test_price_list_view(get_prices_default_dict_mock, get_prices_mock, api_clie
             last_updated=datetime(2025, 9, 21, 12, 0),
         )
     ]
-    get_prices_default_dict_mock.return_value = {
-        "AAPL": Decimal("150.25")
-    }
+    get_prices_default_dict_mock.return_value = {"AAPL": Decimal("150.25")}
 
     query_params = {"tickers": ["AAPL"]}
 
@@ -109,7 +109,9 @@ def test_price_list_view(get_prices_default_dict_mock, get_prices_mock, api_clie
 
 @patch("modules.prices.views.PolygonPricesRepository.get_price")
 @patch("modules.prices.serializers.LatestPriceService.get_prices_default_dict")
-def test_price_retrieve_view(get_prices_default_dict_mock, get_price_mock, api_client_auth):
+def test_price_retrieve_view(
+    get_prices_default_dict_mock, get_price_mock, api_client_auth
+):
     url = reverse("prices-detail", args=["AAPL"])
 
     get_price_mock.return_value = PriceDailySummary(
@@ -127,9 +129,7 @@ def test_price_retrieve_view(get_prices_default_dict_mock, get_price_mock, api_c
         last_updated=datetime(2025, 9, 21, 12, 0),
     )
 
-    get_prices_default_dict_mock.return_value = {
-        "AAPL": Decimal("150.25")
-    }
+    get_prices_default_dict_mock.return_value = {"AAPL": Decimal("150.25")}
 
     expected = {
         "ticker": "AAPL",

@@ -7,10 +7,10 @@ from modules.notifications.serializers import (
     NotificationConfigCreateSerializer,
     NotificationConfigSerializer,
 )
-from modules.prices.services import LatestPriceService
 from modules.prices.constants import POLYGON_INTERVALS
 from modules.prices.models import PriceAlert
 from modules.prices.schemas import PriceBar, PriceDailySummary
+from modules.prices.services import LatestPriceService
 
 
 class PriceBarsQueryParams(serializers.Serializer):

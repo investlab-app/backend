@@ -100,10 +100,7 @@ class LatestPriceServiceMock:
         self._prices[(ticker, date_at)] = Decimal(price)
 
     def get_prices(self) -> dict[str, Decimal]:
-        return {
-            ticker.ticker: price
-            for (ticker, _), price in self._prices.items()
-        }
+        return {ticker.ticker: price for (ticker, _), price in self._prices.items()}
 
     def get_prices_default_dict(
         self, factory=lambda: Decimal(1)
