@@ -75,7 +75,6 @@ class PriceRepositoryMock:
             )
             price_summary = PriceDailySummary(
                 ticker=ticker,
-                current_price=price,
                 daily_summary=price_daily,
                 todays_change=Decimal("2.33"),
                 todays_change_percent=Decimal("1.28"),
