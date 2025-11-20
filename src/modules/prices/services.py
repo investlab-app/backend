@@ -346,9 +346,13 @@ class LatestPriceService:
         }
         return data
 
-    def get_prices(self) -> dict[str, Decimal]:
+    def get_prices(self, tickers: list[str] = None) -> dict[str, Decimal]:
         price_bars = self.get_price_bars()
-        return {ticker: bar.close for ticker, bar in price_bars.items()}
+        prices = {ticker: bar.close for ticker, bar in price_bars.items()}
+        if tickers is not None:
+            return {ticker: prices[ticker] for ticker in tickers if ticker in prices}
+
+        return prices
 
     def get_prices_default_dict(
         self, factory=lambda: Decimal(1)

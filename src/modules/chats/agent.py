@@ -68,7 +68,7 @@ async def get_portfolio(ctx: RunContext[AgentDeps]) -> dict:
     # Get current prices (use cached latest prices)
     tickers = [a.ticker.ticker.upper() for a in assets]
     latest_service = LatestPriceService()
-    prices = await sync_to_async(latest_service.get_prices)()
+    prices = await sync_to_async(latest_service.get_prices)(tickers)
 
     if prices is None:
         return {
