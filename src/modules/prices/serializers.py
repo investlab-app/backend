@@ -49,7 +49,7 @@ class PriceDailySummarySerializer(DataclassSerializer):
 
     def get_current_price(self, obj: PriceDailySummary) -> str:
         price = LatestPriceService().get_prices_default_dict()[obj.ticker]
-        return str(round(quantize_decimal(price), 2))
+        return str(round(price, 2))
 
 
 class PriceAlertSerializer(serializers.ModelSerializer):
