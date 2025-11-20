@@ -346,7 +346,7 @@ class LatestPriceService:
         }
         return data
 
-    def get_prices(self, tickers: list[str] = None) -> dict[str, Decimal]:
+    def get_prices(self, tickers: list[str] | None = None) -> dict[str, Decimal]:
         price_bars = self.get_price_bars()
         prices = {ticker: bar.close for ticker, bar in price_bars.items()}
         if tickers is not None:
