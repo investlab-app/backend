@@ -4,6 +4,7 @@ from decimal import Decimal
 from math import floor
 
 from modules.prices.repositories import PolygonPricesRepository
+from modules.prices.services import LatestPriceService
 
 
 @dataclass
@@ -40,14 +41,17 @@ class PriceProvider:
     def __init__(
         self,
         repository: PolygonPricesRepository | None = None,
+        latest_price_service: LatestPriceService | None = None,
         samples=100,
     ):
         self.fetched_ranges = {}
         self.prices = {}
         self.repository = repository or PolygonPricesRepository()
+        self.latest_price_service = latest_price_service or LatestPriceService()
         self.samples = samples
 
     def prefetch_data(self, data: dict[str, timedelta], date_at: datetime):
+        latest_prices = self.latest_price_service.get_prices()
         for ticker, timespan in data.items():
             bars = self.repository.get_ohlc(
                 ticker,
@@ -58,11 +62,9 @@ class PriceProvider:
                     floor(timespan.total_seconds() / self.samples), 1
                 ),  # TODO add test for max
             )
-            ticker_prices = []
             ticker_prices = [(bar.close, bar.timestamp) for bar in bars]
             if not ticker_prices:
-                snapshot = self.repository.get_price(ticker)
-                ticker_prices.append((snapshot.current_price, date_at))
+                ticker_prices.append((latest_prices[ticker], date_at))
 
             self.prices[ticker] = ticker_prices
             self.fetched_ranges[ticker] = (date_at - timespan, date_at)
