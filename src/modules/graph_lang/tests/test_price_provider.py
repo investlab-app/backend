@@ -48,7 +48,7 @@ class TestPriceProvider:
             )
 
     def set_latest_price_service_response(self, prices):
-        self.latest_price_service.get_prices.return_value = prices
+        self.latest_price_service.get_price_bars.return_value = prices
 
     def price_bar(self, dt, price):
         return PriceBar(
@@ -63,7 +63,6 @@ class TestPriceProvider:
     def price_daily_summary(self, ticker, price):
         return PriceDailySummary(
             ticker=ticker,
-            current_price=Decimal(price),
             daily_summary=PriceDaily(
                 open=Decimal(0),
                 high=Decimal(0),
@@ -179,4 +178,4 @@ class TestPriceProvider:
         self.provider.prefetch_data({"AAPL": timedelta()}, dt)
 
         assert self.provider.get_price("AAPL", dt) == 100
-        self.latest_price_service.get_prices.assert_called_once()
+        self.latest_price_service.get_price_bars.assert_called_once()

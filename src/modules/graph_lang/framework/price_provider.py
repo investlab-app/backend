@@ -51,7 +51,7 @@ class PriceProvider:
         self.samples = samples
 
     def prefetch_data(self, data: dict[str, timedelta], date_at: datetime):
-        latest_prices = self.latest_price_service.get_prices()
+        latest_prices = self.latest_price_service.get_price_bars()
 
         for ticker, timespan in data.items():
             bars = self.repository.get_ohlc(

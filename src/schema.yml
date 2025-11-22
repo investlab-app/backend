@@ -3129,11 +3129,11 @@ components:
     PriceDailySummary:
       type: object
       properties:
-        ticker:
-          type: string
         current_price:
           type: string
-          format: decimal
+          readOnly: true
+        ticker:
+          type: string
         daily_summary:
           $ref: '#/components/schemas/PriceDaily'
         todays_change:

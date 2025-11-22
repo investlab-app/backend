@@ -8,7 +8,7 @@ from pydantic_ai import Agent, RunContext
 from config.clients import clerk_client
 from modules.chats.mcps import MassiveMCP
 from modules.investors.models import Asset, Investor
-from modules.prices.repositories import PolygonPricesRepository
+from modules.prices.services import LatestPriceService
 from modules.transactions.models import Transaction
 
 massive_mcp = MassiveMCP()
@@ -65,10 +65,10 @@ async def get_portfolio(ctx: RunContext[AgentDeps]) -> dict:
             "total_value": str(investor.balance),
         }
 
-    # Get current prices
+    # Get current prices (use cached latest prices)
     tickers = [a.ticker.ticker.upper() for a in assets]
-    prices_repo = PolygonPricesRepository()
-    prices = await sync_to_async(prices_repo.get_prices_map)(tickers)
+    latest_service = LatestPriceService()
+    prices = await sync_to_async(latest_service.get_prices)(tickers)
 
     if prices is None:
         return {
@@ -81,7 +81,7 @@ async def get_portfolio(ctx: RunContext[AgentDeps]) -> dict:
 
     for asset in assets:
         ticker_upper = asset.ticker.ticker.upper()
-        current_price = prices[ticker_upper].current_price
+        current_price = prices.get(ticker_upper)
         position_value = asset.volume * current_price
         total_holdings_value += position_value
 

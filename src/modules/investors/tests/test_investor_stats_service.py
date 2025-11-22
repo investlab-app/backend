@@ -1,12 +1,8 @@
-from decimal import Decimal
-
 import pytest
-from faker import Faker
 
-from modules.investors.models import Asset, Investor
 from modules.investors.services import InvestorStatsService
 from modules.investors.tests.conftest import asset_factory, investor_factory
-from modules.prices.tests.conftest import PriceRepositoryMock
+from modules.prices.tests.conftest import LatestPriceServiceMock
 
 pytestmark = pytest.mark.django_db
 
@@ -14,9 +10,9 @@ pytestmark = pytest.mark.django_db
 class TestInvestorStats:
     @pytest.fixture(autouse=True)
     def setup(self, investor_factory):
-        self.mock = PriceRepositoryMock()
         self.investor = investor_factory(balance=0)
-        self.service = InvestorStatsService(price_repository=self.mock)
+        self.mock = LatestPriceServiceMock()
+        self.service = InvestorStatsService(price_service=self.mock)
 
     @pytest.mark.parametrize("balance", [0, 10])
     def test_get_total_value__no_assets__returns_balance(self, balance):

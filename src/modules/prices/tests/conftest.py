@@ -1,5 +1,6 @@
 import random
 import time
+from collections import defaultdict
 from datetime import datetime
 from decimal import Decimal
 
@@ -27,7 +28,7 @@ class PriceRepositoryMock:
     def __init__(self):
         self._prices: dict[tuple[Instrument, datetime], Decimal] = {}
 
-    def set_price(self, ticker: Instrument, price: Decimal, date_at=None):
+    def set_price(self, ticker: Instrument, price, date_at=None):
         self._prices[(ticker, date_at)] = Decimal(price)
 
     def get_prices_at(
@@ -75,7 +76,6 @@ class PriceRepositoryMock:
             )
             price_summary = PriceDailySummary(
                 ticker=ticker,
-                current_price=price,
                 daily_summary=price_daily,
                 todays_change=Decimal("2.33"),
                 todays_change_percent=Decimal("1.28"),
@@ -90,6 +90,25 @@ class PriceRepositoryMock:
         if prices_list is None:
             return {}
         return {price.ticker: price for price in prices_list}
+
+
+class LatestPriceServiceMock:
+    def __init__(self):
+        self._prices: dict[tuple[Instrument, datetime], Decimal] = {}
+
+    def set_price(self, ticker: Instrument, price, date_at=None):
+        self._prices[(ticker, date_at)] = Decimal(price)
+
+    def get_prices(self) -> dict[str, Decimal]:
+        return {ticker.ticker: price for (ticker, _), price in self._prices.items()}
+
+    def get_prices_default_dict(
+        self, factory=lambda: Decimal(1)
+    ) -> defaultdict[str, Decimal]:
+        price_bars = self.get_prices()
+        prices_dict = defaultdict(factory)
+        prices_dict.update(price_bars)
+        return prices_dict
 
 
 def get_fake_ohlc(
