@@ -145,7 +145,7 @@ services:
       [
         "uvx",
         "--from",
-        "git+https://github.com/mikolajkapica/mcp_massive",
+        "git+https://github.com/investlab-app/mcp_massive",
         "mcp_massive",
       ]
     env_file: .env
