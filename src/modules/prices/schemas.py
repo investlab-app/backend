@@ -124,7 +124,6 @@ class PriceDaily:
 @dataclass
 class PriceDailySummary:
     ticker: str
-    current_price: Decimal
     daily_summary: PriceDaily
     todays_change: Decimal
     todays_change_percent: Decimal
@@ -151,7 +150,6 @@ class PriceDailySummary:
 
         return cls(
             ticker=snapshot.ticker,
-            current_price=to_quantized_decimal(snapshot.min.close),
             daily_summary=PriceDaily(
                 open=to_quantized_decimal(snapshot.day.open),
                 high=to_quantized_decimal(snapshot.day.high),

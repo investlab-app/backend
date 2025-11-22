@@ -12,14 +12,15 @@ from modules.investors.models import (
     NotificationHistory,
 )
 from modules.investors.schemas import AssetAllocation
-from modules.prices.repositories import PolygonPricesRepository
 
 logger = logging.getLogger(__name__)
 
 
 class InvestorStatsService:
-    def __init__(self, price_repository=None):
-        self.prices = price_repository or PolygonPricesRepository()
+    def __init__(self, price_service=None):
+        from modules.prices.services import LatestPriceService  # noqa
+
+        self.price_service = price_service or LatestPriceService()
 
     def get_total_value(self, investor: Investor) -> Decimal:
         total_assets_value = self.get_total_assets_value(investor)
@@ -28,33 +29,35 @@ class InvestorStatsService:
     def get_total_assets_value(self, investor: Investor) -> Decimal:
         assets = Asset.objects.filter(investor=investor)
         tickers = [a.ticker.ticker.upper() for a in assets]
-        prices = self.prices.get_prices_map(tickers)
+        prices = self.price_service.get_prices_default_dict()
+        prices = {ticker: prices[ticker] for ticker in tickers}
 
         asset_value = Decimal(0)
         for a in assets:
-            asset_value += prices[a.ticker.ticker.upper()].current_price * a.volume
+            asset_value += prices[a.ticker.ticker.upper()] * a.volume
 
         return asset_value
 
     def get_asset_allocation(self, investor: Investor) -> list[AssetAllocation]:
         assets = Asset.objects.filter(investor=investor)
         tickers = [a.ticker.ticker.upper() for a in assets]
-        prices = self.prices.get_prices_map(tickers)
+        prices = self.price_service.get_prices_default_dict()
+        prices = {ticker: prices[ticker] for ticker in tickers}
         allocations = []
 
         total_value = 0
         for a in assets:
-            total_value += a.volume * prices[a.ticker.ticker.upper()].current_price
+            total_value += a.volume * prices[a.ticker.ticker.upper()]
 
         for a in assets:
             ticker = a.ticker.ticker.upper()
-            value = a.volume * prices[ticker].current_price
+            value = a.volume * prices[ticker]
             allocations.append(
                 AssetAllocation(
                     asset=a,
                     percentage=(value / total_value * 100) if total_value > 0 else 0,
-                    price_per_action=prices[ticker].current_price,
-                    total_value=a.volume * prices[ticker].current_price,
+                    price_per_action=prices[ticker],
+                    total_value=a.volume * prices[ticker],
                 )
             )
 

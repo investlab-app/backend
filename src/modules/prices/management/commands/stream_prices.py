@@ -27,7 +27,7 @@ class PriceStream:
         self.latest_price_service = latest_price_service or LatestPriceService()
 
         initial_prices = prices_service.get_latest_daily_bars_from_last_n_days(7)
-        self.latest_price_service.update_prices(initial_prices)
+        self.latest_price_service.update_price_bars(initial_prices)
 
     async def start(self, tickers: list[str]):
         await self.channel_layer.group_add(PRICES_CHANNEL_LAYER, "broadcast")
@@ -42,7 +42,7 @@ class PriceStream:
         price_bars = {d["symbol"]: PriceBar.from_ws(d) for d in data}
         prices = {d["symbol"]: d for d in data}
 
-        self.latest_price_service.update_prices(price_bars)
+        self.latest_price_service.update_price_bars(price_bars)
         await self.channel_layer.group_send(
             PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": prices}
         )
