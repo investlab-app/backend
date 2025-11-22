@@ -161,6 +161,24 @@ services:
     profiles:
       - default
 
+  mcp-echarts:
+    image: node:18-alpine
+    command: ["/bin/sh", "-c", "printenv && npx -y mcp-echarts -t streamable --port 8000"]
+    restart: unless-stopped
+    ports:
+      - "8051:8000"
+    networks:
+      - app_network
+    environment:
+      - MINIO_ENDPOINT=s3.us-east-1.amazonaws.com
+      - MINIO_PORT=443
+      - MINIO_USE_SSL=true
+      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
+      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
+      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+    profiles:
+      - default
+
 volumes:
   postgres_data:
 

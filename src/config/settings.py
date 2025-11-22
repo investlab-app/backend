@@ -441,7 +441,10 @@ VAPID_CLAIMS = {
 # OpenAI
 OPENAI_API_KEY = os.environ["OPENAI_API_KEY"]
 OPENAI_API_URL = os.environ["OPENAI_API_URL"]
-OPENAI_TRANSLATING_MODEL = os.environ["OPENAI_TRANSLATING_MODEL"]
+OPENAI_TRANSLATING_MODEL = os.environ.get(
+    "OPENAI_TRANSLATING_MODEL", "llama-3.1-8b-instant"
+)
+OPENAI_TITLE_MODEL = os.environ.get("OPENAI_TITLE_MODEL", "llama-3.1-8b-instant")
 
 # LLM Translation Settings
 TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
@@ -450,3 +453,4 @@ TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
 
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 MCP_MASSIVE_URL = os.environ.get("MCP_MASSIVE_URL", "http://mcp-massive:8000/mcp")
+MCP_ECHARTS_URL = os.environ.get("MCP_ECHARTS_URL", "http://mcp-echarts:8000/mcp")
