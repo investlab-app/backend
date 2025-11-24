@@ -222,14 +222,16 @@ def test_complex_realized_unrealized(investor, instrument, mock_price_service, a
     add_tx(True, 2, 230, t0 + timedelta(minutes=5))
 
     txs = Transaction.objects.all()
-    svc = TransactionStatsService(txs, ticker="TTWO", lastest_price_service=mock_price_service)
+    svc = TransactionStatsService(
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
+    )
     stats = svc.compute_stats()
 
-    assert stats['realized_gain'] == Decimal('-5')
-    assert stats['unrealized_gain'] == Decimal('-40')
-    assert stats['total_gain'] == Decimal('-45')
-    assert stats['total_gain_pct'] == pytest.approx(Decimal('-45')/Decimal('1730'))
-    assert stats['remaining_volume'] == Decimal('2.5')
+    assert stats["realized_gain"] == Decimal(-5)
+    assert stats["unrealized_gain"] == Decimal(-40)
+    assert stats["total_gain"] == Decimal(-45)
+    assert stats["total_gain_pct"] == pytest.approx(Decimal(-45) / Decimal(1730))
+    assert stats["remaining_volume"] == Decimal("2.5")
 
 
 def test_partial_sell_percentage(investor, instrument, mock_price_service, add_tx):
@@ -243,14 +245,16 @@ def test_partial_sell_percentage(investor, instrument, mock_price_service, add_t
     add_tx(False, 1.5, 220, t0 + timedelta(minutes=1))
 
     txs = Transaction.objects.all()
-    svc = TransactionStatsService(txs, ticker="TTWO", lastest_price_service=mock_price_service)
+    svc = TransactionStatsService(
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
+    )
     stats = svc.compute_stats()
 
     # gain = 1.5 * 220 - 1.5 * 200 = 30
-    assert stats['realized_gain'] == Decimal('30')
+    assert stats["realized_gain"] == Decimal(30)
     # remaining 1.5x @200, unrealized gain = 1.5*(210-200)=15
-    assert stats['unrealized_gain'] == Decimal('15')
-    assert stats['total_gain'] == Decimal('45')
+    assert stats["unrealized_gain"] == Decimal(15)
+    assert stats["total_gain"] == Decimal(45)
 
 
 def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
@@ -271,9 +275,7 @@ def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
     txs = Transaction.objects.all()
 
     svc = TransactionStatsService(
-        txs,
-        ticker="TTWO",
-        lastest_price_service=mock_price_service
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
     )
 
     stats = svc.compute_stats()
@@ -282,12 +284,14 @@ def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
     # First SELL 2x130 from 2x100 → gain = 2*(130-100)=60
     # Second SELL 2x140 from 2x120 → gain = 2*(140-120)=40
     # Total realized = 60 + 40 = 100
-    assert stats['realized_gain'] == Decimal('100')
-    assert stats['unrealized_gain'] == Decimal('90')
-    assert stats['total_gain'] == Decimal('190')
+    assert stats["realized_gain"] == Decimal(100)
+    assert stats["unrealized_gain"] == Decimal(90)
+    assert stats["total_gain"] == Decimal(190)
 
 
-def test_compute_stats_in_period_edge_case(investor, instrument, mock_price_service, add_tx):
+def test_compute_stats_in_period_edge_case(
+    investor, instrument, mock_price_service, add_tx
+):
     """
     Okno czasowe: upewniamy się, że pre-okresowe BUYy są brane pod uwagę
     BUY 5x @100 (przed start)
@@ -301,11 +305,13 @@ def test_compute_stats_in_period_edge_case(investor, instrument, mock_price_serv
     add_tx(False, 3, 110, start + timedelta(minutes=1))
 
     txs = Transaction.objects.all()
-    svc = TransactionStatsService(txs, ticker="TTWO", lastest_price_service=mock_price_service)
+    svc = TransactionStatsService(
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
+    )
     stats = svc.compute_stats_in_period(start, end)
 
     # realized gain in period = 3*110 - 3*100 = 30
-    assert stats['realized_gain'] == Decimal('30')
+    assert stats["realized_gain"] == Decimal(30)
     # remaining 2x 100, unrealized = 2*(210-100)=220
-    assert stats['unrealized_gain'] == Decimal('220')
-    assert stats['total_gain'] == Decimal('250')
+    assert stats["unrealized_gain"] == Decimal(220)
+    assert stats["total_gain"] == Decimal(250)
