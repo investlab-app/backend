@@ -73,8 +73,9 @@ class TransactionStatsService:
         prices = self.lastest_price_service.get_prices_default_dict()
         return prices[self.ticker]
 
+    @staticmethod
     def _consume_sell_volume(
-        self, buy_lots: list[BuyLot], sell_volume: Decimal
+        buy_lots: list[BuyLot], sell_volume: Decimal
     ) -> tuple[Decimal, Decimal]:
         """FIFO consumption of existing lots."""
         consumed_cost = Decimal(0)
@@ -97,8 +98,8 @@ class TransactionStatsService:
 
         return consumed_volume, consumed_cost
 
+    @staticmethod
     def _finalize_stats(
-        self,
         buy_lots: list[BuyLot],
         realized_gain: Decimal,
         total_buy_cost: Decimal,
