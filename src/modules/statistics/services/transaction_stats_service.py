@@ -2,12 +2,32 @@ from datetime import datetime
 from decimal import Decimal
 
 from django.db.models import Count, Sum
+from pydantic import BaseModel
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
-from modules.statistics.schemas import TransactionStats
 from modules.transactions.models import Transaction
+
+
+class TransactionStats(BaseModel):
+    ticker: str | None
+
+    total_buy_volume: Decimal
+    total_buy_price: Decimal
+    total_sell_volume: Decimal
+    total_sell_price: Decimal
+
+    initial_ticker_volume: Decimal
+    initial_ticker_price: Decimal
+    final_ticker_volume: Decimal
+    final_ticker_price: Decimal
+
+    buy_transactions: int
+    sell_transactions: int
+
+    gain: Decimal
+    gain_percentage: Decimal | None
 
 
 class TransactionStatsService:
