@@ -68,7 +68,7 @@ class InvestorValueHistoryService:
     def __init__(
         self,
         stats_service: InvestorStatsService | None = None,
-        investors: Iterable[Investor] | None = None
+        investors: Iterable[Investor] | None = None,
     ):
         self.stats_service = stats_service or InvestorStatsService()
         self.investors = investors or Investor.objects.all()

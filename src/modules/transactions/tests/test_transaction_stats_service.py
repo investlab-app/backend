@@ -7,8 +7,8 @@ from modules.core.tests.conftest import year
 from modules.instruments.tests.conftest import instruments_factory
 from modules.investors.tests.test_investor_stats_service import investor_factory
 from modules.prices.tests.conftest import PriceRepositoryMock
-from modules.transactions.schemas import TransactionStats
-from modules.transactions.services import TransactionStatsService
+from modules.statistics.schemas import TransactionStats
+from modules.statistics.services import TransactionStatsService
 from modules.transactions.tests.conftest import transaction_factory
 
 fake = faker.Faker()

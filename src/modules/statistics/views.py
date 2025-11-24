@@ -24,9 +24,9 @@ from modules.statistics.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
+from modules.statistics.services import TransactionStatsService
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
-from modules.transactions.services import TransactionStatsService
 
 logger = logging.getLogger(__name__)
 
