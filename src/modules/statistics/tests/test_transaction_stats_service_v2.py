@@ -67,8 +67,8 @@ def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
 
     stats = svc.compute_stats()
 
-    assert stats["realized_gain"] == Decimal(50)
-    assert stats["remaining_volume"] == Decimal(1)  # 1 from the second lot
+    assert stats.realized_gain == Decimal(50)
+    assert stats.remaining_volume == Decimal(1)  # 1 from the second lot
 
 
 def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_tx):
@@ -93,7 +93,7 @@ def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_
     )
 
     stats = svc.compute_stats()
-    assert stats["unrealized_gain"] == Decimal(-40)
+    assert stats.unrealized_gain == Decimal(-40)
 
 
 def test_compute_stats_in_period_with_previous_holdings(
@@ -127,10 +127,10 @@ def test_compute_stats_in_period_with_previous_holdings(
     stats = svc.compute_stats_in_period(start, end)
 
     # Realized gain: same as normal FIFO: (4*220) - (3*200 + 1*230) = 880 - 830 = 50
-    assert stats["realized_gain"] == Decimal(50)
+    assert stats.realized_gain == Decimal(50)
 
     # Remaining lots after period = 1 share from the second BUY lot
-    assert stats["remaining_volume"] == Decimal(1)
+    assert stats.remaining_volume == Decimal(1)
 
 
 def test_period_respects_virtual_lots(investor, instrument, mock_price_service, add_tx):
@@ -165,10 +165,10 @@ def test_period_respects_virtual_lots(investor, instrument, mock_price_service, 
     # Realized gain in PERIOD:
     # sells 3 @150 from virtual remaining lots cost basis 100
     # gain = 3 * 150 - 3 * 100 = 150
-    assert stats["realized_gain"] == Decimal(150)
+    assert stats.realized_gain == Decimal(150)
 
     # Remaining after period: 5 - 3 = 2 shares
-    assert stats["remaining_volume"] == Decimal(2)
+    assert stats.remaining_volume == Decimal(2)
 
 
 def test_period_does_not_count_pre_period_realized_gains(
@@ -196,9 +196,9 @@ def test_period_does_not_count_pre_period_realized_gains(
     stats = svc.compute_stats_in_period(start, end)
 
     # No transactions inside the window
-    assert stats["realized_gain"] == 0
-    assert stats["unrealized_gain"] == 0
-    assert stats["total_gain"] == 0
+    assert stats.realized_gain == 0
+    assert stats.unrealized_gain == 0
+    assert stats.total_gain == 0
 
 
 def test_complex_realized_unrealized(investor, instrument, mock_price_service, add_tx):
@@ -227,11 +227,11 @@ def test_complex_realized_unrealized(investor, instrument, mock_price_service, a
     )
     stats = svc.compute_stats()
 
-    assert stats["realized_gain"] == Decimal(-5)
-    assert stats["unrealized_gain"] == Decimal(-40)
-    assert stats["total_gain"] == Decimal(-45)
-    assert stats["total_gain_pct"] == pytest.approx(Decimal(-45) / Decimal(1730))
-    assert stats["remaining_volume"] == Decimal("2.5")
+    assert stats.realized_gain == Decimal(-5)
+    assert stats.unrealized_gain == Decimal(-40)
+    assert stats.total_gain == Decimal(-45)
+    assert stats.total_gain_pct == pytest.approx(Decimal(-45) / Decimal(1730))
+    assert stats.remaining_volume == Decimal("2.5")
 
 
 def test_partial_sell_percentage(investor, instrument, mock_price_service, add_tx):
@@ -251,10 +251,10 @@ def test_partial_sell_percentage(investor, instrument, mock_price_service, add_t
     stats = svc.compute_stats()
 
     # gain = 1.5 * 220 - 1.5 * 200 = 30
-    assert stats["realized_gain"] == Decimal(30)
+    assert stats.realized_gain == Decimal(30)
     # remaining 1.5x @200, unrealized gain = 1.5*(210-200)=15
-    assert stats["unrealized_gain"] == Decimal(15)
-    assert stats["total_gain"] == Decimal(45)
+    assert stats.unrealized_gain == Decimal(15)
+    assert stats.total_gain == Decimal(45)
 
 
 def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
@@ -284,9 +284,9 @@ def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
     # First SELL 2x130 from 2x100 → gain = 2*(130-100)=60
     # Second SELL 2x140 from 2x120 → gain = 2*(140-120)=40
     # Total realized = 60 + 40 = 100
-    assert stats["realized_gain"] == Decimal(100)
-    assert stats["unrealized_gain"] == Decimal(90)
-    assert stats["total_gain"] == Decimal(190)
+    assert stats.realized_gain == Decimal(100)
+    assert stats.unrealized_gain == Decimal(90)
+    assert stats.total_gain == Decimal(190)
 
 
 def test_compute_stats_in_period_edge_case(
@@ -311,7 +311,7 @@ def test_compute_stats_in_period_edge_case(
     stats = svc.compute_stats_in_period(start, end)
 
     # realized gain in period = 3*110 - 3*100 = 30
-    assert stats["realized_gain"] == Decimal(30)
+    assert stats.realized_gain == Decimal(30)
     # remaining 2x 100, unrealized = 2*(210-100)=220
-    assert stats["unrealized_gain"] == Decimal(220)
-    assert stats["total_gain"] == Decimal(250)
+    assert stats.unrealized_gain == Decimal(220)
+    assert stats.total_gain == Decimal(250)
