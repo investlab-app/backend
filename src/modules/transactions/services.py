@@ -70,7 +70,7 @@ class ExecuteTransactionService:
 
 
 class TransactionStatsService:
-    def __init__(self, prices_service=None):
+    def __init__(self, prices_service: PolygonPricesRepository | None = None):
         self.prices_service = prices_service or PolygonPricesRepository()
 
     def get_stats(

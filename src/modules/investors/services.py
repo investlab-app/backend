@@ -65,7 +65,11 @@ class InvestorStatsService:
 
 
 class InvestorValueHistoryService:
-    def __init__(self, stats_service=None, investors: Iterable | None = None):
+    def __init__(
+        self,
+        stats_service: InvestorStatsService | None = None,
+        investors: Iterable[Investor] | None = None
+    ):
         self.stats_service = stats_service or InvestorStatsService()
         self.investors = investors or Investor.objects.all()
 
@@ -76,7 +80,7 @@ class InvestorValueHistoryService:
             snapshots.append(AccountValueSnapshot(investor=i, value=value))
 
         with transaction.atomic():
-            [s.save() for s in snapshots]
+            AccountValueSnapshot.objects.bulk_create(snapshots)
 
 
 class NotificationHistoryService:
