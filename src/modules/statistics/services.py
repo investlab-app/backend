@@ -17,24 +17,26 @@ class TransactionStatsService:
     def get_stats(
         self,
         investor: Investor,
-        tickers: list[Instrument] | None = None,
+        instruments: list[Instrument] | None = None,
         start_datetime: datetime | None = None,
         end_datetime: datetime | None = None,
     ) -> list[TransactionStats]:
-        if tickers is None:
+        if instruments is None:
             return []
 
         stats = []
 
         initial_prices = {}
         if start_datetime:
-            initial_prices = self.prices_service.get_prices_at(tickers, start_datetime)
+            initial_prices = self.prices_service.get_prices_at(
+                instruments, start_datetime
+            )
 
         final_prices = {}
         if end_datetime:
-            final_prices = self.prices_service.get_prices_at(tickers, end_datetime)
+            final_prices = self.prices_service.get_prices_at(instruments, end_datetime)
 
-        for t in tickers:
+        for t in instruments:
             transactions = Transaction.objects.filter(investor=investor, ticker=t)
 
             initial_ticker_volume = Decimal(0)
@@ -105,3 +107,7 @@ class TransactionStatsService:
             )
 
         return stats
+
+
+class TransactionStatsServiceV2:
+    pass

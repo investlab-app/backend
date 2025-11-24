@@ -49,7 +49,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats_today = stats_service.get_stats(
             investor=investor,
-            tickers=investor_tickers,
+            instruments=investor_tickers,
             start_datetime=start_datetime,
             end_datetime=end_datetime,
         )
@@ -57,7 +57,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
 
         stats_total = stats_service.get_stats(
             investor=investor,
-            tickers=investor_tickers,
+            instruments=investor_tickers,
         )
         total_gain = sum(stat.gain for stat in stats_total)
         invested = sum(stat.total_buy_price for stat in stats_total)
@@ -101,7 +101,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats_today = stats_service.get_stats(
             investor=investor,
-            tickers=investor_tickers,
+            instruments=investor_tickers,
         )
         total_gain = sum(stat.gain for stat in stats_today)
         total_initial_value = sum(
@@ -153,7 +153,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats_last_year = stats_service.get_stats(
             investor=investor,
-            tickers=investor_tickers,
+            instruments=investor_tickers,
         )
         total_gain_this_year = sum(stat.gain for stat in stats_last_year)
 
@@ -234,7 +234,7 @@ class OwnedSharesView(generics.RetrieveAPIView):
         tr_stats_service = TransactionStatsService()
         stats = tr_stats_service.get_stats(
             investor=investor,
-            tickers=tickers,
+            instruments=tickers,
         )
         stats_map = {s.ticker: s for s in stats}
 
@@ -289,7 +289,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats = stats_service.get_stats(
             investor=investor,
-            tickers=investor_tickers,
+            instruments=investor_tickers,
         )
 
         response = {
@@ -339,7 +339,7 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats = stats_service.get_stats(
             investor=investor,
-            tickers=instruments,
+            instruments=instruments,
         )
 
         data = [
@@ -401,7 +401,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
         stats_service = TransactionStatsService()
         stats = stats_service.get_stats(
             investor=investor,
-            tickers=tickers,
+            instruments=tickers,
         )
         stats_map = {s.ticker: s for s in stats}
 

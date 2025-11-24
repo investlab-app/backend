@@ -50,7 +50,7 @@ class TestTransactionStats:
     def run_get_stats(self, start_date=None, end_date=None) -> TransactionStats:
         return self.service.get_stats(
             investor=self.investor,
-            tickers=[self.ticker],
+            instruments=[self.ticker],
             start_datetime=start_date,
             end_datetime=end_date,
         )[0]
@@ -63,7 +63,7 @@ class TestTransactionStats:
     def test_stats__single_ticker_no_transactions__returns_empty_transaction_stats(
         self,
     ):
-        stats = self.service.get_stats(self.investor, tickers=[self.ticker])
+        stats = self.service.get_stats(self.investor, instruments=[self.ticker])
 
         assert stats == [
             TransactionStats(
@@ -89,7 +89,7 @@ class TestTransactionStats:
         n = 5
         instruments = [instruments_factory() for _ in range(n)]
 
-        stats = self.service.get_stats(self.investor, tickers=instruments)
+        stats = self.service.get_stats(self.investor, instruments=instruments)
 
         assert len(stats) == n
 
