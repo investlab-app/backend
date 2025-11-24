@@ -1,4 +1,4 @@
-from collections.abc import Iterable
+from collections.abc import Iterable, Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, getcontext
@@ -50,7 +50,7 @@ class TransactionStats:
 class TransactionStatsService:
     def __init__(
         self,
-        transactions: Iterable[Any],
+        transactions: Iterable[Transaction],
         ticker: str,
         lastest_price_service: LatestPriceService | None = None,
     ):
@@ -98,8 +98,13 @@ class TransactionStatsService:
         return consumed_volume, consumed_cost
 
     def _finalize_stats(
-        self, buy_lots, realized_gain, total_buy_cost, current_price, sell_details
-    ):
+        self,
+        buy_lots: list[BuyLot],
+        realized_gain: Decimal,
+        total_buy_cost: Decimal,
+        current_price: Decimal,
+        sell_details: list[SellDetail],
+    ) -> TransactionStats:
         remaining_volume = sum(i.volume for i in buy_lots)
         unrealized_gain = sum(i.volume * (current_price - i.price) for i in buy_lots)
         total_gain = realized_gain + unrealized_gain
@@ -123,16 +128,21 @@ class TransactionStatsService:
 
         return TransactionStats(
             realized_gain=realized_gain,
-            unrealized_gain=unrealized_gain,
+            unrealized_gain=unrealized_gain,  # type: ignore
             total_gain=total_gain,
             total_buy_cost=total_buy_cost,
             total_gain_pct=total_gain_pct,
             current_price=current_price,
-            remaining_volume=remaining_volume,
+            remaining_volume=remaining_volume,  # type: ignore
             details=details,
         )
 
-    def _compute_from_transactions(self, transactions, initial_buy_lots, current_price):
+    def _compute_from_transactions(
+        self,
+        transactions: Iterable[Transaction],
+        initial_buy_lots: Iterable[BuyLot] | Sequence[BuyLot],
+        current_price: Decimal,
+    ) -> TransactionStats:
         buy_lots = [BuyLot(i.volume, i.price, i.timestamp) for i in initial_buy_lots]
         realized_gain = Decimal(0)
         total_buy_cost = sum(i.volume * i.price for i in buy_lots)
@@ -161,7 +171,11 @@ class TransactionStatsService:
                 )
 
         return self._finalize_stats(
-            buy_lots, realized_gain, total_buy_cost, current_price, sell_details
+            buy_lots,
+            realized_gain,
+            total_buy_cost,  # type: ignore
+            current_price,
+            sell_details,
         )
 
     def compute_stats(self, current_price: Decimal | None = None) -> TransactionStats:
