@@ -107,7 +107,3 @@ class TransactionStatsService:
             )
 
         return stats
-
-
-class TransactionStatsServiceV2:
-    pass
