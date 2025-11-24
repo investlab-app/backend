@@ -24,7 +24,9 @@ from modules.statistics.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
-from modules.statistics.services.transaction_stats_service import TransactionStatsService
+from modules.statistics.services.transaction_stats_service import (
+    TransactionStatsService,
+)
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 

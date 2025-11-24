@@ -1,13 +1,16 @@
-import pytest
-from decimal import Decimal
+# ruff: noqa: FBT003
 from datetime import datetime, timedelta, timezone
+from decimal import Decimal
 
-from modules.transactions.models import Transaction
+import pytest
+
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.prices.services import LatestPriceService
-
-from modules.statistics.services.transaction_stats_service_v2 import TransactionStatsService
+from modules.statistics.services.transaction_stats_service_v2 import (
+    TransactionStatsService,
+)
+from modules.transactions.models import Transaction
 
 pytestmark = pytest.mark.django_db
 
@@ -28,7 +31,7 @@ def mock_price_service(monkeypatch):
 
     class MockLatestPriceService:
         def get_prices_default_dict(self):
-            return {"TEST": Decimal("210")}
+            return {"TEST": Decimal(210)}
 
     return MockLatestPriceService()
 
@@ -72,8 +75,8 @@ def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
 
     stats = svc.compute_stats()
 
-    assert stats["realized_gain"] == Decimal("50")
-    assert stats["remaining_volume"] == Decimal("1")  # 1 from the second lot
+    assert stats["realized_gain"] == Decimal(50)
+    assert stats["remaining_volume"] == Decimal(1)  # 1 from the second lot
 
 
 def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_tx):
@@ -98,7 +101,7 @@ def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_
     )
 
     stats = svc.compute_stats()
-    assert stats["unrealized_gain"] == Decimal("-40")
+    assert stats["unrealized_gain"] == Decimal(-40)
 
 
 def test_compute_stats_in_period_with_previous_holdings(
@@ -132,10 +135,10 @@ def test_compute_stats_in_period_with_previous_holdings(
     stats = svc.compute_stats_in_period(start, end)
 
     # Realized gain: same as normal FIFO: (4*220) - (3*200 + 1*230) = 880 - 830 = 50
-    assert stats["realized_gain"] == Decimal("50")
+    assert stats["realized_gain"] == Decimal(50)
 
     # Remaining lots after period = 1 share from the second BUY lot
-    assert stats["remaining_volume"] == Decimal("1")
+    assert stats["remaining_volume"] == Decimal(1)
 
 
 def test_period_respects_virtual_lots(investor, instrument, mock_price_service, add_tx):
@@ -170,10 +173,10 @@ def test_period_respects_virtual_lots(investor, instrument, mock_price_service, 
     # Realized gain in PERIOD:
     # sells 3 @150 from virtual remaining lots cost basis 100
     # gain = 3 * 150 - 3 * 100 = 150
-    assert stats["realized_gain"] == Decimal("150")
+    assert stats["realized_gain"] == Decimal(150)
 
     # Remaining after period: 5 - 3 = 2 shares
-    assert stats["remaining_volume"] == Decimal("2")
+    assert stats["remaining_volume"] == Decimal(2)
 
 
 def test_period_does_not_count_pre_period_realized_gains(
