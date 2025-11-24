@@ -4,9 +4,6 @@ from decimal import Decimal
 
 import pytest
 
-from modules.instruments.models import Instrument
-from modules.investors.models import Investor
-from modules.prices.services import LatestPriceService
 from modules.statistics.services.transaction_stats_service_v2 import (
     TransactionStatsService,
 )
@@ -16,13 +13,8 @@ pytestmark = pytest.mark.django_db
 
 
 @pytest.fixture
-def investor():
-    return Investor.objects.create(clerk_id="clerk_test_id")
-
-
-@pytest.fixture
-def instrument():
-    return Instrument.objects.create(ticker="TEST")
+def instrument(instruments_factory):
+    return instruments_factory(ticker="TTWO")
 
 
 @pytest.fixture
@@ -31,7 +23,7 @@ def mock_price_service(monkeypatch):
 
     class MockLatestPriceService:
         def get_prices_default_dict(self):
-            return {"TEST": Decimal(210)}
+            return {"TTWO": Decimal(210)}
 
     return MockLatestPriceService()
 
@@ -69,7 +61,7 @@ def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
 
     svc = TransactionStatsService(
         txs,
-        ticker="TEST",
+        ticker="TTWO",
         lastest_price_service=mock_price_service,
     )
 
@@ -96,7 +88,7 @@ def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_
 
     svc = TransactionStatsService(
         txs,
-        ticker="TEST",
+        ticker="TTWO",
         lastest_price_service=mock_price_service,
     )
 
@@ -128,7 +120,7 @@ def test_compute_stats_in_period_with_previous_holdings(
     txs = Transaction.objects.filter(investor=investor, ticker=instrument)
     svc = TransactionStatsService(
         txs,
-        ticker="TEST",
+        ticker="TTWO",
         lastest_price_service=mock_price_service,
     )
 
@@ -164,7 +156,7 @@ def test_period_respects_virtual_lots(investor, instrument, mock_price_service, 
 
     svc = TransactionStatsService(
         txs,
-        ticker="TEST",
+        ticker="TTWO",
         lastest_price_service=mock_price_service,
     )
 
@@ -197,7 +189,7 @@ def test_period_does_not_count_pre_period_realized_gains(
 
     svc = TransactionStatsService(
         txs,
-        ticker="TEST",
+        ticker="TTWO",
         lastest_price_service=mock_price_service,
     )
 
