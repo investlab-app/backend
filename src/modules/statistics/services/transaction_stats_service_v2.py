@@ -1,8 +1,9 @@
 from collections.abc import Iterable, Sequence
-from dataclasses import dataclass
 from datetime import datetime
 from decimal import Decimal, getcontext
 from typing import Any
+
+from pydantic import BaseModel
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
@@ -12,15 +13,13 @@ from modules.transactions.models import Transaction
 getcontext().prec = 28
 
 
-@dataclass
-class BuyLot:
+class BuyLot(BaseModel):
     volume: Decimal
     price: Decimal
     timestamp: Any = None
 
 
-@dataclass
-class SellDetail:
+class SellDetail(BaseModel):
     volume: Decimal
     sell_price: Decimal
     cost_basis: Decimal
@@ -28,15 +27,13 @@ class SellDetail:
     gain_pct: Decimal | None
 
 
-@dataclass
-class TransactionDetails:
+class TransactionDetails(BaseModel):
     sells: list[SellDetail]
     remaining_lots_lifo_order: list[dict[str, Any]]
     remaining_lots_fifo_order: list[dict[str, Any]]
 
 
-@dataclass
-class TransactionStats:
+class TransactionStats(BaseModel):
     realized_gain: Decimal
     unrealized_gain: Decimal
     total_gain: Decimal
@@ -144,7 +141,10 @@ class TransactionStatsService:
         initial_buy_lots: Iterable[BuyLot] | Sequence[BuyLot],
         current_price: Decimal,
     ) -> TransactionStats:
-        buy_lots = [BuyLot(i.volume, i.price, i.timestamp) for i in initial_buy_lots]
+        buy_lots = [
+            BuyLot(volume=i.volume, price=i.price, timestamp=i.timestamp)
+            for i in initial_buy_lots
+        ]
         realized_gain = Decimal(0)
         total_buy_cost = sum(i.volume * i.price for i in buy_lots)
         sell_details: list[SellDetail] = []
@@ -152,7 +152,7 @@ class TransactionStatsService:
         for tx in transactions:
             vol, price = tx.volume, tx.price
             if tx.is_buy:
-                buy_lots.append(BuyLot(vol, price, tx.timestamp))
+                buy_lots.append(BuyLot(volume=vol, price=price, timestamp=tx.timestamp))
                 total_buy_cost += vol * price
 
             else:  # sell
