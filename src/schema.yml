@@ -1673,7 +1673,7 @@ components:
         messages:
           type: array
           items:
-            $ref: '#/components/schemas/Message'
+            $ref: '#/components/schemas/ChatMessage'
           readOnly: true
       required:
       - created_at
@@ -1690,6 +1690,32 @@ components:
           maxLength: 255
       required:
       - title
+    ChatMessage:
+      type: object
+      properties:
+        id:
+          type: string
+          readOnly: true
+          default: ''
+        role:
+          allOf:
+          - $ref: '#/components/schemas/RoleEnum'
+          readOnly: true
+          default: user
+        content:
+          type: string
+          readOnly: true
+          default: ''
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - content
+      - createdAt
+      - id
+      - role
     ClerkLoginRequest:
       type: object
       properties:
@@ -1719,10 +1745,6 @@ components:
     CreateChatRequest:
       type: object
       properties:
-        title:
-          type: string
-          minLength: 1
-          maxLength: 255
         first_message:
           type: string
           minLength: 1
@@ -2517,31 +2539,6 @@ components:
         server_time:
           type: string
           nullable: true
-    Message:
-      type: object
-      properties:
-        id:
-          type: string
-        role:
-          type: string
-        content:
-          type: string
-        created_at:
-          type: string
-          format: date-time
-        experimental_attachments:
-          type: array
-          items: {}
-        tool_invocations:
-          type: array
-          items: {}
-        parts:
-          type: array
-          items: {}
-      required:
-      - content
-      - id
-      - role
     MostTradedItem:
       type: object
       properties:
