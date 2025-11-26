@@ -64,9 +64,7 @@ class TransactionStatsService:
         )
         return cls(qs, ticker=instrument.ticker)
 
-    def _get_current_price(self, current_price: Decimal | None = None) -> Decimal:
-        if current_price is not None:
-            return current_price
+    def _get_current_price(self) -> Decimal:
         prices = self.lastest_price_service.get_prices_default_dict()
         return prices[self.ticker]
 
@@ -180,7 +178,7 @@ class TransactionStatsService:
         )
 
     def compute_stats(self, current_price: Decimal | None = None) -> TransactionStats:
-        current_price = self._get_current_price(current_price)
+        current_price = current_price or self._get_current_price()
         return self._compute_from_transactions(
             transactions=self.transactions,
             initial_buy_lots=[],
@@ -190,7 +188,7 @@ class TransactionStatsService:
     def compute_stats_in_period(
         self, start: datetime, end: datetime, current_price: Decimal | None = None
     ) -> TransactionStats:
-        current_price = self._get_current_price(current_price)
+        current_price = current_price or self._get_current_price()
 
         # Calculate state before the period, but with price = 0 to get only buy_lots
         pre_txs = [t for t in self.transactions if t.timestamp < start]
