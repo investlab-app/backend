@@ -34,7 +34,7 @@ def mock_polygon_price_repository(monkeypatch):
 
     class MockPolygonPricesRepository:
         def get_price_at(self, ticker, timestamp):
-            return Decimal(210)
+            return Decimal(190)
 
     return MockPolygonPricesRepository()
 
@@ -90,7 +90,6 @@ def test_basic_fifo_gain(
 
 
 def test_unrealized_gain_lifo(
-    db,
     investor,
     instrument,
     mock_latest_price_service,
@@ -389,9 +388,9 @@ def test_compute_stats_in_period_edge_case(
 
     # realized gain in period = 3*110 - 3*100 = 30
     assert stats.realized_gain == Decimal(30)
-    # remaining 2x 100, unrealized = 2*(210-100)=220
-    assert stats.unrealized_gain == Decimal(220)
-    assert stats.total_gain == Decimal(250)
+    # remaining 2x 100, unrealized = 2*(190-100)=180
+    assert stats.unrealized_gain == Decimal(180)
+    assert stats.total_gain == Decimal(210)
 
 
 def test_compute_stats_in_period_without_start(
