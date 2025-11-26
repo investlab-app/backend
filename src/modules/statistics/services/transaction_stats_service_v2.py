@@ -7,6 +7,7 @@ from pydantic import BaseModel
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
+from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.services import LatestPriceService
 from modules.transactions.models import Transaction
 
@@ -39,7 +40,7 @@ class TransactionStats(BaseModel):
     total_gain: Decimal
     total_buy_cost: Decimal
     total_gain_pct: Decimal | None
-    current_price: Decimal
+    end_period_price: Decimal
     remaining_volume: Decimal
     details: TransactionDetails
 
@@ -50,10 +51,12 @@ class TransactionStatsService:
         transactions: Iterable[Transaction],
         ticker: str,
         lastest_price_service: LatestPriceService | None = None,
+        polygon_prices_repository: PolygonPricesRepository | None = None,
     ):
         self.transactions = sorted(transactions, key=lambda t: t.timestamp)
         self.ticker = ticker
         self.lastest_price_service = lastest_price_service or LatestPriceService()
+        self.polygon_prices_repository = polygon_prices_repository or PolygonPricesRepository()
 
     @classmethod
     def from_investor_and_instrument(
@@ -67,6 +70,13 @@ class TransactionStatsService:
     def _get_current_price(self) -> Decimal:
         prices = self.lastest_price_service.get_prices_default_dict()
         return prices[self.ticker]
+
+    def _get_price_at(self, timestamp: datetime) -> Decimal:
+        price = self.polygon_prices_repository.get_price_at(self.ticker, timestamp)
+        if price is None:
+            raise ValueError(f"Price not found for {self.ticker} at {timestamp}")
+            # return Decimal("1")
+        return price
 
     @staticmethod
     def _consume_sell_volume(
@@ -98,11 +108,11 @@ class TransactionStatsService:
         buy_lots: list[BuyLot],
         realized_gain: Decimal,
         total_buy_cost: Decimal,
-        current_price: Decimal,
+        end_period_price: Decimal,
         sell_details: list[SellDetail],
     ) -> TransactionStats:
         remaining_volume = sum(i.volume for i in buy_lots)
-        unrealized_gain = sum(i.volume * (current_price - i.price) for i in buy_lots)
+        unrealized_gain = sum(i.volume * (end_period_price - i.price) for i in buy_lots)
         total_gain = realized_gain + unrealized_gain
         total_gain_pct = total_gain / total_buy_cost if total_buy_cost else None
 
@@ -110,7 +120,7 @@ class TransactionStatsService:
             {
                 "volume": i.volume,
                 "buy_price": i.price,
-                "contribution": i.volume * (current_price - i.price),
+                "contribution": i.volume * (end_period_price - i.price),
             }
             for i in reversed(buy_lots)
         ]
@@ -128,7 +138,7 @@ class TransactionStatsService:
             total_gain=total_gain,
             total_buy_cost=total_buy_cost,
             total_gain_pct=total_gain_pct,
-            current_price=current_price,
+            end_period_price=end_period_price,
             remaining_volume=remaining_volume,  # type: ignore
             details=details,
         )
@@ -137,7 +147,7 @@ class TransactionStatsService:
         self,
         transactions: Iterable[Transaction],
         initial_buy_lots: Iterable[BuyLot] | Sequence[BuyLot],
-        current_price: Decimal,
+        end_period_price: Decimal,
     ) -> TransactionStats:
         buy_lots = [
             BuyLot(volume=i.volume, price=i.price, timestamp=i.timestamp)
@@ -173,7 +183,7 @@ class TransactionStatsService:
             buy_lots,
             realized_gain,
             total_buy_cost,  # type: ignore
-            current_price,
+            end_period_price,
             sell_details,
         )
 
@@ -182,29 +192,56 @@ class TransactionStatsService:
         return self._compute_from_transactions(
             transactions=self.transactions,
             initial_buy_lots=[],
-            current_price=current_price,
+            end_period_price=current_price,
         )
 
     def compute_stats_in_period(
-        self, start: datetime, end: datetime, current_price: Decimal | None = None
+        self,
+        start: datetime | None = None,
+        end: datetime | None = None,
+        end_period_price: Decimal | None = None,
     ) -> TransactionStats:
-        current_price = current_price or self._get_current_price()
+        """
+        Compute stats for transactions inside a time window [start, end].
 
-        # Calculate state before the period, but with price = 0 to get only buy_lots
-        pre_txs = [t for t in self.transactions if t.timestamp < start]
+        If `start` is None, the window starts from the beginning of history.
+        If `end` is None, the window goes until the latest transaction.
+        If `end_period_price` is None, the price at `end` timestamp is used,
+        or the current price if `end` is also None.
+        """
+        if end_period_price is None:
+            if end:
+                end_period_price = self._get_price_at(end)
+            else:
+                end_period_price = self._get_current_price()
+
+        # Calculate state before the period (transactions strictly before `start`),
+        # using price=0 so we only get the resulting buy lots (virtual lots).
+        if start is None:
+            pre_txs: list[Transaction] = []
+        else:
+            pre_txs = [t for t in self.transactions if t.timestamp < start]
+
         pre_stats = self._compute_from_transactions(pre_txs, [], Decimal(0))
 
-        # Recreate BuyLot instances from pre_stats
+        # Recreate BuyLot instances from pre_stats (FIFO order)
         pre_lots = [
             BuyLot(volume=i["volume"], price=i["buy_price"])
             for i in pre_stats.details.remaining_lots_fifo_order
         ]
 
-        # Process transactions within the window
-        window_txs = [t for t in self.transactions if start <= t.timestamp <= end]
+        # Build window transactions according to provided bounds.
+        if start is None and end is None:
+            window_txs = self.transactions
+        elif start is None:
+            window_txs = [t for t in self.transactions if t.timestamp <= end]
+        elif end is None:
+            window_txs = [t for t in self.transactions if t.timestamp >= start]
+        else:
+            window_txs = [t for t in self.transactions if start <= t.timestamp <= end]
 
         return self._compute_from_transactions(
             transactions=window_txs,
             initial_buy_lots=pre_lots,
-            current_price=current_price,
+            end_period_price=end_period_price,
         )

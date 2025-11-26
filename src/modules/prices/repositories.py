@@ -101,10 +101,10 @@ class PolygonPricesRepository:
         return list(map(PriceDailySummary.from_snapshot, snapshots))
 
     def get_prices_at(
-        self, tickers: list[Instrument], timestamp: datetime
+        self, instruments: list[Instrument], timestamp: datetime
     ) -> dict[Instrument, Decimal]:
         prices = {}
-        for instrument in tickers:
+        for instrument in instruments:
             ohlc = self.get_ohlc(
                 ticker=instrument.ticker,
                 start_date=timestamp,
@@ -115,6 +115,18 @@ class PolygonPricesRepository:
             if ohlc and len(ohlc) > 0:
                 prices[instrument] = ohlc[0].open
         return prices
+
+    def get_price_at(self, ticker: str, timestamp: datetime) -> Decimal | None:
+        ohlc = self.get_ohlc(
+            ticker=ticker,
+            start_date=timestamp,
+            end_date=timestamp + timedelta(minutes=10),
+            interval="minute",
+            interval_multiplier=1,
+        )
+        if ohlc and len(ohlc) > 0:
+            return ohlc[0].open
+        return None
 
     def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
         prices = self.get_prices(tickers)

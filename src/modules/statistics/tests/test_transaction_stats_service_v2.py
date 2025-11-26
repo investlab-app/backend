@@ -315,3 +315,66 @@ def test_compute_stats_in_period_edge_case(
     # remaining 2x 100, unrealized = 2*(210-100)=220
     assert stats.unrealized_gain == Decimal(220)
     assert stats.total_gain == Decimal(250)
+
+
+def test_compute_stats_in_period_without_start(
+    investor, instrument, mock_price_service, add_tx
+):
+    """
+    When `start` is omitted (None), the period should start from the beginning.
+
+    BUY 3 @200
+    SELL 2 @220  (inside window by specifying `end` only)
+    """
+
+    t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    add_tx(True, 3, 200, t0)
+    add_tx(False, 2, 220, t0 + timedelta(minutes=1))
+
+    end = t0 + timedelta(minutes=1)
+
+    txs = Transaction.objects.filter(investor=investor, ticker=instrument)
+
+    svc = TransactionStatsService(
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
+    )
+
+    stats = svc.compute_stats_in_period(end=end)
+
+    # realized gain = 2*220 - 2*200 = 40
+    assert stats.realized_gain == Decimal(40)
+    # remaining 1 share
+    assert stats.remaining_volume == Decimal(1)
+
+
+def test_compute_stats_in_period_without_end(
+    investor, instrument, mock_price_service, add_tx
+):
+    """
+    When `end` is omitted (None), the period should go until the latest transaction.
+
+    BEFORE START:
+        BUY 5 @100
+
+    PERIOD (start provided):
+        SELL 3 @110
+    """
+
+    t0 = datetime(2023, 12, 31, tzinfo=timezone.utc)
+    add_tx(True, 5, 100, t0)
+
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    add_tx(False, 3, 110, start + timedelta(minutes=1))
+
+    txs = Transaction.objects.all()
+    svc = TransactionStatsService(
+        txs, ticker="TTWO", lastest_price_service=mock_price_service
+    )
+
+    stats = svc.compute_stats_in_period(start=start)
+
+    # realized gain in period = 3*110 - 3*100 = 30
+    assert stats.realized_gain == Decimal(30)
+    # remaining 2x 100, unrealized = 2*(210-100)=220
+    assert stats.unrealized_gain == Decimal(220)
+    assert stats.total_gain == Decimal(250)
