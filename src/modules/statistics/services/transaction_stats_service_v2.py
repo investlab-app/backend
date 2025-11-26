@@ -62,12 +62,12 @@ class TransactionStatsService:
 
     @classmethod
     def from_investor_and_instrument(
-        cls, investor: Investor, instrument: Instrument
+        cls, investor: Investor, instrument: Instrument, **kwargs
     ) -> "TransactionStatsService":
         qs = Transaction.objects.filter(investor=investor, ticker=instrument).order_by(
             "timestamp"
         )
-        return cls(qs, ticker=instrument.ticker)
+        return cls(qs, ticker=instrument.ticker, **kwargs)
 
     def _get_current_price(self) -> Decimal:
         prices = self.lastest_price_service.get_prices_default_dict()
@@ -247,3 +247,41 @@ class TransactionStatsService:
             initial_buy_lots=pre_lots,
             end_period_price=end_period_price,
         )
+
+
+class TransactionMultipleInstrumentsStatsService:
+    def __init__(
+        self,
+        investor: Investor,
+        instruments: list[Instrument],
+        lastest_price_service: LatestPriceService | None = None,
+        polygon_prices_repository: PolygonPricesRepository | None = None,
+    ):
+        self.investor = investor
+        self.instruments = instruments
+        self.lastest_price_service = lastest_price_service or LatestPriceService()
+        self.polygon_prices_repository = (
+            polygon_prices_repository or PolygonPricesRepository()
+        )
+        self.transaction_stats_services: dict[str, TransactionStatsService] = {
+            instrument.ticker: TransactionStatsService.from_investor_and_instrument(
+                investor=investor,
+                instrument=instrument,
+                lastest_price_service=self.lastest_price_service,
+                polygon_prices_repository=self.polygon_prices_repository,
+            )
+            for instrument in instruments
+        }
+
+    def compute_all_stats(
+        self, start: datetime | None = None, end: datetime | None = None
+    ) -> dict[str, TransactionStats]:
+        stats = {}
+        if start or end:
+            for ticker, service in self.transaction_stats_services.items():
+                stats[ticker] = service.compute_stats_in_period(start=start, end=end)
+        else:
+            for ticker, service in self.transaction_stats_services.items():
+                stats[ticker] = service.compute_stats()
+
+        return stats

@@ -5,6 +5,7 @@ from decimal import Decimal
 import pytest
 
 from modules.statistics.services.transaction_stats_service_v2 import (
+    TransactionMultipleInstrumentsStatsService,
     TransactionStatsService,
 )
 from modules.transactions.models import Transaction
@@ -23,7 +24,7 @@ def mock_latest_price_service(monkeypatch):
 
     class MockLatestPriceService:
         def get_prices_default_dict(self):
-            return {"TTWO": Decimal(210)}
+            return {"TTWO": Decimal(210), "FOO": Decimal(60)}
 
     return MockLatestPriceService()
 
@@ -34,7 +35,11 @@ def mock_polygon_price_repository(monkeypatch):
 
     class MockPolygonPricesRepository:
         def get_price_at(self, ticker, timestamp):
-            return Decimal(190)
+            if ticker == "TTWO":
+                return Decimal(190)
+            elif ticker == "FOO":
+                return Decimal(50)
+            return None
 
     return MockPolygonPricesRepository()
 
@@ -468,3 +473,105 @@ def test_compute_stats_in_period_without_end(
     # remaining 2x 100, unrealized = 2*(210-100)=220
     assert stats.unrealized_gain == Decimal(220)
     assert stats.total_gain == Decimal(250)
+
+
+def test_transaction_multiple_instruments_stats_service_no_period(
+    investor,
+    instruments_factory,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+):
+    """
+    Ensure stats are computed per-instrument when no period bounds are provided.
+    """
+
+    # Create two instruments
+    inst1 = instruments_factory(ticker="TTWO")
+    inst2 = instruments_factory(ticker="FOO")
+
+    t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+    # Add transactions for both instruments
+    Transaction.objects.create(
+        investor=investor,
+        ticker=inst1,
+        volume=Decimal(2),
+        price=Decimal(100),
+        is_buy=True,
+        timestamp=t0,
+    )
+
+    Transaction.objects.create(
+        investor=investor,
+        ticker=inst2,
+        volume=Decimal(1),
+        price=Decimal(50),
+        is_buy=True,
+        timestamp=t0,
+    )
+
+    svc = TransactionMultipleInstrumentsStatsService(
+        investor=investor,
+        instruments=[inst1, inst2],
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
+    )
+
+    stats = svc.compute_all_stats()
+
+    assert set(stats.keys()) == {"TTWO", "FOO"}
+    assert stats["TTWO"].remaining_volume == Decimal(2)
+    assert stats["TTWO"].end_period_price == Decimal(210)
+    assert stats["FOO"].remaining_volume == Decimal(1)
+    assert stats["FOO"].end_period_price == Decimal(60)
+
+
+def test_transaction_multiple_instruments_stats_service_with_period(
+    investor,
+    instruments_factory,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+):
+    """
+    Ensure per-instrument period stats use the polygon repository price at `end`.
+    """
+
+    inst1 = instruments_factory(ticker="TTWO")
+    inst2 = instruments_factory(ticker="FOO")
+
+    t0 = datetime(2023, 12, 31, tzinfo=timezone.utc)
+    Transaction.objects.create(
+        investor=investor,
+        ticker=inst1,
+        volume=Decimal(5),
+        price=Decimal(100),
+        is_buy=True,
+        timestamp=t0,
+    )
+
+    start = datetime(2024, 1, 1, tzinfo=timezone.utc)
+    end = datetime(2024, 12, 31, tzinfo=timezone.utc)
+
+    Transaction.objects.create(
+        investor=investor,
+        ticker=inst1,
+        volume=Decimal(3),
+        price=Decimal(110),
+        is_buy=False,
+        timestamp=start + timedelta(minutes=1),
+    )
+
+    svc = TransactionMultipleInstrumentsStatsService(
+        investor=investor,
+        instruments=[inst1, inst2],
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
+    )
+
+    stats = svc.compute_all_stats(start=start, end=end)
+
+    assert set(stats.keys()) == {"TTWO", "FOO"}
+    assert stats["TTWO"].end_period_price == Decimal(190)
+    assert stats["TTWO"].realized_gain == Decimal(30)
+    assert stats["FOO"].end_period_price == Decimal(50)
+    assert stats["FOO"].realized_gain == Decimal(0)
