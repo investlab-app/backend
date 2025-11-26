@@ -41,9 +41,12 @@ class Parser:
             data = {}
             for key, value in node_json["data"]["settings"].items():
                 data[key] = str(value)
-            if "unit" in data and "interval" in data:
+            if "unit" in data and ("interval" in data or "period" in data):
                 unit = data.pop("unit")
-                period = data.pop("interval")
+                if "interval" in data:
+                    period = data.pop("interval")
+                else:
+                    period = data.pop("period")
                 data["timespan"] = f"{period} {unit}"
             if "unit2" in data and "interval2" in data:
                 unit2 = data.pop("unit2")
