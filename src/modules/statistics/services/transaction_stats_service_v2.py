@@ -56,7 +56,9 @@ class TransactionStatsService:
         self.transactions = sorted(transactions, key=lambda t: t.timestamp)
         self.ticker = ticker
         self.lastest_price_service = lastest_price_service or LatestPriceService()
-        self.polygon_prices_repository = polygon_prices_repository or PolygonPricesRepository()
+        self.polygon_prices_repository = (
+            polygon_prices_repository or PolygonPricesRepository()
+        )
 
     @classmethod
     def from_investor_and_instrument(

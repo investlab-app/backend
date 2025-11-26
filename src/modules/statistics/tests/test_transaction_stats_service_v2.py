@@ -18,7 +18,7 @@ def instrument(instruments_factory):
 
 
 @pytest.fixture
-def mock_price_service(monkeypatch):
+def mock_latest_price_service(monkeypatch):
     """Mock LatestPriceService.get_prices_default_dict()"""
 
     class MockLatestPriceService:
@@ -26,6 +26,17 @@ def mock_price_service(monkeypatch):
             return {"TTWO": Decimal(210)}
 
     return MockLatestPriceService()
+
+
+@pytest.fixture
+def mock_polygon_price_repository(monkeypatch):
+    """Mock PolygonPricesRepository.get_price_at()"""
+
+    class MockPolygonPricesRepository:
+        def get_price_at(self, ticker, timestamp):
+            return Decimal(210)
+
+    return MockPolygonPricesRepository()
 
 
 @pytest.fixture
@@ -45,7 +56,13 @@ def add_tx(investor, instrument):
     return _add
 
 
-def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
+def test_basic_fifo_gain(
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     BUY 3 @200
     BUY 2 @230
@@ -62,7 +79,8 @@ def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
     svc = TransactionStatsService(
         txs,
         ticker="TTWO",
-        lastest_price_service=mock_price_service,
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats()
@@ -71,7 +89,14 @@ def test_basic_fifo_gain(investor, instrument, mock_price_service, add_tx):
     assert stats.remaining_volume == Decimal(1)  # 1 from the second lot
 
 
-def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_tx):
+def test_unrealized_gain_lifo(
+    db,
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     BUY 2 @230
     BUY 0.5 @210
@@ -89,7 +114,8 @@ def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_
     svc = TransactionStatsService(
         txs,
         ticker="TTWO",
-        lastest_price_service=mock_price_service,
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats()
@@ -97,7 +123,11 @@ def test_unrealized_gain_lifo(db, investor, instrument, mock_price_service, add_
 
 
 def test_compute_stats_in_period_with_previous_holdings(
-    investor, instrument, mock_price_service, add_tx
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
 ):
     """
     BEFORE PERIOD:
@@ -121,7 +151,8 @@ def test_compute_stats_in_period_with_previous_holdings(
     svc = TransactionStatsService(
         txs,
         ticker="TTWO",
-        lastest_price_service=mock_price_service,
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats_in_period(start, end)
@@ -133,7 +164,13 @@ def test_compute_stats_in_period_with_previous_holdings(
     assert stats.remaining_volume == Decimal(1)
 
 
-def test_period_respects_virtual_lots(investor, instrument, mock_price_service, add_tx):
+def test_period_respects_virtual_lots(
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     BEFORE PERIOD:
         BUY 10 @100
@@ -157,7 +194,8 @@ def test_period_respects_virtual_lots(investor, instrument, mock_price_service, 
     svc = TransactionStatsService(
         txs,
         ticker="TTWO",
-        lastest_price_service=mock_price_service,
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats_in_period(start, end)
@@ -172,7 +210,11 @@ def test_period_respects_virtual_lots(investor, instrument, mock_price_service, 
 
 
 def test_period_does_not_count_pre_period_realized_gains(
-    investor, instrument, mock_price_service, add_tx
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
 ):
     """
     Make sure gains before the window DO NOT appear in period stats.
@@ -190,7 +232,8 @@ def test_period_does_not_count_pre_period_realized_gains(
     svc = TransactionStatsService(
         txs,
         ticker="TTWO",
-        lastest_price_service=mock_price_service,
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats_in_period(start, end)
@@ -201,7 +244,13 @@ def test_period_does_not_count_pre_period_realized_gains(
     assert stats.total_gain == 0
 
 
-def test_complex_realized_unrealized(investor, instrument, mock_price_service, add_tx):
+def test_complex_realized_unrealized(
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     Scenariusz opisany w legendzie:
     BUY 3x @200
@@ -223,7 +272,10 @@ def test_complex_realized_unrealized(investor, instrument, mock_price_service, a
 
     txs = Transaction.objects.all()
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
     stats = svc.compute_stats()
 
@@ -234,7 +286,13 @@ def test_complex_realized_unrealized(investor, instrument, mock_price_service, a
     assert stats.remaining_volume == Decimal("2.5")
 
 
-def test_partial_sell_percentage(investor, instrument, mock_price_service, add_tx):
+def test_partial_sell_percentage(
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     TTWO procentowego zysku/straty dla częściowego sella
     BUY 3x @200
@@ -246,7 +304,10 @@ def test_partial_sell_percentage(investor, instrument, mock_price_service, add_t
 
     txs = Transaction.objects.all()
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
     stats = svc.compute_stats()
 
@@ -257,7 +318,13 @@ def test_partial_sell_percentage(investor, instrument, mock_price_service, add_t
     assert stats.total_gain == Decimal(45)
 
 
-def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
+def test_multiple_sells_fifo(
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
+):
     """
     - BUY 2x @100
     - BUY 3x @120
@@ -275,7 +342,10 @@ def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
     txs = Transaction.objects.all()
 
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats()
@@ -290,7 +360,11 @@ def test_multiple_sells_fifo(investor, instrument, mock_price_service, add_tx):
 
 
 def test_compute_stats_in_period_edge_case(
-    investor, instrument, mock_price_service, add_tx
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
 ):
     """
     Okno czasowe: upewniamy się, że pre-okresowe BUYy są brane pod uwagę
@@ -306,7 +380,10 @@ def test_compute_stats_in_period_edge_case(
 
     txs = Transaction.objects.all()
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
     stats = svc.compute_stats_in_period(start, end)
 
@@ -318,7 +395,11 @@ def test_compute_stats_in_period_edge_case(
 
 
 def test_compute_stats_in_period_without_start(
-    investor, instrument, mock_price_service, add_tx
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
 ):
     """
     When `start` is omitted (None), the period should start from the beginning.
@@ -336,7 +417,10 @@ def test_compute_stats_in_period_without_start(
     txs = Transaction.objects.filter(investor=investor, ticker=instrument)
 
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats_in_period(end=end)
@@ -348,7 +432,11 @@ def test_compute_stats_in_period_without_start(
 
 
 def test_compute_stats_in_period_without_end(
-    investor, instrument, mock_price_service, add_tx
+    investor,
+    instrument,
+    mock_latest_price_service,
+    mock_polygon_price_repository,
+    add_tx,
 ):
     """
     When `end` is omitted (None), the period should go until the latest transaction.
@@ -368,7 +456,10 @@ def test_compute_stats_in_period_without_end(
 
     txs = Transaction.objects.all()
     svc = TransactionStatsService(
-        txs, ticker="TTWO", lastest_price_service=mock_price_service
+        txs,
+        ticker="TTWO",
+        lastest_price_service=mock_latest_price_service,
+        polygon_prices_repository=mock_polygon_price_repository,
     )
 
     stats = svc.compute_stats_in_period(start=start)
