@@ -1,5 +1,5 @@
 import logging
-from dataclasses import dataclass
+from uuid import uuid4
 
 import httpx
 from asgiref.sync import async_to_sync
@@ -16,18 +16,36 @@ from pydantic_ai import (
 from pydantic_ai.models.google import GoogleModel
 from pydantic_ai.providers.google import GoogleProvider
 
-from config.settings import GEMINI_API_KEY
+from config.clients import openai_client
+from config.settings import GEMINI_API_KEY, OPENAI_TITLE_MODEL
 from modules.chats.models import Chat, ChatMessage
+from modules.chats.schema import ChatMessageSchema
 
 logger = logging.getLogger(__name__)
 
 
-@dataclass
-class ChatMessageDTO:
-    id: str
-    role: str
-    timestamp: str
-    content: str
+class ChatService:
+    def generate_title(self, prompt: str) -> str:
+        response = openai_client.chat.completions.create(
+            model=OPENAI_TITLE_MODEL,
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Role: Title Generator
+Output: ONLY the title text. NO quotes. Use language from user prompt.
+Constraint: Max 30 characters total.
+
+Examples:
+"Explain my investment portfolio" -> Investment Portfolio Analysis
+"Generate a chart for my portfolio" -> Portfolio Chart
+"Cześć" -> Cześć""",
+                },
+                {"role": "user", "content": prompt},
+            ],
+            temperature=0.3,
+            max_tokens=30,
+        )
+        return response.choices[0].message.content.strip()
 
 
 class ChatMessagesService:
@@ -38,7 +56,8 @@ class ChatMessagesService:
         async for msg in ChatMessage.objects.filter(
             chat=chat, message_list__isnull=False
         ).order_by("created_at"):
-            model_messages = ModelMessagesTypeAdapter.validate_json(msg.message_list)
+            message_data = msg.message_list
+            model_messages = ModelMessagesTypeAdapter.validate_json(message_data)
             messages.extend(model_messages)
 
         return messages
@@ -46,25 +65,40 @@ class ChatMessagesService:
     def sync_get_messages(self, chat_id: str) -> list[ModelMessage]:
         return async_to_sync(self.get_messages)(chat_id)
 
-    def to_chat_message(self, m: ModelMessage) -> ChatMessageDTO | None:
-        for first_part in m.parts:
-            if isinstance(m, ModelRequest) and isinstance(first_part, UserPromptPart):
-                assert isinstance(first_part.content, str)
-                return ChatMessageDTO(
-                    id=m.timestamp.isoformat(),
+    def convert_messages_to_schema(
+        self, messages: list[ModelMessage]
+    ) -> list[ChatMessageSchema]:
+        schema_messages = []
+        for msg in messages:
+            if isinstance(msg, ModelRequest):
+                converted = self._get_user_prompt(msg)
+                if converted:
+                    schema_messages.append(converted)
+            elif isinstance(msg, ModelResponse):
+                converted = self._get_agent_response(msg)
+                if converted:
+                    schema_messages.append(converted)
+        return schema_messages
+
+    def _get_user_prompt(self, msg: ModelRequest) -> ChatMessageSchema | None:
+        for part in msg.parts:
+            if isinstance(part, UserPromptPart):
+                return ChatMessageSchema(
+                    id=msg.run_id or f"unknown-id-{uuid4()}",
                     role="user",
-                    timestamp=m.timestamp.isoformat(),
-                    content=first_part.content,
-                )
-            elif isinstance(m, ModelResponse) and isinstance(first_part, TextPart):
-                return ChatMessageDTO(
-                    id=m.timestamp.isoformat(),
-                    role="assistant",
-                    timestamp=m.timestamp.isoformat(),
-                    content=first_part.content,
+                    content=str(part.content),  # No complex input for now
+                    createdAt=part.timestamp,
                 )
 
-        return None
+    def _get_agent_response(self, msg: ModelResponse) -> ChatMessageSchema | None:
+        for part in msg.parts:
+            if isinstance(part, TextPart):
+                return ChatMessageSchema(
+                    id=msg.run_id or f"unknown-id-{uuid4()}",
+                    role="assistant",
+                    content=part.content,
+                    createdAt=msg.timestamp,
+                )
 
 
 class LLMStreamingService[AgentDepsT, OutputDataT]:
@@ -108,8 +142,8 @@ class LLMStreamingService[AgentDepsT, OutputDataT]:
                 message_history=messages,
                 deps=deps,
             ) as response:
-                async for text in response.stream_text(delta=True):
-                    yield text
+                async for chunk in response.stream_text(delta=True):
+                    yield chunk
 
         await ChatMessage.objects.acreate(
             chat_id=self.chat_id,

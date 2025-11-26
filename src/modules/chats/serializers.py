@@ -1,25 +1,12 @@
+import logging
+
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
 from modules.chats.models import Chat
-from modules.chats.services import (
-    ChatMessagesService,
-)
+from modules.chats.services import ChatMessagesService
 
-
-class MessageSerializer(serializers.Serializer):
-    id = serializers.CharField()
-    role = serializers.CharField()
-    content = serializers.CharField()
-    created_at = serializers.DateTimeField(required=False)
-    experimental_attachments = serializers.ListField(required=False)
-    tool_invocations = serializers.ListField(required=False)
-    parts = serializers.ListField(required=False)
-
-    @staticmethod
-    def serialize_message(model_message):
-        chat_messages_service = ChatMessagesService()
-        return chat_messages_service.to_chat_message(model_message)
+logger = logging.getLogger(__name__)
 
 
 class ChatSerializer(serializers.ModelSerializer):
@@ -34,6 +21,15 @@ class ChatSerializer(serializers.ModelSerializer):
         return obj.messages.count()
 
 
+class ChatMessageSerializer(serializers.Serializer):
+    id = serializers.CharField(read_only=True, default="")
+    role = serializers.ChoiceField(
+        choices=["user", "assistant"], read_only=True, default="user"
+    )
+    content = serializers.CharField(read_only=True, default="")
+    createdAt = serializers.DateTimeField(read_only=True, allow_null=True)  # noqa: N815
+
+
 class ChatDetailSerializer(serializers.ModelSerializer):
     messages = serializers.SerializerMethodField()
 
@@ -42,18 +38,17 @@ class ChatDetailSerializer(serializers.ModelSerializer):
         fields = ["id", "title", "created_at", "updated_at", "messages"]
         read_only_fields = ["id", "created_at", "updated_at", "messages"]
 
-    @extend_schema_field(serializers.ListSerializer(child=MessageSerializer()))
+    @extend_schema_field(serializers.ListField(child=ChatMessageSerializer()))
     def get_messages(self, obj: Chat):
         chat_message_service = ChatMessagesService()
         model_messages = chat_message_service.sync_get_messages(obj.id)
-        serialized_messages = [
-            MessageSerializer.serialize_message(msg) for msg in model_messages
-        ]
-        return [msg for msg in serialized_messages if msg is not None]
+        converted_messages = chat_message_service.convert_messages_to_schema(
+            model_messages
+        )
+        return ChatMessageSerializer(converted_messages, many=True).data
 
 
 class CreateChatSerializer(serializers.Serializer):
-    title = serializers.CharField(max_length=255, required=False)
     first_message = serializers.CharField(max_length=10000)
 
 

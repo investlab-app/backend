@@ -26,7 +26,7 @@ class TranslationService:
         for attempt in range(max_retries):
             try:
                 response = client.chat.completions.create(
-                    model=OPENAI_TRANSLATING_MODEL or "llama-3.1-8b-instant",
+                    model=OPENAI_TRANSLATING_MODEL,
                     messages=[
                         {
                             "role": "system",

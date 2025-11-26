@@ -36,7 +36,7 @@ class ValueStaysTheSameNode(Node):
 
     inVal = edges.NumberType(direction=edges.INPUT, source="in")
     timespan = edges.TimespanType(direction=edges.INPUT)
-    tolerance = edges.NumberType(direction=edges.INPUT, source="number")
+    tolerance = edges.NumberType(direction=edges.INPUT, source="inX")
 
     out = edges.BoolType(direction=edges.OUTPUT)
 
@@ -72,7 +72,7 @@ class ValueStaysTheSameNode(Node):
 
 # TODO check if samples is > 1
 class ValueStaysAboveBelowNode(Node):
-    TYPE_NAME = "staysAbove"
+    TYPE_NAME = "staysAboveBelow"
     SAMPLES = 25
 
     inVal = edges.NumberType(direction=edges.INPUT, source="inValue")

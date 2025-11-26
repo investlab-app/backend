@@ -79,7 +79,7 @@ class DivideNode(Node):
 
 
 class NumericIfNode(Node):
-    TYPE_NAME = "numericIf"
+    TYPE_NAME = "numbericFlowIf"
 
     inIf = edges.BoolType(direction=edges.INPUT)
     inThen = edges.NumberType(direction=edges.INPUT)
