@@ -8,7 +8,7 @@ from config.clients import clerk_client
 from modules.chats.mcps import EChartsMCP, MassiveMCP
 from modules.investors.models import Investor
 from modules.investors.services import InvestorStatsService
-from modules.transactions.services import TransactionStatsService
+from modules.statistics.services.transaction_stats_service import TransactionStatsService
 
 echarts_mcp = EChartsMCP()
 massive_mcp = MassiveMCP()
