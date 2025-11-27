@@ -13,6 +13,7 @@ from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.services import LatestPriceService
 from modules.transactions.models import Transaction
 
+# Set higher precision for Decimal operations
 getcontext().prec = 28
 
 
@@ -79,6 +80,22 @@ class TransactionStatsDict(UserDict[str, TransactionStats]):
             value = get_attr(stats, attribute)
             total += value
         return total
+
+    def calculate_total_gain_pct(self) -> Decimal | None:
+        total_buy_cost = self.sum_attribute("total_buy_cost")
+        total_sell_cost = self.sum_attribute("total_sell_cost")
+        total_unrealized_gain = self.sum_attribute("unrealized_gain")
+        print("total_buy_cost", total_buy_cost)
+        print("total_sell_cost", total_sell_cost)
+        print("total_unrealized_gain", total_unrealized_gain)
+        if total_buy_cost:
+            total_gain_pct = (
+                total_sell_cost + total_unrealized_gain
+            ) / total_buy_cost - Decimal(1)
+        else:
+            total_gain_pct = None
+
+        return total_gain_pct
 
 
 class TransactionStatsService:
@@ -159,7 +176,7 @@ class TransactionStatsService:
         if total_buy_cost:
             total_gain_pct = (
                 total_sell_cost + unrealized_gain
-            ) / total_buy_cost - Decimal(100)
+            ) / total_buy_cost - Decimal(1)
         else:
             total_gain_pct = None
 
