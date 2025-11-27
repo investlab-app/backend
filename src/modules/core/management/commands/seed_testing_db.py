@@ -168,7 +168,6 @@ class Command(CommandMessagesMixin, BaseCommand):
             return
 
         for instrument in instruments:
-
             with transaction.atomic():
                 buy_volume = Decimal(0)
                 for _ in range(random.randint(1, 10)):
@@ -186,9 +185,7 @@ class Command(CommandMessagesMixin, BaseCommand):
                         is_buy=True,
                     )
                     self.update_assets(
-                        investor=investor,
-                        instrument=instrument,
-                        volume=volume
+                        investor=investor, instrument=instrument, volume=volume
                     )
 
                 for _ in range(random.randint(1, 5)):
@@ -209,7 +206,5 @@ class Command(CommandMessagesMixin, BaseCommand):
                         is_buy=False,
                     )
                     self.update_assets(
-                        investor=investor,
-                        instrument=instrument,
-                        volume=-volume
+                        investor=investor, instrument=instrument, volume=-volume
                     )
