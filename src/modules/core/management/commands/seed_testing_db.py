@@ -185,7 +185,9 @@ class Command(CommandMessagesMixin, BaseCommand):
                         raise ValueError("Generated timestamp is in the future.")
 
                     price_change = random.random() - 0.5
-                    adjusted_price = tickers[instrument.ticker] * Decimal(price_change)
+                    adjusted_price = tickers[instrument.ticker] * (
+                        1 + Decimal(price_change)
+                    )
                     is_buy = random.random() > 0.5
                     if is_buy:
                         volume = Decimal(random.randint(1, 100))
