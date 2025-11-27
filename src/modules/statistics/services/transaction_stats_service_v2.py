@@ -11,6 +11,7 @@ from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.services import LatestPriceService
+from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
 # Set higher precision for Decimal operations
@@ -85,9 +86,7 @@ class TransactionStatsDict(UserDict[str, TransactionStats]):
         total_buy_cost = self.sum_attribute("total_buy_cost")
         total_sell_cost = self.sum_attribute("total_sell_cost")
         total_unrealized_gain = self.sum_attribute("unrealized_gain")
-        print("total_buy_cost", total_buy_cost)
-        print("total_sell_cost", total_sell_cost)
-        print("total_unrealized_gain", total_unrealized_gain)
+
         if total_buy_cost:
             total_gain_pct = (
                 total_sell_cost + total_unrealized_gain
@@ -319,24 +318,24 @@ class MultipleInstrumentsTransactionStatsService:
     def __init__(
         self,
         investor: Investor,
-        instruments: list[Instrument],
+        instruments: list[Instrument] | None = None,
         lastest_price_service: LatestPriceService | None = None,
         polygon_prices_repository: PolygonPricesRepository | None = None,
     ):
         self.investor = investor
-        self.instruments = instruments
+        self.instruments = instruments or get_investor_tickers(investor)
         self.lastest_price_service = lastest_price_service or LatestPriceService()
         self.polygon_prices_repository = (
             polygon_prices_repository or PolygonPricesRepository()
         )
         self.transaction_stats_services: dict[str, TransactionStatsService] = {
             instrument.ticker: TransactionStatsService.from_investor_and_instrument(
-                investor=investor,
+                investor=self.investor,
                 instrument=instrument,
                 lastest_price_service=self.lastest_price_service,
                 polygon_prices_repository=self.polygon_prices_repository,
             )
-            for instrument in instruments
+            for instrument in self.instruments
         }
 
     def compute_stats(
