@@ -141,7 +141,7 @@ class TransactionStatsService:
         remaining_volume = sum((i.volume for i in buy_lots), start=Decimal(0))
         unrealized_gain = sum(
             (i.volume * (end_period_price - i.price) for i in buy_lots),
-            start=Decimal(0)
+            start=Decimal(0),
         )
         total_gain = realized_gain + unrealized_gain
         total_gain_pct = total_gain / total_buy_cost if total_buy_cost else None
