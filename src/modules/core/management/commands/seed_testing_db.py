@@ -5,6 +5,7 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 from modules.core.constants import DecimalConvertible
@@ -50,12 +51,15 @@ class Command(CommandMessagesMixin, BaseCommand):
 
         return investor
 
-    def create_assets(
+    def update_assets(
         self, investor: Investor, instrument: Instrument, volume: DecimalConvertible
     ) -> Asset:
         asset = Asset.objects.filter(ticker=instrument, investor=investor).first()
         if asset:
             asset.volume = asset.volume + Decimal(volume)
+            if asset.volume < 0:
+                raise ValueError("Volume cannot be negative.")
+
             asset.save()
 
             self.print_success(
@@ -63,9 +67,12 @@ class Command(CommandMessagesMixin, BaseCommand):
                 f"\tinvestor='{investor.clerk_id}', "
                 f"\tinstrument='{instrument.ticker}', "
                 f"\tvolume={volume}"
-                f") created successfully."
+                f") updated successfully."
             )
         else:
+            if volume < 0:
+                raise ValueError("Volume cannot be negative.")
+
             asset = Asset.objects.create(
                 investor=investor,
                 ticker=instrument,
@@ -74,7 +81,7 @@ class Command(CommandMessagesMixin, BaseCommand):
             self.print_info(
                 f"Asset("
                 f"\tinvestor='{investor.clerk_id}', instrument='{instrument.ticker}'"
-                f") to volume={volume} updated."
+                f") to volume={volume} created."
             )
 
         return asset
@@ -161,27 +168,48 @@ class Command(CommandMessagesMixin, BaseCommand):
             return
 
         for instrument in instruments:
-            for _ in range(random.randint(1, 10)):
-                price_change = random.random() * -0.35
-                adjusted_price = tickers[instrument.ticker] * (
-                    1 + Decimal(price_change)
-                )
-                volume = Decimal(random.randint(1, 100)) + Decimal(
-                    random.randint(0, 999999)
-                ) / Decimal(1_000_000)
-                is_buy = random.choice([True, False])
-                self.create_transaction(
-                    investor=investor,
-                    instrument=instrument,
-                    volume=volume,
-                    price=adjusted_price.quantize(Decimal("0.01")),
-                    is_buy=is_buy,
-                )
 
-                if is_buy:
-                    self.create_assets(
+            with transaction.atomic():
+                buy_volume = Decimal(0)
+                for _ in range(random.randint(1, 10)):
+                    price_change = random.random() * -0.35
+                    adjusted_price = tickers[instrument.ticker] * (
+                        1 + Decimal(price_change)
+                    )
+                    volume = Decimal(random.randint(1, 100))
+                    buy_volume += volume
+                    self.create_transaction(
                         investor=investor,
                         instrument=instrument,
-                        volume=Decimal(random.randint(10, 500))
-                        + Decimal(random.randint(0, 999999)) / Decimal(1_000_000),
+                        volume=volume,
+                        price=adjusted_price,
+                        is_buy=True,
+                    )
+                    self.update_assets(
+                        investor=investor,
+                        instrument=instrument,
+                        volume=volume
+                    )
+
+                for _ in range(random.randint(1, 5)):
+                    if buy_volume <= 0:
+                        break
+
+                    price_change = random.random() * 0.35
+                    adjusted_price = tickers[instrument.ticker] * (
+                        1 + Decimal(price_change)
+                    )
+                    volume = Decimal(random.randint(1, int(buy_volume)))
+                    buy_volume -= volume
+                    self.create_transaction(
+                        investor=investor,
+                        instrument=instrument,
+                        volume=volume,
+                        price=adjusted_price,
+                        is_buy=False,
+                    )
+                    self.update_assets(
+                        investor=investor,
+                        instrument=instrument,
+                        volume=-volume
                     )
