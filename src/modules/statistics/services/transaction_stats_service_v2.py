@@ -1,3 +1,4 @@
+from collections import UserDict
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from decimal import Decimal, getcontext
@@ -5,6 +6,7 @@ from typing import Any
 
 from pydantic import BaseModel
 
+from modules.core.utils import get_attr
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
@@ -43,6 +45,29 @@ class TransactionStats(BaseModel):
     end_period_price: Decimal
     remaining_volume: Decimal
     details: TransactionDetails
+
+
+class TransactionStatsDict(UserDict[str, TransactionStats]):
+    """
+    A dictionary-like container for TransactionStats, with utility methods.
+
+    key: str - Ticker symbol
+    value: TransactionStats - Statistics for the corresponding ticker
+    """
+
+    def __setitem__(self, key: str, value: TransactionStats):
+        if not isinstance(value, TransactionStats):
+            raise ValueError("Value must be an instance of TransactionStats")
+        super().__setitem__(key, value)
+
+    def sum_attribute(self, attribute: str) -> Decimal:
+        total = Decimal(0)
+        for stats in self.data.values():
+            if not hasattr(stats, attribute):
+                raise ValueError(f"TransactionStats has no attribute '{attribute}'")
+            value = get_attr(stats, attribute)
+            total += value
+        return total
 
 
 class TransactionStatsService:
@@ -252,7 +277,7 @@ class TransactionStatsService:
         )
 
 
-class TransactionMultipleInstrumentsStatsService:
+class MultipleInstrumentsTransactionStatsService:
     def __init__(
         self,
         investor: Investor,
@@ -278,8 +303,9 @@ class TransactionMultipleInstrumentsStatsService:
 
     def compute_stats(
         self, start: datetime | None = None, end: datetime | None = None
-    ) -> dict[str, TransactionStats]:
-        stats = {}
+    ) -> TransactionStatsDict:
+        """Compute stats for all instruments, optionally within a time window."""
+        stats = TransactionStatsDict()
         if start or end:
             for ticker, service in self.transaction_stats_services.items():
                 stats[ticker] = service.compute_stats_in_period(start=start, end=end)

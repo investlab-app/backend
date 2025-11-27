@@ -5,7 +5,7 @@ from decimal import Decimal
 import pytest
 
 from modules.statistics.services.transaction_stats_service_v2 import (
-    TransactionMultipleInstrumentsStatsService,
+    MultipleInstrumentsTransactionStatsService,
     TransactionStatsService,
 )
 from modules.transactions.models import Transaction
@@ -510,7 +510,7 @@ def test_transaction_multiple_instruments_stats_service_no_period(
         timestamp=t0,
     )
 
-    svc = TransactionMultipleInstrumentsStatsService(
+    svc = MultipleInstrumentsTransactionStatsService(
         investor=investor,
         instruments=[inst1, inst2],
         lastest_price_service=mock_latest_price_service,
@@ -561,7 +561,7 @@ def test_transaction_multiple_instruments_stats_service_with_period(
         timestamp=start + timedelta(minutes=1),
     )
 
-    svc = TransactionMultipleInstrumentsStatsService(
+    svc = MultipleInstrumentsTransactionStatsService(
         investor=investor,
         instruments=[inst1, inst2],
         lastest_price_service=mock_latest_price_service,
