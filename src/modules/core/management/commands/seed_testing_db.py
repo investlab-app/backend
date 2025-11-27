@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from modules.core.constants import DecimalConvertible
 from modules.core.management.mixins import CommandMessagesMixin
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.transactions.models import Transaction
@@ -92,6 +93,7 @@ class Command(CommandMessagesMixin, BaseCommand):
         instrument: Instrument,
         volume: DecimalConvertible,
         price: DecimalConvertible,
+        timestamp: datetime,
         *,
         is_buy: bool,
     ) -> Transaction:
@@ -100,13 +102,15 @@ class Command(CommandMessagesMixin, BaseCommand):
             ticker=instrument,
             volume=Decimal(volume),
             price=Decimal(price),
+            timestamp=timestamp,
             is_buy=is_buy,
         )
         self.print_success(
             f"Transaction("
-            f"\tinvestor='{investor.clerk_id}', "
-            f"\tinstrument='{instrument.ticker}', volume={volume}, "
-            f"\tprice={price}, is_buy={is_buy}"
+            f"investor='{investor.clerk_id}', "
+            f"instrument='{instrument.ticker}', volume={volume}, "
+            f"price={price}, is_buy={is_buy} ,"
+            f"timestamp='{timestamp}'"
             f") created successfully."
         )
 
@@ -169,42 +173,39 @@ class Command(CommandMessagesMixin, BaseCommand):
 
         for instrument in instruments:
             with transaction.atomic():
-                buy_volume = Decimal(0)
+                current_asset_volume = Decimal(0)
+                timestamp = get_local_datetime() - timedelta(days=30)
+
                 for _ in range(random.randint(1, 10)):
-                    price_change = random.random() * -0.35
-                    adjusted_price = tickers[instrument.ticker] * (
-                        1 + Decimal(price_change)
+                    timestamp += timedelta(
+                        minutes=random.randint(30, 300),
+                        seconds=random.randint(0, 59),
                     )
-                    volume = Decimal(random.randint(1, 100))
-                    buy_volume += volume
+                    if timestamp > get_local_datetime():
+                        raise ValueError("Generated timestamp is in the future.")
+
+                    price_change = random.random() - 0.5
+                    adjusted_price = tickers[instrument.ticker] * Decimal(price_change)
+                    is_buy = random.random() > 0.5
+                    if is_buy:
+                        volume = Decimal(random.randint(1, 100))
+                        current_asset_volume += volume
+                    else:
+                        if current_asset_volume <= 0:
+                            continue
+                        volume = Decimal(random.randint(1, int(current_asset_volume)))
+                        current_asset_volume -= volume
+
                     self.create_transaction(
                         investor=investor,
                         instrument=instrument,
                         volume=volume,
                         price=adjusted_price,
-                        is_buy=True,
+                        timestamp=timestamp,
+                        is_buy=is_buy,
                     )
                     self.update_assets(
-                        investor=investor, instrument=instrument, volume=volume
-                    )
-
-                for _ in range(random.randint(1, 5)):
-                    if buy_volume <= 0:
-                        break
-
-                    price_change = random.random() * 0.35
-                    adjusted_price = tickers[instrument.ticker] * (
-                        1 + Decimal(price_change)
-                    )
-                    volume = Decimal(random.randint(1, int(buy_volume)))
-                    buy_volume -= volume
-                    self.create_transaction(
                         investor=investor,
                         instrument=instrument,
-                        volume=volume,
-                        price=adjusted_price,
-                        is_buy=False,
-                    )
-                    self.update_assets(
-                        investor=investor, instrument=instrument, volume=-volume
+                        volume=volume if is_buy else -volume,
                     )

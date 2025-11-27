@@ -156,7 +156,12 @@ class TransactionStatsService:
             start=Decimal(0),
         )
         total_gain = realized_gain + unrealized_gain
-        total_gain_pct = total_gain / total_buy_cost if total_buy_cost else None
+        if total_buy_cost:
+            total_gain_pct = (
+                total_sell_cost + unrealized_gain
+            ) / total_buy_cost - Decimal(100)
+        else:
+            total_gain_pct = None
 
         remaining_lifo_order = [
             {

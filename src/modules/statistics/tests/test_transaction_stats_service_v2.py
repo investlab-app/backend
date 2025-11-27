@@ -294,7 +294,13 @@ def test_complex_realized_unrealized(
     assert stats.realized_gain == Decimal(-5)
     assert stats.unrealized_gain == Decimal(-40)
     assert stats.total_gain == Decimal(-45)
-    assert stats.total_gain_pct == pytest.approx(Decimal(-45) / Decimal(1730))
+    # New total_gain_pct formula
+    # total_sell_cost = 5*210 + 0.5*220 = 1160
+    # unrealized_gain = -40
+    # denominator total_buy_cost = 1730
+    assert stats.total_gain_pct == pytest.approx(
+        (Decimal(1160) + Decimal(-40)) / Decimal(1730) - Decimal(100)
+    )
     assert stats.remaining_volume == Decimal("2.5")
     # sells: 5 @210 and 0.5 @220 => 5*210 + 0.5*220 = 1160
     assert stats.total_sell_cost == Decimal(1160)
