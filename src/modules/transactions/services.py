@@ -124,6 +124,13 @@ class TransactionStatsService:
                 total_price=Sum("price"),
                 count=Count("id"),
             )
+            total_buy_value = Decimal(0)
+            total_sell_value = Decimal(0)
+            for i in transactions:
+                if i.is_buy:
+                    total_buy_value += i.price * i.volume
+                else:
+                    total_sell_value += i.price * i.volume
 
             final_ticker_volume = (
                 initial_ticker_volume
@@ -135,12 +142,19 @@ class TransactionStatsService:
             initial_value = initial_price * initial_ticker_volume
             final_price = final_prices.get(t, 0)
             final_value = final_price * final_ticker_volume
-            total_buy_price = buy_stats["total_price"] or 0
-            total_sell_price = sell_stats["total_price"] or 0
+
+            # bug
+            total_buy_price = total_buy_value
+            total_sell_price = total_sell_value
 
             gain = final_value + total_sell_price - total_buy_price - initial_value
+            # gain_percentage = (
+            #     (gain / initial_value) * 100 if initial_value != 0 else None
+            # )
+            print(total_sell_price, final_value, total_buy_price)
             gain_percentage = (
-                (gain / initial_value) * 100 if initial_value != 0 else None
+                ((total_sell_price + final_value)/total_buy_price - 100)
+                if total_buy_price != 0 else None
             )
             if gain_percentage is not None and gain_percentage > 999.99:
                 gain_percentage = Decimal("999.99")
