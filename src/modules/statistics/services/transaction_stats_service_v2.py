@@ -41,6 +41,7 @@ class TransactionStats(BaseModel):
     unrealized_gain: Decimal
     total_gain: Decimal
     total_buy_cost: Decimal
+    total_sell_cost: Decimal
     total_gain_pct: Decimal | None
     end_period_price: Decimal
     remaining_volume: Decimal
@@ -60,6 +61,7 @@ class TransactionStatsDict(UserDict[str, TransactionStats]):
         "unrealized_gain",
         "total_gain",
         "total_buy_cost",
+        "total_sell_cost",
         "end_period_price",
         "remaining_volume",
     ]
@@ -144,6 +146,7 @@ class TransactionStatsService:
         buy_lots: list[BuyLot],
         realized_gain: Decimal,
         total_buy_cost: Decimal,
+        total_sell_cost: Decimal,
         end_period_price: Decimal,
         sell_details: list[SellDetail],
     ) -> TransactionStats:
@@ -176,6 +179,7 @@ class TransactionStatsService:
             unrealized_gain=unrealized_gain,
             total_gain=total_gain,
             total_buy_cost=total_buy_cost,
+            total_sell_cost=total_sell_cost,
             total_gain_pct=total_gain_pct,
             end_period_price=end_period_price,
             remaining_volume=remaining_volume,
@@ -194,6 +198,7 @@ class TransactionStatsService:
         ]
         realized_gain = Decimal(0)
         total_buy_cost = sum((i.volume * i.price for i in buy_lots), start=Decimal(0))
+        total_sell_cost = Decimal(0)
         sell_details: list[SellDetail] = []
 
         for tx in transactions:
@@ -206,6 +211,7 @@ class TransactionStatsService:
                 consumed_volume, consumed_cost = self._consume_sell_volume(
                     buy_lots, vol
                 )
+                total_sell_cost += vol * price
                 gain = consumed_volume * price - consumed_cost
                 realized_gain += gain
                 sell_details.append(
@@ -222,6 +228,7 @@ class TransactionStatsService:
             buy_lots,
             realized_gain,
             total_buy_cost,
+            total_sell_cost,
             end_period_price,
             sell_details,
         )

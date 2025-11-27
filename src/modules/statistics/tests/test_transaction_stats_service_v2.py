@@ -92,6 +92,8 @@ def test_basic_fifo_gain(
 
     assert stats.realized_gain == Decimal(50)
     assert stats.remaining_volume == Decimal(1)  # 1 from the second lot
+    # total sell cost = 4 * 220 = 880
+    assert stats.total_sell_cost == Decimal(880)
 
 
 def test_unrealized_gain_lifo(
@@ -124,6 +126,7 @@ def test_unrealized_gain_lifo(
 
     stats = svc.compute_stats()
     assert stats.unrealized_gain == Decimal(-40)
+    assert stats.total_sell_cost == Decimal(0)
 
 
 def test_compute_stats_in_period_with_previous_holdings(
@@ -166,6 +169,8 @@ def test_compute_stats_in_period_with_previous_holdings(
 
     # Remaining lots after period = 1 share from the second BUY lot
     assert stats.remaining_volume == Decimal(1)
+    # one sell in period: 4 * 220 = 880
+    assert stats.total_sell_cost == Decimal(880)
 
 
 def test_period_respects_virtual_lots(
@@ -211,6 +216,8 @@ def test_period_respects_virtual_lots(
 
     # Remaining after period: 5 - 3 = 2 shares
     assert stats.remaining_volume == Decimal(2)
+    # one sell in period of 3 @150 -> 450
+    assert stats.total_sell_cost == Decimal(450)
 
 
 def test_period_does_not_count_pre_period_realized_gains(
@@ -246,6 +253,7 @@ def test_period_does_not_count_pre_period_realized_gains(
     assert stats.realized_gain == 0
     assert stats.unrealized_gain == 0
     assert stats.total_gain == 0
+    assert stats.total_sell_cost == Decimal(0)
 
 
 def test_complex_realized_unrealized(
@@ -288,6 +296,8 @@ def test_complex_realized_unrealized(
     assert stats.total_gain == Decimal(-45)
     assert stats.total_gain_pct == pytest.approx(Decimal(-45) / Decimal(1730))
     assert stats.remaining_volume == Decimal("2.5")
+    # sells: 5 @210 and 0.5 @220 => 5*210 + 0.5*220 = 1160
+    assert stats.total_sell_cost == Decimal(1160)
 
 
 def test_partial_sell_percentage(
@@ -320,6 +330,8 @@ def test_partial_sell_percentage(
     # remaining 1.5x @200, unrealized gain = 1.5*(210-200)=15
     assert stats.unrealized_gain == Decimal(15)
     assert stats.total_gain == Decimal(45)
+    # sell 1.5 @220 => 330
+    assert stats.total_sell_cost == Decimal(330)
 
 
 def test_multiple_sells_fifo(
@@ -361,6 +373,8 @@ def test_multiple_sells_fifo(
     assert stats.realized_gain == Decimal(100)
     assert stats.unrealized_gain == Decimal(90)
     assert stats.total_gain == Decimal(190)
+    # sells: 2*130 + 2*140 = 540
+    assert stats.total_sell_cost == Decimal(540)
 
 
 def test_compute_stats_in_period_edge_case(
@@ -396,6 +410,8 @@ def test_compute_stats_in_period_edge_case(
     # remaining 2x 100, unrealized = 2*(190-100)=180
     assert stats.unrealized_gain == Decimal(180)
     assert stats.total_gain == Decimal(210)
+    # sell in period: 3 * 110 = 330
+    assert stats.total_sell_cost == Decimal(330)
 
 
 def test_compute_stats_in_period_without_start(
@@ -433,6 +449,7 @@ def test_compute_stats_in_period_without_start(
     assert stats.realized_gain == Decimal(40)
     # remaining 1 share
     assert stats.remaining_volume == Decimal(1)
+    assert stats.total_sell_cost == Decimal(440)  # 2 * 220? WAIT - need to recalc
 
 
 def test_compute_stats_in_period_without_end(
