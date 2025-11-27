@@ -52,7 +52,7 @@ class Command(CommandMessagesMixin, BaseCommand):
         return investor
 
     def update_assets(
-        self, investor: Investor, instrument: Instrument, volume: DecimalConvertible
+        self, investor: Investor, instrument: Instrument, volume: Decimal
     ) -> Asset:
         asset = Asset.objects.filter(ticker=instrument, investor=investor).first()
         if asset:

@@ -2,7 +2,7 @@ from collections import UserDict
 from collections.abc import Iterable, Sequence
 from datetime import datetime
 from decimal import Decimal, getcontext
-from typing import Any
+from typing import Any, Literal
 
 from pydantic import BaseModel
 
@@ -54,13 +54,21 @@ class TransactionStatsDict(UserDict[str, TransactionStats]):
     key: str - Ticker symbol
     value: TransactionStats - Statistics for the corresponding ticker
     """
+    SummableAttributes = Literal[
+        "realized_gain",
+        "unrealized_gain",
+        "total_gain",
+        "total_buy_cost",
+        "end_period_price",
+        "remaining_volume"
+    ]
 
     def __setitem__(self, key: str, value: TransactionStats):
         if not isinstance(value, TransactionStats):
             raise ValueError("Value must be an instance of TransactionStats")
         super().__setitem__(key, value)
 
-    def sum_attribute(self, attribute: str) -> Decimal:
+    def sum_attribute(self, attribute: SummableAttributes) -> Decimal:
         total = Decimal(0)
         for stats in self.data.values():
             if not hasattr(stats, attribute):
