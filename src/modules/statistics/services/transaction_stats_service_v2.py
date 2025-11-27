@@ -54,13 +54,14 @@ class TransactionStatsDict(UserDict[str, TransactionStats]):
     key: str - Ticker symbol
     value: TransactionStats - Statistics for the corresponding ticker
     """
+
     SummableAttributes = Literal[
         "realized_gain",
         "unrealized_gain",
         "total_gain",
         "total_buy_cost",
         "end_period_price",
-        "remaining_volume"
+        "remaining_volume",
     ]
 
     def __setitem__(self, key: str, value: TransactionStats):
