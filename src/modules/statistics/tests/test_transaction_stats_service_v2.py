@@ -517,7 +517,7 @@ def test_transaction_multiple_instruments_stats_service_no_period(
         polygon_prices_repository=mock_polygon_price_repository,
     )
 
-    stats = svc.compute_all_stats()
+    stats = svc.compute_stats()
 
     assert set(stats.keys()) == {"TTWO", "FOO"}
     assert stats["TTWO"].remaining_volume == Decimal(2)
@@ -568,7 +568,7 @@ def test_transaction_multiple_instruments_stats_service_with_period(
         polygon_prices_repository=mock_polygon_price_repository,
     )
 
-    stats = svc.compute_all_stats(start=start, end=end)
+    stats = svc.compute_stats(start=start, end=end)
 
     assert set(stats.keys()) == {"TTWO", "FOO"}
     assert stats["TTWO"].end_period_price == Decimal(190)

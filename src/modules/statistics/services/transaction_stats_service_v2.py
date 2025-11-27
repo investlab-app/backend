@@ -113,8 +113,11 @@ class TransactionStatsService:
         end_period_price: Decimal,
         sell_details: list[SellDetail],
     ) -> TransactionStats:
-        remaining_volume = sum(i.volume for i in buy_lots)
-        unrealized_gain = sum(i.volume * (end_period_price - i.price) for i in buy_lots)
+        remaining_volume = sum((i.volume for i in buy_lots), start=Decimal(0))
+        unrealized_gain = sum(
+            (i.volume * (end_period_price - i.price) for i in buy_lots),
+            start=Decimal(0)
+        )
         total_gain = realized_gain + unrealized_gain
         total_gain_pct = total_gain / total_buy_cost if total_buy_cost else None
 
@@ -136,12 +139,12 @@ class TransactionStatsService:
 
         return TransactionStats(
             realized_gain=realized_gain,
-            unrealized_gain=unrealized_gain,  # type: ignore
+            unrealized_gain=unrealized_gain,
             total_gain=total_gain,
             total_buy_cost=total_buy_cost,
             total_gain_pct=total_gain_pct,
             end_period_price=end_period_price,
-            remaining_volume=remaining_volume,  # type: ignore
+            remaining_volume=remaining_volume,
             details=details,
         )
 
@@ -156,7 +159,7 @@ class TransactionStatsService:
             for i in initial_buy_lots
         ]
         realized_gain = Decimal(0)
-        total_buy_cost = sum(i.volume * i.price for i in buy_lots)
+        total_buy_cost = sum((i.volume * i.price for i in buy_lots), start=Decimal(0))
         sell_details: list[SellDetail] = []
 
         for tx in transactions:
@@ -184,7 +187,7 @@ class TransactionStatsService:
         return self._finalize_stats(
             buy_lots,
             realized_gain,
-            total_buy_cost,  # type: ignore
+            total_buy_cost,
             end_period_price,
             sell_details,
         )
@@ -273,7 +276,7 @@ class TransactionMultipleInstrumentsStatsService:
             for instrument in instruments
         }
 
-    def compute_all_stats(
+    def compute_stats(
         self, start: datetime | None = None, end: datetime | None = None
     ) -> dict[str, TransactionStats]:
         stats = {}
