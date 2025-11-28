@@ -93,8 +93,8 @@ def test_trade_engine_data_fetcher(uuids):
 
 
 @pytest.mark.django_db()
-@patch("modules.orders.services.engine_services.ExecuteTransactionService.sell")
-@patch("modules.orders.services.engine_services.ExecuteTransactionService.buy")
+@patch("modules.orders.services.engine_services.ExecutiveTransactionService.sell")
+@patch("modules.orders.services.engine_services.ExecutiveTransactionService.buy")
 def test_trade_engine_output_handler(buy, sell, uuids):
     ticker = create_fake_instrument(ticker="AAPL", save=True)
     inv = create_fake_investor(investor_id=TEST_INVESTOR_ID, save=True)

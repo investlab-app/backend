@@ -6,23 +6,22 @@ from modules.transactions.models import Transaction
 from modules.transactions.schemas import TransactionParams
 
 
-class ExecuteTransactionService:
-    def buy(self, params: TransactionParams):
-        transaction_price = params.volume * params.price_per_unit
-        if params.investor.balance < transaction_price:
+class ExecutiveTransactionService:
+    @staticmethod
+    def buy(params: TransactionParams):
+        transaction_value = params.volume * params.price_per_unit
+        if params.investor.balance < transaction_value:
             raise ValueError("Investor doesn't have enough balance")
 
-        params.investor.balance -= transaction_price
+        params.investor.balance -= transaction_value
 
-        try:
-            asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
-                investor=params.investor, ticker=params.instrument
-            )
+        asset, created = Asset.objects.get_or_create(
+            investor=params.investor,
+            ticker=params.instrument,
+            defaults={"volume": params.volume},
+        )
+        if not created:
             asset.volume += params.volume
-        except ObjectDoesNotExist:
-            asset = Asset(
-                investor=params.investor, ticker=params.instrument, volume=params.volume
-            )
 
         with transaction.atomic():
             params.investor.save()
@@ -30,12 +29,13 @@ class ExecuteTransactionService:
                 investor=params.investor,
                 ticker=params.instrument,
                 volume=params.volume,
-                price=params.volume * params.price_per_unit,
+                price=params.price_per_unit,
                 is_buy=True,
             )
             asset.save()
 
-    def sell(self, params: TransactionParams):
+    @staticmethod
+    def sell(params: TransactionParams):
         try:
             asset: Asset = Asset.objects.get(  # ty: ignore[invalid-assignment]
                 investor=params.investor, ticker=params.instrument
@@ -46,9 +46,9 @@ class ExecuteTransactionService:
         if asset.volume < params.volume:
             raise ValueError("Not enough assets to sell.")
 
-        transaction_price = params.volume * params.price_per_unit
+        transaction_value = params.volume * params.price_per_unit
 
-        params.investor.balance += transaction_price
+        params.investor.balance += transaction_value
         asset.volume -= params.volume
 
         with transaction.atomic():
@@ -58,6 +58,6 @@ class ExecuteTransactionService:
                 investor=params.investor,
                 ticker=params.instrument,
                 volume=params.volume,
-                price=transaction_price,
+                price=params.price_per_unit,
                 is_buy=False,
             )
