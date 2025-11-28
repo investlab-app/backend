@@ -6,7 +6,6 @@ from unittest.mock import AsyncMock, MagicMock, patch
 import pytest
 from channels.db import database_sync_to_async
 
-from modules.instruments.models import Instrument
 from modules.notifications.models import NotificationConfig
 from modules.notifications.services import (
     EmailPayload,
@@ -327,11 +326,11 @@ class TestPriceService:
         self.repo_mock.get_daily_market_summary = lambda date: self.mock_prices[date]
         self.price_service = PriceService(self.repo_mock)
         self.now = datetime.now()
-        mock_datetime.now.return_value = self.now
+        mock_datetime.return_value = self.now
 
     @pytest.fixture
     def mock_datetime(self):
-        with patch("modules.prices.services.datetime") as dt:
+        with patch("modules.prices.services.get_new_york_datetime") as dt:
             yield dt
 
     def test_days_equals_zero__empty_dict_is_returned(self):
