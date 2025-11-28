@@ -10,8 +10,8 @@ from polygon.exceptions import BadResponse
 
 from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE
+from modules.core.exceptions import PayloadTooLargeException
 from modules.instruments.models import Instrument
-from modules.prices.exceptions import PayloadTooLarge
 from modules.prices.schemas import PriceBar, PriceDailySummary
 
 
@@ -46,7 +46,7 @@ class PolygonPricesRepository:
         results = []
         for idx, agg in enumerate(aggs, start=1):
             if idx > 10_000:
-                raise PayloadTooLarge
+                raise PayloadTooLargeException
             results.append(PriceBar.from_agg(agg))
 
         return results
@@ -82,7 +82,9 @@ class PolygonPricesRepository:
     def get_prices(self, tickers: list[str]) -> list[PriceDailySummary] | None:
         tickers = [t.upper() for t in tickers]
         if len(tickers) > 200:
-            raise PayloadTooLarge("Maximum of 200 tickers allowed per request.")
+            raise PayloadTooLargeException(
+                "Maximum of 200 tickers allowed per request."
+            )
 
         if Instrument.objects.filter(ticker__in=tickers).count() != len(tickers):
             raise Http404("One or more tickers not found in the database.")
