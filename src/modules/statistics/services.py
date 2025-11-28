@@ -314,7 +314,7 @@ class TransactionStatsService:
         )
 
 
-class MultipleInstrumentsTransactionStatsService:
+class MultiInstrumentsTransactionStatsService:
     def __init__(
         self,
         investor: Investor,

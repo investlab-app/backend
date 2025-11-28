@@ -24,9 +24,7 @@ from modules.statistics.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
-from modules.statistics.services.transaction_stats_service_v2 import (
-    MultipleInstrumentsTransactionStatsService as TransactionStatsService,
-)
+from modules.statistics.services import MultiInstrumentsTransactionStatsService
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
@@ -46,7 +44,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
         today = get_local_datetime()
         start_datetime = today - timedelta(days=1)
 
-        stats_service = TransactionStatsService(investor=investor)
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
         stats_today = stats_service.compute_stats(start=start_datetime)
         todays_gain = stats_today.sum_attribute("total_gain")
 
@@ -89,7 +87,7 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
 
-        stats_service = TransactionStatsService(investor=investor)
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
         stats_today = stats_service.compute_stats()
         total_gain = stats_today.sum_attribute("total_gain")
         total_gain_pct = stats_today.calculate_total_gain_pct()
@@ -134,7 +132,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
 
         today = get_local_datetime()
         year_ago = today - timedelta(days=365)
-        stats_service = TransactionStatsService(investor=investor)
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
         stats_last_year = stats_service.compute_stats(start=year_ago)
         total_gain_this_year = stats_last_year.sum_attribute("total_gain")
 
@@ -215,7 +213,7 @@ class OwnedSharesView(generics.RetrieveAPIView):
         is_service = InvestorStatsService()
         asset_allocations = is_service.get_asset_allocation(investor=investor)
         instruments = [aa.asset.ticker for aa in asset_allocations]
-        tr_stats_service = TransactionStatsService(
+        tr_stats_service = MultiInstrumentsTransactionStatsService(
             investor=investor, instruments=instruments
         )
         stats_map = tr_stats_service.compute_stats()
@@ -263,7 +261,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        stats_service = TransactionStatsService(investor=investor)
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
         stats = stats_service.compute_stats()
         total_gain = stats.sum_attribute("total_gain")
 
@@ -313,7 +311,7 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
         instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        stats_service = TransactionStatsService(
+        stats_service = MultiInstrumentsTransactionStatsService(
             investor=investor, instruments=instruments
         )
         stats = stats_service.compute_stats()
@@ -383,7 +381,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
             aa.asset.ticker.ticker.upper(): aa for aa in asset_allocations
         }
 
-        stats_service = TransactionStatsService(investor=investor, instruments=tickers)
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor, instruments=tickers)
         stats_map = stats_service.compute_stats()
 
         positions = []

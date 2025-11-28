@@ -8,9 +8,7 @@ from config.clients import clerk_client
 from modules.chats.mcps import EChartsMCP, MassiveMCP
 from modules.investors.models import Investor
 from modules.investors.services import InvestorStatsService
-from modules.statistics.services.transaction_stats_service import (
-    TransactionStatsService,
-)
+from modules.statistics.services import MultiInstrumentsTransactionStatsService
 
 echarts_mcp = EChartsMCP()
 massive_mcp = MassiveMCP()
@@ -93,5 +91,5 @@ async def get_stats(ctx: RunContext[AgentDeps]) -> str:
     transaction counts, and volume for each ticker.
     """
     investor = await Investor.objects.aget(id=ctx.deps.investor_id)
-    stats = await sync_to_async(TransactionStatsService().get_stats)(investor)
+    stats = await sync_to_async(MultiInstrumentsTransactionStatsService(investor).compute_stats)()
     return str(stats)
