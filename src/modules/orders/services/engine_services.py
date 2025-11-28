@@ -152,9 +152,9 @@ class TradeEngineOutputHandler:
         for t in transactions:
             transaction_params = TransactionParams(
                 investor=investors[t.investor_id],
-                ticker=tickers[t.ticker],
+                instrument=tickers[t.ticker],
                 volume=t.volume,
-                action_price=prices[t.ticker],
+                price_per_unit=prices[t.ticker],
             )
             if t.is_buy:
                 transaction_service.buy(transaction_params)

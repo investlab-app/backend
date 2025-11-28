@@ -10,6 +10,6 @@ class TransactionParams(BaseModel):
     model_config = ConfigDict(arbitrary_types_allowed=True)
 
     investor: Investor
-    ticker: Instrument
+    instrument: Instrument
     volume: Decimal
-    action_price: Decimal
+    price_per_unit: Decimal

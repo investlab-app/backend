@@ -31,9 +31,9 @@ class TestCase:
 
         params = TransactionParams(
             investor=self.investor,
-            ticker=self.ticker,
+            instrument=self.ticker,
             volume=self.volume,
-            action_price=self.action_price,
+            price_per_unit=self.action_price,
         )
         self.service.buy(params)
 
@@ -50,9 +50,9 @@ class TestCase:
 
         params = TransactionParams(
             investor=self.investor,
-            ticker=self.ticker,
+            instrument=self.ticker,
             volume=self.volume,
-            action_price=self.action_price,
+            price_per_unit=self.action_price,
         )
         self.service.sell(params)
 

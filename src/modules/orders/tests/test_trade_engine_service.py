@@ -143,16 +143,16 @@ def test_trade_engine_output_handler(buy, sell, uuids):
     buy.assert_called_with(
         TransactionParams(
             investor=investor,
-            ticker=ticker,
+            instrument=ticker,
             volume=Decimal(5),
-            action_price=Decimal(20),
+            price_per_unit=Decimal(20),
         )
     )
     sell.assert_called_with(
         TransactionParams(
             investor=investor,
-            ticker=ticker,
+            instrument=ticker,
             volume=Decimal(15),
-            action_price=Decimal(20),
+            price_per_unit=Decimal(20),
         )
     )
