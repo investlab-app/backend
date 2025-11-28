@@ -220,27 +220,26 @@ class OwnedSharesView(generics.RetrieveAPIView):
         )
         stats_map = tr_stats_service.compute_stats()
 
-        data = [
-            {
-                "name": asset_allocation.asset.ticker.name,
-                "symbol": asset_allocation.asset.ticker.ticker,
-                "logo": asset_allocation.asset.ticker.logo,
-                "icon": asset_allocation.asset.ticker.icon,
-                "volume": round(asset_allocation.asset.volume, 5),
-                "value": round(asset_allocation.total_value, 2),
-                "gain": round(
-                    stats_map[str(asset_allocation.asset.ticker.ticker)].total_gain, 2
-                ),
-                "gain_percentage": round(
-                    stats_map[str(asset_allocation.asset.ticker.ticker)].total_gain_pct,
-                    2,
-                )
-                if stats_map[str(asset_allocation.asset.ticker.ticker)].total_gain_pct
-                is not None
-                else None,
-            }
-            for asset_allocation in asset_allocations
-        ]
+        data = []
+        for asset_allocation in asset_allocations:
+            instrument = asset_allocation.asset.ticker
+            ticker_key = str(instrument.ticker)
+            stat = stats_map[ticker_key]
+
+            data.append(
+                {
+                    "name": instrument.name,
+                    "symbol": instrument.ticker,
+                    "logo": instrument.logo,
+                    "icon": instrument.icon,
+                    "volume": round(asset_allocation.asset.volume, 5),
+                    "value": round(asset_allocation.total_value, 2),
+                    "gain": round(stat.total_gain, 2),
+                    "gain_percentage": round(Decimal(stat.total_gain_pct), 2)
+                    if stat.total_gain_pct is not None
+                    else None,
+                }
+            )
 
         serializer = self.get_serializer(data, many=True)
         return Response(serializer.data)
@@ -417,15 +416,16 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 quantity = asset_allocations_map[ticker_symbol].asset.volume
                 market_value = asset_allocations_map[ticker_symbol].total_value
 
+            stat = stats_map[ticker_symbol]
             position = {
                 "symbol": ticker_symbol,
                 "name": ticker.name,
                 "icon": (icon if (icon := ticker.icon) else None),
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
-                "gain": round(stats_map[ticker_symbol].total_gain, 2),
-                "gain_percentage": round(stats_map[ticker_symbol].total_gain_pct, 2)
-                if stats_map[ticker_symbol].total_gain_pct is not None
+                "gain": round(stat.total_gain, 2),
+                "gain_percentage": round(Decimal(stat.total_gain_pct), 2)
+                if stat.total_gain_pct is not None
                 else None,
                 "history": history,
             }
