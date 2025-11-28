@@ -311,10 +311,11 @@ class PriceService:
             daily_bars = self.price_repository.get_daily_market_summary(
                 new_york_dt - timedelta(days=n)
             )
-            if daily_bars is None:
-                raise ValueError("Failed to fetch daily market summary")
+            if daily_bars:
+                bars.update(daily_bars)
 
-            bars.update(daily_bars)
+        if not bars:
+            raise ValueError("Failed to fetch daily market summary")
 
         return bars
 
