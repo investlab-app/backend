@@ -168,14 +168,12 @@ class TransactionStatsService:
     ) -> TransactionStats:
         remaining_volume = sum((i.volume for i in buy_lots), start=Decimal(0))
         unrealized_gain = sum(
-            (i.volume * (end_period_price - i.price) for i in buy_lots),
+            ((i.volume * end_period_price - i.price) for i in buy_lots),
             start=Decimal(0),
         )
         total_gain = realized_gain + unrealized_gain
         if total_buy_cost:
-            total_gain_pct = (
-                total_sell_cost + unrealized_gain
-            ) / total_buy_cost - Decimal(1)
+            total_gain_pct = total_gain / total_buy_cost
         else:
             total_gain_pct = None
 
@@ -218,7 +216,7 @@ class TransactionStatsService:
             for i in initial_buy_lots
         ]
         realized_gain = Decimal(0)
-        total_buy_cost = sum((i.volume * i.price for i in buy_lots), start=Decimal(0))
+        total_buy_cost = sum((i.price for i in buy_lots), start=Decimal(0))
         total_sell_cost = Decimal(0)
         sell_details: list[SellDetail] = []
 
@@ -226,25 +224,24 @@ class TransactionStatsService:
             vol, price = tx.volume, tx.price
             if tx.is_buy:
                 buy_lots.append(BuyLot(volume=vol, price=price, timestamp=tx.timestamp))
-                total_buy_cost += vol * price
+                total_buy_cost += price
 
             else:  # sell
                 consumed_volume, consumed_cost = self._consume_sell_volume(
                     buy_lots, vol
                 )
-                total_sell_cost += vol * price
-                gain = consumed_volume * price - consumed_cost
+                total_sell_cost +=  price
+                gain = consumed_volume * (price/vol) - consumed_cost
                 realized_gain += gain
                 sell_details.append(
                     SellDetail(
                         volume=consumed_volume,
-                        sell_price=price,
+                        sell_price=price/vol,
                         cost_basis=consumed_cost,
                         gain=gain,
                         gain_pct=(gain / consumed_cost) if consumed_cost else None,
                     )
                 )
-
         return self._finalize_stats(
             buy_lots,
             realized_gain,
