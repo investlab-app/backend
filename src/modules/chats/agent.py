@@ -91,5 +91,7 @@ async def get_stats(ctx: RunContext[AgentDeps]) -> str:
     transaction counts, and volume for each ticker.
     """
     investor = await Investor.objects.aget(id=ctx.deps.investor_id)
-    stats = await sync_to_async(MultiInstrumentsTransactionStatsService(investor).compute_stats)()
+    stats = await sync_to_async(
+        MultiInstrumentsTransactionStatsService(investor).compute_stats
+    )()
     return str(stats)

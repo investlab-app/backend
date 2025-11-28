@@ -381,7 +381,9 @@ class TransactionHistoryView(generics.RetrieveAPIView):
             aa.asset.ticker.ticker.upper(): aa for aa in asset_allocations
         }
 
-        stats_service = MultiInstrumentsTransactionStatsService(investor=investor, instruments=tickers)
+        stats_service = MultiInstrumentsTransactionStatsService(
+            investor=investor, instruments=tickers
+        )
         stats_map = stats_service.compute_stats()
 
         positions = []
