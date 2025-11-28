@@ -2,7 +2,7 @@ import asyncio
 import json
 import logging
 from collections import defaultdict
-from datetime import datetime, timedelta
+from datetime import timedelta
 from decimal import Decimal
 from typing import Any
 
@@ -12,6 +12,7 @@ from django.db.models import Q
 from redis import Redis
 
 from config.clients import redis_client
+from modules.core.utils import get_new_york_datetime
 from modules.investors.services import NotificationHistoryService
 from modules.notifications.services import (
     EmailPayload,
@@ -305,15 +306,16 @@ class PriceService:
             return {}
 
         bars = {}
-        now = datetime.now()
+        new_york_dt = get_new_york_datetime()
         for n in reversed(range(days)):
             daily_bars = self.price_repository.get_daily_market_summary(
-                now - timedelta(days=n)
+                new_york_dt - timedelta(days=n)
             )
-            if daily_bars is None:
-                raise ValueError("Failed to fetch daily market summary")
+            if daily_bars:
+                bars.update(daily_bars)
 
-            bars.update(daily_bars)
+        if not bars:
+            raise ValueError("Failed to fetch daily market summary")
 
         return bars
 

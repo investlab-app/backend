@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta
 from decimal import Decimal
 from http.client import HTTPResponse
+from zoneinfo import ZoneInfo
 
 from django.http.response import Http404
 from django.shortcuts import get_object_or_404
@@ -135,9 +136,15 @@ class PolygonPricesRepository:
 
         return {price.ticker: price for price in prices}
 
-    def get_daily_market_summary(self, date=None) -> dict[str, PriceBar] | None:
+    def get_daily_market_summary(
+        self, timestamp: datetime
+    ) -> dict[str, PriceBar] | None:
+        timestamp = timestamp.astimezone(ZoneInfo("America/New_York"))
+
         try:
-            aggs = self.polygon_client.get_grouped_daily_aggs(date.strftime("%Y-%m-%d"))
+            aggs = self.polygon_client.get_grouped_daily_aggs(
+                timestamp.strftime("%Y-%m-%d")
+            )
             bars = {agg.ticker: PriceBar.from_agg(agg) for agg in aggs}
             return bars
         except Exception:

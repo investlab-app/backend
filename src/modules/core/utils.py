@@ -3,6 +3,7 @@ import random
 import uuid
 from decimal import ROUND_HALF_UP, Decimal
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 from django.utils import timezone
 from django.utils.deconstruct import deconstructible
@@ -21,6 +22,12 @@ def get_local_date():
 def get_local_time():
     """Get the current local time."""
     return get_local_datetime().time()
+
+
+def get_new_york_datetime():
+    """Get the current date and time in New York timezone."""
+    ny_tz = ZoneInfo("America/New_York")
+    return timezone.now().astimezone(ny_tz)
 
 
 def get_random_bool():
