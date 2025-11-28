@@ -93,8 +93,8 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         stats_today = stats_service.compute_stats()
         total_gain = stats_today.sum_attribute("total_gain")
         total_gain_pct = stats_today.calculate_total_gain_pct()
-        if total_gain_pct is not None and total_gain_pct > 999.99:
-            total_gain_pct = Decimal("999.99")
+        if total_gain_pct is not None and total_gain_pct > 9999.99:
+            total_gain_pct = Decimal("9999.99")
 
         response = {
             "total_account_value": round(total_value, 2),
