@@ -409,7 +409,8 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                     "share_price": round(transaction.price, 2),
                     "acquisition_price": (
                         round(transaction.volume * transaction.price, 2)
-                        if transaction.is_buy else 0
+                        if transaction.is_buy
+                        else 0
                     ),
                 }
                 history.append(history_entry)
