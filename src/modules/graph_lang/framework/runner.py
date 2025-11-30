@@ -58,6 +58,5 @@ class Runner:
             graph_id=graph_id,
             action_set=context.effects,
         )
-        print(effect_set)
 
         return effect_set

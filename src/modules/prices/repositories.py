@@ -49,7 +49,6 @@ class PolygonPricesRepository:
             if idx > 10_000:
                 raise PayloadTooLargeException
             results.append(PriceBar.from_agg(agg))
-        print(len(results))
 
         return results
 
