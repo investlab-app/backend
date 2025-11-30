@@ -37,6 +37,8 @@ dependencies = [
     "uvicorn>=0.34.3",
     "whitenoise>=6.9.0",
     "yfinance>=0.2.63",
+    "django-storages[s3]>=1.14.2",
+    "boto3>=1.34.0",
 ]
 
 [dependency-groups]
