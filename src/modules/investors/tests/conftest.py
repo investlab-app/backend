@@ -72,3 +72,8 @@ def asset_factory():
         return create_fake_asset(**kwargs, save=True)
 
     return create_asset
+
+
+@pytest.fixture
+def investor():
+    return create_fake_investor(save=True)

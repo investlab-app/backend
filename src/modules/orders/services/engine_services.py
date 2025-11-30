@@ -25,7 +25,7 @@ from modules.orders.order_engine.structures import (
 from modules.orders.services.order_services import OrderService
 from modules.prices.services import LatestPriceService
 from modules.transactions.schemas import TransactionParams
-from modules.transactions.services import ExecuteTransactionService
+from modules.transactions.services import ExecutiveTransactionService
 
 
 class RunOrderEngineService:
@@ -147,19 +147,18 @@ class TradeEngineOutputHandler:
         ticker_names = [t.ticker for t in transactions]
         ticker_list = Instrument.objects.filter(ticker__in=ticker_names)
         tickers = {i.ticker: i for i in ticker_list}
-        transaction_service = ExecuteTransactionService()
 
         for t in transactions:
             transaction_params = TransactionParams(
                 investor=investors[t.investor_id],
-                ticker=tickers[t.ticker],
+                instrument=tickers[t.ticker],
                 volume=t.volume,
-                action_price=prices[t.ticker],
+                price_per_unit=prices[t.ticker],
             )
             if t.is_buy:
-                transaction_service.buy(transaction_params)
+                ExecutiveTransactionService.buy(transaction_params)
             else:
-                transaction_service.sell(transaction_params)
+                ExecutiveTransactionService.sell(transaction_params)
 
     def _send_order_update(
         self,

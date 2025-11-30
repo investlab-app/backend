@@ -6,7 +6,7 @@ from modules.instruments.tests.conftest import instruments_factory
 from modules.investors.models import Asset, Investor
 from modules.transactions.models import Transaction
 from modules.transactions.schemas import TransactionParams
-from modules.transactions.services import ExecuteTransactionService
+from modules.transactions.services import ExecutiveTransactionService
 
 pytestmark = pytest.mark.django_db
 
@@ -16,7 +16,7 @@ class TestCase:
     def setup(self, instruments_factory):
         self.investor = Investor.objects.create(clerk_id="asdf", balance=0)
         self.ticker = instruments_factory()
-        self.service = ExecuteTransactionService()
+        self.service = ExecutiveTransactionService
 
     def _run_simple_buy_test_case(
         self,
@@ -31,9 +31,9 @@ class TestCase:
 
         params = TransactionParams(
             investor=self.investor,
-            ticker=self.ticker,
+            instrument=self.ticker,
             volume=self.volume,
-            action_price=self.action_price,
+            price_per_unit=self.action_price,
         )
         self.service.buy(params)
 
@@ -50,9 +50,9 @@ class TestCase:
 
         params = TransactionParams(
             investor=self.investor,
-            ticker=self.ticker,
+            instrument=self.ticker,
             volume=self.volume,
-            action_price=self.action_price,
+            price_per_unit=self.action_price,
         )
         self.service.sell(params)
 
@@ -67,7 +67,7 @@ class TestCase:
         assert transaction.investor == self.investor
         assert transaction.ticker == self.ticker
         assert transaction.volume == self.volume
-        assert transaction.price == self.volume * self.action_price
+        assert transaction.price == self.action_price
         assert transaction.is_buy is True
 
     def test_buy__not_enough_money__exception_gets_raised(self):
@@ -119,7 +119,7 @@ class TestCase:
         assert transaction.investor == self.investor
         assert transaction.ticker == self.ticker
         assert transaction.volume == self.volume
-        assert transaction.price == self.volume * self.action_price
+        assert transaction.price == self.action_price
         assert transaction.is_buy is False
 
     def test_sell__success__asset_gets_updated(self):

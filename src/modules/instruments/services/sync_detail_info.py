@@ -74,7 +74,6 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
             if polish_translation:
                 instrument.description_pl = polish_translation
                 return instrument, True
-
         except Exception:
             pass
 
