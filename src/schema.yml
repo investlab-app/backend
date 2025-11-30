@@ -1950,10 +1950,15 @@ components:
           type: string
           format: decimal
           pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
+        action_price:
+          type: string
+          format: decimal
+          pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
         effect_type:
           type: string
           readOnly: true
       required:
+      - action_price
       - amount
       - effect_type
       - instrument
