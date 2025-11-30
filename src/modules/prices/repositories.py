@@ -10,8 +10,8 @@ from polygon.exceptions import BadResponse
 
 from config.clients import polygon_client
 from config.settings import POLYGON_ASSET_TYPE
+from modules.core.exceptions import PayloadTooLargeException
 from modules.instruments.models import Instrument
-from modules.prices.exceptions import PayloadTooLarge
 from modules.prices.schemas import PriceBar, PriceDailySummary
 
 
@@ -46,7 +46,7 @@ class PolygonPricesRepository:
         results = []
         for idx, agg in enumerate(aggs, start=1):
             if idx > 10_000:
-                raise PayloadTooLarge
+                raise PayloadTooLargeException
             results.append(PriceBar.from_agg(agg))
 
         return results
@@ -82,7 +82,9 @@ class PolygonPricesRepository:
     def get_prices(self, tickers: list[str]) -> list[PriceDailySummary] | None:
         tickers = [t.upper() for t in tickers]
         if len(tickers) > 200:
-            raise PayloadTooLarge("Maximum of 200 tickers allowed per request.")
+            raise PayloadTooLargeException(
+                "Maximum of 200 tickers allowed per request."
+            )
 
         if Instrument.objects.filter(ticker__in=tickers).count() != len(tickers):
             raise Http404("One or more tickers not found in the database.")
@@ -102,10 +104,10 @@ class PolygonPricesRepository:
         return list(map(PriceDailySummary.from_snapshot, snapshots))
 
     def get_prices_at(
-        self, tickers: list[Instrument], timestamp: datetime
+        self, instruments: list[Instrument], timestamp: datetime
     ) -> dict[Instrument, Decimal]:
         prices = {}
-        for instrument in tickers:
+        for instrument in instruments:
             ohlc = self.get_ohlc(
                 ticker=instrument.ticker,
                 start_date=timestamp,
@@ -116,6 +118,18 @@ class PolygonPricesRepository:
             if ohlc and len(ohlc) > 0:
                 prices[instrument] = ohlc[0].open
         return prices
+
+    def get_price_at(self, ticker: str, timestamp: datetime) -> Decimal | None:
+        ohlc = self.get_ohlc(
+            ticker=ticker,
+            start_date=timestamp,
+            end_date=timestamp + timedelta(minutes=10),
+            interval="minute",
+            interval_multiplier=1,
+        )
+        if ohlc and len(ohlc) > 0:
+            return ohlc[0].open
+        return None
 
     def get_prices_map(self, tickers: list[str]) -> dict[str, PriceDailySummary] | None:
         prices = self.get_prices(tickers)

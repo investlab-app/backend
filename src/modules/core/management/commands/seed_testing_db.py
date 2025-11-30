@@ -5,10 +5,12 @@ from decimal import Decimal
 from django.contrib.auth.models import User
 from django.core.management import call_command
 from django.core.management.base import BaseCommand
+from django.db import transaction
 from django.utils import timezone
 
 from modules.core.constants import DecimalConvertible
 from modules.core.management.mixins import CommandMessagesMixin
+from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
 from modules.transactions.models import Transaction
@@ -50,12 +52,15 @@ class Command(CommandMessagesMixin, BaseCommand):
 
         return investor
 
-    def create_assets(
-        self, investor: Investor, instrument: Instrument, volume: DecimalConvertible
+    def update_assets(
+        self, investor: Investor, instrument: Instrument, volume: Decimal
     ) -> Asset:
         asset = Asset.objects.filter(ticker=instrument, investor=investor).first()
         if asset:
             asset.volume = asset.volume + Decimal(volume)
+            if asset.volume < 0:
+                raise ValueError("Volume cannot be negative.")
+
             asset.save()
 
             self.print_success(
@@ -63,9 +68,12 @@ class Command(CommandMessagesMixin, BaseCommand):
                 f"\tinvestor='{investor.clerk_id}', "
                 f"\tinstrument='{instrument.ticker}', "
                 f"\tvolume={volume}"
-                f") created successfully."
+                f") updated successfully."
             )
         else:
+            if volume < 0:
+                raise ValueError("Volume cannot be negative.")
+
             asset = Asset.objects.create(
                 investor=investor,
                 ticker=instrument,
@@ -74,7 +82,7 @@ class Command(CommandMessagesMixin, BaseCommand):
             self.print_info(
                 f"Asset("
                 f"\tinvestor='{investor.clerk_id}', instrument='{instrument.ticker}'"
-                f") to volume={volume} updated."
+                f") to volume={volume} created."
             )
 
         return asset
@@ -85,6 +93,7 @@ class Command(CommandMessagesMixin, BaseCommand):
         instrument: Instrument,
         volume: DecimalConvertible,
         price: DecimalConvertible,
+        timestamp: datetime,
         *,
         is_buy: bool,
     ) -> Transaction:
@@ -93,13 +102,15 @@ class Command(CommandMessagesMixin, BaseCommand):
             ticker=instrument,
             volume=Decimal(volume),
             price=Decimal(price),
+            timestamp=timestamp,
             is_buy=is_buy,
         )
         self.print_success(
             f"Transaction("
-            f"\tinvestor='{investor.clerk_id}', "
-            f"\tinstrument='{instrument.ticker}', volume={volume}, "
-            f"\tprice={price}, is_buy={is_buy}"
+            f"investor='{investor.clerk_id}', "
+            f"instrument='{instrument.ticker}', volume={volume}, "
+            f"price={price}, is_buy={is_buy} ,"
+            f"timestamp='{timestamp}'"
             f") created successfully."
         )
 
@@ -161,27 +172,42 @@ class Command(CommandMessagesMixin, BaseCommand):
             return
 
         for instrument in instruments:
-            for _ in range(random.randint(1, 10)):
-                price_change = random.random() * -0.35
-                adjusted_price = tickers[instrument.ticker] * (
-                    1 + Decimal(price_change)
-                )
-                volume = Decimal(random.randint(1, 100)) + Decimal(
-                    random.randint(0, 999999)
-                ) / Decimal(1_000_000)
-                is_buy = random.choice([True, False])
-                self.create_transaction(
-                    investor=investor,
-                    instrument=instrument,
-                    volume=volume,
-                    price=adjusted_price.quantize(Decimal("0.01")),
-                    is_buy=is_buy,
-                )
+            with transaction.atomic():
+                current_asset_volume = Decimal(0)
+                timestamp = get_local_datetime() - timedelta(days=30)
 
-                if is_buy:
-                    self.create_assets(
+                for _ in range(random.randint(1, 10)):
+                    timestamp += timedelta(
+                        minutes=random.randint(30, 300),
+                        seconds=random.randint(0, 59),
+                    )
+                    if timestamp > get_local_datetime():
+                        raise ValueError("Generated timestamp is in the future.")
+
+                    price_change = random.random() - 0.5
+                    adjusted_price = tickers[instrument.ticker] * (
+                        1 + Decimal(price_change)
+                    )
+                    is_buy = random.random() > 0.5
+                    if is_buy:
+                        volume = Decimal(random.randint(1, 100))
+                        current_asset_volume += volume
+                    else:
+                        if current_asset_volume <= 0:
+                            continue
+                        volume = Decimal(random.randint(1, int(current_asset_volume)))
+                        current_asset_volume -= volume
+
+                    self.create_transaction(
                         investor=investor,
                         instrument=instrument,
-                        volume=Decimal(random.randint(10, 500))
-                        + Decimal(random.randint(0, 999999)) / Decimal(1_000_000),
+                        volume=volume,
+                        price=adjusted_price,
+                        timestamp=timestamp,
+                        is_buy=is_buy,
+                    )
+                    self.update_assets(
+                        investor=investor,
+                        instrument=instrument,
+                        volume=volume if is_buy else -volume,
                     )

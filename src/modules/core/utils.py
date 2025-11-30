@@ -46,12 +46,12 @@ def to_quantized_decimal(value: Decimal | float | str, places: int = 15) -> Deci
     return quantize_decimal(Decimal(value), places)
 
 
-def get_attr(obj, attr_path: str, scope_operator: str = "__"):
+def get_attr(obj, attr_path: str, default=None, *, scope_operator: str = "__"):
     """Get nested attribute from an object using a scope operator."""
     for attr in attr_path.split(scope_operator):
         obj = getattr(obj, attr, None)
         if obj is None:
-            return None
+            return default
     return obj
 
 
