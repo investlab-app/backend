@@ -46,6 +46,7 @@ INSTALLED_APPS = [
     "rest_framework_simplejwt",
     "drf_spectacular",
     "corsheaders",
+    "storages",
     # Local modules
     "modules.authentication",
     "modules.chats",
@@ -150,14 +151,40 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
 STATIC_URL = "static/"
-
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STATICFILES_STORAGE = "whitenoise.storage.CompressedManifestStaticFilesStorage"
+STORAGES = {
+    "default": {
+        "BACKEND": "django.core.files.storage.FileSystemStorage",
+    },
+    "staticfiles": {
+        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+    },
+}
 
-MEDIA_URL = "/media/"
+USE_MINIO = str_to_bool(os.environ.get("USE_MINIO", "false"))
 
-MEDIA_ROOT = BASE_DIR / "media"
+if USE_MINIO:
+    STORAGES["default"] = {
+        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
+    }
+    # Build the endpoint URL from MINIO_ENDPOINT and MINIO_PORT
+    minio_endpoint = os.environ["MINIO_ENDPOINT"]
+    minio_port = os.environ["MINIO_PORT"]
+    minio_use_ssl = str_to_bool(os.environ["MINIO_USE_SSL"])
+    protocol = "https" if minio_use_ssl else "http"
+    AWS_S3_ENDPOINT_URL = f"{protocol}://{minio_endpoint}:{minio_port}"
+
+    AWS_ACCESS_KEY_ID = os.environ["MINIO_ACCESS_KEY"]
+    AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]
+    AWS_STORAGE_BUCKET_NAME = os.environ["MINIO_BUCKET_NAME"]
+    AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
+    AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_QUERYSTRING_AUTH = False
+    AWS_S3_FILE_OVERWRITE = False
+else:
+    MEDIA_URL = "/media/"
+    MEDIA_ROOT = BASE_DIR / "media"
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
