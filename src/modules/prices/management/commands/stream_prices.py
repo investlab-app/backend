@@ -26,7 +26,7 @@ class PriceStream:
         self.price_service = prices_service or PriceService()
         self.latest_price_service = latest_price_service or LatestPriceService()
 
-        initial_prices = prices_service.get_latest_daily_bars_from_last_n_days(7)
+        initial_prices = prices_service.get_latest_daily_bars_from_last_n_days(7)  # ty: ignore
         self.latest_price_service.update_price_bars(initial_prices)
 
     async def start(self, tickers: list[str]):

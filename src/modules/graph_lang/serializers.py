@@ -141,7 +141,7 @@ class GraphTransactionEffectSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = BuySellEffect
-        fields = ["instrument", "is_buy", "amount", "effect_type"]
+        fields = ["instrument", "is_buy", "amount", "action_price", "effect_type"]
 
     def get_effect_type(self, obj) -> str:
         return "transaction"

@@ -44,6 +44,7 @@ class RunOrderEngineService:
                 data.prices = prices
                 output = self.engine.run(data)
                 self.output_handler.handle(output, prices)
+                sleep(0.5)
             else:
                 sleep(60)
 

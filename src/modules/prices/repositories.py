@@ -36,6 +36,7 @@ class PolygonPricesRepository:
                 timespan=interval.lower(),
                 from_=start_date,
                 to=end_date,
+                limit=50000,
             )
         except BadResponse:
             return None
@@ -48,6 +49,7 @@ class PolygonPricesRepository:
             if idx > 10_000:
                 raise PayloadTooLargeException
             results.append(PriceBar.from_agg(agg))
+        print(len(results))
 
         return results
 

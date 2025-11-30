@@ -50,7 +50,6 @@ class Runner:
             root_node.execute(context)
         except Exception:
             logger.exception("Graph executed with errors")
-            context.dump_logs()
             return {}
 
         graph = Graph.objects.get(id=graph_id)
@@ -59,5 +58,6 @@ class Runner:
             graph_id=graph_id,
             action_set=context.effects,
         )
+        print(effect_set)
 
         return effect_set

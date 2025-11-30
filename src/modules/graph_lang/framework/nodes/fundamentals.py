@@ -108,6 +108,7 @@ class RollingAverageNode(Node):
         total_price = 0
         for i in range(self.SAMPLES):
             time = time_at - time_step * i
+            time = max(time_at - timespan, min(time, time_at))
             price = context.price_provider.get_price(ticker, time)
             total_price += price
 
@@ -121,7 +122,7 @@ class RollingAverageNode(Node):
         )
 
     def _get_needed_prices(self):
-        return {self.ticker(None): self.timespan(None)}
+        return {self.ticker(None): self.timespan(self.timespan)}
 
 
 class PriceChangeOfNode(Node):

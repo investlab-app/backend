@@ -93,10 +93,6 @@ class GraphResultView(generics.ListAPIView):
 
     def get_queryset(self):
         pk = self.kwargs.get("pk")
-        print(self.request.query_params)
-        print(pk)
         investor = Investor.objects.get(clerk_id=self.request.user.id)
-        print(investor)
         graph = get_object_or_404(Graph, investor=investor, pk=pk)
-        print(graph)
         return GraphEffect.objects.filter(graph=graph)

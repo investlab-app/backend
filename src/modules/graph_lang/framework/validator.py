@@ -70,7 +70,7 @@ class Validator:
 
     def _validate_node_field_types(self, nodes: list[NodeData]):
         for node in nodes:
-            edges = node.type.get_incoming_edges()
+            edges = node.type.get_incoming_edges()  # ty: ignore
 
             for field_ in node.fields:
                 if not any(field_ == e.source_name for e in edges):
@@ -78,7 +78,7 @@ class Validator:
 
     def _validate_node_field_values(self, nodes: list[NodeData]):
         for node in nodes:
-            edges = node.type.get_incoming_edges()
+            edges = node.type.get_incoming_edges()  # ty: ignore
 
             for field_, value in node.fields.items():
                 edge = next((e for e in edges if field_ == e.source_name), None)
@@ -94,7 +94,7 @@ class Validator:
         edge_data = graph.edges
 
         for node in node_data:
-            names = {e.source_name for e in node.type.get_incoming_edges()}
+            names = {e.source_name for e in node.type.get_incoming_edges()}  # ty: ignore
 
             connected_edge_names = [
                 field_name for field_name in node.fields if field_name in names
@@ -107,10 +107,11 @@ class Validator:
                     connected_edge_names.append(edge.handle_b)
 
             edges = [
-                node.type.get_edge_by_source_name(name) for name in connected_edge_names
+                node.type.get_edge_by_source_name(name)  # ty: ignore
+                for name in connected_edge_names
             ]
 
-            if not node.type.validate_all_needed_edges(edges):
+            if not node.type.validate_all_needed_edges(edges):  # ty: ignore
                 self.errors.append(NodeIncorrectlyConnected(node.id))
 
     def _validate_edge_handle_names(self, graph: GraphData):
@@ -125,7 +126,7 @@ class Validator:
                 self._validate_edge_handle(edge, nodes[edge.id_b], edge.handle_b)
 
     def _validate_edge_handle(self, edge: EdgeData, node: NodeData, handle: str):
-        names = {e.source_name for e in node.type.get_all_edges()}
+        names = {e.source_name for e in node.type.get_all_edges()}  # ty: ignore
         if handle not in names:
             self.errors.append(EdgeInvalidHandle(edge.id_a, edge.id_b, handle))
 
@@ -250,7 +251,7 @@ class Validator:
             self.errors.append(DanglingNodeInGraph())
 
     def _validate_triggers(self, nodes: list[NodeData]):
-        triggers = sum(1 for n in nodes if n.type.TRIGGER)
+        triggers = sum(1 for n in nodes if n.type.TRIGGER)  # ty: ignore
         if triggers != 1:
             self.errors.append(InvalidTriggerNodeCount())
 

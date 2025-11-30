@@ -131,7 +131,7 @@ class InstrumentType(EdgeType):
         return Instrument.objects.filter(ticker__iexact=value).exists()
 
     def parse(self, value):
-        return value
+        return value.upper()
 
 
 @dataclass

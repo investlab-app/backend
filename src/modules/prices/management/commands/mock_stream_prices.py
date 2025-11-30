@@ -68,7 +68,7 @@ class PriceStreamMock:
                 PRICES_CHANNEL_LAYER, {"type": "send.prices", "data": data}
             )
 
-            await asyncio.sleep(1)
+            await asyncio.sleep(3)
 
 
 class Command(BaseCommand):
