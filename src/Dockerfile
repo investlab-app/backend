@@ -41,7 +41,7 @@ RUN chmod +x /app/entrypoint.sh
 # Add a healthcheck to verify the app responds on /api/status
 HEALTHCHECK --start-period=20s \
   CMD python -c "import sys,urllib.request; \
-  url='http://127.0.0.1:8000/api/status'; \
+  url='http://127.0.0.1:8000/api/status/'; \
   resp=urllib.request.urlopen(url, timeout=3); \
   sys.exit(0 if 200 <= resp.getcode() < 300 else 1)" || exit 1
 

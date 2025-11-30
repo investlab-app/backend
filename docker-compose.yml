@@ -76,6 +76,17 @@ services:
     profiles:
       - default
 
+  migrate:
+    <<: *backend-common
+    command: ["uv", "run", "manage.py", "migrate", "--noinput"]
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+    profiles:
+      - default
+      - ci
+
   backend:
     <<: *backend-common
     depends_on:
@@ -83,6 +94,8 @@ services:
         condition: service_healthy
       redis:
         condition: service_healthy
+      migrate:
+        condition: service_completed_successfully
     ports:
       - "8000:8000"
     profiles:
@@ -181,12 +194,66 @@ services:
       - MINIO_USE_SSL=${MINIO_USE_SSL:-true}
       - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
       - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
+      - MINIO_BUCKET_NAME=${MINIO_ECHARTS_MCP_BUCKET_NAME}
     profiles:
       - default
 
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY}
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    volumes:
+      - minio_data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    restart: unless-stopped
+    networks:
+      - app_network
+    profiles:
+      - default
+      - ci
+
+  init-minio:
+    image: alpine:latest
+    depends_on:
+      minio:
+        condition: service_healthy
+    environment:
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY}
+      MINIO_STATIC_BUCKET_NAME: ${MINIO_STATIC_BUCKET_NAME}
+      MINIO_MEDIA_BUCKET_NAME: ${MINIO_MEDIA_BUCKET_NAME}
+      MINIO_ECHARTS_MCP_BUCKET_NAME: ${MINIO_ECHARTS_MCP_BUCKET_NAME}
+    command: sh -c "
+      apk add --no-cache curl &&
+      curl -s https://dl.min.io/client/mc/release/linux-amd64/mc -o /usr/local/bin/mc &&
+      chmod +x /usr/local/bin/mc &&
+      mc alias set minio http://minio:9000 ${MINIO_ACCESS_KEY} ${MINIO_SECRET_KEY} &&
+      mc mb minio/${MINIO_STATIC_BUCKET_NAME} || true &&
+      mc mb minio/${MINIO_MEDIA_BUCKET_NAME} || true &&
+      mc mb minio/${MINIO_ECHARTS_MCP_BUCKET_NAME} || true &&
+      mc anonymous set download minio/${MINIO_STATIC_BUCKET_NAME} || true &&
+      mc anonymous set download minio/${MINIO_MEDIA_BUCKET_NAME} || true &&
+      mc anonymous set download minio/${MINIO_ECHARTS_MCP_BUCKET_NAME} || true
+      "
+    networks:
+      - app_network
+    profiles:
+      - default
+      - ci
+
 volumes:
   postgres_data:
+  minio_data:
 
 networks:
   app_network:
