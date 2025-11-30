@@ -150,7 +150,6 @@ USE_TZ = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = "static/"
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 STORAGES = {
@@ -165,9 +164,6 @@ STORAGES = {
 USE_MINIO = str_to_bool(os.environ.get("USE_MINIO", "false"))
 
 if USE_MINIO:
-    STORAGES["default"] = {
-        "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
-    }
     # Build the endpoint URL from MINIO_ENDPOINT and MINIO_PORT
     # This is the internal URL used by the backend to communicate with MinIO
     minio_endpoint = os.environ["MINIO_ENDPOINT"]
@@ -176,20 +172,38 @@ if USE_MINIO:
     protocol = "https" if minio_use_ssl else "http"
     AWS_S3_ENDPOINT_URL = f"{protocol}://{minio_endpoint}:{minio_port}"
 
-    # Public domain for generating externally accessible media URLs
-    # This overrides AWS_S3_ENDPOINT_URL when generating URLs for clients
+    # Public domain for generating externally accessible URLs
+    # This is used to build the base URL for static/media files
     minio_public_domain = os.environ.get("MINIO_PUBLIC_DOMAIN")
-    if minio_public_domain:
-        AWS_S3_CUSTOM_DOMAIN = minio_public_domain
 
     AWS_ACCESS_KEY_ID = os.environ["MINIO_ACCESS_KEY"]
     AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]
-    AWS_STORAGE_BUCKET_NAME = os.environ["MINIO_BUCKET_NAME"]
     AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
-    AWS_QUERYSTRING_AUTH = False
-    AWS_S3_FILE_OVERWRITE = False
+
+    # Use custom storage backends with separate buckets for media and static
+    STORAGES["default"] = {
+        "BACKEND": "config.storages.S3MediaStorage",
+    }
+    STORAGES["staticfiles"] = {
+        "BACKEND": "config.storages.S3StaticStorage",
+    }
+
+    # Configure URLs for static and media files
+    static_bucket = os.environ.get("MINIO_STATIC_BUCKET_NAME", "static")
+    media_bucket = os.environ.get("MINIO_MEDIA_BUCKET_NAME", "media")
+
+    if minio_public_domain:
+        # Use public domain for client-accessible URLs
+        # Format: https://domain.com/bucket-name/
+        STATIC_URL = f"https://{minio_public_domain}/{static_bucket}/"
+        MEDIA_URL = f"https://{minio_public_domain}/{media_bucket}/"
+    else:
+        # Fallback to internal endpoint
+        STATIC_URL = f"{AWS_S3_ENDPOINT_URL}/{static_bucket}/"
+        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{media_bucket}/"
 else:
+    STATIC_URL = "static/"
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
 
@@ -488,3 +502,23 @@ TRANSLATE_INSTRUMENT_DESCRIPTION = str_to_bool(
 GEMINI_API_KEY = os.environ["GEMINI_API_KEY"]
 MCP_MASSIVE_URL = os.environ.get("MCP_MASSIVE_URL", "http://mcp-massive:8000/mcp")
 MCP_ECHARTS_URL = os.environ.get("MCP_ECHARTS_URL", "http://mcp-echarts:8000/mcp")
+
+# Datadog APM Configuration
+DD_TRACE_ENABLED = str_to_bool(os.environ.get("DD_TRACE_ENABLED", "false"))
+DD_SERVICE = os.environ.get("DD_SERVICE", "investlab-backend")
+DD_ENV = os.environ.get("DD_ENV", "development")
+DD_VERSION = os.environ.get("DD_VERSION", "0.1.0")
+DD_AGENT_HOST = os.environ.get("DD_AGENT_HOST", "datadog-agent")
+DD_TRACE_AGENT_PORT = os.environ.get("DD_TRACE_AGENT_PORT", "8126")
+DD_LOGS_INJECTION = str_to_bool(os.environ.get("DD_LOGS_INJECTION", "true"))
+DD_DJANGO_INSTRUMENT_MIDDLEWARE = str_to_bool(
+    os.environ.get("DD_DJANGO_INSTRUMENT_MIDDLEWARE", "true")
+)
+DD_DJANGO_INSTRUMENT_DATABASES = str_to_bool(
+    os.environ.get("DD_DJANGO_INSTRUMENT_DATABASES", "true")
+)
+DD_DJANGO_INSTRUMENT_CACHES = str_to_bool(
+    os.environ.get("DD_DJANGO_INSTRUMENT_CACHES", "true")
+)
+DD_TRACE_SAMPLE_RATE = float(os.environ.get("DD_TRACE_SAMPLE_RATE", "1.0"))
+DD_PROFILING_ENABLED = str_to_bool(os.environ.get("DD_PROFILING_ENABLED", "false"))
