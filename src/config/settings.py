@@ -169,11 +169,18 @@ if USE_MINIO:
         "BACKEND": "storages.backends.s3boto3.S3Boto3Storage",
     }
     # Build the endpoint URL from MINIO_ENDPOINT and MINIO_PORT
+    # This is the internal URL used by the backend to communicate with MinIO
     minio_endpoint = os.environ["MINIO_ENDPOINT"]
     minio_port = os.environ["MINIO_PORT"]
     minio_use_ssl = str_to_bool(os.environ["MINIO_USE_SSL"])
     protocol = "https" if minio_use_ssl else "http"
     AWS_S3_ENDPOINT_URL = f"{protocol}://{minio_endpoint}:{minio_port}"
+
+    # Public domain for generating externally accessible media URLs
+    # This overrides AWS_S3_ENDPOINT_URL when generating URLs for clients
+    minio_public_domain = os.environ.get("MINIO_PUBLIC_DOMAIN")
+    if minio_public_domain:
+        AWS_S3_CUSTOM_DOMAIN = minio_public_domain
 
     AWS_ACCESS_KEY_ID = os.environ["MINIO_ACCESS_KEY"]
     AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]

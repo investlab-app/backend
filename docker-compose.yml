@@ -168,7 +168,7 @@ services:
       - default
 
   mcp-echarts:
-    image: node:22-alpine
+    image: node:22-slim
     command: ["npx", "-y", "mcp-echarts", "-t", "streamable", "--port", "8000"]
     restart: unless-stopped
     ports:
