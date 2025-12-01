@@ -152,57 +152,47 @@ USE_TZ = True
 
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
-STORAGES = {
-    "default": {
-        "BACKEND": "django.core.files.storage.FileSystemStorage",
-    },
-    "staticfiles": {
-        "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
-    },
-}
-
-USE_MINIO = str_to_bool(os.environ.get("USE_MINIO", "false"))
-
-if USE_MINIO:
-    # Build the endpoint URL from MINIO_ENDPOINT and MINIO_PORT
-    # This is the internal URL used by the backend to communicate with MinIO
-    minio_endpoint = os.environ["MINIO_ENDPOINT"]
-    minio_port = os.environ["MINIO_PORT"]
-    minio_use_ssl = str_to_bool(os.environ["MINIO_USE_SSL"])
+if str_to_bool(os.environ.get("USE_MINIO", "false")):
+    minio_use_ssl = str_to_bool(os.environ.get("MINIO_USE_SSL", "false"))
     protocol = "https" if minio_use_ssl else "http"
-    AWS_S3_ENDPOINT_URL = f"{protocol}://{minio_endpoint}:{minio_port}"
 
-    # Public domain for generating externally accessible URLs
-    # This is used to build the base URL for static/media files
-    minio_public_domain = os.environ.get("MINIO_PUBLIC_DOMAIN")
-
+    AWS_S3_ENDPOINT_URL = (
+        f"{protocol}://{os.environ['MINIO_ENDPOINT']}:{os.environ['MINIO_PORT']}"
+    )
     AWS_ACCESS_KEY_ID = os.environ["MINIO_ACCESS_KEY"]
     AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]
     AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get(
+        "MINIO_PUBLIC_DOMAIN",
+        f"{os.environ['MINIO_ENDPOINT']}:{os.environ['MINIO_PORT']}",
+    )
 
-    # Use custom storage backends with separate buckets for media and static
-    STORAGES["default"] = {
-        "BACKEND": "config.storages.S3MediaStorage",
+    STORAGES = {
+        "default": {
+            "BACKEND": "config.storages.S3MediaStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "config.storages.S3StaticStorage",
+        },
     }
-    STORAGES["staticfiles"] = {
-        "BACKEND": "config.storages.S3StaticStorage",
-    }
 
-    # Configure URLs for static and media files
-    static_bucket = os.environ.get("MINIO_STATIC_BUCKET_NAME", "static")
-    media_bucket = os.environ.get("MINIO_MEDIA_BUCKET_NAME", "media")
-
-    if minio_public_domain:
-        # Use public domain for client-accessible URLs
-        # Format: https://domain.com/bucket-name/
-        STATIC_URL = f"https://{minio_public_domain}/{static_bucket}/"
-        MEDIA_URL = f"https://{minio_public_domain}/{media_bucket}/"
-    else:
-        # Fallback to internal endpoint
-        STATIC_URL = f"{AWS_S3_ENDPOINT_URL}/{static_bucket}/"
-        MEDIA_URL = f"{AWS_S3_ENDPOINT_URL}/{media_bucket}/"
+    STATIC_URL = (
+        f"{protocol}://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_STATIC_BUCKET_NAME']}/"
+    )
+    MEDIA_URL = (
+        f"{protocol}://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_MEDIA_BUCKET_NAME']}/"
+    )
 else:
+    STORAGES = {
+        "default": {
+            "BACKEND": "django.core.files.storage.FileSystemStorage",
+        },
+        "staticfiles": {
+            "BACKEND": "whitenoise.storage.CompressedManifestStaticFilesStorage",
+        },
+    }
+
     STATIC_URL = "static/"
     MEDIA_URL = "/media/"
     MEDIA_ROOT = BASE_DIR / "media"
