@@ -1,4 +1,6 @@
+from collections import defaultdict
 from contextlib import suppress
+from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import OpenApiParameter, extend_schema
@@ -16,6 +18,7 @@ from modules.instruments.serializers import (
 )
 from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
+from modules.prices.services import LatestPriceService
 
 
 class InstrumentsListView(generics.ListAPIView):
@@ -87,10 +90,16 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
 
         tickers = [obj.ticker.upper() for obj in items]
         repository = PolygonPricesRepository()
-        try:
+        latest_price_service = LatestPriceService()
+
+        snapshot_map = {}
+        with suppress(Exception):
             snapshot_map = repository.get_prices_map(tickers=tickers) or {}
-        except Exception:
-            snapshot_map = {}
+
+        latest_prices_map = defaultdict(lambda: Decimal(1))
+        with suppress(Exception):
+            prices = latest_price_service.get_prices()
+            latest_prices_map.update(prices)
 
         investor = None
         if request.user and hasattr(request.user, "id"):
@@ -100,6 +109,7 @@ class InstrumentsWithPricesListView(generics.ListAPIView):
         context = {
             **self.get_serializer_context(),
             "snapshot_map": snapshot_map,
+            "latest_prices_map": latest_prices_map,
             "investor": investor,
         }
         serializer = self.get_serializer(items, many=True, context=context)
