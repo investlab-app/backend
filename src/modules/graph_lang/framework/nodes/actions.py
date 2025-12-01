@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from modules.graph_lang.framework import edges
 from modules.graph_lang.framework.actions import (
     BuySellAmountAction,
@@ -72,7 +74,9 @@ class BuySellPercentNode(Node):
         percent = self._get(self.percent)
         ticker = self._get(self.ticker)
 
-        effect = BuySellPercentAction(action=action, percent=percent, ticker=ticker)
+        effect = BuySellPercentAction(
+            action=action, percent=percent / Decimal(100), ticker=ticker
+        )
         context.effects.add(effect)
 
         self.out.set(None)

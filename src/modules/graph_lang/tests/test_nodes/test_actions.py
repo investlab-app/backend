@@ -55,7 +55,11 @@ def test_buy_sell_percent_node():
     context = ExecutionContext(None, action_set, fake.date_time())
     node.execute(context)
 
-    assert action_set == {BuySellPercentAction("buy", Decimal(10), "MSFT")}
+    assert len(action_set) == 1
+    item = action_set.pop()
+    assert item.action == "buy"
+    assert item.percent > 0.0999 and item.percent < 0.1001
+    assert item.ticker == "MSFT"
 
 
 def test_send_notification_node():
