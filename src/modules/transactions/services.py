@@ -75,20 +75,23 @@ class ExecutiveTransactionService:
 
         return sell_transaction
 
+    @staticmethod
     def _check_for_enough_assets(investor, instrument, volume):
         try:
             asset = Asset.objects.get(investor=investor, ticker=instrument)
-        except:
-            raise ValueError("Investor doesn't have enough assets")
+        except Exception:
+            raise ValueError("Investor doesn't have enough assets") from None
 
         if asset.volume < volume:
             raise ValueError("Investor doesn't have enough assets")
         return asset
 
+    @staticmethod
     def _add_balance(investor, balance):
         investor.balance += balance
         investor.save()
 
+    @staticmethod
     def _subtract_asset(asset, volume):
         asset.volume -= volume
         if asset.volume > 0:
@@ -96,6 +99,7 @@ class ExecutiveTransactionService:
         else:
             asset.delete()
 
+    @staticmethod
     def _handle_partial_transactions_after_sell(sell: Transaction):
         investor = sell.investor
         instrument = sell.ticker
@@ -120,6 +124,7 @@ class ExecutiveTransactionService:
                 )
                 volume_left = 0
 
+    @staticmethod
     def _get_open_partial(investor, instrument):
         return (
             PartialTransaction.objects.filter(
@@ -132,12 +137,14 @@ class ExecutiveTransactionService:
             .first()
         )
 
+    @staticmethod
     def _close_partial_transaction(
         sell: Transaction, partial_transaction: PartialTransaction
     ):
         partial_transaction.sell_transaction = sell
         partial_transaction.save()
 
+    @staticmethod
     def _split_partial_transaction(
         sell: Transaction,
         partial_transaction: PartialTransaction,

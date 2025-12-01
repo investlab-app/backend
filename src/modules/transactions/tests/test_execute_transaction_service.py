@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from decimal import Decimal
 
 import pytest
+from django.core.exceptions import ObjectDoesNotExist
 from pydantic import BaseModel, ConfigDict
 
 from modules.core.constants import PrecisionType
@@ -84,7 +85,7 @@ class TestRegularTransactions(TestSingleInvestorSingleInstrument):
 
         self.buy(volume=2, action_price=3)
 
-        self.get_asset().volume == 7
+        assert self.get_asset().volume == 7
 
     def test_buy__transaction_is_saved(self):
         self.set_balance(10)
@@ -97,7 +98,7 @@ class TestRegularTransactions(TestSingleInvestorSingleInstrument):
         assert transaction.ticker == self.instrument
         assert transaction.volume == 10
         assert transaction.price == 1
-        assert transaction.is_buy == True
+        assert transaction.is_buy
 
     def test_sell__no_assets_in_db__raises_value_error(self):
         with pytest.raises(ValueError):
@@ -134,7 +135,7 @@ class TestRegularTransactions(TestSingleInvestorSingleInstrument):
         self.buy(volume=10, action_price=1)
         self.sell(10, 1)
 
-        with pytest.raises(Exception):
+        with pytest.raises(ObjectDoesNotExist):
             self.get_asset()
 
     def test_sell__success__transaction_is_created(self):
@@ -149,7 +150,7 @@ class TestRegularTransactions(TestSingleInvestorSingleInstrument):
         assert transaction.ticker == self.instrument
         assert transaction.volume == 10
         assert transaction.price == 1
-        assert transaction.is_buy == False
+        assert not transaction.is_buy
 
     def test_sell__volume_zero__raises_value_error(self):
         self.set_balance(10)
@@ -203,7 +204,7 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         self.set_balance(10)
         buy = self.buy(volume=10, action_price=1)
 
-        expected = set([PartialData(buy=buy, sell=None, volume=10)])
+        expected = {PartialData(buy=buy, sell=None, volume=10)}
         assert self.get_partial_transaction_data() == expected
 
     def test_sell__success__partial_transaction_is_created(self):
@@ -211,7 +212,7 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         buy = self.buy(volume=10, action_price=1)
         sell = self.sell(volume=10, action_price=1)
 
-        expected = set([PartialData(buy=buy, sell=sell, volume=10)])
+        expected = {PartialData(buy=buy, sell=sell, volume=10)}
         assert self.get_partial_transaction_data() == expected
 
     def test_sell_partial_asset__partial_transaction_gets_split(self):
@@ -219,12 +220,10 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         buy = self.buy(volume=10, action_price=1)
         sell = self.sell(volume=3, action_price=1)
 
-        expected = set(
-            [
-                PartialData(buy=buy, sell=sell, volume=3),
-                PartialData(buy=buy, sell=None, volume=7),
-            ]
-        )
+        expected = {
+            PartialData(buy=buy, sell=sell, volume=3),
+            PartialData(buy=buy, sell=None, volume=7),
+        }
         assert self.get_partial_transaction_data() == expected
 
     def test_sell_partial_asset_twice__asset_is_completely_sold(self):
@@ -233,12 +232,10 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         sell_1 = self.sell(volume=4, action_price=1)
         sell_2 = self.sell(volume=6, action_price=1)
 
-        expected = set(
-            [
-                PartialData(buy=buy, sell=sell_1, volume=4),
-                PartialData(buy=buy, sell=sell_2, volume=6),
-            ]
-        )
+        expected = {
+            PartialData(buy=buy, sell=sell_1, volume=4),
+            PartialData(buy=buy, sell=sell_2, volume=6),
+        }
         assert self.get_partial_transaction_data() == expected
 
     def test_sell_partial_asset_twice__asset_is_partially_sold(self):
@@ -247,13 +244,11 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         sell_1 = self.sell(volume=2, action_price=1)
         sell_2 = self.sell(volume=3, action_price=1)
 
-        expected = set(
-            [
-                PartialData(buy=buy, sell=sell_1, volume=2),
-                PartialData(buy=buy, sell=sell_2, volume=3),
-                PartialData(buy=buy, sell=None, volume=5),
-            ]
-        )
+        expected = {
+            PartialData(buy=buy, sell=sell_1, volume=2),
+            PartialData(buy=buy, sell=sell_2, volume=3),
+            PartialData(buy=buy, sell=None, volume=5),
+        }
         assert self.get_partial_transaction_data() == expected
 
     def test_multiple_buys__multiple_partials_get_created(self):
@@ -262,13 +257,11 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         buy_2 = self.buy(volume=5, action_price=1)
         buy_3 = self.buy(volume=15, action_price=1)
 
-        expected = set(
-            [
-                PartialData(buy=buy_1, sell=None, volume=10),
-                PartialData(buy=buy_2, sell=None, volume=5),
-                PartialData(buy=buy_3, sell=None, volume=15),
-            ]
-        )
+        expected = {
+            PartialData(buy=buy_1, sell=None, volume=10),
+            PartialData(buy=buy_2, sell=None, volume=5),
+            PartialData(buy=buy_3, sell=None, volume=15),
+        }
         assert self.get_partial_transaction_data() == expected
 
     def test_sell_covers_multiple_buys(self):
