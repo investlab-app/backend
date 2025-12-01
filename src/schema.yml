@@ -1947,13 +1947,11 @@ components:
         is_buy:
           type: boolean
         amount:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
+          type: number
+          format: double
         action_price:
-          type: string
-          format: decimal
-          pattern: ^-?\d{0,15}(?:\.\d{0,15})?$
+          type: number
+          format: double
         effect_type:
           type: string
           readOnly: true

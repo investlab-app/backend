@@ -138,6 +138,8 @@ class RunGraphResultSerializer(serializers.Serializer):
 class GraphTransactionEffectSerializer(serializers.ModelSerializer):
     instrument = InstrumentNameSerializer()
     effect_type = serializers.SerializerMethodField()
+    amount = serializers.FloatField()
+    action_price = serializers.FloatField()
 
     class Meta:
         model = BuySellEffect
