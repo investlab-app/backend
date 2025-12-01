@@ -41,6 +41,8 @@ class TransactionDetails(BaseModel):
 class TransactionStats(BaseModel):
     realized_gain: Decimal
     unrealized_gain: Decimal
+    avg_gain: Decimal
+    avg_loss: Decimal
     total_gain: Decimal
     total_buy_cost: Decimal
     total_sell_cost: Decimal
@@ -161,6 +163,8 @@ class TransactionStatsService:
     def _finalize_stats(
         buy_lots: list[BuyLot],
         realized_gain: Decimal,
+        avg_gain: Decimal,
+        avg_loss: Decimal,
         total_buy_cost: Decimal,
         total_sell_cost: Decimal,
         end_period_price: Decimal,
@@ -198,6 +202,8 @@ class TransactionStatsService:
         return TransactionStats(
             realized_gain=realized_gain,
             unrealized_gain=unrealized_gain,
+            avg_gain=avg_gain,
+            avg_loss=avg_loss,
             total_gain=total_gain,
             total_buy_cost=total_buy_cost,
             total_sell_cost=total_sell_cost,
@@ -218,6 +224,10 @@ class TransactionStatsService:
             for i in initial_buy_lots
         ]
         realized_gain = Decimal(0)
+        gain_sum = Decimal(0)
+        loss_sum = Decimal(0)
+        gain_count = 0
+        loss_count = 0
         total_buy_cost = sum((i.volume * i.price for i in buy_lots), start=Decimal(0))
         total_sell_cost = Decimal(0)
         sell_details: list[SellDetail] = []
@@ -235,6 +245,12 @@ class TransactionStatsService:
                 total_sell_cost += vol * price
                 gain = consumed_volume * price - consumed_cost
                 realized_gain += gain
+                if gain > 0:
+                    gain_sum += gain
+                    gain_count += 1
+                elif gain < 0:
+                    loss_sum += gain
+                    loss_count += 1
                 sell_details.append(
                     SellDetail(
                         volume=consumed_volume,
@@ -248,6 +264,8 @@ class TransactionStatsService:
         return self._finalize_stats(
             buy_lots,
             realized_gain,
+            gain_sum / gain_count if gain_count > 0 else Decimal(0),
+            -(loss_sum / loss_count) if loss_count > 0 else Decimal(0),
             total_buy_cost,
             total_sell_cost,
             end_period_price,
