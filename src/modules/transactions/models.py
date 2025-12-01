@@ -44,9 +44,18 @@ class Transaction(BaseModel):
 
 class PartialTransaction(BaseModel):
     buy_transaction = models.ForeignKey(
-        Transaction, on_delete=models.CASCADE, related_name="buy"
+        Transaction,
+        on_delete=models.CASCADE,
+        related_name="buy",
+        verbose_name=_("Associated buy transaction"),
     )
     sell_transaction = models.ForeignKey(
-        Transaction, on_delete=models.CASCADE, related_name="sell", null=True
+        Transaction,
+        on_delete=models.CASCADE,
+        related_name="sell",
+        null=True,
+        verbose_name=_("Associated sell transaction"),
     )
-    volume = models.DecimalField(max_digits=30, decimal_places=15)
+    volume = models.DecimalField(
+        max_digits=30, decimal_places=15, verbose_name=_("Volume")
+    )
