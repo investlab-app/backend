@@ -4,13 +4,12 @@ from decimal import Decimal
 import pytest
 from pydantic import BaseModel, ConfigDict
 
-from modules.investors.tests.conftest import create_fake_investor
-from modules.instruments.tests.conftest import create_fake_instrument
-
 from modules.core.constants import PrecisionType
 from modules.instruments.models import Instrument
+from modules.instruments.tests.conftest import create_fake_instrument
 from modules.investors.models import Asset, Investor
-from modules.transactions.models import Transaction, PartialTransaction
+from modules.investors.tests.conftest import create_fake_investor
+from modules.transactions.models import PartialTransaction, Transaction
 from modules.transactions.services import ExecutiveTransactionService, TransactionParams
 
 pytestmark = pytest.mark.django_db
@@ -152,16 +151,33 @@ class TestRegularTransactions(TestSingleInvestorSingleInstrument):
         assert transaction.price == 1
         assert transaction.is_buy == False
 
-    # test_sell__volume_zero__raises_value_error(self):
-    # test_buy__volume_zero__raises_value_error(self):
-    # test_buy__negative_price__raises_value_error(self):
-    # test_sell__negative_price__raises_value_error(self):
+    def test_sell__volume_zero__raises_value_error(self):
+        self.set_balance(10)
+        self.buy(volume=10, action_price=1)
+        with pytest.raises(ValueError):
+            self.sell(volume=0, action_price=1)
+
+    def test_buy__volume_zero__raises_value_error(self):
+        self.set_balance(10)
+        with pytest.raises(ValueError):
+            self.buy(volume=0, action_price=1)
+
+    def test_buy__negative_price__raises_value_error(self):
+        self.set_balance(100)
+        with pytest.raises(ValueError):
+            self.buy(volume=10, action_price=Decimal(-1))
+
+    def test_sell__negative_price__raises_value_error(self):
+        self.set_balance(100)
+        self.buy(volume=10, action_price=1)
+        with pytest.raises(ValueError):
+            self.sell(volume=5, action_price=Decimal(-2))
 
 
 class PartialData(BaseModel):
     buy: Transaction
     sell: Transaction | None
-    volume: Decimal
+    volume: Decimal | int
 
     class Config:
         arbitrary_types_allowed = True
@@ -171,27 +187,7 @@ class PartialData(BaseModel):
 
 
 class TestPartialTransactions(TestSingleInvestorSingleInstrument):
-    def partial_transaction_exists(self, partial: PartialData) -> bool:
-        try:
-            PartialTransaction.objects.get(
-                buy_transaction=partial.buy,
-                sell_transaction=partial.sell,
-                volume=Decimal(partial.volume),
-            )
-            return True
-        except:
-            return False
-
-    def partial_transactions_equal(self, partial: list[PartialData]) -> bool:
-        if not len(partial) == len(PartialTransaction.objects.all()):
-            return False
-
-        for p in partial:
-            if not self.partial_transaction_exists(p):
-                return False
-        return True
-
-    def get_partial_transaction_data(self) -> list[PartialData]:
+    def get_partial_transaction_data(self) -> set[PartialData]:
         data = set()
         for partial in PartialTransaction.objects.all():
             data.add(
@@ -275,17 +271,49 @@ class TestPartialTransactions(TestSingleInvestorSingleInstrument):
         )
         assert self.get_partial_transaction_data() == expected
 
-    # def test_sell_covers_multiple_buys(self):
-    #     self.set_balance(100)
-    #     buy_1 = self.buy(volume=10, action_price=1)
-    #     buy_2 = self.buy(volume=5, action_price=1)
-    #     sell_1 = self.sell(volume=13, action_price=1)
+    def test_sell_covers_multiple_buys(self):
+        self.set_balance(100)
+        buy_1 = self.buy(volume=10, action_price=1)
+        buy_2 = self.buy(volume=5, action_price=1)
+        buy_3 = self.buy(volume=15, action_price=1)
+        sell_1 = self.sell(volume=20, action_price=1)
 
-    #     expected = set(
-    #         [
-    #             PartialData(buy=buy_1, sell=sell_1, volume=10),
-    #             PartialData(buy=buy_2, sell=sell_1, volume=3),
-    #             PartialData(buy=buy_2, sell=None, volume=2),
-    #         ]
-    #     )
-    #     assert self.get_partial_transaction_data() == expected
+        expected = {
+            PartialData(buy=buy_1, sell=sell_1, volume=10),
+            PartialData(buy=buy_2, sell=sell_1, volume=5),
+            PartialData(buy=buy_3, sell=sell_1, volume=5),
+            PartialData(buy=buy_3, sell=None, volume=10),
+        }
+        assert self.get_partial_transaction_data() == expected
+
+    def test_sell_consumes_oldest_buys_first(self):
+        self.set_balance(100)
+        buy_1 = self.buy(volume=Decimal(5), action_price=Decimal(1))
+        buy_2 = self.buy(volume=Decimal(8), action_price=Decimal(1))
+        buy_3 = self.buy(volume=Decimal(4), action_price=Decimal(1))
+
+        sell_1 = self.sell(volume=Decimal(7), action_price=Decimal(2))
+        sell_2 = self.sell(volume=Decimal(7), action_price=Decimal(2))
+
+        expected_after_sell_2 = {
+            PartialData(buy=buy_1, sell=sell_1, volume=Decimal(5)),
+            PartialData(buy=buy_2, sell=sell_1, volume=Decimal(2)),
+            PartialData(buy=buy_2, sell=sell_2, volume=Decimal(6)),
+            PartialData(buy=buy_3, sell=sell_2, volume=Decimal(1)),
+            PartialData(buy=buy_3, sell=None, volume=Decimal(3)),
+        }
+        assert self.get_partial_transaction_data() == expected_after_sell_2
+
+    def test_decimal_precision(self):
+        self.set_balance(10)
+        buy_1 = self.buy(volume=Decimal("0.3"), action_price=Decimal("1.00"))
+        buy_2 = self.buy(volume=Decimal("0.2"), action_price=Decimal("1.50"))
+
+        sell_1 = self.sell(volume=Decimal("0.25"), action_price=Decimal("2.10"))
+
+        expected = {
+            PartialData(buy=buy_1, sell=sell_1, volume=Decimal("0.25")),
+            PartialData(buy=buy_1, sell=None, volume=Decimal("0.05")),
+            PartialData(buy=buy_2, sell=None, volume=Decimal("0.2")),
+        }
+        assert self.get_partial_transaction_data() == expected
