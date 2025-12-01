@@ -153,7 +153,7 @@ USE_TZ = True
 STATIC_ROOT = BASE_DIR / "staticfiles"
 
 if str_to_bool(os.environ.get("USE_MINIO", "false")):
-    minio_use_ssl = str_to_bool(os.environ["MINIO_USE_SSL"])
+    minio_use_ssl = str_to_bool(os.environ.get("MINIO_USE_SSL", "false"))
     protocol = "https" if minio_use_ssl else "http"
 
     AWS_S3_ENDPOINT_URL = (
@@ -161,7 +161,7 @@ if str_to_bool(os.environ.get("USE_MINIO", "false")):
     )
     AWS_ACCESS_KEY_ID = os.environ["MINIO_ACCESS_KEY"]
     AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]
-    AWS_S3_REGION_NAME = os.environ["MINIO_REGION_NAME"]
+    AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
     AWS_S3_CUSTOM_DOMAIN = os.environ["MINIO_PUBLIC_DOMAIN"]
 
