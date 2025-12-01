@@ -163,7 +163,10 @@ if str_to_bool(os.environ.get("USE_MINIO", "false")):
     AWS_SECRET_ACCESS_KEY = os.environ["MINIO_SECRET_KEY"]
     AWS_S3_REGION_NAME = os.environ.get("MINIO_REGION_NAME", "us-east-1")
     AWS_S3_SIGNATURE_VERSION = "s3v4"
-    AWS_S3_CUSTOM_DOMAIN = os.environ["MINIO_PUBLIC_DOMAIN"]
+    AWS_S3_CUSTOM_DOMAIN = os.environ.get(
+        "MINIO_PUBLIC_DOMAIN",
+        f"{os.environ['MINIO_ENDPOINT']}:{os.environ['MINIO_PORT']}",
+    )
 
     STORAGES = {
         "default": {
@@ -175,10 +178,10 @@ if str_to_bool(os.environ.get("USE_MINIO", "false")):
     }
 
     STATIC_URL = (
-        f"https://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_STATIC_BUCKET_NAME']}/"
+        f"{protocol}://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_STATIC_BUCKET_NAME']}/"
     )
     MEDIA_URL = (
-        f"https://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_MEDIA_BUCKET_NAME']}/"
+        f"{protocol}://{AWS_S3_CUSTOM_DOMAIN}/{os.environ['MINIO_MEDIA_BUCKET_NAME']}/"
     )
 else:
     STORAGES = {
