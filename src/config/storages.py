@@ -9,6 +9,13 @@ class S3MediaStorage(S3Boto3Storage):
     default_acl = None
     querystring_auth = False
 
+    @property
+    def custom_domain(self):
+        minio_public_domain = os.environ.get("MINIO_PUBLIC_DOMAIN")
+        if minio_public_domain:
+            return f"{minio_public_domain}/{self.bucket_name}"
+        return None
+
 
 class S3StaticStorage(S3Boto3Storage):
     bucket_name = os.environ.get("MINIO_STATIC_BUCKET_NAME", "static")
@@ -20,3 +27,10 @@ class S3StaticStorage(S3Boto3Storage):
     object_parameters = {
         "CacheControl": "max-age=31536000, public, immutable",
     }
+
+    @property
+    def custom_domain(self):
+        minio_public_domain = os.environ.get("MINIO_PUBLIC_DOMAIN")
+        if minio_public_domain:
+            return f"{minio_public_domain}/{self.bucket_name}"
+        return None
