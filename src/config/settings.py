@@ -467,6 +467,12 @@ ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
 FROM_EMAIL = os.environ["FROM_EMAIL"]
 EMAIL_BACKEND = os.environ["EMAIL_BACKEND"]
 EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = str_to_bool(os.environ.get("EMAIL_USE_TLS", "True"))
+EMAIL_USE_SSL = str_to_bool(os.environ.get("EMAIL_USE_SSL", "False"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 
 # Web Push
 VAPID_PRIVATE_KEY = os.environ["VAPID_PRIVATE_KEY"]
