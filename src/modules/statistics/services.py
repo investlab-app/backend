@@ -165,6 +165,7 @@ class TransactionStatsService:
         total_sell_cost: Decimal,
         end_period_price: Decimal,
         sell_details: list[SellDetail],
+        type: str = "both",
     ) -> TransactionStats:
         remaining_volume = sum((i.volume for i in buy_lots), start=Decimal(0))
         unrealized_gain = sum(
@@ -173,9 +174,17 @@ class TransactionStatsService:
         )
         total_gain = realized_gain + unrealized_gain
         if total_buy_cost:
-            total_gain_pct = (
-                total_sell_cost + unrealized_gain
-            ) / total_buy_cost - Decimal(1)
+            print("TOTAL BUY COST", total_buy_cost )
+            print("TOTAL SELL COST", total_sell_cost )
+            print("UNREALIZED GAIN", unrealized_gain )
+            print("TYPE", type )
+            if type == "open":
+                total_gain_pct = 100 * unrealized_gain / (total_buy_cost)
+            elif type == "closed":
+                total_gain_pct = 100 * (total_sell_cost - total_buy_cost) / total_buy_cost
+            else:
+                total_gain_pct = None
+            print("TOTAL GAIN PCT", total_gain_pct )
         else:
             total_gain_pct = None
 
@@ -212,6 +221,7 @@ class TransactionStatsService:
         transactions: Iterable[Transaction],
         initial_buy_lots: Iterable[BuyLot] | Sequence[BuyLot],
         end_period_price: Decimal,
+        type: str = "both",
     ) -> TransactionStats:
         buy_lots = [
             BuyLot(volume=i.volume, price=i.price, timestamp=i.timestamp)
@@ -252,14 +262,17 @@ class TransactionStatsService:
             total_sell_cost,
             end_period_price,
             sell_details,
+            type=type,
         )
 
-    def compute_stats(self, current_price: Decimal | None = None) -> TransactionStats:
+    def compute_stats(self, current_price: Decimal | None = None, type: str = "both") -> TransactionStats:
         current_price = current_price or self._get_current_price()
+        print("CURRENT PRICE 2", current_price )
         return self._compute_from_transactions(
             transactions=self.transactions,
             initial_buy_lots=[],
             end_period_price=current_price,
+            type=type,
         )
 
     def compute_stats_in_period(
@@ -267,6 +280,7 @@ class TransactionStatsService:
         start: datetime | None = None,
         end: datetime | None = None,
         end_period_price: Decimal | None = None,
+        type: str = "both",
     ) -> TransactionStats:
         """
         Compute stats for transactions inside a time window [start, end].
@@ -281,6 +295,7 @@ class TransactionStatsService:
                 end_period_price = self._get_price_at(end)
             else:
                 end_period_price = self._get_current_price()
+        print("END PERIOD PRICE 1", end_period_price )
 
         # Calculate state before the period (transactions strictly before `start`),
         # using price=0 so we only get the resulting buy lots (virtual lots).
@@ -289,7 +304,7 @@ class TransactionStatsService:
         else:
             pre_txs = [t for t in self.transactions if t.timestamp < start]
 
-        pre_stats = self._compute_from_transactions(pre_txs, [], Decimal(0))
+        pre_stats = self._compute_from_transactions(pre_txs, [], Decimal(0), type=type)
 
         # Recreate BuyLot instances from pre_stats (FIFO order)
         pre_lots = [
@@ -311,6 +326,7 @@ class TransactionStatsService:
             transactions=window_txs,
             initial_buy_lots=pre_lots,
             end_period_price=end_period_price,
+            type=type,
         )
 
 
@@ -339,15 +355,15 @@ class MultiInstrumentsTransactionStatsService:
         }
 
     def compute_stats(
-        self, start: datetime | None = None, end: datetime | None = None
+        self, start: datetime | None = None, end: datetime | None = None, type: str= "both" 
     ) -> TransactionStatsDict:
         """Compute stats for all instruments, optionally within a time window."""
         stats = TransactionStatsDict()
         if start or end:
             for ticker, service in self.transaction_stats_services.items():
-                stats[ticker] = service.compute_stats_in_period(start=start, end=end)
+                stats[ticker] = service.compute_stats_in_period(start=start, end=end, type=type)
         else:
             for ticker, service in self.transaction_stats_services.items():
-                stats[ticker] = service.compute_stats()
+                stats[ticker] = service.compute_stats(type=type)
 
         return stats

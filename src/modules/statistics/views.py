@@ -364,9 +364,10 @@ class TransactionHistoryView(generics.RetrieveAPIView):
 
     def retrieve(self, request, *args, **kwargs):
         parameters = TransactionHistoryQueryParams(data=request.query_params)
+        print(parameters)
         parameters.is_valid(raise_exception=True)
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
-        position_type = parameters.validated_data.get("type", "both")
+        position_type = parameters.validated_data.get("type", "open")
         tickers_names = parameters.validated_data.get("tickers", [])
         if tickers_names:
             tickers = Instrument.objects.filter(ticker__in=tickers_names)
@@ -384,17 +385,11 @@ class TransactionHistoryView(generics.RetrieveAPIView):
         stats_service = MultiInstrumentsTransactionStatsService(
             investor=investor, instruments=tickers
         )
-        stats_map = stats_service.compute_stats()
+        stats_map = stats_service.compute_stats(type=position_type)
 
         positions = []
         for ticker in tickers:
             ticker_symbol = ticker.ticker.upper()
-
-            if position_type == "open" and ticker_symbol not in asset_allocations_map:
-                continue
-
-            if position_type == "closed" and ticker_symbol in asset_allocations_map:
-                continue
 
             ticker_transactions = transactions.filter(
                 ticker__ticker=ticker_symbol
@@ -421,6 +416,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 market_value = asset_allocations_map[ticker_symbol].total_value
 
             stat = stats_map[ticker_symbol]
+            print("STAT", stat)
             position = {
                 "symbol": ticker_symbol,
                 "name": ticker.name,
@@ -428,7 +424,7 @@ class TransactionHistoryView(generics.RetrieveAPIView):
                 "quantity": quantity,
                 "market_value": round(market_value, 2),
                 "gain": round(stat.total_gain, 2),
-                "gain_percentage": round(Decimal(stat.total_gain_pct), 2)
+                "gain_percentage": round(stat.total_gain_pct, 2)
                 if stat.total_gain_pct is not None
                 else None,
                 "history": history,
