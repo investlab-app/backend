@@ -1,8 +1,7 @@
 import decimal
 from datetime import datetime
 from time import sleep
-
-from django.db.models.signals import post_delete, post_save
+from uuid import UUID
 
 from modules.graph_lang.framework.scheduler import Scheduler
 from modules.graph_lang.models import Graph
@@ -13,32 +12,36 @@ from modules.transactions.models import Transaction
 class SchedulerUpdater:
     stop = False
 
+    graph_ids: dict[UUID, datetime]
+    transaction_ids: list[UUID]
+
     def __init__(
         self, scheduler, latest_price_service: LatestPriceService | None = None
     ):
-        self._latest_price_service = latest_price_service
+        self._latest_price_service = latest_price_service or LatestPriceService()
         self.scheduler = scheduler or Scheduler()
+
+        self.graph_ids = {}
+        self.transaction_ids = []
+        self._check_new_graphs()
+        self._fill_transactions()
 
         self._pre_step_callback = None
         self._post_step_callback = None
-        self.get_all_graphs()
-        post_save.connect(self.handle_graph_save, sender=Graph)
-        post_delete.connect(self.handle_graph_delete, sender=Graph)
-        post_save.connect(self.handle_transaction_execution, sender=Transaction)
         self.last_prices = {}
         self.received_prices = {}
-
-    def get_all_graphs(self):
-        ids = Graph.objects.values_list("id", flat=True)
-        for id_ in ids:
-            self.scheduler.add_graph(id_)
 
     def run(self):
         while not self.stop:
             if self._pre_step_callback:
                 self._pre_step_callback()
 
+            self._check_new_graphs()
+            self._check_updated_graphs()
+            self._check_removed_graphs()
+            self._check_new_transactions()
             self._check_prices()
+
             now = datetime.now()
             next_step = self.scheduler.get_max_idle_datetime()
             sleep((next_step - now).seconds)
@@ -47,38 +50,60 @@ class SchedulerUpdater:
             if self._post_step_callback:
                 self._post_step_callback()
 
+    def _check_new_graphs(self):
+        current_ids = self.graph_ids.keys()
+        new_graphs = Graph.objects.exclude(id__in=current_ids)
+
+        for graph in new_graphs:
+            self.graph_ids[graph.id] = graph.updated_at
+            self.scheduler.add_graph(graph.id)
+
+    def _fill_transactions(self):
+        for t in Transaction.objects.all():
+            self.transaction_ids.append(t.id)
+
+    def _check_updated_graphs(self):
+        current_ids = self.graph_ids.keys()
+        current_graphs = Graph.objects.filter(id__in=current_ids)
+
+        for graph in current_graphs:
+            if graph.updated_at != self.graph_ids[graph.id]:
+                self.graph_ids[graph.id] = graph.updated_at
+                self.scheduler.update_graph(graph.id)
+
+    def _check_removed_graphs(self):
+        removed_ids = []
+        for id_ in self.graph_ids:
+            if not Graph.objects.filter(id=id_).exists():
+                self.scheduler.remove_graph(id_)
+                removed_ids.append(id_)
+
+        for id_ in removed_ids:
+            self.graph_ids.pop(id_)
+
+    def _check_new_transactions(self):
+        new_transactions = Transaction.objects.exclude(id__in=self.transaction_ids)
+        for transaction in new_transactions:
+            self.transaction_ids.append(transaction.id)
+            if transaction.is_buy:
+                self.scheduler.buy_executed(
+                    transaction.investor.id,
+                    transaction.ticker.ticker,
+                    transaction.volume,
+                )
+            else:
+                self.scheduler.sell_executed(
+                    transaction.investor.id,
+                    transaction.ticker.ticker,
+                    transaction.volume,
+                )
+
     def _check_prices(self):
         prices = self._latest_price_service.get_prices()
         if self.last_prices != prices:
             self.last_prices = prices
-            prices = {p: decimal.Decimal(prices[p].close) for p in prices}
+            prices = {p: decimal.Decimal(prices[p]) for p in prices}
             self.scheduler.price_changed(prices)
-
-    def handle_graph_save(self, sender, instance, created, **kwargs):
-        if created:
-            self.scheduler.add_graph(instance.id)
-        else:
-            self.scheduler.update_graph(instance.id)
-
-    def handle_graph_delete(self, instance, **kwargs):
-        self.scheduler.remove_graph(instance.id)
-
-    def handle_transaction_execution(
-        self, sender, instance: Transaction, created, **kwargs
-    ):
-        if created:
-            if instance.is_buy:
-                self.scheduler.buy_executed(
-                    instance.investor.id,
-                    instance.ticker.id,
-                    instance.price,
-                )
-            else:
-                self.scheduler.sell_executed(
-                    instance.investor.id,
-                    instance.ticker.id,
-                    instance.price,
-                )
 
     def set_post_step_callback(self, callback):
         self._post_step_callback = callback

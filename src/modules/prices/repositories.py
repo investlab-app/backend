@@ -36,6 +36,7 @@ class PolygonPricesRepository:
                 timespan=interval.lower(),
                 from_=start_date,
                 to=end_date,
+                limit=50000,
             )
         except BadResponse:
             return None

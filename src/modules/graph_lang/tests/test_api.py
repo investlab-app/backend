@@ -255,9 +255,14 @@ class TestGraphResultView:
 
         assert response.json()["results"] == []
 
-    def create_transaction_effect(self, graph, success, instrument, is_buy, amount):
+    def create_transaction_effect(
+        self, graph, success, instrument, is_buy, amount, action_price
+    ):
         transaction_effect = BuySellEffect.objects.create(
-            instrument=instrument, is_buy=is_buy, amount=amount
+            instrument=instrument,
+            is_buy=is_buy,
+            amount=amount,
+            action_price=action_price,
         )
         GraphEffect.objects.create(
             graph=graph, success=success, effect=transaction_effect
@@ -279,6 +284,7 @@ class TestGraphResultView:
             instrument=instrument,
             is_buy=True,
             amount=40,
+            action_price=10,
         )
 
         response = api_client_auth.get(self.url()).json()
@@ -288,8 +294,9 @@ class TestGraphResultView:
         assert result["effect"] == {
             "instrument": {"ticker": "AAPL"},
             "is_buy": True,
-            "amount": "40.000000000000000",
+            "amount": 40.0,
             "effect_type": "transaction",
+            "action_price": 10.0,
         }
         assert result["success"] is True
 
@@ -325,6 +332,7 @@ class TestGraphResultView:
             success=True,
             instrument=instrument,
             is_buy=True,
+            action_price=50,
             amount=40,
         )
 

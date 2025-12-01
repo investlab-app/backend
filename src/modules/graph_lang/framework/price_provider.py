@@ -42,7 +42,7 @@ class PriceProvider:
         self,
         repository: PolygonPricesRepository | None = None,
         latest_price_service: LatestPriceService | None = None,
-        samples=100,
+        samples=1000,
     ):
         self.repository = repository or PolygonPricesRepository()
         self.latest_price_service = latest_price_service or LatestPriceService()
@@ -78,7 +78,9 @@ class PriceProvider:
         date_range = self.fetched_ranges[ticker]
         if date_at < date_range[0] or date_at > date_range[1]:
             raise ValueError(
-                f"Price of {ticker} accessed outside of prefetched timerange"
+                f"Price of {ticker} accessed outside of prefetched timerange."
+                f"Prefetched ranges: {self.fetched_ranges}"
+                f"Accessed date: {date_at}"
             )
 
         return self._select_closest_price(ticker, date_at)

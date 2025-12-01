@@ -80,7 +80,7 @@ class ActionHandler:
         self, investor: Investor, graph: Graph, action: BuySellForPriceAction
     ):
         prices = self._latest_price_service.get_prices()
-        volume = action.price / prices[action.ticker].close
+        volume = action.price / prices[action.ticker]
         self._try_create_market_order(
             investor=investor,
             graph=graph,
@@ -120,6 +120,9 @@ class ActionHandler:
         *,
         is_buy: bool,
     ):
+        action_price = self._latest_price_service.get_prices().get(
+            ticker.upper(), Decimal(0)
+        )
         with transaction.atomic():
             instrument = Instrument.objects.get(ticker__iexact=ticker)
 
@@ -139,6 +142,7 @@ class ActionHandler:
                 instrument=instrument,
                 is_buy=is_buy,
                 amount=volume,
+                action_price=action_price,
             )
             GraphEffect.objects.create(
                 graph=graph, success=success, effect=effect_detail

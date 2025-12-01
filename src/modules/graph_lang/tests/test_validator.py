@@ -34,16 +34,16 @@ class TestValidator:
     @pytest.fixture(autouse=True)
     def setup(self):
         factory = MockNodeFactory()
-        factory.set_type("EmptyNode", EmptyNode)
-        factory.set_type("EnumInputNode", EnumInputNode)
-        factory.set_type("NumberInputChangeSourceNode", NumberInputChangeSourceNode)
-        factory.set_type("NumberInputNode", NumberInputNode)
-        factory.set_type("NumberInputOutputNode", NumberInputOutputNode)
-        factory.set_type("NumberOutputNode", NumberOutputNode)
-        factory.set_type("TriggerNode", TriggerNode)
-        factory.set_type("TwoBoolInputNode", TwoBoolInputNode)
-        factory.set_type("TypeMismatchNode", TypeMismatchNode)
-        factory.set_type("SingleInputNeededNode", SingleInputNeededNode)
+        factory.set_type("EmptyNode", EmptyNode)  # ty: ignore
+        factory.set_type("EnumInputNode", EnumInputNode)  # ty: ignore
+        factory.set_type("NumberInputChangeSourceNode", NumberInputChangeSourceNode)  # ty: ignore
+        factory.set_type("NumberInputNode", NumberInputNode)  # ty: ignore
+        factory.set_type("NumberInputOutputNode", NumberInputOutputNode)  # ty: ignore
+        factory.set_type("NumberOutputNode", NumberOutputNode)  # ty: ignore
+        factory.set_type("TriggerNode", TriggerNode)  # ty: ignore
+        factory.set_type("TwoBoolInputNode", TwoBoolInputNode)  # ty: ignore
+        factory.set_type("TypeMismatchNode", TypeMismatchNode)  # ty: ignore
+        factory.set_type("SingleInputNeededNode", SingleInputNeededNode)  # ty: ignore
         self.validator = Validator(factory)  # ty: ignore[invalid-argument-type]
 
     def run(self, data):

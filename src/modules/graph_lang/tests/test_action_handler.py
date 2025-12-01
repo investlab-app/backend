@@ -38,6 +38,7 @@ class TestActionHandlerBase:
             notification_service=self.notification_service,
             latest_price_service=self.latest_price_mock,
         )
+        self.latest_price_mock.get_prices.return_value = {"AAPL": Decimal(10)}
 
     def handle_default(self, action_set):
         self.handler.handle(
@@ -48,7 +49,7 @@ class TestActionHandlerBase:
         ohlc_prices = {}
         for key, value in prices.items():
             ohlc_prices[key] = get_fake_price_bar(close=value)
-        self.latest_price_mock.get_prices.return_value = ohlc_prices
+        self.latest_price_mock.get_prices.return_value = prices
 
     def set_assets(self, volume):
         Asset.objects.create(

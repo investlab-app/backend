@@ -138,10 +138,12 @@ class RunGraphResultSerializer(serializers.Serializer):
 class GraphTransactionEffectSerializer(serializers.ModelSerializer):
     instrument = InstrumentNameSerializer()
     effect_type = serializers.SerializerMethodField()
+    amount = serializers.FloatField()
+    action_price = serializers.FloatField()
 
     class Meta:
         model = BuySellEffect
-        fields = ["instrument", "is_buy", "amount", "effect_type"]
+        fields = ["instrument", "is_buy", "amount", "action_price", "effect_type"]
 
     def get_effect_type(self, obj) -> str:
         return "transaction"

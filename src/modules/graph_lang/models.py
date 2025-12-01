@@ -32,6 +32,7 @@ class BuySellEffect(BaseModel):
     instrument = models.ForeignKey(Instrument, on_delete=models.CASCADE)
     is_buy = models.BooleanField()
     amount = models.DecimalField(max_digits=30, decimal_places=15)
+    action_price = models.DecimalField(max_digits=30, decimal_places=15)
 
 
 class NotificationEffect(BaseModel):
