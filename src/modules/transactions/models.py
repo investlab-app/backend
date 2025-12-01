@@ -40,3 +40,13 @@ class Transaction(BaseModel):
 
     def __str__(self):
         return f"Transaction {self.id}"
+
+
+class PartialTransaction(BaseModel):
+    buy_transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="buy"
+    )
+    sell_transaction = models.ForeignKey(
+        Transaction, on_delete=models.CASCADE, related_name="sell", null=True
+    )
+    volume = models.DecimalField(max_digits=30, decimal_places=15)
