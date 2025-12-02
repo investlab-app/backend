@@ -72,11 +72,14 @@ class InstrumentWithPriceSerializer(InstrumentListSerializer):
     def get_price_info(self, obj: Instrument):
         # Prefer a pre-fetched snapshot map in context to avoid N calls
         snapshot_map: dict | None = self.context.get("snapshot_map")
-        if not snapshot_map:
+        if snapshot_map is None:
             raise serializers.ValidationError("Serializer context missing snapshot_map")
 
         ticker = obj.ticker.upper()
-        return PriceDailySummarySerializer(snapshot_map.get(ticker)).data
+
+        return PriceDailySummarySerializer(
+            snapshot_map.get(ticker), context=self.context
+        ).data
 
     def get_is_watched(self, obj: Instrument) -> bool:
         investor: Investor | None = self.context.get("investor")
