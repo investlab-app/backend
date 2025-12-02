@@ -1,3 +1,7 @@
+from collections import defaultdict
+from contextlib import suppress
+from decimal import Decimal
+
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics
 from rest_framework.request import Request
@@ -14,6 +18,7 @@ from modules.prices.serializers import (
     PriceDailySummarySerializer,
     PricesListQueryParams,
 )
+from modules.prices.services import LatestPriceService
 
 
 class PricesBarsView(generics.GenericAPIView):
@@ -53,7 +58,18 @@ class PricesListView(generics.GenericAPIView):
         repository = PolygonPricesRepository()
         prices = repository.get_prices(tickers=tickers_list)
 
-        serializer = self.get_serializer(instance=prices, many=True)
+        latest_price_service = LatestPriceService()
+        latest_prices_map = defaultdict(lambda: Decimal(1))
+
+        with suppress(Exception):
+            latest_prices = latest_price_service.get_prices()
+            for t, p in latest_prices.items():
+                if t in tickers_list:
+                    latest_prices_map[t] = p
+
+        serializer = self.get_serializer(
+            instance=prices, many=True, context={"latest_prices_map": latest_prices_map}
+        )
         return Response(serializer.data)
 
 
@@ -62,9 +78,22 @@ class PricesRetrieveView(generics.GenericAPIView):
 
     @extend_schema(operation_id="prices_retrieve")
     def get(self, request: Request, ticker: str) -> Response:
+        ticker = ticker.upper()
         repository = PolygonPricesRepository()
         prices = repository.get_price(ticker=ticker)
-        serializer = self.get_serializer(instance=prices)
+
+        latest_price_service = LatestPriceService()
+
+        latest_prices_map = {ticker: Decimal(1)}
+        with suppress(Exception):
+            latest_prices = latest_price_service.get_prices_default_dict(
+                lambda: Decimal(1)
+            )
+            latest_prices_map[ticker] = latest_prices[ticker]
+
+        serializer = self.get_serializer(
+            instance=prices, context={"latest_prices_map": latest_prices_map}
+        )
         return Response(serializer.data)
 
 
