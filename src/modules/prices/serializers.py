@@ -1,5 +1,4 @@
-from collections import defaultdict
-from decimal import Decimal
+from typing import TYPE_CHECKING
 
 from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
@@ -13,6 +12,10 @@ from modules.notifications.serializers import (
 from modules.prices.constants import POLYGON_INTERVALS
 from modules.prices.models import PriceAlert
 from modules.prices.schemas import PriceBar, PriceDailySummary
+
+if TYPE_CHECKING:
+    from collections import defaultdict
+    from decimal import Decimal
 
 
 class PriceBarsQueryParams(serializers.Serializer):
