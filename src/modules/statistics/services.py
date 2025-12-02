@@ -124,7 +124,7 @@ class TransactionStatsService:
         return cls(qs, ticker=instrument.ticker, **kwargs)
 
     def _get_current_price(self) -> Decimal:
-        prices = self.lastest_price_service.get_prices_default_dict()
+        prices = self.lastest_price_service.get_prices()
         return prices[self.ticker]
 
     def _get_price_at(self, timestamp: datetime) -> Decimal:
@@ -356,16 +356,31 @@ class MultiInstrumentsTransactionStatsService:
             for instrument in self.instruments
         }
 
+    def _get_prices_at(self, timestamp: datetime) -> dict[str, Decimal]:
+        prices = self.polygon_prices_repository.get_prices_at(
+            self.instruments, timestamp
+        )
+        if prices is None:
+            raise ValueError(f"Prices for {self.instruments} at {timestamp} not found")
+        return {inst.ticker: price for inst, price in prices.items()}
+
+    def _get_current_prices(self) -> dict[str, Decimal]:
+        return self.lastest_price_service.get_prices()
+
     def compute_stats(
         self, start: datetime | None = None, end: datetime | None = None
     ) -> TransactionStatsDict:
         """Compute stats for all instruments, optionally within a time window."""
         stats = TransactionStatsDict()
         if start or end:
+            prices = self._get_prices_at(end)
             for ticker, service in self.transaction_stats_services.items():
-                stats[ticker] = service.compute_stats_in_period(start=start, end=end)
+                stats[ticker] = service.compute_stats_in_period(
+                    start=start, end=end, end_period_price=prices[ticker]
+                )
         else:
+            prices = self._get_current_prices()
             for ticker, service in self.transaction_stats_services.items():
-                stats[ticker] = service.compute_stats()
+                stats[ticker] = service.compute_stats(current_price=prices[ticker])
 
         return stats
