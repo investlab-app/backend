@@ -412,6 +412,10 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: watched
+        schema:
+          type: boolean
       tags:
       - instruments
       security:
@@ -512,6 +516,10 @@ paths:
         description: A search term.
         schema:
           type: string
+      - in: query
+        name: watched
+        schema:
+          type: boolean
       tags:
       - instruments
       security:

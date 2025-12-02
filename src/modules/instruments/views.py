@@ -3,12 +3,15 @@ from contextlib import suppress
 from decimal import Decimal
 
 from django.shortcuts import get_object_or_404
+from django_filters.rest_framework import DjangoFilterBackend
 from drf_spectacular.utils import OpenApiParameter, extend_schema
-from rest_framework import filters, generics
+from rest_framework import generics
+from rest_framework.filters import SearchFilter
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
 from modules.core.filters import NullsLastOrderingFilter
+from modules.instruments.filters import InstrumentFilterSet
 from modules.instruments.models import Instrument
 from modules.instruments.serializers import (
     AllTickersSerializer,
@@ -24,7 +27,12 @@ from modules.prices.services import LatestPriceService
 class InstrumentsListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentListSerializer
-    filter_backends = [filters.SearchFilter, NullsLastOrderingFilter]
+    filterset_class = InstrumentFilterSet
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        NullsLastOrderingFilter,
+    ]
     search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
     ordering_fields = ["ticker", "name", "market_cap"]
 
@@ -78,7 +86,12 @@ class InstrumentsRetrieveView(generics.GenericAPIView):
 class InstrumentsWithPricesListView(generics.ListAPIView):
     queryset = Instrument.objects.all()
     serializer_class = InstrumentWithPriceSerializer
-    filter_backends = [filters.SearchFilter, NullsLastOrderingFilter]
+    filterset_class = InstrumentFilterSet
+    filter_backends = [
+        DjangoFilterBackend,
+        SearchFilter,
+        NullsLastOrderingFilter,
+    ]
     search_fields = ["ticker", "name", "cik", "composite_figi", "share_class_figi"]
     ordering_fields = ["ticker", "name", "market_cap"]
 
