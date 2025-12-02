@@ -58,9 +58,7 @@ def test_price_bar_view(ohlc_mock, api_client_auth):
 
 @patch("modules.prices.views.PolygonPricesRepository.get_prices")
 @patch("modules.prices.views.LatestPriceService.get_prices")
-def test_price_list_view(
-    get_latest_prices_mock, get_prices_mock, api_client_auth
-):
+def test_price_list_view(get_latest_prices_mock, get_prices_mock, api_client_auth):
     url = reverse("prices-list")
 
     get_prices_mock.return_value = [
