@@ -106,11 +106,11 @@ class MostTradedItemSerializer(serializers.Serializer):
     # TransactionStats.sell_transactions
     sells = serializers.IntegerField()
 
-    # TransactionStats.gain
-    gain = serializers.FloatField()
+    # TransactionStats.avg_gain
+    avg_gain = serializers.FloatField()
 
-    # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField(allow_null=True)
+    # TransactionStats.avg_loss
+    avg_loss = serializers.FloatField()
 
 
 class TransactionHistoryQueryParams(serializers.Serializer):
