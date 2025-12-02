@@ -144,7 +144,7 @@ class ExecutiveTransactionService:
             buy_transaction__investor=investor,
             buy_transaction__ticker=instrument,
         )
-    
+
     @staticmethod
     def get_closed_partials(investor, instrument):
         return PartialTransaction.objects.filter(
@@ -152,7 +152,7 @@ class ExecutiveTransactionService:
             buy_transaction__investor=investor,
             buy_transaction__ticker=instrument,
         )
-    
+
     @staticmethod
     def _close_partial_transaction(
         sell: Transaction, partial_transaction: PartialTransaction

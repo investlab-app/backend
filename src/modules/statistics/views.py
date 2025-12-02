@@ -24,7 +24,10 @@ from modules.statistics.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
-from modules.statistics.services import MultiInstrumentsTransactionStatsService, StatsNew
+from modules.statistics.services import (
+    MultiInstrumentsTransactionStatsService,
+    StatsNew,
+)
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
@@ -363,40 +366,51 @@ class TransactionHistoryView(generics.RetrieveAPIView):
     pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
-        parameters = TransactionHistoryQueryParams(data=request.query_params)
-        print(parameters)
-        parameters.is_valid(raise_exception=True)
-        investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
-        position_type = parameters.validated_data.get("type", "open")
-        tickers_names = parameters.validated_data.get("tickers", [])
-        if tickers_names:
-            tickers = Instrument.objects.filter(ticker__in=tickers_names)
-        else:
-            tickers = get_investor_tickers(investor)
+        try:
+            parameters = TransactionHistoryQueryParams(data=request.query_params)
+            parameters.is_valid(raise_exception=True)
+            investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
+            position_type = parameters.validated_data.get("type", "open")
+            tickers_names = parameters.validated_data.get("tickers", [])
+            if tickers_names:
+                tickers = Instrument.objects.filter(ticker__in=tickers_names)
+            else:
+                tickers = get_investor_tickers(investor)
 
-        stats_service = StatsNew()
-        positions = []
-        for ticker in tickers:
-            history = stats_service.get_position_history(
-                open=(position_type != "closed"), investor=investor, instrument=ticker
-            )
-            summary = stats_service.get_position_summary(
-                open=(position_type != "closed"), investor=investor, instrument=ticker
-            )
-            position = {
-                "symbol": summary["symbol"],
-                "name": ticker.name,
-                "icon": (icon if (icon := ticker.icon) else None),
-                "quantity": summary["quantity"],
-                "value": summary["value"],
-                "gain": summary["gain"],
-                "gain_percentage": summary["gain_percentage"],
-                "history": history,
-            }
-            positions.append(position)
+            stats_service = StatsNew()
+            positions = []
+            for ticker in tickers:
+                history = stats_service.get_position_history(
+                    is_open=(position_type != "closed"),
+                    investor=investor,
+                    instrument=ticker,
+                )
+                if not history:
+                    continue
+                summary = stats_service.get_position_summary(
+                    is_open=(position_type != "closed"),
+                    investor=investor,
+                    instrument=ticker,
+                )
+                position = {
+                    "symbol": summary["symbol"],
+                    "name": ticker.name,
+                    "icon": (icon if (icon := ticker.icon) else None),
+                    "quantity": summary["quantity"],
+                    "value": summary["value"],
+                    "gain": summary["gain"],
+                    "gain_percentage": summary["gain_percentage"],
+                    "history": history,
+                }
+                positions.append(position)
 
-        serializer = self.get_serializer(positions, many=True)
-        return Response(serializer.data)
+            serializer = self.get_serializer(positions, many=True)
+            return Response(serializer.data)
+        except Exception as _:
+            return Response(
+                {"detail": "An error occurred while retrieving transaction history."},
+                status=500,
+            )
 
     @extend_schema(
         parameters=[TransactionHistoryQueryParams],

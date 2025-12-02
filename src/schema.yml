@@ -1985,17 +1985,32 @@ components:
           format: decimal
           pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Number of shares traded
+        final_transaction_value:
+          type: number
+          format: double
+          description: Value of the transaction at closing or current market price
         final_share_price:
           type: number
           format: double
-          description: Price per share at the time of transaction
+          description: Price per share at the time of sell transaction or current
+            market price
         initial_share_price:
           type: number
           format: double
-          nullable: true
-          description: Acquisition price (null for SELL transactions)
+          description: Price per share at the time of buy transaction
+        gain:
+          type: number
+          format: double
+          description: Gain or loss from this transaction
+        gain_percentage:
+          type: number
+          format: double
+          description: Gain or loss percentage from this transaction
       required:
       - final_share_price
+      - final_transaction_value
+      - gain
+      - gain_percentage
       - initial_share_price
       - quantity
       - timestamp
