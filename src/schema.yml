@@ -2554,17 +2554,16 @@ components:
           type: integer
         sells:
           type: integer
-        gain:
+        avg_gain:
           type: number
           format: double
-        gain_percentage:
+        avg_loss:
           type: number
           format: double
-          nullable: true
       required:
+      - avg_gain
+      - avg_loss
       - buys
-      - gain
-      - gain_percentage
       - no_trades
       - sells
       - symbol

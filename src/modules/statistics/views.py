@@ -332,10 +332,8 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
                     "no_trades": buy_transactions_count + sell_transactions_count,
                     "buys": buy_transactions_count,
                     "sells": sell_transactions_count,
-                    "gain": round(stat.total_gain, 2),
-                    "gain_percentage": round(stat.total_gain_pct, 2)
-                    if stat.total_gain_pct is not None
-                    else None,
+                    "avg_gain": round(stat.avg_gain, 2),
+                    "avg_loss": round(stat.avg_loss, 2),
                 }
             )
 
