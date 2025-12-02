@@ -138,6 +138,22 @@ class ExecutiveTransactionService:
         )
 
     @staticmethod
+    def get_open_partials(investor, instrument):
+        return PartialTransaction.objects.filter(
+            sell_transaction__isnull=True,
+            buy_transaction__investor=investor,
+            buy_transaction__ticker=instrument,
+        )
+    
+    @staticmethod
+    def get_closed_partials(investor, instrument):
+        return PartialTransaction.objects.filter(
+            sell_transaction__isnull=False,
+            buy_transaction__investor=investor,
+            buy_transaction__ticker=instrument,
+        )
+    
+    @staticmethod
     def _close_partial_transaction(
         sell: Transaction, partial_transaction: PartialTransaction
     ):

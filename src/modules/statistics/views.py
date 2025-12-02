@@ -24,7 +24,7 @@ from modules.statistics.serializers import (
     TradingOverviewSerializer,
     TransactionHistoryQueryParams,
 )
-from modules.statistics.services import MultiInstrumentsTransactionStatsService
+from modules.statistics.services import MultiInstrumentsTransactionStatsService, StatsNew
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
@@ -374,59 +374,23 @@ class TransactionHistoryView(generics.RetrieveAPIView):
         else:
             tickers = get_investor_tickers(investor)
 
-        transactions = Transaction.objects.filter(investor=investor).select_related(
-            "ticker"
-        )
-        asset_allocations = InvestorStatsService().get_asset_allocation(investor)
-        asset_allocations_map = {
-            aa.asset.ticker.ticker.upper(): aa for aa in asset_allocations
-        }
-
-        stats_service = MultiInstrumentsTransactionStatsService(
-            investor=investor, instruments=tickers
-        )
-        stats_map = stats_service.compute_stats(type=position_type)
-
+        stats_service = StatsNew()
         positions = []
         for ticker in tickers:
-            ticker_symbol = ticker.ticker.upper()
-
-            ticker_transactions = transactions.filter(
-                ticker__ticker=ticker_symbol
-            ).order_by("-timestamp")
-
-            history = []
-            for transaction in ticker_transactions:
-                history_entry = {
-                    "timestamp": transaction.timestamp,
-                    "is_buy": transaction.is_buy,
-                    "quantity": transaction.volume,
-                    "share_price": round(transaction.price, 2),
-                    "acquisition_price": (
-                        round(transaction.volume * transaction.price, 2)
-                        if transaction.is_buy
-                        else 0
-                    ),
-                }
-                history.append(history_entry)
-
-            quantity, market_value = 0, 0
-            if ticker_symbol in asset_allocations_map:
-                quantity = asset_allocations_map[ticker_symbol].asset.volume
-                market_value = asset_allocations_map[ticker_symbol].total_value
-
-            stat = stats_map[ticker_symbol]
-            print("STAT", stat)
+            history = stats_service.get_position_history(
+                open=(position_type != "closed"), investor=investor, instrument=ticker
+            )
+            summary = stats_service.get_position_summary(
+                open=(position_type != "closed"), investor=investor, instrument=ticker
+            )
             position = {
-                "symbol": ticker_symbol,
+                "symbol": summary["symbol"],
                 "name": ticker.name,
                 "icon": (icon if (icon := ticker.icon) else None),
-                "quantity": quantity,
-                "market_value": round(market_value, 2),
-                "gain": round(stat.total_gain, 2),
-                "gain_percentage": round(stat.total_gain_pct, 2)
-                if stat.total_gain_pct is not None
-                else None,
+                "quantity": summary["quantity"],
+                "value": summary["value"],
+                "gain": summary["gain"],
+                "gain_percentage": summary["gain_percentage"],
                 "history": history,
             }
             positions.append(position)

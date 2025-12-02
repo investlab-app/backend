@@ -12,6 +12,7 @@ from modules.investors.models import Investor
 from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.services import LatestPriceService
 from modules.statistics.utils import get_investor_tickers
+from modules.transactions.services import ExecutiveTransactionService
 from modules.transactions.models import Transaction
 
 # Set higher precision for Decimal operations
@@ -367,3 +368,64 @@ class MultiInstrumentsTransactionStatsService:
                 stats[ticker] = service.compute_stats(type=type)
 
         return stats
+
+
+class StatsNew:
+    def __init__(
+        self,
+        lastest_price_service: LatestPriceService | None = None,
+    ):
+        self.lastest_price_service = lastest_price_service or LatestPriceService()
+
+    def get_position_history(self, open: bool, investor: Investor, instrument: Instrument):
+        price = self.lastest_price_service.get_prices()[instrument.ticker]
+        if open:
+            partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
+        else:
+            partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
+
+        history = []
+        for partial in partials:
+            transaction = partial.buy_transaction
+            history_entry = {
+                "timestamp": transaction.timestamp,
+                "quantity":  partial.volume,
+                "final_share_price": (
+                    round(partial.sell_transaction.price, 2)
+                    if partial.sell_transaction is not None
+                    else round(price, 2)
+                ),
+                "initial_share_price": round(transaction.price, 2)
+            }
+            history.append(history_entry)
+        return history
+    
+    def get_position_summary(self, open, investor: Investor, instrument: Instrument):
+        price = self.lastest_price_service.get_prices()[instrument.ticker]
+        if open:
+            partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
+        else:
+            partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
+
+        total_quantity = Decimal(0)
+        total_cost = Decimal(0)
+        total_sell_value = Decimal(0)
+        for partial in partials:
+            transaction = partial.buy_transaction
+            total_quantity += partial.volume
+            total_cost += partial.volume * transaction.price
+            if partial.sell_transaction is not None:
+                total_sell_value += partial.volume * partial.sell_transaction.price
+        
+        value = total_quantity * price if open else total_sell_value
+        gain = value - total_cost
+        gain_percentage = (gain / total_cost * 100) if total_cost > 0 else None
+
+        summary = {
+            "symbol": instrument.ticker,
+            "quantity": total_quantity,
+            "value": round(value, 2),
+            "gain": round(gain, 2),
+            "gain_percentage": round(gain_percentage, 2) if gain_percentage is not None else None,
+        }
+        return summary
