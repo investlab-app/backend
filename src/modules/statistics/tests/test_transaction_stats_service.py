@@ -19,6 +19,11 @@ def instrument(instruments_factory):
 
 
 @pytest.fixture
+def instrument_2(instruments_factory):
+    return instruments_factory(ticker="FOO")
+
+
+@pytest.fixture
 def mock_latest_price_service(monkeypatch):
     """Mock LatestPriceService.get_prices_default_dict()"""
 
@@ -26,11 +31,14 @@ def mock_latest_price_service(monkeypatch):
         def get_prices_default_dict(self):
             return {"TTWO": Decimal(210), "FOO": Decimal(60)}
 
+        def get_prices(self):
+            return {"TTWO": Decimal(210), "FOO": Decimal(60)}
+
     return MockLatestPriceService()
 
 
 @pytest.fixture
-def mock_polygon_price_repository(monkeypatch):
+def mock_polygon_price_repository(monkeypatch, instrument, instrument_2):
     """Mock PolygonPricesRepository.get_price_at()"""
 
     class MockPolygonPricesRepository:
@@ -40,6 +48,9 @@ def mock_polygon_price_repository(monkeypatch):
             elif ticker == "FOO":
                 return Decimal(50)
             return None
+
+        def get_prices_at(self, tickers, timestamp):
+            return {instrument: Decimal(190), instrument_2: Decimal(50)}
 
     return MockPolygonPricesRepository()
 
