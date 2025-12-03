@@ -9,7 +9,6 @@ def test_auth_with_valid_authorization_header(
     factory,
     user_from_payload,
     mock_clerk,
-    mock_django_cache,
 ):
     request = factory.get("/test", HTTP_AUTHORIZATION="Bearer mock.token")
     auth = ClerkAuthentication()
