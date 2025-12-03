@@ -457,16 +457,29 @@ class StatsNew:
         total_quantity = Decimal(0)
         total_cost = Decimal(0)
         total_sell_value = Decimal(0)
+        gain_sum = Decimal(0)
+        loss_sum = Decimal(0)
+        gain_count = 0
+        loss_count = 0
         for partial in partials:
             transaction = partial.buy_transaction
             total_quantity += partial.volume
             total_cost += partial.volume * transaction.price
             if partial.sell_transaction is not None:
                 total_sell_value += partial.volume * partial.sell_transaction.price
+                if gain > 0:
+                    gain_sum += gain
+                    gain_count += 1
+                elif gain < 0:
+                    loss_sum += gain
+                    loss_count += 1
+
 
         value = total_quantity * price if is_open else total_sell_value
         gain = value - total_cost
         gain_percentage = (gain / total_cost * 100) if total_cost > 0 else None
+        avg_gain = gain_sum / gain_count if gain_count > 0 else Decimal(0)
+        avg_loss = -(loss_sum / loss_count) if loss_count > 0 else Decimal(0)
 
         summary = {
             "symbol": instrument.ticker,
@@ -476,5 +489,7 @@ class StatsNew:
             "gain_percentage": round(gain_percentage, 2)
             if gain_percentage is not None
             else None,
+            "avg_gain": round(avg_gain, 2),
+            "avg_loss": round(avg_loss, 2),
         }
         return summary

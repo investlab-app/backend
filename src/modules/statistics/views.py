@@ -215,17 +215,15 @@ class OwnedSharesView(generics.RetrieveAPIView):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         is_service = InvestorStatsService()
         asset_allocations = is_service.get_asset_allocation(investor=investor)
-        instruments = [aa.asset.ticker for aa in asset_allocations]
-        tr_stats_service = MultiInstrumentsTransactionStatsService(
-            investor=investor, instruments=instruments
-        )
-        stats_map = tr_stats_service.compute_stats()
+        stats_service = StatsNew()
+
 
         data = []
         for asset_allocation in asset_allocations:
             instrument = asset_allocation.asset.ticker
-            ticker_key = str(instrument.ticker)
-            stat = stats_map[ticker_key]
+            summary = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=instrument
+            )
 
             data.append(
                 {
@@ -235,10 +233,8 @@ class OwnedSharesView(generics.RetrieveAPIView):
                     "icon": instrument.icon,
                     "volume": round(asset_allocation.asset.volume, 5),
                     "value": round(asset_allocation.total_value, 2),
-                    "gain": round(stat.total_gain, 2),
-                    "gain_percentage": round(Decimal(stat.total_gain_pct), 2)
-                    if stat.total_gain_pct is not None
-                    else None,
+                    "gain": summary["gain"], 
+                    "gain_percentage": summary["gain_percentage"],
                 }
             )
 
@@ -303,10 +299,12 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
+        stats_service = StatsNew()
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
+        transactions = Transaction.objects.filter(investor=investor)
         instruments_by_transaction_count = (
-            Transaction.objects.filter(investor=investor)
+            transactions
             .values("ticker")
             .annotate(count=Count("id"))
             .order_by("-count")[:10]
@@ -314,24 +312,22 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
         instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        transactions = Transaction.objects.filter(investor=investor)
-
         data = []
-        for ticker, stat in stats.items():
-            instrument_transactions = transactions.filter(ticker__ticker=ticker)
+        for instrument in instruments:
+            instrument_transactions = transactions.filter(ticker__ticker=instrument.ticker)
             buy_transactions_count = instrument_transactions.filter(is_buy=True).count()
             sell_transactions_count = instrument_transactions.filter(
                 is_buy=False
             ).count()
-
+            summary = stats_service.get_position_summary(is_open=False, investor=investor, instrument=instrument)
             data.append(
                 {
-                    "symbol": ticker,
+                    "symbol": instrument.ticker,
                     "no_trades": buy_transactions_count + sell_transactions_count,
                     "buys": buy_transactions_count,
                     "sells": sell_transactions_count,
-                    "avg_gain": round(stat.avg_gain, 2),
-                    "avg_loss": round(stat.avg_loss, 2),
+                    "avg_gain": round(summary["avg_gain"], 2),
+                    "avg_loss": round(summary["avg_loss"], 2),
                 }
             )
 
