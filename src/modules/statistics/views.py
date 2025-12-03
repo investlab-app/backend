@@ -314,11 +314,6 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
         instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
         instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        stats_service = MultiInstrumentsTransactionStatsService(
-            investor=investor, instruments=instruments
-        )
-        stats = stats_service.compute_stats()
-
         transactions = Transaction.objects.filter(investor=investor)
 
         data = []
