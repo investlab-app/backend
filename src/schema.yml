@@ -2966,8 +2966,8 @@ components:
         value:
           type: number
           format: double
-          description: Current market value for open positions or total sell value
-            for closed positions
+          description: Current market value for open positions or total sell valuefor
+            closed positions
         gain:
           type: number
           format: double

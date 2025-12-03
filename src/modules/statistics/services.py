@@ -434,6 +434,7 @@ class StatsNew:
             partials = ExecutiveTransactionService.get_closed_partials(
                 investor, instrument
             )
+        print(partials)
 
         history = []
         for partial in partials:
