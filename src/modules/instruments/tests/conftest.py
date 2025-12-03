@@ -26,16 +26,19 @@ def create_fake_instrument(
     locale = locale or random.choice(LocaleChoices.choices)[0]
     active = active if active is not None else True
 
-    instrument = Instrument(
+    instrument, created = Instrument.objects.get_or_create(
         ticker=ticker,
-        name=name,
-        market=market,
-        locale=locale,
-        active=active,
-        **kwargs,
+        defaults={
+            "name": name,
+            "market": market,
+            "locale": locale,
+            "active": active,
+            **kwargs,
+        },
     )
-    if save:
+    if save and not created:
         instrument.save()
+
     return instrument
 
 
