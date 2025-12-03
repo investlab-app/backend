@@ -406,6 +406,22 @@ class StatsNew:
     ):
         self.lastest_price_service = lastest_price_service or LatestPriceService()
 
+    def get_open_partials_from_date(self, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
+        """Get open partials, optionally filtered by start date."""
+        partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
+        if start_date:
+            partials = partials.filter(buy_transaction__timestamp__gte=start_date)
+        return partials
+
+    def get_closed_partials_from_date(self, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
+        """Get closed partials, optionally filtered by start date."""
+        partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
+        if start_date:
+            partials = partials.filter(buy_transaction__timestamp__gte=start_date)
+        return partials
+
+
+
     def get_position_history(
         self, is_open: bool, investor: Investor, instrument: Instrument
     ):
@@ -443,16 +459,12 @@ class StatsNew:
             history.append(history_entry)
         return history
 
-    def get_position_summary(self, is_open, investor: Investor, instrument: Instrument):
+    def get_position_summary(self, is_open, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
-            partials = ExecutiveTransactionService.get_open_partials(
-                investor, instrument
-            )
+            partials = self.get_open_partials_from_date(investor, instrument, start_date)
         else:
-            partials = ExecutiveTransactionService.get_closed_partials(
-                investor, instrument
-            )
+            partials = self.get_closed_partials_from_date(investor, instrument, start_date)
 
         total_quantity = Decimal(0)
         total_cost = Decimal(0)
@@ -466,7 +478,9 @@ class StatsNew:
             total_quantity += partial.volume
             total_cost += partial.volume * transaction.price
             if partial.sell_transaction is not None:
-                total_sell_value += partial.volume * partial.sell_transaction.price
+                sell_value = partial.volume * partial.sell_transaction.price
+                total_sell_value += sell_value
+                gain = sell_value - (partial.volume * transaction.price)
                 if gain > 0:
                     gain_sum += gain
                     gain_count += 1
@@ -491,5 +505,6 @@ class StatsNew:
             else None,
             "avg_gain": round(avg_gain, 2),
             "avg_loss": round(avg_loss, 2),
+            "total_cost": round(total_cost, 2),
         }
         return summary

@@ -25,9 +25,9 @@ from modules.statistics.serializers import (
     TransactionHistoryQueryParams,
 )
 from modules.statistics.services import (
-    MultiInstrumentsTransactionStatsService,
     StatsNew,
 )
+from modules.statistics.utils import get_investor_tickers
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
@@ -47,13 +47,34 @@ class InvestorStatsView(generics.RetrieveAPIView):
         today = get_local_datetime()
         start_datetime = today - timedelta(days=1)
 
-        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
-        stats_today = stats_service.compute_stats(start=start_datetime)
-        todays_gain = stats_today.sum_attribute("total_gain")
+        stats_service = StatsNew()
+        tickers = get_investor_tickers(investor)
+        
+        # Calculate today's gain
+        todays_gain = Decimal(0)
+        for ticker in tickers:
+            summary_today = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=ticker, start_date=start_datetime
+            )
+            todays_gain += Decimal(str(summary_today["gain"]))
 
-        stats_total = stats_service.compute_stats()
-        total_gain = stats_total.sum_attribute("total_gain")
-        invested = stats_total.sum_attribute("total_buy_cost")
+        # Calculate total stats
+        total_gain = Decimal(0)
+        invested = Decimal(0)
+        for ticker in tickers:
+            # Get gain from closed positions
+            summary_closed = stats_service.get_position_summary(
+                is_open=False, investor=investor, instrument=ticker
+            )
+            total_gain += Decimal(str(summary_closed["gain"]))
+            invested += Decimal(str(summary_closed["total_cost"]))
+            
+            # Get gain from open positions  
+            summary_open = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=ticker
+            )
+            total_gain += Decimal(str(summary_open["gain"]))
+            invested += Decimal(str(summary_open["total_cost"]))
 
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
@@ -90,12 +111,27 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
 
-        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
-        stats_today = stats_service.compute_stats()
-        total_gain = stats_today.sum_attribute("total_gain")
-        total_gain_pct = stats_today.calculate_total_gain_pct()
-        if total_gain_pct is not None and total_gain_pct > 9999.99:
-            total_gain_pct = Decimal("9999.99")
+        stats_service = StatsNew()
+        tickers = get_investor_tickers(investor)
+        
+        # Calculate total gain and total cost for gain percentage
+        total_gain = Decimal(0)
+        total_cost = Decimal(0)
+        
+        for ticker in tickers:
+            summary = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=ticker
+            )
+            total_gain += Decimal(str(summary["gain"]))
+            total_cost += Decimal(str(summary["total_cost"]))
+        
+        # Calculate gain percentage
+        if total_cost > 0:
+            total_gain_pct = (total_gain / total_cost) * 100
+            if total_gain_pct > 9999.99:
+                total_gain_pct = Decimal("9999.99")
+        else:
+            total_gain_pct = None
 
         response = {
             "total_account_value": round(total_value, 2),
@@ -135,9 +171,24 @@ class AssetAllocationView(generics.RetrieveAPIView):
 
         today = get_local_datetime()
         year_ago = today - timedelta(days=365)
-        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
-        stats_last_year = stats_service.compute_stats(start=year_ago)
-        total_gain_this_year = stats_last_year.sum_attribute("total_gain")
+        
+        stats_service = StatsNew()
+        tickers = get_investor_tickers(investor)
+        
+        # Calculate total gain this year
+        total_gain_this_year = Decimal(0)
+        for ticker in tickers:
+            # Get gain from closed positions this year
+            summary_closed = stats_service.get_position_summary(
+                is_open=False, investor=investor, instrument=ticker, start_date=year_ago
+            )
+            total_gain_this_year += Decimal(str(summary_closed["gain"]))
+            
+            # Get gain from open positions (bought this year)
+            summary_open = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=ticker, start_date=year_ago
+            )
+            total_gain_this_year += Decimal(str(summary_open["gain"]))
 
         is_service = InvestorStatsService()
         total_value = is_service.get_total_assets_value(investor=investor)
@@ -260,9 +311,18 @@ class TradingOverviewView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
-        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
-        stats = stats_service.compute_stats()
-        total_gain = stats.sum_attribute("total_gain")
+        stats_service = StatsNew()
+        tickers = get_investor_tickers(investor)
+        
+        # Calculate total gain (both open and closed positions)
+        total_gain = Decimal(0)
+        for ticker in tickers:
+            # Get gain from closed positions
+            summary_closed = stats_service.get_position_summary(
+                is_open=False, investor=investor, instrument=ticker
+            )
+            total_gain += Decimal(str(summary_closed["gain"]))
+
 
         investor_tr = Transaction.objects.filter(investor=investor)
         buy_tr = investor_tr.filter(is_buy=True).count()
