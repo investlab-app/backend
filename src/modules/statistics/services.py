@@ -372,11 +372,7 @@ class MultiInstrumentsTransactionStatsService:
     ) -> TransactionStatsDict:
         """Compute stats for all instruments, optionally within a time window."""
         stats = TransactionStatsDict()
-
-        if end:
-            prices = self._get_prices_at(end)
-        else:
-            prices = self._get_current_prices()
+        prices = self._get_prices_at(end) if end else self._get_current_prices()
 
         if start or end:
             for ticker, service in self.transaction_stats_services.items():
