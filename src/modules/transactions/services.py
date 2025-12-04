@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
 from modules.investors.models import Asset
@@ -79,7 +80,7 @@ class ExecutiveTransactionService:
     def _check_for_enough_assets(investor, instrument, volume):
         try:
             asset = Asset.objects.get(investor=investor, ticker=instrument)
-        except Exception:
+        except ObjectDoesNotExist:
             raise ValueError("Investor doesn't have enough assets") from None
 
         if asset.volume < volume:
