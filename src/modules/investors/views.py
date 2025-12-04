@@ -195,7 +195,7 @@ class DepositMoneyView(generics.GenericAPIView):
         investor, _ = Investor.objects.get_or_create(clerk_id=user_clerk_id)
         deposit_last_24h = (
             DepositHistory.objects.filter(investor=investor)
-            .deposited_last_24h()
+            .deposited_last_24h()  # ty: ignore
             .sum_amount()
         )
 

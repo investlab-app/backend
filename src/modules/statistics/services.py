@@ -179,10 +179,6 @@ class TransactionStatsService:
         )
         total_gain = realized_gain + unrealized_gain
         if total_buy_cost:
-            print("TOTAL BUY COST", total_buy_cost)
-            print("TOTAL SELL COST", total_sell_cost)
-            print("UNREALIZED GAIN", unrealized_gain)
-            print("summary_type", summary_type)
             if summary_type == "open":
                 total_gain_pct = 100 * unrealized_gain / (total_buy_cost)
             elif summary_type == "closed":
@@ -190,10 +186,9 @@ class TransactionStatsService:
                     100 * (total_sell_cost - total_buy_cost) / total_buy_cost
                 )
             else:
-                total_gain_pct = None
-            print("TOTAL GAIN PCT", total_gain_pct)
+                total_gain_pct = 0
         else:
-            total_gain_pct = None
+            total_gain_pct = 0
 
         remaining_lifo_order = [
             {
@@ -290,7 +285,6 @@ class TransactionStatsService:
         self, current_price: Decimal | None = None, summary_type: str = "both"
     ) -> TransactionStats:
         current_price = current_price or self._get_current_price()
-        print("CURRENT PRICE 2", current_price)
         return self._compute_from_transactions(
             transactions=self.transactions,
             initial_buy_lots=[],
@@ -318,7 +312,6 @@ class TransactionStatsService:
                 end_period_price = self._get_price_at(end)
             else:
                 end_period_price = self._get_current_price()
-        print("END PERIOD PRICE 1", end_period_price)
 
         # Calculate state before the period (transactions strictly before `start`),
         # using price=0 so we only get the resulting buy lots (virtual lots).
@@ -435,7 +428,6 @@ class StatsNew:
             partials = ExecutiveTransactionService.get_closed_partials(
                 investor, instrument
             )
-        print(partials)
 
         history = []
         for partial in partials:
