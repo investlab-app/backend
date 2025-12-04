@@ -26,8 +26,8 @@ from modules.statistics.serializers import (
 )
 from modules.statistics.services import (
     StatsNew,
+    MultiInstrumentsTransactionStatsService,
 )
-from modules.statistics.utils import get_investor_tickers
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
 
@@ -47,34 +47,13 @@ class InvestorStatsView(generics.RetrieveAPIView):
         today = get_local_datetime()
         start_datetime = today - timedelta(days=1)
 
-        stats_service = StatsNew()
-        tickers = get_investor_tickers(investor)
-        
-        # Calculate today's gain
-        todays_gain = Decimal(0)
-        for ticker in tickers:
-            summary_today = stats_service.get_position_summary(
-                is_open=True, investor=investor, instrument=ticker, start_date=start_datetime
-            )
-            todays_gain += Decimal(str(summary_today["gain"]))
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
+        stats_today = stats_service.compute_stats(start=start_datetime)
+        todays_gain = stats_today.sum_attribute("total_gain")
 
-        # Calculate total stats
-        total_gain = Decimal(0)
-        invested = Decimal(0)
-        for ticker in tickers:
-            # Get gain from closed positions
-            summary_closed = stats_service.get_position_summary(
-                is_open=False, investor=investor, instrument=ticker
-            )
-            total_gain += Decimal(str(summary_closed["gain"]))
-            invested += Decimal(str(summary_closed["total_cost"]))
-            
-            # Get gain from open positions  
-            summary_open = stats_service.get_position_summary(
-                is_open=True, investor=investor, instrument=ticker
-            )
-            total_gain += Decimal(str(summary_open["gain"]))
-            invested += Decimal(str(summary_open["total_cost"]))
+        stats_total = stats_service.compute_stats()
+        total_gain = stats_total.sum_attribute("total_gain")
+        invested = stats_total.sum_attribute("total_buy_cost")
 
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
@@ -111,27 +90,12 @@ class CurrentAccountValueView(generics.RetrieveAPIView):
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)
 
-        stats_service = StatsNew()
-        tickers = get_investor_tickers(investor)
-        
-        # Calculate total gain and total cost for gain percentage
-        total_gain = Decimal(0)
-        total_cost = Decimal(0)
-        
-        for ticker in tickers:
-            summary = stats_service.get_position_summary(
-                is_open=True, investor=investor, instrument=ticker
-            )
-            total_gain += Decimal(str(summary["gain"]))
-            total_cost += Decimal(str(summary["total_cost"]))
-        
-        # Calculate gain percentage
-        if total_cost > 0:
-            total_gain_pct = (total_gain / total_cost) * 100
-            if total_gain_pct > 9999.99:
-                total_gain_pct = Decimal("9999.99")
-        else:
-            total_gain_pct = None
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
+        stats_today = stats_service.compute_stats()
+        total_gain = stats_today.sum_attribute("total_gain")
+        total_gain_pct = stats_today.calculate_total_gain_pct()
+        if total_gain_pct is not None and total_gain_pct > 9999.99:
+            total_gain_pct = Decimal("9999.99")
 
         response = {
             "total_account_value": round(total_value, 2),
@@ -171,24 +135,9 @@ class AssetAllocationView(generics.RetrieveAPIView):
 
         today = get_local_datetime()
         year_ago = today - timedelta(days=365)
-        
-        stats_service = StatsNew()
-        tickers = get_investor_tickers(investor)
-        
-        # Calculate total gain this year
-        total_gain_this_year = Decimal(0)
-        for ticker in tickers:
-            # Get gain from closed positions this year
-            summary_closed = stats_service.get_position_summary(
-                is_open=False, investor=investor, instrument=ticker, start_date=year_ago
-            )
-            total_gain_this_year += Decimal(str(summary_closed["gain"]))
-            
-            # Get gain from open positions (bought this year)
-            summary_open = stats_service.get_position_summary(
-                is_open=True, investor=investor, instrument=ticker, start_date=year_ago
-            )
-            total_gain_this_year += Decimal(str(summary_open["gain"]))
+        stats_service = MultiInstrumentsTransactionStatsService(investor=investor)
+        stats_last_year = stats_service.compute_stats(start=year_ago)
+        total_gain_this_year = stats_last_year.sum_attribute("total_gain")
 
         is_service = InvestorStatsService()
         total_value = is_service.get_total_assets_value(investor=investor)
@@ -254,6 +203,7 @@ class AssetAllocationView(generics.RetrieveAPIView):
         return super().get(request, *args, **kwargs)
 
 
+
 class OwnedSharesView(generics.RetrieveAPIView):
     """
     Get owned shares data for the current authenticated user.
@@ -266,17 +216,14 @@ class OwnedSharesView(generics.RetrieveAPIView):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         is_service = InvestorStatsService()
         asset_allocations = is_service.get_asset_allocation(investor=investor)
-        instruments = [aa.asset.ticker for aa in asset_allocations]
-        tr_stats_service = MultiInstrumentsTransactionStatsService(
-            investor=investor, instruments=instruments
-        )
-        stats_map = tr_stats_service.compute_stats()
+        stats_service = StatsNew()
 
         data = []
         for asset_allocation in asset_allocations:
             instrument = asset_allocation.asset.ticker
-            ticker_key = str(instrument.ticker)
-            stat = stats_map[ticker_key]
+            summary = stats_service.get_position_summary(
+                is_open=True, investor=investor, instrument=instrument
+            )
 
             data.append(
                 {
@@ -286,10 +233,8 @@ class OwnedSharesView(generics.RetrieveAPIView):
                     "icon": instrument.icon,
                     "volume": round(asset_allocation.asset.volume, 5),
                     "value": round(asset_allocation.total_value, 2),
-                    "gain": round(stat.total_gain, 2),
-                    "gain_percentage": round(Decimal(stat.total_gain_pct), 2)
-                    if stat.total_gain_pct is not None
-                    else None,
+                    "gain": summary["gain"],
+                    "gain_percentage": summary["gain_percentage"],
                 }
             )
 
@@ -316,17 +261,9 @@ class TradingOverviewView(generics.RetrieveAPIView):
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
         stats_service = StatsNew()
-        tickers = get_investor_tickers(investor)
-        
-        # Calculate total gain (both open and closed positions)
-        total_gain = Decimal(0)
-        for ticker in tickers:
-            # Get gain from closed positions
-            summary_closed = stats_service.get_position_summary(
-                is_open=False, investor=investor, instrument=ticker
-            )
-            total_gain += Decimal(str(summary_closed["gain"]))
-
+        total_gain = stats_service.get_total_gain(
+            investor=investor,
+        )
 
         investor_tr = Transaction.objects.filter(investor=investor)
         buy_tr = investor_tr.filter(is_buy=True).count()
@@ -336,7 +273,7 @@ class TradingOverviewView(generics.RetrieveAPIView):
             "total_trades": buy_tr + sell_tr,
             "buys": buy_tr,
             "sells": sell_tr,
-            "total_gain": round(total_gain, 2),
+            "total_gain": total_gain,
         }
 
         serializer = self.get_serializer(response)
@@ -363,40 +300,38 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     pagination_class = None
 
     def retrieve(self, request, *args, **kwargs):
+        stats_service = StatsNew()
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
 
+        transactions = Transaction.objects.filter(investor=investor)
         instruments_by_transaction_count = (
-            Transaction.objects.filter(investor=investor)
-            .values("ticker")
+            transactions.values("ticker")
             .annotate(count=Count("id"))
             .order_by("-count")[:10]
         )
         instrument_ids = [str(i["ticker"]) for i in instruments_by_transaction_count]
         instruments = list(Instrument.objects.filter(id__in=instrument_ids))
 
-        stats_service = MultiInstrumentsTransactionStatsService(
-            investor=investor, instruments=instruments
-        )
-        stats = stats_service.compute_stats()
-
-        transactions = Transaction.objects.filter(investor=investor)
-
         data = []
-        for ticker, stat in stats.items():
-            instrument_transactions = transactions.filter(ticker__ticker=ticker)
+        for instrument in instruments:
+            instrument_transactions = transactions.filter(
+                ticker__ticker=instrument.ticker
+            )
             buy_transactions_count = instrument_transactions.filter(is_buy=True).count()
             sell_transactions_count = instrument_transactions.filter(
                 is_buy=False
             ).count()
-
+            summary = stats_service.get_position_summary(
+                is_open=False, investor=investor, instrument=instrument
+            )
             data.append(
                 {
-                    "symbol": ticker,
+                    "symbol": instrument.ticker,
                     "no_trades": buy_transactions_count + sell_transactions_count,
                     "buys": buy_transactions_count,
                     "sells": sell_transactions_count,
-                    "avg_gain": round(stat.avg_gain, 2),
-                    "avg_loss": round(stat.avg_loss, 2),
+                    "avg_gain": round(summary["avg_gain"], 2),
+                    "avg_loss": round(summary["avg_loss"], 2),
                 }
             )
 
@@ -413,6 +348,8 @@ class MostTradedOverviewView(generics.RetrieveAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
+
+
 class TransactionHistoryView(generics.RetrieveAPIView):
     """
     Get transaction history for the current authenticated user.
@@ -435,23 +372,19 @@ class TransactionHistoryView(generics.RetrieveAPIView):
 
             stats_service = StatsNew()
             positions = []
-            print(tickers)
             for ticker in tickers:
                 history = stats_service.get_position_history(
                     is_open=(position_type != "closed"),
                     investor=investor,
                     instrument=ticker,
                 )
-                 
                 if not history:
                     continue
-                print(history)
                 summary = stats_service.get_position_summary(
                     is_open=(position_type != "closed"),
                     investor=investor,
                     instrument=ticker,
                 )
-                print(summary)
                 position = {
                     "symbol": summary["symbol"],
                     "name": ticker.name,

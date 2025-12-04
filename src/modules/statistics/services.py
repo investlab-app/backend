@@ -419,24 +419,36 @@ class StatsNew:
     ):
         self.lastest_price_service = lastest_price_service or LatestPriceService()
 
-    def get_open_partials_from_date(self, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
+    def get_open_partials_from_date(
+        self,
+        investor: Investor,
+        instrument: Instrument,
+        start_date: datetime | None = None,
+    ):
         """Get open partials, optionally filtered by start date."""
         partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
         if start_date:
             partials = partials.filter(buy_transaction__timestamp__gte=start_date)
         return partials
 
-    def get_closed_partials_from_date(self, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
+    def get_closed_partials_from_date(
+        self,
+        investor: Investor,
+        instrument: Instrument,
+        start_date: datetime | None = None,
+    ):
         """Get closed partials, optionally filtered by start date."""
         partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
         if start_date:
             partials = partials.filter(buy_transaction__timestamp__gte=start_date)
         return partials
 
-
-
     def get_position_history(
-        self, is_open: bool, investor: Investor, instrument: Instrument
+        self,
+        investor: Investor,
+        instrument: Instrument,
+        *,
+        is_open: bool,
     ):
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
@@ -473,12 +485,22 @@ class StatsNew:
             history.append(history_entry)
         return history
 
-    def get_position_summary(self, is_open, investor: Investor, instrument: Instrument, start_date: datetime | None = None):
+    def get_position_summary(
+        self,
+        is_open,
+        investor: Investor,
+        instrument: Instrument,
+        start_date: datetime | None = None,
+    ):
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
-            partials = self.get_open_partials_from_date(investor, instrument, start_date)
+            partials = self.get_open_partials_from_date(
+                investor, instrument, start_date
+            )
         else:
-            partials = self.get_closed_partials_from_date(investor, instrument, start_date)
+            partials = self.get_closed_partials_from_date(
+                investor, instrument, start_date
+            )
 
         total_quantity = Decimal(0)
         total_cost = Decimal(0)
@@ -502,7 +524,6 @@ class StatsNew:
                     loss_sum += gain
                     loss_count += 1
 
-
         value = total_quantity * price if is_open else total_sell_value
         gain = value - total_cost
         gain_percentage = (gain / total_cost * 100) if total_cost > 0 else None
@@ -522,3 +543,20 @@ class StatsNew:
             "total_cost": round(total_cost, 2),
         }
         return summary
+
+    def get_total_gain(
+        self,
+        investor: Investor,
+    ):
+        tickers = get_investor_tickers(investor)
+        total_gain = Decimal(0)
+
+        for ticker in tickers:
+            summary = self.get_position_summary(
+                is_open=False,
+                investor=investor,
+                instrument=ticker,
+            )
+            total_gain += Decimal(str(summary["gain"]))
+
+        return round(total_gain, 2)
