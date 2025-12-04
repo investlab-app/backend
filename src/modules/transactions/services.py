@@ -35,7 +35,6 @@ class ExecutiveTransactionService:
             PartialTransaction.objects.create(
                 buy_transaction=buy_transaction, volume=params.volume
             )
-
             params.investor.balance -= total_cost
             params.investor.save()
 
@@ -133,7 +132,7 @@ class ExecutiveTransactionService:
     @staticmethod
     def get_open_partials(investor, instrument):
         return PartialTransaction.objects.filter(
-            sell_transaction__isnull=True,
+            sell_transaction=None,
             buy_transaction__investor=investor,
             buy_transaction__ticker=instrument,
         )

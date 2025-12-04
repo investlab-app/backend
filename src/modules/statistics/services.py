@@ -419,30 +419,6 @@ class StatsNew:
     ):
         self.lastest_price_service = lastest_price_service or LatestPriceService()
 
-    def get_open_partials_from_date(
-        self,
-        investor: Investor,
-        instrument: Instrument,
-        start_date: datetime | None = None,
-    ):
-        """Get open partials, optionally filtered by start date."""
-        partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
-        if start_date:
-            partials = partials.filter(buy_transaction__timestamp__gte=start_date)
-        return partials
-
-    def get_closed_partials_from_date(
-        self,
-        investor: Investor,
-        instrument: Instrument,
-        start_date: datetime | None = None,
-    ):
-        """Get closed partials, optionally filtered by start date."""
-        partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
-        if start_date:
-            partials = partials.filter(buy_transaction__timestamp__gte=start_date)
-        return partials
-
     def get_position_history(
         self,
         investor: Investor,
@@ -490,17 +466,12 @@ class StatsNew:
         is_open,
         investor: Investor,
         instrument: Instrument,
-        start_date: datetime | None = None,
     ):
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
-            partials = self.get_open_partials_from_date(
-                investor, instrument, start_date
-            )
+            partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
         else:
-            partials = self.get_closed_partials_from_date(
-                investor, instrument, start_date
-            )
+            partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
 
         total_quantity = Decimal(0)
         total_cost = Decimal(0)
@@ -526,7 +497,7 @@ class StatsNew:
 
         value = total_quantity * price if is_open else total_sell_value
         gain = value - total_cost
-        gain_percentage = (gain / total_cost * 100) if total_cost > 0 else None
+        gain_percentage = (gain / total_cost * 100) if total_cost > 0 else 0
         avg_gain = gain_sum / gain_count if gain_count > 0 else Decimal(0)
         avg_loss = -(loss_sum / loss_count) if loss_count > 0 else Decimal(0)
 
@@ -535,9 +506,7 @@ class StatsNew:
             "quantity": total_quantity,
             "value": round(value, 2),
             "gain": round(gain, 2),
-            "gain_percentage": round(gain_percentage, 2)
-            if gain_percentage is not None
-            else None,
+            "gain_percentage": round(gain_percentage, 2),
             "avg_gain": round(avg_gain, 2),
             "avg_loss": round(avg_loss, 2),
             "total_cost": round(total_cost, 2),
