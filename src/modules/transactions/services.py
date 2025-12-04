@@ -1,5 +1,6 @@
 from decimal import Decimal
 
+from django.core.exceptions import ObjectDoesNotExist
 from django.db import transaction
 
 from modules.investors.models import Asset
@@ -10,10 +11,6 @@ from modules.transactions.schemas import TransactionParams
 class ExecutiveTransactionService:
     @staticmethod
     def buy(params: TransactionParams):
-        if params.volume <= 0:
-            raise ValueError("Volume needs to be greater than 0")
-        if params.price_per_unit <= 0:
-            raise ValueError("Price needs to be greater than 0")
         total_cost = params.price_per_unit * params.volume
         if params.investor.balance < total_cost:
             raise ValueError("Investor doesn't have enough money")
@@ -49,10 +46,6 @@ class ExecutiveTransactionService:
         investor = params.investor
         instrument = params.instrument
         volume = params.volume
-        if volume <= 0:
-            raise ValueError("Volume needs to be greater than 0")
-        if params.price_per_unit <= 0:
-            raise ValueError("Price needs to be greater than 0")
 
         with transaction.atomic():
             asset = ExecutiveTransactionService._check_for_enough_assets(
@@ -79,7 +72,7 @@ class ExecutiveTransactionService:
     def _check_for_enough_assets(investor, instrument, volume):
         try:
             asset = Asset.objects.get(investor=investor, ticker=instrument)
-        except Exception:
+        except ObjectDoesNotExist:
             raise ValueError("Investor doesn't have enough assets") from None
 
         if asset.volume < volume:

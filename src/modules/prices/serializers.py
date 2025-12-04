@@ -1,3 +1,5 @@
+from typing import TYPE_CHECKING
+
 from rest_framework import serializers
 from rest_framework_dataclasses.serializers import DataclassSerializer
 
@@ -10,7 +12,10 @@ from modules.notifications.serializers import (
 from modules.prices.constants import POLYGON_INTERVALS
 from modules.prices.models import PriceAlert
 from modules.prices.schemas import PriceBar, PriceDailySummary
-from modules.prices.services import LatestPriceService
+
+if TYPE_CHECKING:
+    from collections import defaultdict
+    from decimal import Decimal
 
 
 class PriceBarsQueryParams(serializers.Serializer):
@@ -48,8 +53,14 @@ class PriceDailySummarySerializer(DataclassSerializer):
         dataclass = PriceDailySummary
 
     def get_current_price(self, obj: PriceDailySummary) -> str:
-        price = LatestPriceService().get_prices_default_dict()[obj.ticker]
-        return str(round(price, 2))
+        latest_prices_map: dict[str, Decimal] | defaultdict[str, Decimal] | None = (
+            self.context.get("latest_prices_map")
+        )
+        if latest_prices_map is None:
+            raise serializers.ValidationError(
+                "Serializer context missing latest_prices_map"
+            )
+        return str(round(latest_prices_map[obj.ticker], 2))
 
 
 class PriceAlertSerializer(serializers.ModelSerializer):

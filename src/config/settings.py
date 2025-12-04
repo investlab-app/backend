@@ -439,7 +439,11 @@ if not DEBUG:
         },
         "modules.instruments.tasks.sync_instruments_images": {
             "task": "modules.instruments.tasks.sync_instruments_images",
-            "schedule": crontab(day_of_week=3, hour=0),  # Every Wednesday at midnight
+            "schedule": crontab(
+                day_of_week=3,
+                hour=0,
+                minute=0,
+            ),  # Every Wednesday at midnight
         },
         "modules.investors.tasks.save_accounts_value_snapshot": {
             "task": "modules.investors.tasks.save_accounts_value_snapshot",
@@ -467,6 +471,12 @@ ADMIN_EMAIL = os.environ["ADMIN_EMAIL"]
 FROM_EMAIL = os.environ["FROM_EMAIL"]
 EMAIL_BACKEND = os.environ["EMAIL_BACKEND"]
 EMAIL_FILE_PATH = os.environ.get("EMAIL_FILE_PATH")
+EMAIL_HOST = os.environ.get("EMAIL_HOST", "smtp.gmail.com")
+EMAIL_PORT = int(os.environ.get("EMAIL_PORT", "587"))
+EMAIL_USE_TLS = str_to_bool(os.environ.get("EMAIL_USE_TLS", "True"))
+EMAIL_USE_SSL = str_to_bool(os.environ.get("EMAIL_USE_SSL", "False"))
+EMAIL_HOST_USER = os.environ.get("EMAIL_HOST_USER", "")
+EMAIL_HOST_PASSWORD = os.environ.get("EMAIL_HOST_PASSWORD", "")
 
 # Web Push
 VAPID_PRIVATE_KEY = os.environ["VAPID_PRIVATE_KEY"]

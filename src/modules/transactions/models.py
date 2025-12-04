@@ -46,13 +46,13 @@ class PartialTransaction(BaseModel):
     buy_transaction = models.ForeignKey(
         Transaction,
         on_delete=models.CASCADE,
-        related_name="buy",
+        related_name="partial_buys",
         verbose_name=_("Associated buy transaction"),
     )
     sell_transaction = models.ForeignKey(
         Transaction,
         on_delete=models.CASCADE,
-        related_name="sell",
+        related_name="partial_sells",
         null=True,
         verbose_name=_("Associated sell transaction"),
     )

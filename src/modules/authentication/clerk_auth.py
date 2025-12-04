@@ -2,7 +2,6 @@ from typing import Any
 
 from clerk_backend_api import AuthenticateRequestOptions
 from django.conf import settings
-from django.core.cache import cache
 from rest_framework.authentication import BaseAuthentication
 from rest_framework.exceptions import AuthenticationFailed
 from rest_framework.request import Request
@@ -20,22 +19,8 @@ class ClerkUser:
 
 def parse_clerk_user_from_payload(payload: dict[str, Any]) -> ClerkUser:
     clerk_user_id = payload.get("sub")
-    if not clerk_user_id:
-        raise AuthenticationFailed("User ID (sub) not found in token")
-
-    cache_key = f"clerk_user_{clerk_user_id}"
-    clerk_user = cache.get(cache_key)
-
-    if not clerk_user:
-        clerk_user = clerk_sdk.users.get(user_id=clerk_user_id)
-        cache.set(cache_key, clerk_user, timeout=300)
-
-    if not clerk_user:
-        raise AuthenticationFailed("Could not retrieve clerk user")
-
-    role = clerk_user.public_metadata.get("role", "user")
-    Investor.objects.update_or_create(clerk_id=clerk_user_id)
-    return ClerkUser(clerk_user_id, role)
+    role = payload.get("role", "user")
+    return ClerkUser(clerk_id=clerk_user_id, role=role)
 
 
 class ClerkAuthentication(BaseAuthentication):
@@ -54,13 +39,18 @@ class ClerkAuthentication(BaseAuthentication):
         )
 
         if not request_state.is_signed_in:
-            raise AuthenticationFailed("User is not authenticated")
+            raise AuthenticationFailed("User is not signed in")
 
         payload = request_state.payload
-
         if not payload:
-            raise AuthenticationFailed("User payload not found")
+            raise AuthenticationFailed("Token valid but payload missing")
 
         clerk_user = parse_clerk_user_from_payload(payload)
+
+        if not request.META.get("CLERK_INVESTOR_SYNCED"):
+            Investor.objects.get_or_create(clerk_id=clerk_user.id)
+            request.META["CLERK_INVESTOR_SYNCED"] = True
+
         token = request_state.token
+
         return clerk_user, token
