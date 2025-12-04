@@ -27,7 +27,6 @@ class PolygonMarketsRepository:
             return None
 
     def is_nasdaq_open(self) -> bool | None:
-        return True
         """Check if NASDAQ market is currently open."""
         status = self.get_market_status()
         if status is None:
