@@ -25,8 +25,8 @@ from modules.statistics.serializers import (
     TransactionHistoryQueryParams,
 )
 from modules.statistics.services import (
-    StatsNew,
     MultiInstrumentsTransactionStatsService,
+    StatsNew,
 )
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
@@ -201,7 +201,6 @@ class AssetAllocationView(generics.RetrieveAPIView):
     )
     def get(self, request: Request, *args, **kwargs) -> Response:
         return super().get(request, *args, **kwargs)
-
 
 
 class OwnedSharesView(generics.RetrieveAPIView):

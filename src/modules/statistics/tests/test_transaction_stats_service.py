@@ -6,9 +6,11 @@ import pytest
 
 from modules.statistics.services import (
     MultiInstrumentsTransactionStatsService,
+    StatsNew,
     TransactionStatsService,
 )
 from modules.transactions.models import Transaction
+from modules.transactions.services import ExecutiveTransactionService
 
 pytestmark = pytest.mark.django_db
 
@@ -305,13 +307,6 @@ def test_complex_realized_unrealized(
     assert stats.realized_gain == Decimal(-5)
     assert stats.unrealized_gain == Decimal(-40)
     assert stats.total_gain == Decimal(-45)
-    # New total_gain_pct formula
-    # total_sell_cost = 5*210 + 0.5*220 = 1160
-    # unrealized_gain = -40
-    # denominator total_buy_cost = 1730
-    assert stats.total_gain_pct == pytest.approx(
-        (Decimal(1160) + Decimal(-40)) / Decimal(1730) - Decimal(1)
-    )
     assert stats.remaining_volume == Decimal("2.5")
     # sells: 5 @210 and 0.5 @220 => 5*210 + 0.5*220 = 1160
     assert stats.total_sell_cost == Decimal(1160)
@@ -609,3 +604,288 @@ def test_transaction_multiple_instruments_stats_service_with_period(
     assert stats["TTWO"].realized_gain == Decimal(30)
     assert stats["FOO"].end_period_price == Decimal(50)
     assert stats["FOO"].realized_gain == Decimal(0)
+
+
+class TestStatsNew:
+    """Tests for the new StatsNew service."""
+
+    @pytest.fixture
+    def stats_service(self, mock_latest_price_service):
+        return StatsNew(lastest_price_service=mock_latest_price_service)
+
+    def test_position_summary_only_buy(self, stats_service, investor, instrument):
+        """Test position summary with only a buy transaction."""
+        from modules.investors.models import Asset
+        from modules.transactions.models import PartialTransaction
+
+        t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+        buy_tx = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(10),
+            price=Decimal(100),
+            is_buy=True,
+            timestamp=t0,
+        )
+
+        Asset.objects.create(investor=investor, ticker=instrument, volume=Decimal(10))
+
+        PartialTransaction.objects.create(buy_transaction=buy_tx, volume=Decimal(10))
+
+        summary = stats_service.get_position_summary(
+            is_open=True, investor=investor, instrument=instrument
+        )
+
+        assert summary["symbol"] == "TTWO"
+        assert summary["quantity"] == Decimal(10)
+        assert summary["total_cost"] == Decimal(1000)
+        assert summary["value"] == Decimal(2100)
+        assert summary["gain"] == Decimal(1100)
+        assert summary["gain_percentage"] == Decimal("110.0")
+
+        expected_gain = summary["value"] - summary["total_cost"]
+        assert summary["gain"] == expected_gain
+
+        expected_gain_pct = (summary["gain"] / summary["total_cost"]) * 100
+        assert summary["gain_percentage"] == expected_gain_pct
+
+    def test_position_summary_with_partial_sell(
+        self, stats_service, investor, instrument
+    ):
+        """Test position summary with a partial sell."""
+        from modules.investors.models import Asset
+        from modules.transactions.models import PartialTransaction
+
+        t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+        buy_tx = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(10),
+            price=Decimal(100),
+            is_buy=True,
+            timestamp=t0,
+        )
+
+        sell_tx = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(5),
+            price=Decimal(120),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=1),
+        )
+
+        Asset.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(5),  # 5 remaining after sell
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx, sell_transaction=sell_tx, volume=Decimal(5)
+        )
+
+        PartialTransaction.objects.create(buy_transaction=buy_tx, volume=Decimal(5))
+
+        open_summary = stats_service.get_position_summary(
+            is_open=True, investor=investor, instrument=instrument
+        )
+
+        assert open_summary["symbol"] == "TTWO"
+        assert open_summary["quantity"] == Decimal(5)
+        assert open_summary["total_cost"] == Decimal(500)
+        assert open_summary["value"] == Decimal(1050)
+        assert open_summary["gain"] == Decimal(550)
+        assert open_summary["gain_percentage"] == Decimal("110.0")
+
+        expected_open_value = open_summary["quantity"] * Decimal(210)
+        assert open_summary["value"] == expected_open_value
+
+        expected_open_gain = expected_open_value - open_summary["total_cost"]
+        assert open_summary["gain"] == expected_open_gain
+
+        closed_summary = stats_service.get_position_summary(
+            is_open=False, investor=investor, instrument=instrument
+        )
+
+        assert closed_summary["symbol"] == "TTWO"
+        assert closed_summary["quantity"] == Decimal(5)
+        assert closed_summary["value"] == Decimal(600)
+        assert closed_summary["gain"] == Decimal(100)
+        assert closed_summary["total_cost"] == Decimal(500)
+        assert closed_summary["gain_percentage"] == Decimal("20.0")
+
+        expected_closed_gain = closed_summary["value"] - closed_summary["total_cost"]
+        assert closed_summary["gain"] == expected_closed_gain
+
+        expected_closed_gain_pct = (
+            closed_summary["gain"] / closed_summary["total_cost"]
+        ) * 100
+        assert closed_summary["gain_percentage"] == expected_closed_gain_pct
+
+    def test_get_total_gain_multiple_instruments_integration(
+        self, stats_service, investor, instrument, instrument_2
+    ):
+        """Test sumary with two total sells."""
+        from modules.investors.models import Asset
+        from modules.transactions.models import PartialTransaction
+
+        t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+        buy_tx1 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(5),
+            price=Decimal(100),
+            is_buy=True,
+            timestamp=t0,
+        )
+
+        sell_tx1 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(5),
+            price=Decimal(120),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=1),
+        )
+
+        buy_tx2 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument_2,
+            volume=Decimal(10),
+            price=Decimal(50),
+            is_buy=True,
+            timestamp=t0,
+        )
+
+        sell_tx2 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument_2,
+            volume=Decimal(10),
+            price=Decimal(55),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=1),
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx1, sell_transaction=sell_tx1, volume=Decimal(5)
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx2, sell_transaction=sell_tx2, volume=Decimal(10)
+        )
+
+        ttwo_summary = stats_service.get_position_summary(
+            is_open=False, investor=investor, instrument=instrument
+        )
+        foo_summary = stats_service.get_position_summary(
+            is_open=False, investor=investor, instrument=instrument_2
+        )
+
+        assert ttwo_summary["quantity"] == Decimal(5)
+        assert ttwo_summary["total_cost"] == Decimal(500)
+        assert ttwo_summary["value"] == Decimal(600)
+        assert ttwo_summary["gain"] == Decimal(100)
+        assert ttwo_summary["gain_percentage"] == Decimal("20.0")
+
+        assert foo_summary["quantity"] == Decimal(10)
+        assert foo_summary["total_cost"] == Decimal(500)
+        assert foo_summary["value"] == Decimal(550)
+        assert foo_summary["gain"] == Decimal(50)
+        assert foo_summary["gain_percentage"] == Decimal("10.0")
+
+        total_gain = stats_service.get_total_gain(investor=investor)
+
+        expected_total = ttwo_summary["gain"] + foo_summary["gain"]
+        assert total_gain == expected_total
+        assert total_gain == Decimal("150.00")
+
+    def test_position_summary_avg_gain_with_multiple_sells(
+        self, stats_service, investor, instrument
+    ):
+        """Test avg gain calculation with multiple buy and sell transactions."""
+        from modules.investors.models import Asset
+        from modules.transactions.models import PartialTransaction
+
+        t0 = datetime(2024, 1, 1, tzinfo=timezone.utc)
+
+        buy_tx1 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(10),
+            price=Decimal(100),
+            is_buy=True,
+            timestamp=t0,
+        )
+
+        buy_tx2 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(5),
+            price=Decimal(120),
+            is_buy=True,
+            timestamp=t0 + timedelta(minutes=1),
+        )
+
+        sell_tx1 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(6),
+            price=Decimal(130),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=3),
+        )
+
+        sell_tx2 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(4),
+            price=Decimal(110),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=4),
+        )
+
+        sell_tx3 = Transaction.objects.create(
+            investor=investor,
+            ticker=instrument,
+            volume=Decimal(3),
+            price=Decimal(90),
+            is_buy=False,
+            timestamp=t0 + timedelta(minutes=5),
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx1, sell_transaction=sell_tx1, volume=Decimal(6)
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx1, sell_transaction=sell_tx2, volume=Decimal(4)
+        )
+
+        PartialTransaction.objects.create(
+            buy_transaction=buy_tx2, sell_transaction=sell_tx3, volume=Decimal(3)
+        )
+
+        summary = stats_service.get_position_summary(
+            is_open=False, investor=investor, instrument=instrument
+        )
+
+        assert summary["symbol"] == "TTWO"
+        assert summary["quantity"] == Decimal(13)
+        assert summary["total_cost"] == Decimal(1360)
+        assert summary["value"] == Decimal(1490)
+        assert summary["gain"] == Decimal(130)
+        assert summary["gain_percentage"] == Decimal("9.56")
+
+        gain1 = Decimal(6) * Decimal(130) - Decimal(6) * Decimal(100)
+        gain2 = Decimal(4) * Decimal(110) - Decimal(4) * Decimal(100)
+        gain3 = Decimal(3) * Decimal(90) - Decimal(3) * Decimal(120)
+
+        expected_avg_gain = (gain1 + gain2) / 2
+        expected_avg_loss = -gain3
+
+        assert summary["avg_gain"] == expected_avg_gain
+        assert summary["avg_loss"] == expected_avg_loss

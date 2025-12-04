@@ -174,8 +174,6 @@ class PositionSerializer(serializers.Serializer):
 
     gain = serializers.FloatField(help_text="Total gain or loss")
 
-    gain_percentage = serializers.FloatField(
-        help_text="Total gain or loss percentage"
-    )
+    gain_percentage = serializers.FloatField(help_text="Total gain or loss percentage")
 
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")

@@ -469,9 +469,13 @@ class StatsNew:
     ):
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
-            partials = ExecutiveTransactionService.get_open_partials(investor, instrument)
+            partials = ExecutiveTransactionService.get_open_partials(
+                investor, instrument
+            )
         else:
-            partials = ExecutiveTransactionService.get_closed_partials(investor, instrument)
+            partials = ExecutiveTransactionService.get_closed_partials(
+                investor, instrument
+            )
 
         total_quantity = Decimal(0)
         total_cost = Decimal(0)
