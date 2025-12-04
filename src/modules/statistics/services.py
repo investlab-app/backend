@@ -170,7 +170,6 @@ class TransactionStatsService:
         total_sell_cost: Decimal,
         end_period_price: Decimal,
         sell_details: list[SellDetail],
-        summary_type: str = "both",
     ) -> TransactionStats:
         remaining_volume = sum((i.volume for i in buy_lots), start=Decimal(0))
         unrealized_gain = sum(
@@ -179,16 +178,11 @@ class TransactionStatsService:
         )
         total_gain = realized_gain + unrealized_gain
         if total_buy_cost:
-            if summary_type == "open":
-                total_gain_pct = 100 * unrealized_gain / (total_buy_cost)
-            elif summary_type == "closed":
-                total_gain_pct = (
-                    100 * (total_sell_cost - total_buy_cost) / total_buy_cost
-                )
-            else:
-                total_gain_pct = 0
+            total_gain_pct = (
+                total_sell_cost + unrealized_gain
+            ) / total_buy_cost - Decimal(1)
         else:
-            total_gain_pct = 0
+            total_gain_pct = None
 
         remaining_lifo_order = [
             {
@@ -225,7 +219,6 @@ class TransactionStatsService:
         transactions: Iterable[Transaction],
         initial_buy_lots: Iterable[BuyLot] | Sequence[BuyLot],
         end_period_price: Decimal,
-        summary_type: str = "both",
     ) -> TransactionStats:
         buy_lots = [
             BuyLot(volume=i.volume, price=i.price, timestamp=i.timestamp)
@@ -278,18 +271,14 @@ class TransactionStatsService:
             total_sell_cost,
             end_period_price,
             sell_details,
-            summary_type=summary_type,
         )
 
-    def compute_stats(
-        self, current_price: Decimal | None = None, summary_type: str = "both"
-    ) -> TransactionStats:
+    def compute_stats(self, current_price: Decimal | None = None) -> TransactionStats:
         current_price = current_price or self._get_current_price()
         return self._compute_from_transactions(
             transactions=self.transactions,
             initial_buy_lots=[],
             end_period_price=current_price,
-            summary_type=summary_type,
         )
 
     def compute_stats_in_period(
@@ -297,7 +286,6 @@ class TransactionStatsService:
         start: datetime | None = None,
         end: datetime | None = None,
         end_period_price: Decimal | None = None,
-        summary_type: str = "both",
     ) -> TransactionStats:
         """
         Compute stats for transactions inside a time window [start, end].
@@ -320,9 +308,7 @@ class TransactionStatsService:
         else:
             pre_txs = [t for t in self.transactions if t.timestamp < start]
 
-        pre_stats = self._compute_from_transactions(
-            pre_txs, [], Decimal(0), summary_type=summary_type
-        )
+        pre_stats = self._compute_from_transactions(pre_txs, [], Decimal(0))
 
         # Recreate BuyLot instances from pre_stats (FIFO order)
         pre_lots = [
@@ -344,7 +330,6 @@ class TransactionStatsService:
             transactions=window_txs,
             initial_buy_lots=pre_lots,
             end_period_price=end_period_price,
-            summary_type=summary_type,
         )
 
 
@@ -384,10 +369,7 @@ class MultiInstrumentsTransactionStatsService:
         return self.lastest_price_service.get_prices()
 
     def compute_stats(
-        self,
-        start: datetime | None = None,
-        end: datetime | None = None,
-        summary_type: str = "both",
+        self, start: datetime | None = None, end: datetime | None = None
     ) -> TransactionStatsDict:
         """Compute stats for all instruments, optionally within a time window."""
         stats = TransactionStatsDict()
