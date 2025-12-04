@@ -1,5 +1,5 @@
 from config.celery import async_task
-from modules.chats.agent import AgentDeps, agent
+from modules.chats.agent import AgentDeps, create_agent
 from modules.chats.services import LLMStreamingService
 
 
@@ -10,6 +10,7 @@ async def respond_to_chat_message(
     user_message: str,
 ):
     deps = AgentDeps(investor_id=investor_id)
+    agent = create_agent()
     service = LLMStreamingService(agent, investor_id=investor_id, chat_id=chat_id)
     await service.respond(
         user_message=user_message,

@@ -1753,12 +1753,16 @@ components:
     CreateChatRequest:
       type: object
       properties:
+        id:
+          type: string
+          format: uuid
         first_message:
           type: string
           minLength: 1
           maxLength: 10000
       required:
       - first_message
+      - id
     CreateLimitOrderRequest:
       type: object
       properties:
