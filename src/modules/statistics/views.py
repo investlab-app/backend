@@ -53,7 +53,7 @@ class InvestorStatsView(generics.RetrieveAPIView):
 
         stats_total = stats_service.compute_stats()
         total_gain = stats_total.sum_attribute("total_gain")
-        invested = stats_total.sum_attribute("total_buy_cost")
+        invested = stats_total.sum_attribute("total_buy_cost") - stats_total.sum_attribute("total_sell_cost")
 
         investor_stats_service = InvestorStatsService()
         total_value = investor_stats_service.get_total_value(investor=investor)

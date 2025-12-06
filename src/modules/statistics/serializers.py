@@ -75,7 +75,7 @@ class OwnedShareSerializer(serializers.Serializer):
     gain = serializers.FloatField()
 
     # TransactionStats.gain_percentage
-    gain_percentage = serializers.FloatField(allow_null=True)
+    gain_percentage = serializers.FloatField()
 
 
 # stats
