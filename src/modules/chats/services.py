@@ -131,30 +131,37 @@ class LLMStreamingService[AgentDepsT, OutputDataT]:
     async def stream(self, user_message: str, deps: AgentDepsT):
         messages = await self.chat_messages_service.get_messages(chat_id=self.chat_id)
 
-        # Create entirely new client per request to avoid issues with concurrency (https://github.com/pydantic/pydantic-ai/issues/748)
-        async with httpx.AsyncClient() as http_client:
-            provider = GoogleProvider(api_key=GEMINI_API_KEY, http_client=http_client)
-            model = GoogleModel("gemini-2.5-flash", provider=provider)
+        try:
+            # Create entirely new client per request to avoid issues with concurrency (https://github.com/pydantic/pydantic-ai/issues/748)
+            async with httpx.AsyncClient() as http_client:
+                provider = GoogleProvider(
+                    api_key=GEMINI_API_KEY, http_client=http_client
+                )
+                model = GoogleModel("gemini-2.5-flash", provider=provider)
 
-            async with self.agent.run_stream(
-                user_message,
-                model=model,
-                message_history=messages,
-                deps=deps,
-            ) as response:
-                async for chunk in response.stream_text(delta=True):
-                    yield chunk
+                async with self.agent.run_stream(
+                    user_message,
+                    model=model,
+                    message_history=messages,
+                    deps=deps,
+                ) as response:
+                    async for chunk in response.stream_text(delta=True):
+                        yield chunk
 
-        await ChatMessage.objects.acreate(
-            chat_id=self.chat_id,
-            message_list=response.new_messages_json(),
-        )
+            await ChatMessage.objects.acreate(
+                chat_id=self.chat_id,
+                message_list=response.new_messages_json(),
+            )
+        except Exception:
+            logger.exception("Unexpected error during LLM streaming")
+            await self.send({"state": "error", "error_type": "UnexpectedError"})
+            return
 
     async def send(self, data: dict):
         await self.channel_layer.group_send(
             self.group_name,
             {
                 "type": "send.llm",
-                "data": data,
+                "data": {**data, "chat_id": str(self.chat_id)},
             },
         )

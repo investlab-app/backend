@@ -49,6 +49,7 @@ class ChatDetailSerializer(serializers.ModelSerializer):
 
 
 class CreateChatSerializer(serializers.Serializer):
+    id = serializers.UUIDField(required=True)
     first_message = serializers.CharField(max_length=10000)
 
 

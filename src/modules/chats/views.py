@@ -39,11 +39,12 @@ class ChatsView(generics.ListCreateAPIView):
 
         investor = get_object_or_404(Investor, clerk_id=self.request.user.id)
         first_message = serializer.validated_data["first_message"]
+        chat_id = serializer.validated_data["id"]
 
         chat_service = ChatService()
         title = chat_service.generate_title(first_message)
 
-        chat = Chat.objects.create(investor=investor, title=title)
+        chat = Chat.objects.create(id=chat_id, investor=investor, title=title)
 
         respond_to_chat_message.delay(
             investor_id=investor.id,

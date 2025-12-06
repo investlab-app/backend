@@ -5,35 +5,32 @@ from config.settings import MCP_ECHARTS_URL, MCP_MASSIVE_URL
 
 
 class MassiveMCP:
-    base_toolset = FastMCPToolset(MCP_MASSIVE_URL)
+    # Our subscriptions only allow a subset of tools
+    allowed_tools = {
+        "get_aggs",
+        "list_aggs",
+        "get_grouped_daily_aggs",
+        "get_daily_open_close_agg",
+        "get_previous_close_agg",
+        "list_trades",
+        "list_universal_snapshots",
+        "get_snapshot_all",
+        "get_snapshot_direction",
+        "get_market_holidays",
+        "get_market_status",
+        "list_tickers",
+        "get_ticker_details",
+        "list_ticker_news",
+    }
 
     def get_toolset(self) -> FilteredToolset[None]:
-        # Our subscriptions only allow a subset of tools
-        allowed_tools = {
-            "get_aggs",
-            "list_aggs",
-            "get_grouped_daily_aggs",
-            "get_daily_open_close_agg",
-            "get_previous_close_agg",
-            "list_trades",
-            "list_universal_snapshots",
-            "get_snapshot_all",
-            "get_snapshot_direction",
-            "get_market_holidays",
-            "get_market_status",
-            "list_tickers",
-            "get_ticker_details",
-            "list_ticker_news",
-        }
-
-        return self.base_toolset.filtered(
-            lambda ctx, tool_def: tool_def.name in allowed_tools
+        base_toolset = FastMCPToolset(MCP_MASSIVE_URL)
+        return base_toolset.filtered(
+            lambda ctx, tool_def: tool_def.name in self.allowed_tools
         )
 
 
 class EChartsMCP:
-    toolset = FastMCPToolset(MCP_ECHARTS_URL)
-
     # Some tools cause errors
     allowed_tools = [
         "generate_echarts",
@@ -55,6 +52,7 @@ class EChartsMCP:
     ]
 
     def get_toolset(self) -> FilteredToolset[None]:
-        return self.toolset.filtered(
+        toolset = FastMCPToolset(MCP_ECHARTS_URL)
+        return toolset.filtered(
             lambda ctx, tool_def: tool_def.name in self.allowed_tools
         )
