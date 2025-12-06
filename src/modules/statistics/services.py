@@ -400,7 +400,7 @@ class StatsNew:
         instrument: Instrument,
         *,
         is_open: bool,
-    ):
+    ) -> list[dict[str, Any]]:
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
             partials = ExecutiveTransactionService.get_open_partials(
@@ -437,10 +437,11 @@ class StatsNew:
 
     def get_position_summary(
         self,
-        is_open,
         investor: Investor,
         instrument: Instrument,
-    ):
+        *,
+        is_open: bool,
+    ) -> dict[str, Any]:
         price = self.lastest_price_service.get_prices()[instrument.ticker]
         if is_open:
             partials = ExecutiveTransactionService.get_open_partials(
@@ -491,10 +492,7 @@ class StatsNew:
         }
         return summary
 
-    def get_total_gain(
-        self,
-        investor: Investor,
-    ):
+    def get_total_gain(self, investor: Investor) -> Decimal:
         tickers = get_investor_tickers(investor)
         total_gain = Decimal(0)
 

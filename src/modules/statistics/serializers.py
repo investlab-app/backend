@@ -131,26 +131,20 @@ class TransactionHistoryQueryParams(serializers.Serializer):
 
 class HistoryEntrySerializer(serializers.Serializer):
     timestamp = serializers.DateTimeField(help_text="Date of the transaction")
-
     quantity = serializers.DecimalField(
         max_digits=20, decimal_places=5, help_text="Number of shares traded"
     )
-
     final_transaction_value = serializers.FloatField(
         help_text="Value of the transaction at closing or current market price"
     )
-
     final_share_price = serializers.FloatField(
         help_text="Price per share at the time of sell transaction "
         "or current market price"
     )
-
     initial_share_price = serializers.FloatField(
         help_text="Price per share at the time of buy transaction"
     )
-
     gain = serializers.FloatField(help_text="Gain or loss from this transaction")
-
     gain_percentage = serializers.FloatField(
         help_text="Gain or loss percentage from this transaction"
     )
@@ -158,22 +152,15 @@ class HistoryEntrySerializer(serializers.Serializer):
 
 class PositionSerializer(serializers.Serializer):
     symbol = serializers.CharField(max_length=10, help_text="Ticker symbol")
-
     name = serializers.CharField(max_length=255, help_text="Instrument name")
-
     icon = serializers.ImageField(allow_null=True)
-
     quantity = serializers.DecimalField(
         max_digits=20, decimal_places=5, help_text="Total quantity of shares"
     )
-
     value = serializers.FloatField(
         help_text="Current market value for open positions or total sell value"
         "for closed positions"
     )
-
     gain = serializers.FloatField(help_text="Total gain or loss")
-
     gain_percentage = serializers.FloatField(help_text="Total gain or loss percentage")
-
     history = HistoryEntrySerializer(many=True, help_text="Transaction history")
