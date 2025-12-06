@@ -35,7 +35,6 @@ class ExecutiveTransactionService:
             PartialTransaction.objects.create(
                 buy_transaction=buy_transaction, volume=params.volume
             )
-
             params.investor.balance -= total_cost
             params.investor.save()
 
@@ -128,6 +127,22 @@ class ExecutiveTransactionService:
             .select_related("buy_transaction")
             .order_by("buy_transaction__timestamp")
             .first()
+        )
+
+    @staticmethod
+    def get_open_partials(investor, instrument):
+        return PartialTransaction.objects.filter(
+            sell_transaction=None,
+            buy_transaction__investor=investor,
+            buy_transaction__ticker=instrument,
+        )
+
+    @staticmethod
+    def get_closed_partials(investor, instrument):
+        return PartialTransaction.objects.filter(
+            sell_transaction__isnull=False,
+            buy_transaction__investor=investor,
+            buy_transaction__ticker=instrument,
         )
 
     @staticmethod
