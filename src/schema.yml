@@ -1988,28 +1988,39 @@ components:
           type: string
           format: date-time
           description: Date of the transaction
-        is_buy:
-          type: boolean
-          description: True if the transaction was a buy False if it was a sell
         quantity:
           type: string
           format: decimal
           pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Number of shares traded
-        share_price:
+        final_transaction_value:
           type: number
           format: double
-          description: Price per share at the time of transaction
-        acquisition_price:
+          description: Value of the transaction at closing or current market price
+        final_share_price:
           type: number
           format: double
-          nullable: true
-          description: Acquisition price (null for SELL transactions)
+          description: Price per share at the time of sell transaction or current
+            market price
+        initial_share_price:
+          type: number
+          format: double
+          description: Price per share at the time of buy transaction
+        gain:
+          type: number
+          format: double
+          description: Gain or loss from this transaction
+        gain_percentage:
+          type: number
+          format: double
+          description: Gain or loss percentage from this transaction
       required:
-      - acquisition_price
-      - is_buy
+      - final_share_price
+      - final_transaction_value
+      - gain
+      - gain_percentage
+      - initial_share_price
       - quantity
-      - share_price
       - timestamp
     Insight:
       type: object
@@ -2740,7 +2751,6 @@ components:
         gain_percentage:
           type: number
           format: double
-          nullable: true
       required:
       - gain
       - gain_percentage
@@ -2960,10 +2970,11 @@ components:
           format: decimal
           pattern: ^-?\d{0,15}(?:\.\d{0,5})?$
           description: Total quantity of shares
-        market_value:
+        value:
           type: number
           format: double
-          description: Current market value
+          description: Current market value for open positions or total sell valuefor
+            closed positions
         gain:
           type: number
           format: double
@@ -2971,7 +2982,6 @@ components:
         gain_percentage:
           type: number
           format: double
-          nullable: true
           description: Total gain or loss percentage
         history:
           type: array
@@ -2983,10 +2993,10 @@ components:
       - gain_percentage
       - history
       - icon
-      - market_value
       - name
       - quantity
       - symbol
+      - value
     PriceAlert:
       type: object
       properties:

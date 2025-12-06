@@ -1,5 +1,5 @@
+import django_filters.rest_framework as drf_filters
 from django.db.models import Exists, OuterRef
-from django_filters import rest_framework as drf_filters
 
 from modules.instruments.models import Instrument
 from modules.investors.models import Investor

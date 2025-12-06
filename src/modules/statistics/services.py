@@ -13,6 +13,7 @@ from modules.prices.repositories import PolygonPricesRepository
 from modules.prices.services import LatestPriceService
 from modules.statistics.utils import get_investor_tickers
 from modules.transactions.models import Transaction
+from modules.transactions.services import ExecutiveTransactionService
 
 # Set higher precision for Decimal operations
 getcontext().prec = 28
@@ -384,3 +385,123 @@ class MultiInstrumentsTransactionStatsService:
                 stats[ticker] = service.compute_stats(current_price=prices[ticker])
 
         return stats
+
+
+class StatsNew:
+    def __init__(
+        self,
+        lastest_price_service: LatestPriceService | None = None,
+    ):
+        self.lastest_price_service = lastest_price_service or LatestPriceService()
+
+    def get_position_history(
+        self,
+        investor: Investor,
+        instrument: Instrument,
+        *,
+        is_open: bool,
+    ) -> list[dict[str, Any]]:
+        price = self.lastest_price_service.get_prices()[instrument.ticker]
+        if is_open:
+            partials = ExecutiveTransactionService.get_open_partials(
+                investor, instrument
+            )
+        else:
+            partials = ExecutiveTransactionService.get_closed_partials(
+                investor, instrument
+            )
+
+        history = []
+        for partial in partials:
+            transaction = partial.buy_transaction
+            final_price = (
+                partial.sell_transaction.price
+                if partial.sell_transaction is not None
+                else price
+            )
+            value = final_price * partial.volume
+            gain = value - (transaction.price * partial.volume)
+            history_entry = {
+                "timestamp": transaction.timestamp,
+                "quantity": partial.volume,
+                "final_transaction_value": round(value, 2),
+                "final_share_price": round(final_price, 2),
+                "initial_share_price": round(transaction.price, 2),
+                "gain": round(gain, 2),
+                "gain_percentage": round(
+                    (gain / (transaction.price * partial.volume) * 100), 2
+                ),
+            }
+            history.append(history_entry)
+        return history
+
+    def get_position_summary(
+        self,
+        investor: Investor,
+        instrument: Instrument,
+        *,
+        is_open: bool,
+    ) -> dict[str, Any]:
+        price = self.lastest_price_service.get_prices()[instrument.ticker]
+        if is_open:
+            partials = ExecutiveTransactionService.get_open_partials(
+                investor, instrument
+            )
+        else:
+            partials = ExecutiveTransactionService.get_closed_partials(
+                investor, instrument
+            )
+
+        total_quantity = Decimal(0)
+        total_cost = Decimal(0)
+        total_sell_value = Decimal(0)
+        gain_sum = Decimal(0)
+        loss_sum = Decimal(0)
+        gain_count = 0
+        loss_count = 0
+        for partial in partials:
+            transaction = partial.buy_transaction
+            total_quantity += partial.volume
+            total_cost += partial.volume * transaction.price
+            if partial.sell_transaction is not None:
+                sell_value = partial.volume * partial.sell_transaction.price
+                total_sell_value += sell_value
+                gain = sell_value - (partial.volume * transaction.price)
+                if gain > 0:
+                    gain_sum += gain
+                    gain_count += 1
+                elif gain < 0:
+                    loss_sum += gain
+                    loss_count += 1
+
+        value = total_quantity * price if is_open else total_sell_value
+        gain = value - total_cost
+        gain_percentage = (gain / total_cost * 100) if total_cost > 0 else 0
+        avg_gain = gain_sum / gain_count if gain_count > 0 else Decimal(0)
+        avg_loss = -(loss_sum / loss_count) if loss_count > 0 else Decimal(0)
+
+        summary = {
+            "symbol": instrument.ticker,
+            "quantity": total_quantity,
+            "value": round(value, 2),
+            "gain": round(gain, 2),
+            "gain_percentage": round(gain_percentage, 2),
+            "avg_gain": round(avg_gain, 2),
+            "avg_loss": round(avg_loss, 2),
+            "total_cost": round(total_cost, 2),
+        }
+        return summary
+
+    def get_total_gain(self, investor: Investor) -> Decimal:
+        tickers = get_investor_tickers(investor)
+        total_gain = Decimal(0)
+
+        for ticker in tickers:
+            summary = self.get_position_summary(
+                is_open=False,
+                investor=investor,
+                instrument=ticker,
+            )
+            total_gain += Decimal(str(summary["gain"]))
+
+        return round(total_gain, 2)
