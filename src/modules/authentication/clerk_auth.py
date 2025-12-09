@@ -16,6 +16,10 @@ class ClerkUser:
         self.role = role
         self.is_authenticated = True
 
+    @property
+    def pk(self):
+        return self.id
+
 
 def parse_clerk_user_from_payload(payload: dict[str, Any]) -> ClerkUser:
     clerk_user_id = payload.get("sub")

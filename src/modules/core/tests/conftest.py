@@ -5,6 +5,12 @@ import pytest
 from modules.authentication.tests.conftest import user
 
 
+@pytest.fixture(autouse=True)
+def disable_throttling(settings):
+    settings.REST_FRAMEWORK["DEFAULT_THROTTLE_CLASSES"] = []
+    return settings
+
+
 @pytest.fixture()
 def api_client():
     from rest_framework.test import APIClient
