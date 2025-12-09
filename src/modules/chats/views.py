@@ -17,14 +17,18 @@ from modules.investors.models import Investor
 
 
 class ChatsThrottle(UserRateThrottle):
-    rate = "20/minute"
+    rate = "30/minute"
 
 
 class ChatsView(generics.ListCreateAPIView):
     ordering_fields = ["created_at", "updated_at", "title"]
     ordering = ["-updated_at"]
     pagination_class = None
-    throttle_classes = [ChatsThrottle]
+
+    def get_throttles(self):
+        if self.request.method == "POST":
+            return [ChatsThrottle()]
+        return super().get_throttles()
 
     def get_serializer_class(self):
         if self.request.method == "POST":
