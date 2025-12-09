@@ -2,6 +2,7 @@ from django.shortcuts import get_object_or_404
 from drf_spectacular.utils import extend_schema
 from rest_framework import generics, status
 from rest_framework.response import Response
+from rest_framework.throttling import UserRateThrottle
 
 from modules.chats.models import Chat
 from modules.chats.serializers import (
@@ -15,10 +16,15 @@ from modules.chats.tasks import respond_to_chat_message
 from modules.investors.models import Investor
 
 
+class ChatsThrottle(UserRateThrottle):
+    rate = "20/minute"
+
+
 class ChatsView(generics.ListCreateAPIView):
     ordering_fields = ["created_at", "updated_at", "title"]
     ordering = ["-updated_at"]
     pagination_class = None
+    throttle_classes = [ChatsThrottle]
 
     def get_serializer_class(self):
         if self.request.method == "POST":
@@ -33,7 +39,7 @@ class ChatsView(generics.ListCreateAPIView):
     def post(self, request, *args, **kwargs):
         return super().post(request, *args, **kwargs)
 
-    def create(self, request):
+    def create(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -77,6 +83,7 @@ class ChatDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ChatMessageView(generics.CreateAPIView):
     serializer_class = CreateChatMessageSerializer
+    throttle_classes = [ChatsThrottle]
 
     @extend_schema(
         responses={
