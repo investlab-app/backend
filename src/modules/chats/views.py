@@ -17,7 +17,7 @@ from modules.investors.models import Investor
 
 
 class ChatsThrottle(UserRateThrottle):
-    rate = "20/minute"
+    rate = "30/minute"
 
 
 class ChatsView(generics.ListCreateAPIView):
