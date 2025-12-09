@@ -13,7 +13,8 @@ from modules.core.management.mixins import CommandMessagesMixin
 from modules.core.utils import get_local_datetime
 from modules.instruments.models import Instrument
 from modules.investors.models import AccountValueSnapshot, Asset, Investor
-from modules.transactions.models import Transaction
+from modules.transactions.schemas import TransactionParams
+from modules.transactions.services import ExecutiveTransactionService
 
 
 class Command(CommandMessagesMixin, BaseCommand):
@@ -96,25 +97,25 @@ class Command(CommandMessagesMixin, BaseCommand):
         timestamp: datetime,
         *,
         is_buy: bool,
-    ) -> Transaction:
-        transaction = Transaction.objects.create(
+    ):
+        params = TransactionParams(
             investor=investor,
-            ticker=instrument,
+            instrument=instrument,
             volume=Decimal(volume),
-            price=Decimal(price),
-            timestamp=timestamp,
-            is_buy=is_buy,
+            price_per_unit=Decimal(price),
         )
+        if is_buy:
+            ExecutiveTransactionService.buy(params)
+        else:
+            ExecutiveTransactionService.sell(params)
+
         self.print_success(
-            f"Transaction("
+            f"TransactionParams("
             f"investor='{investor.clerk_id}', "
             f"instrument='{instrument.ticker}', volume={volume}, "
             f"price={price}, is_buy={is_buy} ,"
-            f"timestamp='{timestamp}'"
-            f") created successfully."
+            f")"
         )
-
-        return transaction
 
     def create_account_value_snapshot(
         self,
@@ -143,36 +144,42 @@ class Command(CommandMessagesMixin, BaseCommand):
         call_command("seed_popular_instruments")
         investor_id = options["investor_id"]
         investor = self.create_investor(investor_id)
+        investor_old_balance = investor.balance
 
-        now = timezone.now()
-        for days_ago in range(30, 0, -1):
-            date = now - timedelta(days=days_ago)
-            self.create_account_value_snapshot(
-                investor=investor,
-                timestamp=date,
-                value=1000
-                + days_ago * 10
-                + random.randint(0, 50)
-                + Decimal(random.randint(0, 99)) / Decimal(100),
+        with transaction.atomic():
+            investor.balance = Decimal(10_000_000)
+            investor.save()
+
+            now = timezone.now()
+            for days_ago in range(30, 0, -1):
+                date = now - timedelta(days=days_ago)
+                self.create_account_value_snapshot(
+                    investor=investor,
+                    timestamp=date,
+                    value=1000
+                    + days_ago * 10
+                    + random.randint(0, 50)
+                    + Decimal(random.randint(0, 99)) / Decimal(100),
+                )
+
+            tickers = {
+                "AAPL": Decimal("259.13"),
+                "MSFT": Decimal("529.24"),
+                "GOOGL": Decimal("253.30"),
+                "AMZN": Decimal("205.71"),
+                "TSLA": Decimal("344.27"),
+            }
+            instruments = list(
+                Instrument.objects.filter(ticker__in=list(tickers.keys()))
             )
+            if len(instruments) != len(tickers):
+                self.print_error(
+                    "Not all specified instruments found. "
+                    "Ensure 'seed_popular_instruments' ran correctly.\n"
+                )
+                return
 
-        tickers = {
-            "AAPL": Decimal("259.13"),
-            "MSFT": Decimal("529.24"),
-            "GOOGL": Decimal("253.30"),
-            "AMZN": Decimal("205.71"),
-            "TSLA": Decimal("344.27"),
-        }
-        instruments = list(Instrument.objects.filter(ticker__in=list(tickers.keys())))
-        if len(instruments) != len(tickers):
-            self.print_error(
-                "Not all specified instruments found. "
-                "Ensure 'seed_popular_instruments' ran correctly.\n"
-            )
-            return
-
-        for instrument in instruments:
-            with transaction.atomic():
+            for instrument in instruments:
                 current_asset_volume = Decimal(0)
                 timestamp = get_local_datetime() - timedelta(days=30)
 
@@ -211,3 +218,6 @@ class Command(CommandMessagesMixin, BaseCommand):
                         instrument=instrument,
                         volume=volume if is_buy else -volume,
                     )
+
+            investor.balance = investor_old_balance
+            investor.save()
