@@ -39,6 +39,7 @@ class StatusView(GenericAPIView):
     permission_classes = [AllowAny]
     authentication_classes = []
     serializer_class = StatusResponseSerializer
+    throttle_classes = []
 
     @extend_schema(
         responses={
