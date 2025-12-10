@@ -2154,6 +2154,10 @@ components:
         description:
           type: string
           nullable: true
+        description_pl:
+          type: string
+          nullable: true
+          title: Polish Description
         ticker_root:
           type: string
           nullable: true
