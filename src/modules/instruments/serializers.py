@@ -45,6 +45,7 @@ class InstrumentRetrieveSerializer(serializers.ModelSerializer):
             "primary_exchange",
             "share_class_figi",
             "description",
+            "description_pl",
             "ticker_root",
             "ticker_suffix",
             "homepage_url",
