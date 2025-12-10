@@ -92,13 +92,15 @@ class SyncInstrumentsDetailInfoService(UpdateWithMappingMixin):
 
             old_description = instrument.description
             new_description = ticker_details.description
-            need_of_translation = old_description != new_description
+            was_changes = old_description != new_description
 
             updated_instrument, updated = self.update_with_mapping(
                 instrument, ticker_details
             )
 
-            if TRANSLATE_INSTRUMENT_DESCRIPTION and need_of_translation:
+            if TRANSLATE_INSTRUMENT_DESCRIPTION and (
+                was_changes or not instrument.description_pl
+            ):
                 (
                     updated_instrument,
                     translation_updated,
