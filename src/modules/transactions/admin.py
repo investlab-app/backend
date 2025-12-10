@@ -7,7 +7,7 @@ from modules.transactions.models import Transaction
 
 @admin.register(Transaction)
 class TransactionAdmin(ModelAdmin):
-    list_display = ["id", "ticker", "investor"]
+    list_display = ["id", "ticker", "investor", "timestamp"]
     list_filter = ["ticker", "investor"]
     search_fields = ("id", "investor__clerk_id", "ticker__ticker")
     ordering = ("-timestamp",)
